@@ -1,0 +1,21 @@
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+node_modules/
+dist/
+
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Runtime media is stored in a Docker volume and must not be committed.
+media/
+uploads/
+cg/
