@@ -273,23 +273,26 @@ media_data
 
 요구가 생기기 전 Redis, Kafka, MinIO 등 별도 인프라는 추가하지 않는다.
 
+Docker/Compose 실제 빌드와 통합 실행 검증은 기능 구현이 완료된 뒤 최종 통합 단계에서
+수행한다. 개발 중에는 현재 골격을 유지하고 각 구성요소를 직접 실행해 검증한다.
+
 ## 12. 구현 순서
 
-1. Docker 부트스트랩 실제 실행 검증
-2. RiichiEnv 0.4.8 API/동풍전 스파이크
+1. RiichiEnv 0.4.8 API/동풍전 스파이크
+2. DB 모델 / migration / 최고 관리자 bootstrap
 3. 인증 / 회원 프로필
-4. DB 모델 / migration / 최고 관리자 bootstrap
-5. CPU/대사 관리자 기초
-6. RiichiEnv adapter + 서버 authoritative game session
-7. 최소 마작 UI
-8. Tier 0 CPU 3명으로 동풍전 완주
-9. 4위 판정 / HP / `user_cpu_progress`
-10. CPU 재선택 게임 루프
-11. 말풍선 / 대사
-12. CG metadata + 관리자 업로드
-13. Tier 1 CPU
-14. Tier 2 CPU
-15. 자동 시뮬레이션 기반 난이도 튜닝
+4. CPU/대사 관리자 기초
+5. RiichiEnv adapter + 서버 authoritative game session
+6. 최소 마작 UI
+7. Tier 0 CPU 3명으로 동풍전 완주
+8. 4위 판정 / HP / `user_cpu_progress`
+9. CPU 재선택 게임 루프
+10. 말풍선 / 대사
+11. CG metadata + 관리자 업로드
+12. Tier 1 CPU
+13. Tier 2 CPU
+14. 자동 시뮬레이션 기반 난이도 튜닝
+15. Docker/Compose 최종 빌드·통합 실행·persistent volume 검증
 
 ## 13. 아직 미확정
 
