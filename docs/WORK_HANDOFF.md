@@ -4,9 +4,10 @@
 
 GitHub bootstrap and the RiichiEnv 0.4.8 spike are complete. Backend settings, initial
 database models, Alembic migrations, superadmin bootstrap, CPU seed path, authentication and
-member name profile APIs are implemented. New members start with current/max HP 3 and stage 0
-progress for every seeded CPU. Docker/Compose runtime validation is intentionally deferred to
-the final integration stage.
+member name profile APIs are implemented. Superadmin authorization and member/CPU/dialogue
+management foundation APIs are also implemented. New members start with current/max HP 3 and
+stage 0 progress for every seeded CPU. Docker/Compose runtime validation is intentionally
+deferred to the final integration stage.
 
 Repository:
 
@@ -37,6 +38,9 @@ danhk0612/no-riichi-no-fuku
 - Member registration, login, authenticated profile read/name update and password change tests.
 - Superadmin initial-password flag and verified password-change transition tests.
 - Initial/max HP 3 migration, including SQLite round-trip and PostgreSQL offline SQL generation.
+- Superadmin access denial before the initial password change and member access denial.
+- Member listing/activation, CPU create/update and dialogue CRUD API tests.
+- New CPU creation adds stage 0 progress for every existing member.
 
 ## Deferred to final integration
 
@@ -54,6 +58,7 @@ Read:
 1. `AGENTS.md`
 2. `docs/WORK_INSTRUCTIONS.md`
 3. `docs/WORK_START.md`
-4. Decide profile image upload requirements before implementing its media-storage path
+4. RiichiEnv adapter and server-authoritative game session foundation
 
-Do not begin CG generation or add CG binaries to the repository.
+Profile/CPU image upload requirements remain undecided. Do not implement that media path or
+begin CG generation, and do not add CG binaries to the repository.
