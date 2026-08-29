@@ -2,7 +2,8 @@
 
 ## Current status
 
-GitHub bootstrap is complete. No feature implementation beyond the minimal Docker/API/frontend scaffold has been started.
+GitHub bootstrap and the RiichiEnv 0.4.8 spike are complete. Docker/Compose runtime
+validation is intentionally deferred to the final integration stage.
 
 Repository:
 
@@ -21,21 +22,30 @@ danhk0612/no-riichi-no-fuku
 - RiichiEnv 0.4.8 current PyPI release and Apache-2.0 license were rechecked on 2026-08-29.
 - Mortal code license was rechecked as AGPL-3.0-or-later.
 
-## Not verified in this environment
+## Verified in the first Work
 
-- Full `npm install` / frontend build: dependency installation exceeded the execution time limit.
-- Full `docker compose build/up`: Docker runtime was not available in the current execution environment.
-- RiichiEnv runtime integration/API: intentionally deferred to the first Work spike.
+- Backend dependency installation and direct `/api/health` response.
+- Frontend production build.
+- RiichiEnv 0.4.8 four-seat East-only match completion.
+- Actual initialization, observation/action structure, red fives, termination and rank behavior
+  are recorded in `docs/DECISIONS.md`.
 
-These are the first Work's verification tasks, not assumed working facts.
+## Deferred to final integration
 
-## First Work entry point
+- `docker compose config/build/up`
+- Web root and nginx-proxied `/api/health`
+- PostgreSQL container health
+- `postgres_data` and `media_data` persistence
+
+These remain unverified until the final Docker integration task succeeds.
+
+## Next entry point
 
 Read:
 
 1. `AGENTS.md`
 2. `docs/WORK_INSTRUCTIONS.md`
 3. `docs/WORK_START.md`
-4. GitHub issue `Bootstrap validation + RiichiEnv 0.4.8 spike`
+4. Backend foundation: settings, database models, Alembic, superadmin bootstrap and CPU seed path
 
 Do not begin CG generation or add CG binaries to the repository.

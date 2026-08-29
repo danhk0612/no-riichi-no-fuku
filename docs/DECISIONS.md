@@ -38,6 +38,13 @@
 - 초기 프로젝트 라이선스 MIT
 - GPL/AGPL 핵심 소스가 필요해지면 프로젝트 라이선스도 호환 계열로 전환
 
+## Docker 검증 시점
+
+- 개발 중에는 현재 Docker/Compose 골격을 유지하되 기능 구현과 로컬 테스트를 우선한다.
+- 실제 `docker compose config/build/up`, nginx 경유 API, PostgreSQL health와 persistent
+  volume 검증은 기능 구현이 완료된 최종 통합 단계에서 수행한다.
+- 최종 Docker 검증 전에는 Docker 배포 완료로 간주하지 않는다.
+
 ## RiichiEnv 0.4.8 스파이크 확정 사항
 
 2026-08-29에 PyPI의 `riichienv==0.4.8`을 Python 3.12 환경에 실제 설치하고

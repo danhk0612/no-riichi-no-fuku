@@ -21,20 +21,20 @@ danhk0612/no-riichi-no-fuku
 
 ## 1. 첫 작업 목표
 
-첫 Work의 목표는 기능을 많이 만드는 것이 아니라 **현재 부트스트랩이 실제 Docker 환경에서 재현 가능하게 실행되는지 검증하고, 이후 마작 엔진 구현을 시작할 수 있는 기준 상태를 만드는 것**이다.
+첫 Work의 목표는 기능을 많이 만드는 것이 아니라 **RiichiEnv 0.4.8의 실제 API와
+동풍전 동작을 확인하고 이후 마작 엔진 구현을 시작할 수 있는 기준 상태를 만드는 것**이다.
 
 다음 순서로 진행한다.
 
-### A. 부트스트랩 검증
+### A. 로컬 부트스트랩 검증
 
 - `.env.example` 검토
-- `docker compose config` 검증
-- `docker compose build` 실행
-- `docker compose up` 후 다음 확인
-  - 웹 루트 접근 가능
-  - `/api/health`가 nginx를 거쳐 정상 응답
-  - PostgreSQL health 정상
+- 백엔드 의존성 설치와 `/api/health` 직접 실행
+- 프론트엔드 production build
 - 실패 시 해당 실패 원인만 최소 수정
+
+실제 Docker/Compose 빌드, nginx proxy, PostgreSQL health와 persistent volume 검증은
+최종 통합 단계에서 수행한다.
 
 ### B. 백엔드 기반 정리
 
