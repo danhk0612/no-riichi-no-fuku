@@ -26,6 +26,12 @@ class BackendFoundationTest(unittest.TestCase):
             settings.require_database_url()
         with self.assertRaises(RuntimeError):
             settings.require_superadmin_credentials()
+        with self.assertRaises(RuntimeError):
+            settings.require_jwt_secret()
+
+        short_jwt = Settings(_env_file=None, jwt_secret="too-short")
+        with self.assertRaises(RuntimeError):
+            short_jwt.require_jwt_secret()
 
     def test_settings_build_database_url_from_postgres_fields(self) -> None:
         settings = Settings(

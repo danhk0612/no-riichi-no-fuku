@@ -15,3 +15,8 @@ dependencies = [
   "PyJWT>=2.10,<3",
   "riichienv==0.4.8"
 ]
+
+[project.optional-dependencies]
+test = [
+  "httpx>=0.28,<1"
+]

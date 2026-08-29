@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     postgres_port: int = 5432
     superadmin_login_id: str | None = None
     superadmin_initial_password: SecretStr | None = None
+    jwt_secret: SecretStr | None = None
+    access_token_expire_minutes: int = 60
     media_root: Path = Path("/data/media")
 
     def require_database_url(self) -> str:
@@ -47,3 +49,11 @@ class Settings(BaseSettings):
             self.superadmin_login_id,
             self.superadmin_initial_password.get_secret_value(),
         )
+
+    def require_jwt_secret(self) -> str:
+        if not self.jwt_secret:
+            raise RuntimeError("JWT_SECRET is required")
+        secret = self.jwt_secret.get_secret_value()
+        if len(secret.encode("utf-8")) < 32:
+            raise RuntimeError("JWT_SECRET must be at least 32 bytes")
+        return secret
