@@ -70,3 +70,19 @@ def get_current_user(
     if user is None or not user.is_active:
         raise unauthorized
     return user
+
+
+def get_current_superadmin(
+    user: User = Depends(get_current_user),
+) -> User:
+    if user.role != "superadmin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="superadmin access required",
+        )
+    if user.must_change_password:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="initial password must be changed",
+        )
+    return user
