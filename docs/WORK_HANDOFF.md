@@ -5,9 +5,10 @@
 GitHub bootstrap and the RiichiEnv 0.4.8 spike are complete. Backend settings, initial
 database models, Alembic migrations, superadmin bootstrap, CPU seed path, authentication and
 member name profile APIs are implemented. Superadmin authorization and member/CPU/dialogue
-management foundation APIs are also implemented. New members start with current/max HP 3 and
-stage 0 progress for every seeded CPU. Docker/Compose runtime validation is intentionally
-deferred to the final integration stage.
+management foundation APIs are also implemented. The RiichiEnv adapter, MahjongAgent boundary
+and process-local authoritative game session foundation are implemented. New members start with
+current/max HP 3 and stage 0 progress for every seeded CPU. Docker/Compose runtime validation is
+intentionally deferred to the final integration stage.
 
 Repository:
 
@@ -41,6 +42,9 @@ danhk0612/no-riichi-no-fuku
 - Superadmin access denial before the initial password change and member access denial.
 - Member listing/activation, CPU create/update and dialogue CRUD API tests.
 - New CPU creation adds stage 0 progress for every existing member.
+- RiichiEnv adapter rejects missing or illegal seat actions before calling the engine.
+- A fixed-seed authoritative session completed in 300 steps with all three injected CPU agents.
+- Human turns expose seat 0 observation/legal actions while other seats' hands remain hidden.
 
 ## Deferred to final integration
 
@@ -58,7 +62,7 @@ Read:
 1. `AGENTS.md`
 2. `docs/WORK_INSTRUCTIONS.md`
 3. `docs/WORK_START.md`
-4. RiichiEnv adapter and server-authoritative game session foundation
+4. Minimal WebSocket game transport contract and Mahjong UI foundation
 
 Profile/CPU image upload requirements remain undecided. Do not implement that media path or
 begin CG generation, and do not add CG binaries to the repository.

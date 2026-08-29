@@ -158,6 +158,28 @@ ranks = env.ranks()
 `[1, 2, 3, 4]`였다. 화료 6회, 유국 5회를 포함했으며 네 좌석 모두 실제 행동
 요청을 받아 제어되었다.
 
+## RiichiEnv adapter와 게임 세션 기초
+
+- 애플리케이션 게임 코드는 `RiichiEnvAdapter` 뒤에서 RiichiEnv 0.4.8을 사용한다.
+  adapter 생성 시 실제 설치 버전이 0.4.8인지 검사하고, 모드는 `4p-red-east`, 룰은
+  `GameRule.default_tenhou()`로 고정한다.
+- `MahjongAgent.choose_action(observation) -> Action`을 CPU 제어 공통 경계로 사용한다.
+  실제 Tier 0/1/2 정책은 이 경계 뒤에서 후속 구현한다.
+- 서버 세션은 사람을 좌석 0, 선택한 CPU 3명을 좌석 1~3에 배치한다. RiichiEnv env,
+  전체 좌석 Observation과 Action 객체는 서버 메모리에만 둔다.
+- 사람이 행동할 차례에는 좌석 0의 `Observation.to_dict()`와 그 시점의 합법 행동
+  목록만 `HumanTurn`으로 제공한다. 다른 좌석의 손패가 빈 목록인 0.4.8 관측 경계를
+  그대로 유지한다.
+- 사람 행동은 서버가 제공했던 합법 행동 목록의 index로 내부 선택하고, adapter가
+  현재 필요한 모든 좌석의 행동과 각 행동의 합법성을 다시 검사한 뒤 `env.step()`을
+  호출한다. 이 index는 내부 세션 API이며 아직 WebSocket wire contract가 아니다.
+- 현재 세션은 단일 서버 프로세스 메모리 기반 foundation이다. 공개 WebSocket API,
+  세션 registry/소유권 연결, 재접속과 프로세스 간 공유·영속화 정책은 아직 구현하지
+  않는다.
+- test-only 결정적 agent와 고정 seed 5로 완주한 결과는 300 step, 사람 행동 요청
+  66회, 최종 점수 `(16700, 25000, 33300, 25000)`, 순위 `(4, 2, 1, 3)`이다.
+  세 CPU 좌석 모두 실제 행동 요청을 받았다.
+
 ## 스파이크 전 초기 가정(확정 완료)
 
 첫 통합 전에 다음을 후보로 두었으며, 위 0.4.8 스파이크에서 실제 동작을 확정했다.
