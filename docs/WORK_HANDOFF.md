@@ -2,8 +2,9 @@
 
 ## Current status
 
-GitHub bootstrap and the RiichiEnv 0.4.8 spike are complete. Docker/Compose runtime
-validation is intentionally deferred to the final integration stage.
+GitHub bootstrap and the RiichiEnv 0.4.8 spike are complete. Backend settings, initial
+database models, Alembic migration, superadmin bootstrap and CPU seed path are implemented.
+Docker/Compose runtime validation is intentionally deferred to the final integration stage.
 
 Repository:
 
@@ -29,6 +30,8 @@ danhk0612/no-riichi-no-fuku
 - RiichiEnv 0.4.8 four-seat East-only match completion.
 - Actual initialization, observation/action structure, red fives, termination and rank behavior
   are recorded in `docs/DECISIONS.md`.
+- Initial migration upgrade/downgrade and schema drift check on SQLite.
+- Idempotent superadmin/CPU seed bootstrap tests.
 
 ## Deferred to final integration
 
@@ -46,6 +49,6 @@ Read:
 1. `AGENTS.md`
 2. `docs/WORK_INSTRUCTIONS.md`
 3. `docs/WORK_START.md`
-4. Backend foundation: settings, database models, Alembic, superadmin bootstrap and CPU seed path
+4. Authentication and member profile implementation
 
 Do not begin CG generation or add CG binaries to the repository.
