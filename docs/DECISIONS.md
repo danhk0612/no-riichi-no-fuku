@@ -45,6 +45,20 @@
   volume 검증은 기능 구현이 완료된 최종 통합 단계에서 수행한다.
 - 최종 Docker 검증 전에는 Docker 배포 완료로 간주하지 않는다.
 
+## 백엔드 기반
+
+- SQLAlchemy 2.x 동기 session과 `psycopg` 드라이버를 사용한다.
+- Alembic migration을 DB schema의 기준으로 사용한다.
+- 최고 관리자와 일반 회원은 `users`를 공유한다. 최고 관리자는 플레이어 전용 필드
+  (`player_name`, 프로필 이미지, 현재/최대 HP)를 `NULL`로 둘 수 있다.
+- 일반 회원 생성 단계에서는 플레이어 전용 필드를 서비스 계층에서 필수 검증한다.
+- 최대 HP 값은 아직 확정하지 않았으며 migration이나 seed에 임의 기본값을 넣지 않는다.
+- 최고 관리자 bootstrap은 환경변수의 ID/초기 암호로 최고 관리자가 없을 때만 생성하며,
+  기존 최고 관리자의 암호나 로그인 ID를 덮어쓰지 않는다.
+- 기본 CPU seed는 slug 기준 create-only로 입력한다. 이후 관리자 수정값은 재실행으로
+  덮어쓰지 않는다.
+- `cpu_result_assets`에는 런타임 저장소 key와 metadata만 기록하고 파일은 만들지 않는다.
+
 ## RiichiEnv 0.4.8 스파이크 확정 사항
 
 2026-08-29에 PyPI의 `riichienv==0.4.8`을 Python 3.12 환경에 실제 설치하고
