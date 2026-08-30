@@ -7,9 +7,10 @@ database models, Alembic migrations, superadmin bootstrap, CPU seed path, authen
 member name profile APIs are implemented. Superadmin authorization and member/CPU/dialogue
 management foundation APIs are also implemented. The RiichiEnv adapter, MahjongAgent boundary
 and process-local authoritative game session foundation are implemented. A minimal React Mahjong
-table renders HumanTurn data, legal actions and match results without image assets. New members
-start with current/max HP 3 and stage 0 progress for every seeded CPU. Docker/Compose runtime
-validation is intentionally deferred to the final integration stage.
+table renders HumanTurn data, legal actions and match results without image assets. The production
+Tier 0 CPU uses shanten, approximate ukeire, a weak riichi-genbutsu bias and seeded weighted
+selection. New members start with current/max HP 3 and stage 0 progress for every seeded CPU.
+Docker/Compose runtime validation is intentionally deferred to the final integration stage.
 
 Repository:
 
@@ -48,6 +49,10 @@ danhk0612/no-riichi-no-fuku
 - Human turns expose seat 0 observation/legal actions while other seats' hands remain hidden.
 - Frontend TypeScript production build with HumanTurn/action types and tile-id conversion.
 - Responsive four-seat table, scores, discards, hand actions, dora and result components.
+- Tier 0 prioritizes wins/riichi, filters discards by shanten and approximate ukeire, and only
+  calls when shanten improves.
+- A fixed-seed authoritative match with three production Tier 0 agents completed in 381 steps;
+  final scores `(18600, 37000, 26600, 17800)`, ranks `(3, 1, 2, 4)`.
 
 ## Deferred to final integration
 
@@ -65,7 +70,7 @@ Read:
 1. `AGENTS.md`
 2. `docs/WORK_INSTRUCTIONS.md`
 3. `docs/WORK_START.md`
-4. Tier 0 CPU agent implementation and fixed-seed match validation
+4. Final fourth-place result handling for HP and user CPU progress
 
 Profile/CPU image upload requirements remain undecided. Do not implement that media path or
 begin CG generation, and do not add CG binaries to the repository.
