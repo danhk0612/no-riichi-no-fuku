@@ -16,6 +16,12 @@ Authenticated REST creation now registers that session in an owner-scoped proces
 The game WebSocket authenticates with its first message, accepts only legal-action indexes, retains
 state across same-process reconnects, and commits authoritative match settlement before returning
 the completed result.
+The React client now provides minimal member registration/login, selectable CPU cards, REST game
+creation, first-message-authenticated WebSocket play, authoritative result settlement display and
+the return-to-selection loop. Access tokens remain in tab memory only, and stage 1/2 CPU cards are
+explicitly unavailable until those agents exist.
+The current browser client does not persist a token or active session ID, so a page refresh during
+a match cannot recover that process-local game yet.
 New members start with current/max HP 3 and stage 0 progress for every seeded CPU. Docker/Compose
 runtime validation is intentionally deferred to the final integration stage.
 
@@ -79,6 +85,13 @@ danhk0612/no-riichi-no-fuku
 - A fixed-seed Tier 0 match completed through only WebSocket action messages, committed the matching
   HP/CPU settlement, and returned the same cached completion on reconnect.
 - Backend test suite: 33 tests passed. Frontend TypeScript/Vite production build passed.
+- Vite development proxy was verified end to end for registration, login, CPU loading, session
+  creation and the game WebSocket. A production-agent match completed after 90 human action-index
+  messages and returned the matching CPU stage settlement.
+- The frontend disables action controls until the server returns the next turn, and reloads CPU
+  choices after a completed match instead of calculating progress locally.
+- The nginx `/api/` location is configured to forward WebSocket upgrades, but its actual container
+  runtime remains part of the deferred final Docker validation.
 
 ## Deferred to final integration
 
@@ -96,7 +109,7 @@ Read:
 1. `AGENTS.md`
 2. `docs/WORK_INSTRUCTIONS.md`
 3. `docs/WORK_START.md`
-4. Frontend CPU selection, REST session creation and authenticated WebSocket client integration
+4. Game dialogue event contract and speech-bubble integration
 
 Profile/CPU image upload requirements remain undecided. Do not implement that media path or
 begin CG generation, and do not add CG binaries to the repository.

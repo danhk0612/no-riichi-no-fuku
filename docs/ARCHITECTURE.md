@@ -146,6 +146,12 @@ registry는 소유권, authoritative RiichiEnv 세션과 정산 결과를 현재
 공유는 아직 지원하지 않는다. 완료 시 짧은 DB transaction으로 HP 또는 CPU 진행도를
 commit한 뒤 서버 산출 점수·순위와 정산 결과를 함께 전송한다.
 
+React 클라이언트는 access token을 현재 탭 메모리에만 유지한다. CPU 선택과 세션 생성은
+상대 `/api` REST 경로를 사용하고, WebSocket도 현재 page의 `ws`/`wss` origin 아래 같은
+`/api` 경로를 사용한다. 개발 시 Vite proxy가, 배포 시 nginx가 REST와 WebSocket을
+FastAPI로 전달한다. 클라이언트는 서버 응답을 화면 상태로 옮길 뿐 결과와 진행도를
+별도로 판정하지 않는다.
+
 ## 데이터 핵심 관계
 
 ```text

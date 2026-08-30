@@ -280,6 +280,28 @@ ranks = env.ranks()
   worker 간 공유, 메모리 회수, 영속적인 대국 이력과 재시작 이후 정산 idempotency는
   후속 설계 범위다.
 
+## 프론트엔드 게임 흐름 연결
+
+- 최소 회원 화면은 가입 후 즉시 로그인하거나 기존 회원으로 로그인한다. JWT access
+  token은 React 메모리에만 두며 local/session storage나 URL에 저장하지 않는다.
+  새로고침 후 로그인 유지와 refresh token은 현재 범위가 아니다. 진행 중 session ID도
+  메모리에만 있으므로 대국 중 새로고침 이후 재접속은 지원하지 않는다.
+- 로그인 후 `GET /api/game/cpus` 결과에서 정확히 3명을 선택하고 요청 순서대로 좌석
+  1/2/3에 배치한다. stage 1/2 CPU는 서버 목록에는 남지만 해당 agent가 아직 없으므로
+  UI에서도 `Tier N 미구현`으로 표시하고 선택을 막는다. Tier 0으로 대체하지 않는다.
+- `POST /api/game/sessions` 응답의 session ID와 좌석 표시 정보를 그대로 사용하며,
+  같은 origin의 `/api/game/sessions/{session_id}/ws`에 연결한 뒤 첫 메시지로 JWT를
+  보낸다. Vite 개발 proxy와 nginx 모두 `/api`의 WebSocket upgrade를 전달한다.
+- `human_turn`을 기존 마작 테이블 상태로 반영하고, 사용자가 선택한 합법 행동 index만
+  보낸다. 다음 `human_turn` 또는 `error`가 올 때까지 행동 UI를 잠가 같은 turn의
+  연속 클릭이 다음 turn 행동으로 잘못 처리되지 않게 한다.
+- `match_complete`의 점수·순위·정산만 결과 화면에 사용한다. 다음 대국 버튼은 CPU
+  목록을 다시 조회해 stage 3 제외 및 갱신된 stage를 반영한다. 클라이언트는 HP나
+  CPU 진행도를 직접 계산하거나 제출하지 않는다.
+- 개발 환경에서 Vite `/api` proxy를 경유해 가입, 로그인, CPU 조회, 세션 생성,
+  WebSocket 인증과 90회의 사람 행동 요청으로 실제 동풍전 완주 및 CPU stage 정산을
+  확인했다. nginx/Docker 경유 검증은 최종 Docker 통합 단계에 남긴다.
+
 ## 스파이크 전 초기 가정(확정 완료)
 
 첫 통합 전에 다음을 후보로 두었으며, 위 0.4.8 스파이크에서 실제 동작을 확정했다.

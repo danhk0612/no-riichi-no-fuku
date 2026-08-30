@@ -24,6 +24,8 @@ const ACTION_LABELS: Record<number, string> = {
 type MahjongTableProps = {
   state: GameScreenState
   onAction: (legalActionIndex: number) => void
+  actionsDisabled?: boolean
+  onNextGame?: () => void
 }
 
 function Tile({ tileId, disabled = false, onClick }: {
@@ -99,10 +101,12 @@ function HumanHand({
   observation,
   legalActions,
   onAction,
+  disabled,
 }: {
   observation: HumanObservation
   legalActions: LegalAction[]
   onAction: (index: number) => void
+  disabled: boolean
 }) {
   const discardIndexByTile = new Map<number, number>()
   legalActions.forEach((action, index) => {
@@ -124,7 +128,7 @@ function HumanHand({
             <Tile
               key={tileId}
               tileId={tileId}
-              disabled={actionIndex === undefined}
+              disabled={disabled || actionIndex === undefined}
               onClick={
                 actionIndex === undefined ? undefined : () => onAction(actionIndex)
               }
@@ -135,7 +139,12 @@ function HumanHand({
       <div className="action-bar">
         {nonDiscardActions.length === 0 && <p>버릴 패를 선택하세요.</p>}
         {nonDiscardActions.map(({ action, index }) => (
-          <button key={index} onClick={() => onAction(index)} type="button">
+          <button
+            disabled={disabled}
+            key={index}
+            onClick={() => onAction(index)}
+            type="button"
+          >
             {actionDescription(action)}
           </button>
         ))}
@@ -147,9 +156,11 @@ function HumanHand({
 function ActiveTable({
   state,
   onAction,
+  actionsDisabled,
 }: {
   state: Extract<GameScreenState, { status: 'human_turn' }>
   onAction: (index: number) => void
+  actionsDisabled: boolean
 }) {
   const { observation } = state.turn
   const playersBySeat = new Map(state.players.map((player) => [player.seat, player]))
@@ -177,6 +188,7 @@ function ActiveTable({
         observation={observation}
         legalActions={state.turn.legal_actions}
         onAction={onAction}
+        disabled={actionsDisabled}
       />
     </>
   )
@@ -184,8 +196,10 @@ function ActiveTable({
 
 function CompletedTable({
   state,
+  onNextGame,
 }: {
   state: Extract<GameScreenState, { status: 'complete' }>
+  onNextGame?: () => void
 }) {
   const playersBySeat = new Map(state.players.map((player) => [player.seat, player]))
   const rows = state.result.ranks
@@ -207,11 +221,26 @@ function CompletedTable({
           </li>
         ))}
       </ol>
+      <p className="settlement-summary">
+        {state.settlement.last_place_seat === 0
+          ? `플레이어 HP ${state.settlement.current_hp}`
+          : `CPU 진행 단계 ${state.settlement.defeat_stage}`}
+      </p>
+      {onNextGame && (
+        <button className="primary-button" onClick={onNextGame} type="button">
+          다음 대국 선택
+        </button>
+      )}
     </section>
   )
 }
 
-export function MahjongTable({ state, onAction }: MahjongTableProps) {
+export function MahjongTable({
+  state,
+  onAction,
+  actionsDisabled = false,
+  onNextGame,
+}: MahjongTableProps) {
   if (state.status === 'waiting') {
     return (
       <section className="waiting-panel">
@@ -222,7 +251,13 @@ export function MahjongTable({ state, onAction }: MahjongTableProps) {
     )
   }
   if (state.status === 'complete') {
-    return <CompletedTable state={state} />
+    return <CompletedTable state={state} onNextGame={onNextGame} />
   }
-  return <ActiveTable state={state} onAction={onAction} />
+  return (
+    <ActiveTable
+      state={state}
+      onAction={onAction}
+      actionsDisabled={actionsDisabled}
+    />
+  )
 }
