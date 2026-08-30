@@ -44,10 +44,32 @@ export type PlayerSeat = {
   isHuman: boolean
 }
 
+export type CpuChoice = {
+  id: number
+  slug: string
+  name: string
+  age_adult: boolean
+  style: string
+  short_description: string
+  long_description: string | null
+  profile_image_key: string | null
+  defeat_stage: number
+}
+
+export type GameSessionCreated = {
+  session_id: string
+  players: PlayerSeat[]
+}
+
 export type GameScreenState =
   | { status: 'waiting' }
   | { status: 'human_turn'; turn: HumanTurn; players: PlayerSeat[] }
-  | { status: 'complete'; result: MatchResult; players: PlayerSeat[] }
+  | {
+      status: 'complete'
+      result: MatchResult
+      settlement: MatchSettlement
+      players: PlayerSeat[]
+    }
 
 export type MatchSettlement = {
   last_place_seat: number
