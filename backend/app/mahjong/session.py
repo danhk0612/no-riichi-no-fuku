@@ -80,8 +80,22 @@ class AuthoritativeGameSession:
         observation = self._adapter.pending_observations.get(HUMAN_SEAT)
         if observation is None:
             raise GameSessionStateError("session is not waiting for the human seat")
+        serialized_observation = observation.to_dict()
+        serialized_observation["melds"] = [
+            [
+                {
+                    "meld_type": int(meld.meld_type),
+                    "tiles": list(meld.tiles),
+                    "called_tile": meld.called_tile,
+                    "from_who": meld.from_who,
+                    "opened": meld.opened,
+                }
+                for meld in player_melds
+            ]
+            for player_melds in serialized_observation["melds"]
+        ]
         return HumanTurn(
-            observation=observation.to_dict(),
+            observation=serialized_observation,
             legal_actions=tuple(
                 action.to_dict()
                 for action in self._adapter.legal_actions(HUMAN_SEAT)

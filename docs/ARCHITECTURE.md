@@ -103,27 +103,48 @@ frontend/src/
 
 서버가 authoritative state를 유지한다.
 
-클라이언트 전송 예:
+REST에서 인증된 회원이 CPU 3명을 선택해 process-local 세션을 만든다.
 
 ```json
 {
-  "type": "discard",
-  "tile": "5p"
+  "cpu_character_ids": [1, 2, 3]
 }
 ```
 
-서버 응답/이벤트 예:
+WebSocket 연결 후 첫 클라이언트 메시지는 인증이다.
 
 ```json
 {
-  "type": "game_event",
-  "event": "dahai",
-  "actor": 0,
-  "tile": "5p"
+  "type": "authenticate",
+  "access_token": "..."
 }
 ```
 
-클라이언트는 서버가 제공한 합법 행동만 UI에서 선택 가능하게 한다.
+이후 클라이언트 행동 요청은 서버가 직전에 제공한 합법 행동 index만 사용한다.
+
+```json
+{
+  "type": "action",
+  "legal_action_index": 2
+}
+```
+
+서버 응답 예:
+
+```json
+{
+  "type": "human_turn",
+  "turn": {
+    "observation": {},
+    "legal_actions": []
+  }
+}
+```
+
+registry는 소유권, authoritative RiichiEnv 세션과 정산 결과를 현재 FastAPI 프로세스
+메모리에 유지한다. 같은 프로세스 재접속은 지원하지만 서버 재시작 및 여러 worker 간
+공유는 아직 지원하지 않는다. 완료 시 짧은 DB transaction으로 HP 또는 CPU 진행도를
+commit한 뒤 서버 산출 점수·순위와 정산 결과를 함께 전송한다.
 
 ## 데이터 핵심 관계
 

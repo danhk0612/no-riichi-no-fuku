@@ -170,12 +170,14 @@ ranks = env.ranks()
 - 사람이 행동할 차례에는 좌석 0의 `Observation.to_dict()`와 그 시점의 합법 행동
   목록만 `HumanTurn`으로 제공한다. 다른 좌석의 손패가 빈 목록인 0.4.8 관측 경계를
   그대로 유지한다.
+- 실제 0.4.8의 `Observation.to_dict()["melds"]`는 JSON dict가 아니라 pybind `Meld`
+  객체를 포함한다. WebSocket 경계에서는 이를 `meld_type`, `tiles`, `called_tile`,
+  `from_who`, `opened`만 가진 JSON object로 명시적으로 변환한다.
 - 사람 행동은 서버가 제공했던 합법 행동 목록의 index로 내부 선택하고, adapter가
   현재 필요한 모든 좌석의 행동과 각 행동의 합법성을 다시 검사한 뒤 `env.step()`을
-  호출한다. 이 index는 내부 세션 API이며 아직 WebSocket wire contract가 아니다.
-- 현재 세션은 단일 서버 프로세스 메모리 기반 foundation이다. 공개 WebSocket API,
-  세션 registry/소유권 연결, 재접속과 프로세스 간 공유·영속화 정책은 아직 구현하지
-  않는다.
+  호출한다. 공개 WebSocket도 이 `legal_action_index`만 행동 요청으로 받는다.
+- 현재 세션과 registry는 단일 서버 프로세스 메모리 기반이다. 같은 프로세스 내
+  소유권 연결과 재접속은 지원하지만 프로세스 간 공유·재시작 영속화는 지원하지 않는다.
 - test-only 결정적 agent와 고정 seed 5로 완주한 결과는 300 step, 사람 행동 요청
   66회, 최종 점수 `(16700, 25000, 33300, 25000)`, 순위 `(4, 2, 1, 3)`이다.
   세 CPU 좌석 모두 실제 행동 요청을 받았다.
@@ -250,8 +252,33 @@ ranks = env.ranks()
   거부한다. 구현되지 않은 난이도를 Tier 0으로 임시 대체하지 않는다.
 - 결과 정산으로 stage 3이 된 CPU는 다음 선택 목록에서 즉시 제외된다. 다음 대국은
   같은 세션을 재사용하지 않고 검증된 새 선택으로 별도 authoritative session을 만든다.
-- 공개 세션 생성 API, process-local registry, WebSocket 연결과 재접속은 아직 없다.
-  현재 생성 서비스는 후속 transport가 소유할 서버 내부 경계이다.
+- 세션 생성 서비스는 아래 process-local registry와 transport가 소유한다.
+
+## 인증 게임 registry와 WebSocket transport
+
+- 인증된 일반 회원은 `POST /api/game/sessions`에 서로 다른 CPU ID 3개를 보내 새
+  authoritative 세션을 만든다. match seed와 session ID는 서버가 생성하고 응답은
+  session ID 및 좌석 0~3의 이름/사람 여부를 반환한다.
+- registry는 서버 프로세스 메모리에 게임, 소유 회원, 좌석 표시 정보와 완료 정산을
+  보관한다. 한 회원은 정산되지 않은 미완료/완료 세션을 동시에 하나만 가질 수 있다.
+  완료 정산까지 끝난 뒤에는 새 세션을 만들 수 있으며 이전 완료 세션도 같은 프로세스
+  안에서 다시 조회할 수 있다.
+- WebSocket 경로는 `/api/game/sessions/{session_id}/ws`이다. 브라우저 WebSocket에서
+  임의 Authorization header를 전제로 하지 않고 JWT가 URL/query log에 남지 않도록,
+  첫 JSON 메시지 `{ "type": "authenticate", "access_token": "..." }`로 인증한다.
+  활성 일반 회원이 아니면 4401, 소유하지 않은 세션은 존재 여부를 숨긴 채 4404로
+  종료한다.
+- 인증 직후와 합법 행동 처리 후 서버는 `human_turn`을 전송한다. 클라이언트 행동은
+  `{ "type": "action", "legal_action_index": N }`만 허용한다. 범위를 벗어난 index나
+  잘못된 메시지는 게임을 진행하지 않고 `error`를 반환한다.
+- 대국 완료 시 서버는 `AuthoritativeGameSession.result()`로 `scores`/`ranks`를 만들고
+  짧은 별도 DB session에서 즉시 정산·commit한 뒤 `match_complete`에 authoritative
+  result와 settlement를 함께 보낸다. 클라이언트가 점수·순위·정산 값을 제출하는
+  경로는 없다.
+- WebSocket 연결 종료는 registry의 게임을 삭제하지 않는다. 같은 서버 프로세스에서
+  재접속하면 현재 human turn 또는 캐시된 완료 결과를 다시 받는다. 서버 재시작,
+  worker 간 공유, 메모리 회수, 영속적인 대국 이력과 재시작 이후 정산 idempotency는
+  후속 설계 범위다.
 
 ## 스파이크 전 초기 가정(확정 완료)
 
