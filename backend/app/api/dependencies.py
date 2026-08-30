@@ -86,3 +86,12 @@ def get_current_superadmin(
             detail="initial password must be changed",
         )
     return user
+
+
+def get_current_member(user: User = Depends(get_current_user)) -> User:
+    if user.role != "member":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="member access required",
+        )
+    return user
