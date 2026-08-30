@@ -7,7 +7,7 @@
 
 프로젝트 부트스트랩과 RiichiEnv 0.4.8 스파이크를 마쳤으며, 인증·회원 프로필과
 최고 관리자용 회원/CPU/대사 관리 API, RiichiEnv adapter와 서버 권한형 게임 세션
-기초, 최소 React 마작 테이블 UI를 구현한 단계입니다.
+기초, 최소 React 마작 테이블 UI와 production Tier 0 CPU를 구현한 단계입니다.
 
 ## 핵심 규칙
 
