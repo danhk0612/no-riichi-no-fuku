@@ -12,6 +12,10 @@ Tier 0 CPU uses shanten, approximate ukeire, a weak riichi-genbutsu bias and see
 selection. Completed authoritative sessions settle exactly one fourth-place outcome: player HP
 or the mapped user's CPU progress. Authenticated members can list active, incomplete CPU choices;
 validated groups of three create a fresh authoritative session through a stage-aware agent factory.
+Authenticated REST creation now registers that session in an owner-scoped process-local registry.
+The game WebSocket authenticates with its first message, accepts only legal-action indexes, retains
+state across same-process reconnects, and commits authoritative match settlement before returning
+the completed result.
 New members start with current/max HP 3 and stage 0 progress for every seeded CPU. Docker/Compose
 runtime validation is intentionally deferred to the final integration stage.
 
@@ -64,6 +68,17 @@ danhk0612/no-riichi-no-fuku
 - Stage-aware session creation maps stage 0 to Tier 0. Stage 1/2 fail explicitly until their agents
   exist instead of silently falling back to Tier 0.
 - A settled stage 2 to 3 CPU disappears from the next selection query.
+- REST session creation returns a server-generated session ID and four seat descriptors, and rejects
+  a second unfinished session for the same member.
+- WebSocket first-message JWT authentication rejects unauthenticated and non-owner access without
+  putting the token in the URL.
+- Invalid action indexes do not advance the authoritative turn; disconnect/reconnect returns the
+  same current state.
+- RiichiEnv 0.4.8 `Meld` values inside `Observation.to_dict()["melds"]` are converted to explicit
+  JSON fields at the transport boundary.
+- A fixed-seed Tier 0 match completed through only WebSocket action messages, committed the matching
+  HP/CPU settlement, and returned the same cached completion on reconnect.
+- Backend test suite: 33 tests passed. Frontend TypeScript/Vite production build passed.
 
 ## Deferred to final integration
 
@@ -81,7 +96,7 @@ Read:
 1. `AGENTS.md`
 2. `docs/WORK_INSTRUCTIONS.md`
 3. `docs/WORK_START.md`
-4. Authenticated process-local game registry and WebSocket transport
+4. Frontend CPU selection, REST session creation and authenticated WebSocket client integration
 
 Profile/CPU image upload requirements remain undecided. Do not implement that media path or
 begin CG generation, and do not add CG binaries to the repository.

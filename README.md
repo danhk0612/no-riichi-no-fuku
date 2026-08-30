@@ -8,7 +8,8 @@
 프로젝트 부트스트랩과 RiichiEnv 0.4.8 스파이크를 마쳤으며, 인증·회원 프로필과
 최고 관리자용 회원/CPU/대사 관리 API, RiichiEnv adapter와 서버 권한형 게임 세션
 기초, 최소 React 마작 테이블 UI, production Tier 0 CPU와 최종 4위 결과 정산을
-구현했으며, 회원별 CPU 선택과 새 대국 생성 기초를 추가한 단계입니다.
+구현했습니다. 회원별 CPU 선택, 인증 REST 세션 생성, process-local 게임 registry와
+authoritative WebSocket 진행/정산 transport까지 추가한 단계입니다.
 
 ## 핵심 규칙
 
@@ -65,9 +66,10 @@ cp .env.example .env
 docker compose up --build
 ```
 
-현재 API는 health check, 인증·회원 이름 프로필, 최고 관리자용 회원/CPU/대사 관리와
-회원별 선택 가능 CPU 조회를 제공합니다. 마작 게임 기능과 프론트엔드 화면은 계획서의
-단계 순서에 따라 구현합니다.
+현재 API는 health check, 인증·회원 이름 프로필, 최고 관리자용 회원/CPU/대사 관리,
+회원별 선택 가능 CPU 조회와 게임 세션 생성을 제공합니다. 게임 WebSocket은 연결 후
+첫 메시지의 access token으로 인증하고, 서버가 제공한 합법 행동 index만 받아
+authoritative 동풍전을 진행·정산합니다. 프론트엔드의 실제 API 연결은 다음 단계입니다.
 
 ## 라이선스
 

@@ -33,10 +33,15 @@ def get_session_factory(database_url: str) -> sessionmaker[Session]:
     return create_session_factory(get_engine(database_url))
 
 
-def get_session(
+def get_database_session_factory(
     settings: Settings = Depends(get_settings),
+) -> sessionmaker[Session]:
+    return get_session_factory(settings.require_database_url())
+
+
+def get_session(
+    session_factory: sessionmaker[Session] = Depends(get_database_session_factory),
 ) -> Generator[Session, None, None]:
-    session_factory = get_session_factory(settings.require_database_url())
     with session_factory() as session:
         try:
             yield session

@@ -5,9 +5,18 @@ export type LegalAction = {
   actor: number | null
 }
 
+export type Meld = {
+  meld_type: number
+  tiles: number[]
+  called_tile: number
+  from_who: number
+  opened: boolean
+}
+
 export type HumanObservation = {
   player_id: number
   hands: number[][]
+  melds: Meld[][]
   discards: number[][]
   dora_indicators: number[]
   scores: number[]
@@ -40,12 +49,20 @@ export type GameScreenState =
   | { status: 'human_turn'; turn: HumanTurn; players: PlayerSeat[] }
   | { status: 'complete'; result: MatchResult; players: PlayerSeat[] }
 
-export type GameClientMessage = {
-  type: 'action'
-  legal_action_index: number
+export type MatchSettlement = {
+  last_place_seat: number
+  current_hp: number
+  cpu_character_id: number | null
+  defeat_stage: number | null
+  game_over: boolean
+  cpu_completed: boolean
 }
+
+export type GameClientMessage =
+  | { type: 'authenticate'; access_token: string }
+  | { type: 'action'; legal_action_index: number }
 
 export type GameServerMessage =
   | { type: 'human_turn'; turn: HumanTurn }
-  | { type: 'match_complete'; result: MatchResult }
+  | { type: 'match_complete'; result: MatchResult; settlement: MatchSettlement }
   | { type: 'error'; code: string; message: string }
