@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Mapping
 
 from riichienv import Action
@@ -42,11 +43,14 @@ class AuthoritativeGameSession:
         if set(cpu_agents) != set(CPU_SEATS):
             raise ValueError("CPU agents are required for seats 1, 2 and 3")
         self.user_id = user_id
-        self.cpu_character_by_seat = dict(zip(CPU_SEATS, cpu_character_ids))
+        self.cpu_character_by_seat = MappingProxyType(
+            dict(zip(CPU_SEATS, cpu_character_ids))
+        )
         self._cpu_agents = dict(cpu_agents)
         self._adapter = RiichiEnvAdapter(seed=seed)
         self._max_steps = max_steps
         self._steps = 0
+        self._result_settled = False
 
     @property
     def started(self) -> bool:
@@ -59,6 +63,10 @@ class AuthoritativeGameSession:
     @property
     def steps(self) -> int:
         return self._steps
+
+    @property
+    def result_settled(self) -> bool:
+        return self._result_settled
 
     def start(self) -> None:
         self._adapter.start()
@@ -98,6 +106,13 @@ class AuthoritativeGameSession:
             return self._adapter.result()
         except AdapterStateError as error:
             raise GameSessionStateError(str(error)) from None
+
+    def mark_result_settled(self) -> None:
+        if not self.done:
+            raise GameSessionStateError("match is not complete")
+        if self._result_settled:
+            raise GameSessionStateError("match result is already settled")
+        self._result_settled = True
 
     def _advance_until_human_turn(self) -> None:
         while not self.done and HUMAN_SEAT not in self._adapter.pending_observations:

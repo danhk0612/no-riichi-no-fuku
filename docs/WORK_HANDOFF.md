@@ -9,8 +9,10 @@ management foundation APIs are also implemented. The RiichiEnv adapter, MahjongA
 and process-local authoritative game session foundation are implemented. A minimal React Mahjong
 table renders HumanTurn data, legal actions and match results without image assets. The production
 Tier 0 CPU uses shanten, approximate ukeire, a weak riichi-genbutsu bias and seeded weighted
-selection. New members start with current/max HP 3 and stage 0 progress for every seeded CPU.
-Docker/Compose runtime validation is intentionally deferred to the final integration stage.
+selection. Completed authoritative sessions settle exactly one fourth-place outcome: player HP
+or the mapped user's CPU progress. New members start with current/max HP 3 and stage 0 progress
+for every seeded CPU. Docker/Compose runtime validation is intentionally deferred to the final
+integration stage.
 
 Repository:
 
@@ -53,6 +55,9 @@ danhk0612/no-riichi-no-fuku
   calls when shanten improves.
 - A fixed-seed authoritative match with three production Tier 0 agents completed in 381 steps;
   final scores `(18600, 37000, 26600, 17800)`, ranks `(3, 1, 2, 4)`.
+- Completed server sessions decrement only player HP when seat 0 is fourth, or increment only the
+  mapped user's CPU defeat stage when a CPU seat is fourth.
+- HP 0, completed stage 3 and duplicate process-local settlement boundaries are rejected.
 
 ## Deferred to final integration
 
@@ -70,7 +75,7 @@ Read:
 1. `AGENTS.md`
 2. `docs/WORK_INSTRUCTIONS.md`
 3. `docs/WORK_START.md`
-4. Final fourth-place result handling for HP and user CPU progress
+4. CPU selection and replay loop foundation
 
 Profile/CPU image upload requirements remain undecided. Do not implement that media path or
 begin CG generation, and do not add CG binaries to the repository.
