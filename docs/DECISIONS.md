@@ -234,6 +234,25 @@ ranks = env.ranks()
   결과를 두 번 적용하지 못하게 한다. 대국 이력 테이블과 프로세스 재시작 이후의
   idempotency는 아직 세션 registry가 없으므로 이번 범위에 추가하지 않는다.
 
+## CPU 선택과 재대국 기초
+
+- 인증된 일반 회원은 `GET /api/game/cpus`에서 `active = true`이고 그 회원의
+  `defeat_stage < 3`인 CPU만 조회한다. 응답은 캐릭터 표시 정보와 회원별
+  `defeat_stage`를 포함하며 관리자용 AI 성향 수치는 노출하지 않는다.
+- 새 대국은 서로 다른 CPU ID 정확히 3개를 요청 순서대로 좌석 1/2/3에 배치한다.
+  비활성 CPU, stage 3 CPU, 해당 회원의 진행 row가 없는 CPU가 하나라도 포함되면
+  전체 선택을 거부한다. HP가 0이거나 회원 게임 프로필이 아니어도 생성하지 않는다.
+- 선택 검증이 끝나면 stage와 캐릭터 정보를 받는 `CpuAgentFactory`로 좌석별 agent를
+  만들고 새 `AuthoritativeGameSession`을 즉시 시작한다. 고정 match seed가 있으면
+  좌석별 agent seed는 `match_seed * 10 + seat`로 파생한다.
+- 현재 production factory는 stage 0에만 `Tier0Agent`를 연결한다. stage 1/2 CPU는
+  규칙상 선택 가능 목록에 남지만 실제 Tier 1/2 구현 전에는 세션 생성을 명시적으로
+  거부한다. 구현되지 않은 난이도를 Tier 0으로 임시 대체하지 않는다.
+- 결과 정산으로 stage 3이 된 CPU는 다음 선택 목록에서 즉시 제외된다. 다음 대국은
+  같은 세션을 재사용하지 않고 검증된 새 선택으로 별도 authoritative session을 만든다.
+- 공개 세션 생성 API, process-local registry, WebSocket 연결과 재접속은 아직 없다.
+  현재 생성 서비스는 후속 transport가 소유할 서버 내부 경계이다.
+
 ## 스파이크 전 초기 가정(확정 완료)
 
 첫 통합 전에 다음을 후보로 두었으며, 위 0.4.8 스파이크에서 실제 동작을 확정했다.

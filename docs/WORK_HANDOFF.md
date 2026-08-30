@@ -10,9 +10,10 @@ and process-local authoritative game session foundation are implemented. A minim
 table renders HumanTurn data, legal actions and match results without image assets. The production
 Tier 0 CPU uses shanten, approximate ukeire, a weak riichi-genbutsu bias and seeded weighted
 selection. Completed authoritative sessions settle exactly one fourth-place outcome: player HP
-or the mapped user's CPU progress. New members start with current/max HP 3 and stage 0 progress
-for every seeded CPU. Docker/Compose runtime validation is intentionally deferred to the final
-integration stage.
+or the mapped user's CPU progress. Authenticated members can list active, incomplete CPU choices;
+validated groups of three create a fresh authoritative session through a stage-aware agent factory.
+New members start with current/max HP 3 and stage 0 progress for every seeded CPU. Docker/Compose
+runtime validation is intentionally deferred to the final integration stage.
 
 Repository:
 
@@ -58,6 +59,11 @@ danhk0612/no-riichi-no-fuku
 - Completed server sessions decrement only player HP when seat 0 is fourth, or increment only the
   mapped user's CPU defeat stage when a CPU seat is fourth.
 - HP 0, completed stage 3 and duplicate process-local settlement boundaries are rejected.
+- Member CPU choices exclude inactive and stage 3 characters; selections require three distinct
+  available IDs and positive HP.
+- Stage-aware session creation maps stage 0 to Tier 0. Stage 1/2 fail explicitly until their agents
+  exist instead of silently falling back to Tier 0.
+- A settled stage 2 to 3 CPU disappears from the next selection query.
 
 ## Deferred to final integration
 
@@ -75,7 +81,7 @@ Read:
 1. `AGENTS.md`
 2. `docs/WORK_INSTRUCTIONS.md`
 3. `docs/WORK_START.md`
-4. CPU selection and replay loop foundation
+4. Authenticated process-local game registry and WebSocket transport
 
 Profile/CPU image upload requirements remain undecided. Do not implement that media path or
 begin CG generation, and do not add CG binaries to the repository.
