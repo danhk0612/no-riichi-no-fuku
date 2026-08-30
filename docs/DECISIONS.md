@@ -216,6 +216,24 @@ ranks = env.ranks()
   Tier 0 세 좌석을 주입한 동풍전은 381 step, 사람 행동 요청 92회에 종료됐다.
   최종 점수는 `(18600, 37000, 26600, 17800)`, 순위는 `(3, 1, 2, 4)`였다.
 
+## 동풍전 결과 정산
+
+- 결과 정산은 클라이언트가 보낸 점수나 순위를 받지 않고 완료된
+  `AuthoritativeGameSession.result()`의 `MatchResult`만 사용한다. RiichiEnv가 확정한
+  순위에서 정확히 rank 4인 좌석 하나를 찾는다.
+- 좌석 0이 4위이면 회원 `current_hp`만 1 줄이고 CPU 진행도는 바꾸지 않는다.
+  감소 결과가 0이면 정산 응답의 `game_over`를 `true`로 둔다. HP가 이미 0인 회원의
+  대국 결과는 유효한 시작 상태가 아니므로 정산을 거부한다.
+- 좌석 1~3이 4위이면 게임 세션의 `cpu_character_by_seat` 매핑으로 해당 CPU를 찾고,
+  그 회원의 `UserCpuProgress.defeat_stage`만 1 올린다. 2에서 3이 되면
+  `cpu_completed`를 `true`로 둔다. 이미 stage 3인 CPU 결과는 선택 불변식 위반으로
+  정산을 거부한다.
+- 회원과 CPU 진행 row는 정산 중 `SELECT ... FOR UPDATE`로 조회하고 한 DB transaction
+  안에서 flush한다. HP와 CPU 진행도는 같은 결과에서 동시에 변경하지 않는다.
+- `AuthoritativeGameSession.result_settled`는 현재 process-local 세션 객체에서 같은
+  결과를 두 번 적용하지 못하게 한다. 대국 이력 테이블과 프로세스 재시작 이후의
+  idempotency는 아직 세션 registry가 없으므로 이번 범위에 추가하지 않는다.
+
 ## 스파이크 전 초기 가정(확정 완료)
 
 첫 통합 전에 다음을 후보로 두었으며, 위 0.4.8 스파이크에서 실제 동작을 확정했다.
