@@ -6,9 +6,10 @@ GitHub bootstrap and the RiichiEnv 0.4.8 spike are complete. Backend settings, i
 database models, Alembic migrations, superadmin bootstrap, CPU seed path, authentication and
 member name profile APIs are implemented. Superadmin authorization and member/CPU/dialogue
 management foundation APIs are also implemented. The RiichiEnv adapter, MahjongAgent boundary
-and process-local authoritative game session foundation are implemented. New members start with
-current/max HP 3 and stage 0 progress for every seeded CPU. Docker/Compose runtime validation is
-intentionally deferred to the final integration stage.
+and process-local authoritative game session foundation are implemented. A minimal React Mahjong
+table renders HumanTurn data, legal actions and match results without image assets. New members
+start with current/max HP 3 and stage 0 progress for every seeded CPU. Docker/Compose runtime
+validation is intentionally deferred to the final integration stage.
 
 Repository:
 
@@ -45,6 +46,8 @@ danhk0612/no-riichi-no-fuku
 - RiichiEnv adapter rejects missing or illegal seat actions before calling the engine.
 - A fixed-seed authoritative session completed in 300 steps with all three injected CPU agents.
 - Human turns expose seat 0 observation/legal actions while other seats' hands remain hidden.
+- Frontend TypeScript production build with HumanTurn/action types and tile-id conversion.
+- Responsive four-seat table, scores, discards, hand actions, dora and result components.
 
 ## Deferred to final integration
 
@@ -62,7 +65,7 @@ Read:
 1. `AGENTS.md`
 2. `docs/WORK_INSTRUCTIONS.md`
 3. `docs/WORK_START.md`
-4. Minimal WebSocket game transport contract and Mahjong UI foundation
+4. Tier 0 CPU agent implementation and fixed-seed match validation
 
 Profile/CPU image upload requirements remain undecided. Do not implement that media path or
 begin CG generation, and do not add CG binaries to the repository.
