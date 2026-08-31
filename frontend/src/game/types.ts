@@ -63,7 +63,12 @@ export type GameSessionCreated = {
 
 export type GameScreenState =
   | { status: 'waiting' }
-  | { status: 'human_turn'; turn: HumanTurn; players: PlayerSeat[] }
+  | {
+      status: 'human_turn'
+      actionVersion: number
+      turn: HumanTurn
+      players: PlayerSeat[]
+    }
   | {
       status: 'complete'
       result: MatchResult
@@ -82,9 +87,9 @@ export type MatchSettlement = {
 
 export type GameClientMessage =
   | { type: 'authenticate'; access_token: string }
-  | { type: 'action'; legal_action_index: number }
+  | { type: 'action'; legal_action_index: number; action_version: number }
 
 export type GameServerMessage =
-  | { type: 'human_turn'; turn: HumanTurn }
+  | { type: 'human_turn'; action_version: number; turn: HumanTurn }
   | { type: 'match_complete'; result: MatchResult; settlement: MatchSettlement }
   | { type: 'error'; code: string; message: string }

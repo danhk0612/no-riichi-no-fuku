@@ -12,16 +12,17 @@ Tier 0 CPU uses shanten, approximate ukeire, a weak riichi-genbutsu bias and see
 selection. Completed authoritative sessions settle exactly one fourth-place outcome: player HP
 or the mapped user's CPU progress. Authenticated members can list active, incomplete CPU choices;
 validated groups of three create a fresh authoritative session through a stage-aware agent factory.
-Authenticated REST creation now registers that session in an owner-scoped process-local registry.
-The game WebSocket authenticates with its first message, accepts only legal-action indexes, retains
-state across same-process reconnects, and commits authoritative match settlement before returning
-the completed result.
+Authenticated REST creation now persists the session seed, CPU/player snapshots and accepted human
+action log while caching the live RiichiEnv object in an owner-scoped registry. The game WebSocket
+authenticates with its first message, accepts only a legal-action index with the current action
+version, and commits every accepted human action. A cache miss or server restart reconstructs an
+active match by deterministic replay; completed results and settlement remain durable and
+idempotent.
 The React client now provides minimal member registration/login, selectable CPU cards, REST game
 creation, first-message-authenticated WebSocket play, authoritative result settlement display and
 the return-to-selection loop. Access tokens remain in tab memory only, and stage 1/2 CPU cards are
-explicitly unavailable until those agents exist.
-The current browser client does not persist a token or active session ID, so a page refresh during
-a match cannot recover that process-local game yet.
+explicitly unavailable until those agents exist. After a page refresh the member must log in again;
+the client then discovers the server's active session and reconnects to the persisted turn.
 New members start with current/max HP 3 and stage 0 progress for every seeded CPU. Docker/Compose
 runtime validation is intentionally deferred to the final integration stage.
 
@@ -83,8 +84,18 @@ danhk0612/no-riichi-no-fuku
 - RiichiEnv 0.4.8 `Meld` values inside `Observation.to_dict()["melds"]` are converted to explicit
   JSON fields at the transport boundary.
 - A fixed-seed Tier 0 match completed through only WebSocket action messages, committed the matching
-  HP/CPU settlement, and returned the same cached completion on reconnect.
-- Backend test suite: 33 tests passed. Frontend TypeScript/Vite production build passed.
+  HP/CPU settlement, and returned the same completion from a fresh registry on reconnect.
+- Active sessions persist their seed, CPU/player snapshots and accepted human action indexes; a
+  fresh registry replayed a saved action to exactly the same next `human_turn`.
+- A separate RiichiEnv 0.4.8 replay spike reproduced all 99 human turns across 399 engine steps and
+  the same final scores/ranks with production Tier 0 agents.
+- Stale action versions are rejected and the latest authoritative turn is resent. The active-session
+  REST endpoint lets a re-login recover a match without persisting JWT/session IDs in the browser.
+- Completed scores, ranks and settlement are stored with `status = completed`, preventing restart
+  recovery from applying HP/CPU progress twice.
+- The new migration passed SQLite upgrade/schema/downgrade and PostgreSQL offline SQL generation,
+  including the one-active-session-per-member partial unique index.
+- Backend test suite: 35 tests passed. Frontend TypeScript/Vite production build passed.
 - Vite development proxy was verified end to end for registration, login, CPU loading, session
   creation and the game WebSocket. A production-agent match completed after 90 human action-index
   messages and returned the matching CPU stage settlement.
