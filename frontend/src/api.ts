@@ -66,6 +66,12 @@ export function createGameSession(
   }, accessToken)
 }
 
+export function getActiveGameSession(
+  accessToken: string,
+): Promise<GameSessionCreated | null> {
+  return apiRequest('/api/game/sessions/active', {}, accessToken)
+}
+
 export function gameWebSocketUrl(sessionId: string): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   return `${protocol}//${window.location.host}/api/game/sessions/${sessionId}/ws`

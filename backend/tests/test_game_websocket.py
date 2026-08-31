@@ -15,7 +15,13 @@ from app.api.dependencies import (
 )
 from app.core.config import Settings
 from app.db.base import Base
-from app.db.models import CpuCharacter, GameSetting, User, UserCpuProgress
+from app.db.models import (
+    CpuCharacter,
+    GameSessionRecord,
+    GameSetting,
+    User,
+    UserCpuProgress,
+)
 from app.main import app
 from app.services.bootstrap import seed_cpu_characters
 from app.services.game_registry import GameRegistry, get_game_registry
@@ -120,6 +126,17 @@ class GameWebSocketApiTest(unittest.TestCase):
         self.assertEqual(len(created["players"]), 4)
         self.assertEqual(created["players"][0]["name"], "회원")
         self.assertTrue(created["players"][0]["isHuman"])
+        active = self.client.get(
+            "/api/game/sessions/active",
+            headers={"Authorization": f"Bearer {self.member_token}"},
+        )
+        self.assertEqual(active.status_code, 200, active.text)
+        self.assertEqual(active.json(), created)
+        with self.session_factory() as session:
+            record = session.get(GameSessionRecord, created["session_id"])
+            assert record is not None
+            self.assertEqual(record.status, "active")
+            self.assertEqual(record.human_action_indices, [])
         duplicate = self.client.post(
             "/api/game/sessions",
             headers={"Authorization": f"Bearer {self.member_token}"},
@@ -154,7 +171,13 @@ class GameWebSocketApiTest(unittest.TestCase):
             self.authenticate(websocket)
             first_turn = websocket.receive_json()
             self.assertEqual(first_turn["type"], "human_turn")
-            websocket.send_json({"type": "action", "legal_action_index": 999})
+            websocket.send_json(
+                {
+                    "type": "action",
+                    "legal_action_index": 999,
+                    "action_version": first_turn["action_version"],
+                }
+            )
             error = websocket.receive_json()
             self.assertEqual(error["code"], "invalid_action")
 
@@ -162,6 +185,52 @@ class GameWebSocketApiTest(unittest.TestCase):
             self.authenticate(websocket)
             reconnected_turn = websocket.receive_json()
             self.assertEqual(reconnected_turn, first_turn)
+
+    def test_persisted_action_restores_same_turn_with_fresh_registry(self) -> None:
+        created = self.create_game()
+        path = f"/api/game/sessions/{created['session_id']}/ws"
+        with self.client.websocket_connect(path) as websocket:
+            self.authenticate(websocket)
+            first_turn = websocket.receive_json()
+            action_index = choose_human_action_index(
+                first_turn["turn"]["legal_actions"]
+            )
+            websocket.send_json(
+                {
+                    "type": "action",
+                    "legal_action_index": action_index,
+                    "action_version": first_turn["action_version"],
+                }
+            )
+            expected_turn = websocket.receive_json()
+
+        with self.session_factory() as session:
+            record = session.get(GameSessionRecord, created["session_id"])
+            assert record is not None
+            self.assertEqual(record.human_action_indices, [action_index])
+
+        self.registry = GameRegistry(seed_factory=lambda: 999)
+        app.dependency_overrides[get_game_registry] = lambda: self.registry
+        with self.client.websocket_connect(path) as websocket:
+            self.authenticate(websocket)
+            self.assertEqual(websocket.receive_json(), expected_turn)
+
+    def test_stale_action_is_rejected_and_latest_turn_is_resent(self) -> None:
+        created = self.create_game()
+        path = f"/api/game/sessions/{created['session_id']}/ws"
+        with self.client.websocket_connect(path) as websocket:
+            self.authenticate(websocket)
+            first_turn = websocket.receive_json()
+            websocket.send_json(
+                {
+                    "type": "action",
+                    "legal_action_index": 0,
+                    "action_version": first_turn["action_version"] + 1,
+                }
+            )
+            error = websocket.receive_json()
+            self.assertEqual(error["code"], "stale_action")
+            self.assertEqual(websocket.receive_json(), first_turn)
 
     def test_fixed_seed_match_completes_and_persists_server_settlement(self) -> None:
         created = self.create_game()
@@ -174,7 +243,11 @@ class GameWebSocketApiTest(unittest.TestCase):
                     message["turn"]["legal_actions"]
                 )
                 websocket.send_json(
-                    {"type": "action", "legal_action_index": action_index}
+                    {
+                        "type": "action",
+                        "legal_action_index": action_index,
+                        "action_version": message["action_version"],
+                    }
                 )
                 message = websocket.receive_json()
 
@@ -201,10 +274,25 @@ class GameWebSocketApiTest(unittest.TestCase):
                 defeated_cpu_id = self.cpu_ids[last_place_seat - 1]
                 self.assertEqual(settlement["cpu_character_id"], defeated_cpu_id)
                 self.assertEqual(stages[defeated_cpu_id], 1)
+            record = session.get(GameSessionRecord, created["session_id"])
+            assert record is not None
+            self.assertEqual(record.status, "completed")
+            self.assertEqual(record.scores, message["result"]["scores"])
+            self.assertEqual(record.ranks, message["result"]["ranks"])
+            self.assertEqual(record.settlement, settlement)
 
+        self.registry = GameRegistry(seed_factory=lambda: 999)
+        app.dependency_overrides[get_game_registry] = lambda: self.registry
         with self.client.websocket_connect(path) as websocket:
             self.authenticate(websocket)
             self.assertEqual(websocket.receive_json(), message)
+
+        active = self.client.get(
+            "/api/game/sessions/active",
+            headers={"Authorization": f"Bearer {self.member_token}"},
+        )
+        self.assertEqual(active.status_code, 200, active.text)
+        self.assertIsNone(active.json())
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ from fastapi import (
     WebSocketDisconnect,
     status,
 )
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.api.dependencies import (
@@ -29,11 +30,12 @@ from app.schemas.game import (
 from app.services.game_registry import (
     ActiveGameExistsError,
     GameRegistry,
+    GameRegistryError,
     RegisteredGame,
     RegisteredGameNotFoundError,
+    StaleGameActionError,
     get_game_registry,
 )
-from app.services.game_result import settle_completed_match
 from app.services.game_setup import (
     CpuChoice,
     CpuTierUnavailableError,
@@ -77,6 +79,18 @@ def create_registered_game_session(
         raise HTTPException(status_code=409, detail=str(error)) from None
 
 
+@router.get(
+    "/sessions/active",
+    response_model=CreateGameSessionResponse | None,
+)
+def get_active_game_session(
+    user: User = Depends(get_current_member),
+    session: Session = Depends(get_session),
+    registry: GameRegistry = Depends(get_game_registry),
+) -> RegisteredGame | None:
+    return registry.get_active(session, user.id)
+
+
 async def send_websocket_error(
     websocket: WebSocket,
     code: str,
@@ -108,14 +122,18 @@ async def send_registered_game_state(
     websocket: WebSocket,
     registered: RegisteredGame,
     session_factory: sessionmaker[Session],
+    registry: GameRegistry,
 ) -> None:
     with registered.lock:
-        if not registered.game.done:
+        if not registered.done:
+            if registered.game is None:
+                raise GameRegistryError("active game state is unavailable")
             turn = registered.game.human_turn()
             if turn is None:
                 raise RuntimeError("unfinished game has no human turn")
             message = {
                 "type": "human_turn",
+                "action_version": registered.action_version,
                 "turn": {
                     "observation": turn.observation,
                     "legal_actions": turn.legal_actions,
@@ -125,15 +143,17 @@ async def send_registered_game_state(
             if registered.settlement is None:
                 with session_factory() as session:
                     try:
-                        registered.settlement = settle_completed_match(
-                            session,
-                            registered.game,
-                        )
+                        registered.settlement = registry.settle(session, registered)
                         session.commit()
                     except Exception:
                         session.rollback()
+                        registry.evict(registered.session_id)
                         raise
-            result = registered.game.result()
+            result = registered.result
+            if result is None:
+                if registered.game is None:
+                    raise GameRegistryError("completed game result is unavailable")
+                result = registered.game.result()
             message = {
                 "type": "match_complete",
                 "result": {"scores": result.scores, "ranks": result.ranks},
@@ -178,7 +198,8 @@ async def game_session_websocket(
             await websocket.close(code=4401)
             return
         try:
-            registered = registry.get_owned(session_id, user.id)
+            with session_factory() as session:
+                registered = registry.get_owned(session, session_id, user.id)
         except RegisteredGameNotFoundError:
             await send_websocket_error(
                 websocket, "session_not_found", "game session not found"
@@ -186,7 +207,9 @@ async def game_session_websocket(
             await websocket.close(code=4404)
             return
 
-        await send_registered_game_state(websocket, registered, session_factory)
+        await send_registered_game_state(
+            websocket, registered, session_factory, registry
+        )
         while True:
             message = await websocket.receive_json()
             if not isinstance(message, dict) or message.get("type") != "action":
@@ -195,19 +218,56 @@ async def game_session_websocket(
                 )
                 continue
             action_index = message.get("legal_action_index")
-            if type(action_index) is not int:
+            action_version = message.get("action_version")
+            if type(action_index) is not int or type(action_version) is not int:
                 await send_websocket_error(
                     websocket,
                     "invalid_action",
-                    "legal_action_index must be an integer",
+                    "legal_action_index and action_version must be integers",
                 )
                 continue
             try:
-                with registered.lock:
-                    registered.game.submit_human_action(action_index)
+                with session_factory() as session:
+                    try:
+                        registry.submit_action(
+                            session,
+                            registered,
+                            action_index,
+                            action_version,
+                        )
+                        session.commit()
+                    except Exception:
+                        session.rollback()
+                        raise
             except GameSessionStateError as error:
                 await send_websocket_error(websocket, "invalid_action", str(error))
                 continue
-            await send_registered_game_state(websocket, registered, session_factory)
+            except StaleGameActionError:
+                registry.evict(registered.session_id)
+                with session_factory() as session:
+                    registered = registry.get_owned(
+                        session, session_id, user.id
+                    )
+                await send_websocket_error(
+                    websocket,
+                    "stale_action",
+                    "game state changed; use the latest turn",
+                )
+                await send_registered_game_state(
+                    websocket, registered, session_factory, registry
+                )
+                continue
+            except SQLAlchemyError:
+                registry.evict(registered.session_id)
+                await send_websocket_error(
+                    websocket,
+                    "persistence_failed",
+                    "game action could not be saved",
+                )
+                await websocket.close(code=1011)
+                return
+            await send_registered_game_state(
+                websocket, registered, session_factory, registry
+            )
     except WebSocketDisconnect:
         return

@@ -109,15 +109,33 @@ def create_game_session(
     if any(cpu_id not in choices_by_id for cpu_id in cpu_character_ids):
         raise InvalidCpuSelectionError("selection contains an unavailable CPU")
 
+    return create_game_session_from_choices(
+        user.id,
+        tuple(choices_by_id[cpu_id] for cpu_id in cpu_character_ids),
+        seed=seed,
+        agent_factory=agent_factory,
+    )
+
+
+def create_game_session_from_choices(
+    user_id: int,
+    choices: tuple[CpuChoice, CpuChoice, CpuChoice],
+    *,
+    seed: int | None = None,
+    agent_factory: CpuAgentFactory = create_production_cpu_agent,
+) -> AuthoritativeGameSession:
+    cpu_character_ids = tuple(choice.id for choice in choices)
+    if len(set(cpu_character_ids)) != 3:
+        raise InvalidCpuSelectionError("three distinct CPU characters are required")
     cpu_agents = {
         seat: agent_factory(
-            choices_by_id[cpu_id],
+            choice,
             seed=None if seed is None else seed * 10 + seat,
         )
-        for seat, cpu_id in zip(CPU_SEATS, cpu_character_ids)
+        for seat, choice in zip(CPU_SEATS, choices)
     }
     game = AuthoritativeGameSession(
-        user_id=user.id,
+        user_id=user_id,
         cpu_character_ids=cpu_character_ids,
         cpu_agents=cpu_agents,
         seed=seed,

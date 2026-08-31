@@ -5,6 +5,7 @@ import { CpuSelection } from './CpuSelection'
 import {
   createGameSession,
   gameWebSocketUrl,
+  getActiveGameSession,
   getSelectableCpus,
   loginMember,
   registerMember,
@@ -42,13 +43,26 @@ function App() {
     setSelectedCpuIds([])
   }
 
+  async function enterAuthenticated(token: string) {
+    const activeGame = await getActiveGameSession(token)
+    if (activeGame) {
+      setAccessToken(token)
+      setPlayers(activeGame.players)
+      setCpus(null)
+      setGameState({ status: 'waiting' })
+      connectGame(activeGame.session_id, token, activeGame.players)
+      return
+    }
+    await loadCpus(token)
+    setAccessToken(token)
+  }
+
   async function authenticate(loginId: string, password: string) {
     setBusy(true)
     setError(null)
     try {
       const token = await loginMember(loginId, password)
-      await loadCpus(token)
-      setAccessToken(token)
+      await enterAuthenticated(token)
     } catch (caught) {
       setError(errorMessage(caught))
     } finally {
@@ -66,8 +80,7 @@ function App() {
     try {
       await registerMember(loginId, password, playerName)
       const token = await loginMember(loginId, password)
-      await loadCpus(token)
-      setAccessToken(token)
+      await enterAuthenticated(token)
     } catch (caught) {
       setError(errorMessage(caught))
     } finally {
@@ -96,7 +109,13 @@ function App() {
     socket.addEventListener('message', (event) => {
       const message = JSON.parse(event.data as string) as GameServerMessage
       if (message.type === 'human_turn') {
-        setGameState({ status: 'human_turn', turn: message.turn, players: seats })
+        setGameState({
+          status: 'human_turn',
+          actionVersion: message.action_version,
+          turn: message.turn,
+          players: seats,
+        })
+        setError(null)
         setActionPending(false)
         return
       }
@@ -146,11 +165,17 @@ function App() {
 
   function submitAction(legalActionIndex: number) {
     const socket = socketRef.current
-    if (!socket || socket.readyState !== WebSocket.OPEN || actionPending) return
+    if (
+      !socket
+      || socket.readyState !== WebSocket.OPEN
+      || actionPending
+      || gameState.status !== 'human_turn'
+    ) return
     setActionPending(true)
     const message: GameClientMessage = {
       type: 'action',
       legal_action_index: legalActionIndex,
+      action_version: gameState.actionVersion,
     }
     socket.send(JSON.stringify(message))
   }

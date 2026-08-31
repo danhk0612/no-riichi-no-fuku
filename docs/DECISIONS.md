@@ -165,8 +165,9 @@ ranks = env.ranks()
   `GameRule.default_tenhou()`로 고정한다.
 - `MahjongAgent.choose_action(observation) -> Action`을 CPU 제어 공통 경계로 사용한다.
   실제 Tier 0/1/2 정책은 이 경계 뒤에서 후속 구현한다.
-- 서버 세션은 사람을 좌석 0, 선택한 CPU 3명을 좌석 1~3에 배치한다. RiichiEnv env,
-  전체 좌석 Observation과 Action 객체는 서버 메모리에만 둔다.
+- 서버 세션은 사람을 좌석 0, 선택한 CPU 3명을 좌석 1~3에 배치한다. 실행 중인
+  RiichiEnv env와 전체 좌석 Observation/Action 객체는 서버 메모리 cache에 두되,
+  복구에 필요한 seed·CPU 선택 snapshot·사람 행동 log는 DB에 저장한다.
 - 사람이 행동할 차례에는 좌석 0의 `Observation.to_dict()`와 그 시점의 합법 행동
   목록만 `HumanTurn`으로 제공한다. 다른 좌석의 손패가 빈 목록인 0.4.8 관측 경계를
   그대로 유지한다.
@@ -176,8 +177,9 @@ ranks = env.ranks()
 - 사람 행동은 서버가 제공했던 합법 행동 목록의 index로 내부 선택하고, adapter가
   현재 필요한 모든 좌석의 행동과 각 행동의 합법성을 다시 검사한 뒤 `env.step()`을
   호출한다. 공개 WebSocket도 이 `legal_action_index`만 행동 요청으로 받는다.
-- 현재 세션과 registry는 단일 서버 프로세스 메모리 기반이다. 같은 프로세스 내
-  소유권 연결과 재접속은 지원하지만 프로세스 간 공유·재시작 영속화는 지원하지 않는다.
+- registry cache가 없는 경우 DB의 seed·CPU 선택 snapshot·사람 행동 log로
+  authoritative session을 결정론적으로 다시 만든다. 영속화와 동시 입력 경계는 아래
+  `게임 상태 실시간 영속화` 결정을 따른다.
 - test-only 결정적 agent와 고정 seed 5로 완주한 결과는 300 step, 사람 행동 요청
   66회, 최종 점수 `(16700, 25000, 33300, 25000)`, 순위 `(4, 2, 1, 3)`이다.
   세 CPU 좌석 모두 실제 행동 요청을 받았다.
@@ -232,9 +234,9 @@ ranks = env.ranks()
   정산을 거부한다.
 - 회원과 CPU 진행 row는 정산 중 `SELECT ... FOR UPDATE`로 조회하고 한 DB transaction
   안에서 flush한다. HP와 CPU 진행도는 같은 결과에서 동시에 변경하지 않는다.
-- `AuthoritativeGameSession.result_settled`는 현재 process-local 세션 객체에서 같은
-  결과를 두 번 적용하지 못하게 한다. 대국 이력 테이블과 프로세스 재시작 이후의
-  idempotency는 아직 세션 registry가 없으므로 이번 범위에 추가하지 않는다.
+- `AuthoritativeGameSession.result_settled`는 현재 실행 객체의 중복 적용을 막고,
+  `game_sessions`의 완료 상태와 저장된 정산 결과는 프로세스 재시작 뒤 중복 정산을
+  막는다.
 
 ## CPU 선택과 재대국 기초
 
@@ -259,33 +261,54 @@ ranks = env.ranks()
 - 인증된 일반 회원은 `POST /api/game/sessions`에 서로 다른 CPU ID 3개를 보내 새
   authoritative 세션을 만든다. match seed와 session ID는 서버가 생성하고 응답은
   session ID 및 좌석 0~3의 이름/사람 여부를 반환한다.
-- registry는 서버 프로세스 메모리에 게임, 소유 회원, 좌석 표시 정보와 완료 정산을
-  보관한다. 한 회원은 정산되지 않은 미완료/완료 세션을 동시에 하나만 가질 수 있다.
-  완료 정산까지 끝난 뒤에는 새 세션을 만들 수 있으며 이전 완료 세션도 같은 프로세스
-  안에서 다시 조회할 수 있다.
+- registry는 실행 중 RiichiEnv 세션을 서버 프로세스 메모리에 cache하고, 소유 회원,
+  좌석 표시 정보, 복구 log와 완료 정산은 DB에 보관한다. DB partial unique index로 한
+  회원당 active 세션을 하나만 허용한다. 정산 commit 뒤에는 새 세션을 만들 수 있고
+  이전 완료 세션은 프로세스 재시작 뒤에도 조회할 수 있다.
 - WebSocket 경로는 `/api/game/sessions/{session_id}/ws`이다. 브라우저 WebSocket에서
   임의 Authorization header를 전제로 하지 않고 JWT가 URL/query log에 남지 않도록,
   첫 JSON 메시지 `{ "type": "authenticate", "access_token": "..." }`로 인증한다.
   활성 일반 회원이 아니면 4401, 소유하지 않은 세션은 존재 여부를 숨긴 채 4404로
   종료한다.
-- 인증 직후와 합법 행동 처리 후 서버는 `human_turn`을 전송한다. 클라이언트 행동은
-  `{ "type": "action", "legal_action_index": N }`만 허용한다. 범위를 벗어난 index나
-  잘못된 메시지는 게임을 진행하지 않고 `error`를 반환한다.
+- 인증 직후와 합법 행동 처리 후 서버는 `action_version`을 포함한 `human_turn`을
+  전송한다. 클라이언트 행동은 직전 version과 합법 행동 index를 함께 보내야 한다.
+  범위를 벗어난 index나 오래된 version은 게임을 진행하지 않고 `error`와 최신 turn을
+  반환한다.
 - 대국 완료 시 서버는 `AuthoritativeGameSession.result()`로 `scores`/`ranks`를 만들고
   짧은 별도 DB session에서 즉시 정산·commit한 뒤 `match_complete`에 authoritative
   result와 settlement를 함께 보낸다. 클라이언트가 점수·순위·정산 값을 제출하는
   경로는 없다.
-- WebSocket 연결 종료는 registry의 게임을 삭제하지 않는다. 같은 서버 프로세스에서
-  재접속하면 현재 human turn 또는 캐시된 완료 결과를 다시 받는다. 서버 재시작,
-  worker 간 공유, 메모리 회수, 영속적인 대국 이력과 재시작 이후 정산 idempotency는
-  후속 설계 범위다.
+- WebSocket 연결 종료는 대국을 삭제하지 않는다. cache hit이면 현재 객체를 사용하고,
+  cache miss나 서버 재시작이면 DB에서 active 대국을 재생하거나 완료 결과를 읽는다.
+
+## 게임 상태 실시간 영속화
+
+- RiichiEnv 0.4.8에는 애플리케이션이 채택할 안정적인 snapshot/restore API가 확인되지
+  않아 엔진 객체를 직렬화하지 않는다. `game_sessions`에 match seed, 좌석/CPU 선택
+  snapshot, 승인된 사람 행동 index 배열, 상태와 완료 결과/정산을 저장한다.
+- 서버가 사람 행동 하나를 정상 처리할 때마다 해당 index를 짧은 DB transaction으로
+  즉시 commit한다. crash가 엔진 step 뒤 DB commit 전에 발생하면 그 미커밋 행동만
+  사라지고, 재접속한 클라이언트는 저장된 최신 turn에서 다시 선택한다.
+- cache miss 시 동일 seed와 CPU별 파생 seed로 session을 다시 만들고 저장된 사람 행동을
+  순서대로 재생한다. 2026-08-31 실제 production Tier 0 검증에서 seed 5와 CPU seed
+  51/52/53으로 99개 사람 행동(전체 399 step)을 두 session에 재생했으며 매 HumanTurn과
+  최종 점수 `(20700, 16900, 35100, 27300)`, 순위 `(3, 4, 1, 2)`가 동일했다.
+- 완료 시 점수·순위·정산과 `status = completed`를 HP/CPU 진행 변경과 같은 transaction에
+  commit한다. 따라서 완료 결과 재조회나 프로세스 재시작이 정산을 반복하지 않는다.
+- `GET /api/game/sessions/active`는 로그인한 회원의 active session ID와 좌석 정보를
+  반환한다. access token 자체는 계속 브라우저 메모리에만 두지만, 새로고침 후 다시
+  로그인하면 active 대국을 발견해 WebSocket으로 복구한다.
+- 이 방식은 Redis나 별도 인프라를 추가하지 않는다. row lock과 `action_version`으로
+  중복/오래된 입력을 거부하지만, 여러 worker가 같은 active 세션 객체를 공동 소유하는
+  구조는 아니며 각 worker가 필요할 때 DB log를 재생한다. 엔진/agent 정책 변경을 섞은
+  active 대국 배포 호환성은 후속 배포 정책에서 관리해야 한다.
 
 ## 프론트엔드 게임 흐름 연결
 
 - 최소 회원 화면은 가입 후 즉시 로그인하거나 기존 회원으로 로그인한다. JWT access
   token은 React 메모리에만 두며 local/session storage나 URL에 저장하지 않는다.
-  새로고침 후 로그인 유지와 refresh token은 현재 범위가 아니다. 진행 중 session ID도
-  메모리에만 있으므로 대국 중 새로고침 이후 재접속은 지원하지 않는다.
+  새로고침 후 로그인 유지와 refresh token은 현재 범위가 아니다. 다시 로그인하면
+  서버의 active session을 조회해 진행 중 대국에 재접속한다.
 - 로그인 후 `GET /api/game/cpus` 결과에서 정확히 3명을 선택하고 요청 순서대로 좌석
   1/2/3에 배치한다. stage 1/2 CPU는 서버 목록에는 남지만 해당 agent가 아직 없으므로
   UI에서도 `Tier N 미구현`으로 표시하고 선택을 막는다. Tier 0으로 대체하지 않는다.
