@@ -71,7 +71,7 @@ def admin_result_asset_response(asset: CpuResultAsset) -> dict[str, object]:
         "storage_key": asset.storage_key,
         "mime_type": asset.mime_type,
         "active": asset.active,
-        "url": result_asset_url(asset.id),
+        "url": result_asset_url(asset.id) if asset.storage_key else None,
     }
 
 
@@ -249,7 +249,8 @@ async def put_cpu_result_asset(
         session.add(asset)
     else:
         asset = previous
-        previous_path = storage_path(settings.media_root, previous.storage_key)
+        if previous.storage_key is not None:
+            previous_path = storage_path(settings.media_root, previous.storage_key)
         asset.storage_key = storage_key
         asset.mime_type = mime_type
         asset.active = True
@@ -283,10 +284,12 @@ def remove_cpu_result_asset(
             CpuResultAsset.defeat_stage == defeat_stage,
         )
     )
-    if asset is None:
+    if asset is None or asset.storage_key is None:
         raise HTTPException(status_code=404, detail="result CG not found")
     asset_path = storage_path(settings.media_root, asset.storage_key)
-    session.delete(asset)
+    asset.storage_key = None
+    asset.mime_type = None
+    asset.active = False
     session.commit()
     asset_path.unlink(missing_ok=True)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

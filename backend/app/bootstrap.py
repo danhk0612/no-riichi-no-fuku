@@ -1,6 +1,11 @@
 from app.core.config import Settings
 from app.db.session import create_database_engine, create_session_factory
-from app.services.bootstrap import bootstrap_superadmin, seed_cpu_characters
+from app.services.bootstrap import (
+    bootstrap_superadmin,
+    seed_cpu_characters,
+    seed_cpu_dialogues,
+    seed_result_asset_slots,
+)
 
 
 def main() -> None:
@@ -17,11 +22,15 @@ def main() -> None:
             initial_password,
         )
         created_cpu_count = seed_cpu_characters(session)
+        created_dialogue_count = seed_cpu_dialogues(session)
+        created_result_slot_count = seed_result_asset_slots(session)
 
     print(
         "bootstrap complete: "
         f"superadmin_created={created_superadmin}, "
-        f"cpu_characters_created={created_cpu_count}"
+        f"cpu_characters_created={created_cpu_count}, "
+        f"cpu_dialogues_created={created_dialogue_count}, "
+        f"result_asset_slots_created={created_result_slot_count}"
     )
 
 

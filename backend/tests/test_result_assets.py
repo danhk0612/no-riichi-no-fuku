@@ -19,7 +19,11 @@ from app.db.models import (
     UserCpuProgress,
 )
 from app.main import app
-from app.services.bootstrap import bootstrap_superadmin, seed_cpu_characters
+from app.services.bootstrap import (
+    bootstrap_superadmin,
+    seed_cpu_characters,
+    seed_result_asset_slots,
+)
 from app.services.result_assets import MAX_RESULT_ASSET_BYTES, storage_path
 
 
@@ -39,6 +43,7 @@ class ResultAssetApiTest(unittest.IsolatedAsyncioTestCase):
         with Session(self.engine) as session:
             session.add(GameSetting(key="player_max_hp", value=3))
             seed_cpu_characters(session)
+            seed_result_asset_slots(session)
             bootstrap_superadmin(session, "admin", "initial-admin-password")
             session.commit()
             self.cpu_id = session.scalar(
@@ -182,12 +187,19 @@ class ResultAssetApiTest(unittest.IsolatedAsyncioTestCase):
             headers=self.admin_headers,
         )
         self.assertEqual(listed.status_code, 200, listed.text)
-        self.assertEqual(len(listed.json()), 1)
+        self.assertEqual(len(listed.json()), 3)
+        self.assertEqual(
+            [slot["defeat_stage"] for slot in listed.json()],
+            [1, 2, 3],
+        )
 
         deleted = await self.client.delete(path, headers=self.admin_headers)
         self.assertEqual(deleted.status_code, 204, deleted.text)
         with Session(self.engine) as session:
-            self.assertIsNone(session.get(CpuResultAsset, metadata["id"]))
+            empty_slot = session.get(CpuResultAsset, metadata["id"])
+            assert empty_slot is not None
+            self.assertIsNone(empty_slot.storage_key)
+            self.assertFalse(empty_slot.active)
         self.assertFalse(
             storage_path(
                 self.settings.media_root,
@@ -219,7 +231,8 @@ class ResultAssetApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(oversize.status_code, 413, oversize.text)
         with Session(self.engine) as session:
             assets = session.scalars(select(CpuResultAsset)).all()
-            self.assertEqual(assets, [])
+            self.assertEqual(len(assets), 18)
+            self.assertTrue(all(asset.storage_key is None for asset in assets))
 
 
 if __name__ == "__main__":

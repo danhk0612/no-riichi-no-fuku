@@ -107,7 +107,7 @@ class CpuResultAssetResponse(BaseModel):
     id: int
     cpu_character_id: int
     defeat_stage: int
-    storage_key: str
+    storage_key: str | None
     mime_type: str | None
     active: bool
-    url: str
+    url: str | None

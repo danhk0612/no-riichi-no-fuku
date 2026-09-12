@@ -6,8 +6,13 @@ from sqlalchemy.orm import Session
 
 from app.core.config import Settings
 from app.db.base import Base
-from app.db.models import CpuCharacter, User
-from app.services.bootstrap import bootstrap_superadmin, seed_cpu_characters
+from app.db.models import CpuCharacter, CpuDialogue, CpuResultAsset, User
+from app.services.bootstrap import (
+    bootstrap_superadmin,
+    seed_cpu_characters,
+    seed_cpu_dialogues,
+    seed_result_asset_slots,
+)
 
 
 class BackendFoundationTest(unittest.TestCase):
@@ -80,14 +85,63 @@ class BackendFoundationTest(unittest.TestCase):
 
     def test_cpu_seed_is_idempotent(self) -> None:
         first_created = seed_cpu_characters(self.session)
+        first_dialogues = seed_cpu_dialogues(self.session)
+        first_slots = seed_result_asset_slots(self.session)
         self.session.commit()
         second_created = seed_cpu_characters(self.session)
+        second_dialogues = seed_cpu_dialogues(self.session)
+        second_slots = seed_result_asset_slots(self.session)
         self.session.commit()
 
         count = self.session.scalar(select(func.count()).select_from(CpuCharacter))
+        dialogue_count = self.session.scalar(
+            select(func.count()).select_from(CpuDialogue)
+        )
+        slot_count = self.session.scalar(
+            select(func.count()).select_from(CpuResultAsset)
+        )
         self.assertEqual(first_created, 6)
         self.assertEqual(second_created, 0)
+        self.assertEqual(first_dialogues, 144)
+        self.assertEqual(second_dialogues, 0)
+        self.assertEqual(first_slots, 18)
+        self.assertEqual(second_slots, 0)
         self.assertEqual(count, 6)
+        self.assertEqual(dialogue_count, 144)
+        self.assertEqual(slot_count, 18)
+        expected_event_keys = {
+            "game_start",
+            "riichi",
+            "chi",
+            "pon",
+            "kan",
+            "ron",
+            "tsumo",
+            "match_first",
+            "match_last",
+            "defeat_stage_1",
+            "defeat_stage_2",
+            "defeat_stage_3",
+        }
+        for cpu in self.session.scalars(select(CpuCharacter)).all():
+            dialogues = self.session.scalars(
+                select(CpuDialogue).where(
+                    CpuDialogue.cpu_character_id == cpu.id
+                )
+            ).all()
+            self.assertEqual(
+                {dialogue.event_key for dialogue in dialogues},
+                expected_event_keys,
+            )
+            self.assertTrue(
+                all(
+                    sum(
+                        dialogue.event_key == event_key
+                        for dialogue in dialogues
+                    ) >= 2
+                    for event_key in expected_event_keys
+                )
+            )
         self.assertTrue(
             all(
                 cpu.age_adult

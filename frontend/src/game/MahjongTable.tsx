@@ -5,6 +5,7 @@ import type {
   LegalAction,
   PlayerSeat,
 } from './types'
+import { defeatStageLabel } from '../stages'
 import { roundWindLabel, seatWindLabel, tileIdToDisplay } from './tiles'
 
 const ACTION_LABELS: Record<number, string> = {
@@ -228,6 +229,9 @@ function CompletedTable({
       name: playersBySeat.get(seat)?.name ?? `좌석 ${seat + 1}`,
     }))
     .sort((left, right) => left.rank - right.rank)
+  const defeatedCpuName = state.settlement.last_place_seat === 0
+    ? null
+    : playersBySeat.get(state.settlement.last_place_seat)?.name ?? 'CPU'
 
   return (
     <section className="match-result">
@@ -243,20 +247,32 @@ function CompletedTable({
       <p className="settlement-summary">
         {state.settlement.last_place_seat === 0
           ? `플레이어 HP ${state.settlement.current_hp}`
-          : `CPU 진행 단계 ${state.settlement.defeat_stage}`}
+          : `${defeatedCpuName} · ${defeatStageLabel(state.settlement.defeat_stage ?? 0)}`}
       </p>
-      {state.resultAsset && (
+      {state.resultDialogue && (
+        <blockquote className="result-dialogue">
+          <strong>{defeatedCpuName}</strong>
+          <p>{state.resultDialogue.text}</p>
+        </blockquote>
+      )}
+      {state.settlement.cpu_character_id !== null && (
         <figure className="result-asset">
-          {state.resultAssetObjectUrl
+          {state.resultAsset && state.resultAssetObjectUrl
             ? (
                 <img
-                  alt={`해금된 단계 ${state.resultAsset.defeat_stage} 결과 CG`}
+                  alt={`${defeatedCpuName} ${defeatStageLabel(state.resultAsset.defeat_stage)} 결과 CG`}
                   src={state.resultAssetObjectUrl}
                 />
               )
-            : <p>결과 CG를 불러오는 중입니다.</p>}
+            : state.resultAsset
+              ? <p className="result-asset-placeholder">결과 CG를 불러오는 중입니다.</p>
+              : (
+                  <p className="result-asset-placeholder">
+                    이 단계의 결과 CG는 아직 등록되지 않았습니다.
+                  </p>
+                )}
           <figcaption>
-            단계 {state.resultAsset.defeat_stage} 결과
+            {defeatStageLabel(state.settlement.defeat_stage ?? 0)} 결과 CG 슬롯
           </figcaption>
         </figure>
       )}

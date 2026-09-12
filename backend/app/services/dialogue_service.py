@@ -136,6 +136,7 @@ class DialogueSelector:
                     CpuDialogue.active == True,  # noqa: E712
                 )
             )
+            .order_by(CpuDialogue.id)
             .limit(100)  # 성능을 위해 최대 100개로 제한
         ).all()
 

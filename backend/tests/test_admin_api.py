@@ -148,6 +148,18 @@ class AdminApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(created.json()["age_adult"])
         self.assertIsNone(created.json()["profile_image_key"])
         cpu_id = created.json()["id"]
+        result_slots = await self.client.get(
+            f"/api/admin/cpus/{cpu_id}/result-assets",
+            headers=headers,
+        )
+        self.assertEqual(result_slots.status_code, 200, result_slots.text)
+        self.assertEqual(
+            [slot["defeat_stage"] for slot in result_slots.json()],
+            [1, 2, 3],
+        )
+        self.assertTrue(
+            all(slot["storage_key"] is None for slot in result_slots.json())
+        )
 
         duplicate = await self.client.post(
             "/api/admin/cpus",

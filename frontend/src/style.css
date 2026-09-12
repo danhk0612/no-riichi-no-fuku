@@ -194,6 +194,31 @@ button {
   font-size: 1.2rem;
 }
 
+.cpu-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-placeholder {
+  width: 38px;
+  height: 38px;
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-content: center;
+  border: 1px solid rgba(215, 185, 110, 0.4);
+  border-radius: 50%;
+  color: #d7b96e;
+  background: rgba(215, 185, 110, 0.08);
+  font-weight: 900;
+}
+
+.cpu-stage {
+  color: #e9ddbd;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
 .cpu-card p {
   margin: 4px 0;
   color: #a9bbb3;
@@ -209,6 +234,15 @@ button {
 .start-button {
   width: 100%;
   margin-top: 20px;
+}
+
+.stage-guide {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 16px;
+  margin-top: 18px;
+  color: #a9bbb3;
+  font-size: 0.78rem;
 }
 
 .empty-message {
@@ -442,9 +476,32 @@ button.tile:disabled {
   font-weight: 800;
 }
 
+.result-dialogue {
+  width: min(640px, 82vw);
+  margin: 4px 0 16px;
+  padding: 16px 20px;
+  border: 1px solid rgba(215, 185, 110, 0.24);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.result-dialogue p {
+  margin: 6px 0 0;
+}
+
 .result-asset {
   width: min(640px, 82vw);
   margin: 4px 0 20px;
+}
+
+.result-asset-placeholder {
+  min-height: 180px;
+  display: grid;
+  place-content: center;
+  padding: 20px;
+  border: 1px dashed rgba(215, 185, 110, 0.35);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.16);
 }
 
 .result-asset img {
@@ -481,6 +538,10 @@ button.tile:disabled {
   }
 
   .cpu-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stage-guide {
     grid-template-columns: 1fr;
   }
 

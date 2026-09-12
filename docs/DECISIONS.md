@@ -450,6 +450,31 @@ hand_value_preference, speed_preference)를 Tier 0/1/2 Agent의 의사결정에 
 - 프로필/CPU 프로필 이미지의 허용 형식, 용량 제한과 저장 key 정책
 - Mortal 사용 여부
 
+## 패배 단계 복장 서사와 기본 대사 정책 (2026-09-12)
+
+- 모든 CPU 캐릭터는 성인이며 `defeat_stage`의 플레이어 표시 문구는 다음으로 고정한다.
+  - stage 0: 정상 · 일상복
+  - stage 1: 자켓/겉옷을 벗은 상태
+  - stage 2: 속옷만 입은 상태
+  - stage 3: 알몸 상태 · 최종 완료
+- stage 3 CPU는 기존 규칙대로 이후 대국에서 선택할 수 없다. 복장 서사는 사용자별
+  진행 표시와 결과 연출일 뿐, stage/Tier 난이도 매핑과 캐릭터 성향 수치를 바꾸지 않는다.
+- 기본 대사는 `backend/app/seeds/cpu_dialogues.json`에서 CPU slug와 event key별
+  문장 풀로 관리한다. 현재 6개 seed CPU마다 `riichi`, `chi`, `pon`, `kan`, `ron`,
+  `tsumo`, `game_start`, `match_first`, `match_last`, `defeat_stage_1/2/3`에 각각
+  2개 문장을 제공한다.
+- 대사는 캐릭터의 성향(균형, 수비, 공격, 멘젠 리치, 빠른 울기, 고타점)에 맞춘
+  한국어 문장을 기본으로 한다. bootstrap은 해당 CPU/event에 관리자 대사가 이미
+  하나라도 있으면 그 event의 seed 풀을 추가하거나 덮어쓰지 않는 create-only 정책을
+  사용한다.
+- 대국 중 6개 행동 event는 기존 확률/cooldown 정책을 그대로 사용한다. CPU가 최종
+  4위가 되어 stage가 증가하면 `defeat_stage_{1|2|3}` 풀에서 세션별로 안정적으로
+  선택한 한 문장을 결과 payload에 포함한다.
+- `cpu_result_assets`는 CPU마다 stage 1/2/3 row를 빈 슬롯으로 미리 가진다. 빈 슬롯은
+  `storage_key = NULL`, `mime_type = NULL`, `active = false`이며 파일을 만들지 않는다.
+  관리자 업로드는 슬롯을 채우고 삭제는 row를 제거하지 않고 다시 빈 슬롯으로 만든다.
+  회원 결과 API는 실제 파일 key가 있는 활성 슬롯만 해금 CG로 반환한다.
+
 ## 결과 CG 미디어 정책 (2026-09-12)
 
 - 결과 CG 업로드 형식은 JPEG, PNG, WebP만 허용한다. 서버는 요청의 파일명이나

@@ -77,6 +77,7 @@ export type GameScreenState =
       players: PlayerSeat[]
       resultAsset: ResultAsset | null
       resultAssetObjectUrl: string | null
+      resultDialogue: ResultDialogue | null
     }
 
 export type MatchSettlement = {
@@ -94,6 +95,12 @@ export type ResultAsset = {
   defeat_stage: number
   mime_type: string | null
   url: string
+}
+
+export type ResultDialogue = {
+  cpu_character_id: number
+  event_key: string
+  text: string
 }
 
 export type GameClientMessage =
@@ -114,6 +121,7 @@ export type GameServerMessage =
       result: MatchResult
       settlement: MatchSettlement
       result_asset: ResultAsset | null
+      result_dialogue: ResultDialogue | null
     }
   | { type: 'dialogue_event'; cpu_character_id: number; seat: number; event_key: string; text: string }
   | { type: 'error'; code: string; message: string }

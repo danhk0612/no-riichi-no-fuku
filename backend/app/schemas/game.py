@@ -47,3 +47,9 @@ class ResultAssetResponse(BaseModel):
     defeat_stage: int
     mime_type: str | None
     url: str
+
+
+class ResultDialogueResponse(BaseModel):
+    cpu_character_id: int
+    event_key: str
+    text: str

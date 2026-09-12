@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import random
+
 import jwt
 from fastapi import (
     APIRouter,
@@ -228,11 +230,32 @@ async def send_registered_game_state(
                     raise GameRegistryError("completed game result is unavailable")
                 result = registered.game.result()
             result_asset = None
+            result_dialogue = None
             if (
                 registered.settlement.cpu_character_id is not None
                 and registered.settlement.defeat_stage is not None
             ):
                 with session_factory() as session:
+                    event_key = (
+                        f"defeat_stage_{registered.settlement.defeat_stage}"
+                    )
+                    dialogue_text = DialogueSelector(
+                        rng=random.Random(
+                            f"{registered.session_id}:{event_key}"
+                        )
+                    ).select_dialogue(
+                        session,
+                        registered.settlement.cpu_character_id,
+                        event_key,
+                    )
+                    if dialogue_text is not None:
+                        result_dialogue = {
+                            "cpu_character_id": (
+                                registered.settlement.cpu_character_id
+                            ),
+                            "event_key": event_key,
+                            "text": dialogue_text,
+                        }
                     asset = get_unlocked_result_asset(
                         session,
                         registered.user_id,
@@ -253,6 +276,7 @@ async def send_registered_game_state(
                     "cpu_completed": registered.settlement.cpu_completed,
                 },
                 "result_asset": result_asset,
+                "result_dialogue": result_dialogue,
             }
     await websocket.send_json(message)
 

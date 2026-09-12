@@ -24,7 +24,11 @@ from app.db.models import (
     UserCpuProgress,
 )
 from app.main import app
-from app.services.bootstrap import seed_cpu_characters
+from app.services.bootstrap import (
+    seed_cpu_characters,
+    seed_cpu_dialogues,
+    seed_result_asset_slots,
+)
 from app.services.game_registry import GameRegistry, get_game_registry
 
 
@@ -52,6 +56,7 @@ class GameWebSocketApiTest(unittest.TestCase):
         with self.session_factory() as session:
             session.add(GameSetting(key="player_max_hp", value=3))
             seed_cpu_characters(session)
+            seed_result_asset_slots(session)
             session.commit()
 
         self.settings = Settings(
@@ -245,25 +250,29 @@ class GameWebSocketApiTest(unittest.TestCase):
 
     def test_fixed_seed_match_completes_and_persists_server_settlement(self) -> None:
         with self.session_factory() as session:
-            session.add_all(
-                [
-                    CpuResultAsset(
-                        cpu_character_id=cpu_id,
-                        defeat_stage=1,
-                        storage_key=f"/metadata-fixture/{cpu_id}/stage-1.png",
-                        mime_type="image/png",
-                        active=True,
+            seed_cpu_dialogues(session)
+            for cpu_id in self.cpu_ids:
+                asset = session.scalar(
+                    select(CpuResultAsset).where(
+                        CpuResultAsset.cpu_character_id == cpu_id,
+                        CpuResultAsset.defeat_stage == 1,
                     )
-                    for cpu_id in self.cpu_ids
-                ]
-            )
+                )
+                assert asset is not None
+                asset.storage_key = f"/metadata-fixture/{cpu_id}/stage-1.png"
+                asset.mime_type = "image/png"
+                asset.active = True
             session.commit()
         created = self.create_game()
         path = f"/api/game/sessions/{created['session_id']}/ws"
         with self.client.websocket_connect(path) as websocket:
             self.authenticate(websocket)
             message = websocket.receive_json()
-            while message["type"] == "human_turn":
+            while message["type"] != "match_complete":
+                if message["type"] == "dialogue_event":
+                    message = websocket.receive_json()
+                    continue
+                self.assertEqual(message["type"], "human_turn")
                 action_index = choose_human_action_index(
                     message["turn"]["legal_actions"]
                 )
@@ -296,6 +305,7 @@ class GameWebSocketApiTest(unittest.TestCase):
                 self.assertEqual(member.current_hp, 2)
                 self.assertTrue(all(stage == 0 for stage in stages.values()))
                 self.assertIsNone(message["result_asset"])
+                self.assertIsNone(message["result_dialogue"])
             else:
                 defeated_cpu_id = self.cpu_ids[last_place_seat - 1]
                 self.assertEqual(settlement["cpu_character_id"], defeated_cpu_id)
@@ -305,6 +315,15 @@ class GameWebSocketApiTest(unittest.TestCase):
                     defeated_cpu_id,
                 )
                 self.assertEqual(message["result_asset"]["defeat_stage"], 1)
+                self.assertEqual(
+                    message["result_dialogue"]["cpu_character_id"],
+                    defeated_cpu_id,
+                )
+                self.assertEqual(
+                    message["result_dialogue"]["event_key"],
+                    "defeat_stage_1",
+                )
+                self.assertTrue(message["result_dialogue"]["text"])
             record = session.get(GameSessionRecord, created["session_id"])
             assert record is not None
             self.assertEqual(record.status, "completed")

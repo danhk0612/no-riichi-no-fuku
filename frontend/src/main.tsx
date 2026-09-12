@@ -162,6 +162,7 @@ function App() {
           players: seats,
           resultAsset: message.result_asset,
           resultAssetObjectUrl: null,
+          resultDialogue: message.result_dialogue,
         })
         if (message.result_asset) {
           const asset = message.result_asset
