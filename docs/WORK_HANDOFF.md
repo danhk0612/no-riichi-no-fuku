@@ -163,6 +163,10 @@ implementation added:
 - `dialogue_event` WebSocket message handling in `game.py`
 - `DialogueEvent` type, `recentDialogues` state, and speech-bubble UI in the frontend
 
+After the server-side policy change, the complete backend suite passes with 74 tests and the
+frontend TypeScript/Vite production build passes. Docker/Compose remains explicitly unverified
+until the deferred final integration task.
+
 ## Tier 1 CPU implementation (2026-09-12)
 
 Tier 1 CPU agent is now implemented in `backend/app/mahjong/tier1.py`. The `create_production_cpu_agent`
