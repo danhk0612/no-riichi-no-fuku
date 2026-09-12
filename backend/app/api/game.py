@@ -9,6 +9,7 @@ from fastapi import (
     WebSocketDisconnect,
     status,
 )
+from fastapi.responses import FileResponse
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -27,6 +28,7 @@ from app.schemas.game import (
     CreateGameSessionRequest,
     CreateGameSessionResponse,
     DialogueEventResponse,
+    ResultAssetResponse,
 )
 from app.services.game_registry import (
     ActiveGameExistsError,
@@ -44,6 +46,12 @@ from app.services.game_setup import (
     GameSetupError,
     InvalidCpuSelectionError,
     list_selectable_cpus,
+)
+from app.services.result_assets import (
+    get_unlocked_result_asset,
+    get_unlocked_result_asset_by_id,
+    result_asset_metadata,
+    storage_path,
 )
 
 
@@ -91,6 +99,41 @@ def get_active_game_session(
     registry: GameRegistry = Depends(get_game_registry),
 ) -> RegisteredGame | None:
     return registry.get_active(session, user.id)
+
+
+@router.get(
+    "/result-assets/{asset_id}",
+    response_model=ResultAssetResponse,
+)
+def get_result_asset_metadata(
+    asset_id: int,
+    user: User = Depends(get_current_member),
+    session: Session = Depends(get_session),
+) -> dict[str, object]:
+    asset = get_unlocked_result_asset_by_id(session, user.id, asset_id)
+    if asset is None:
+        raise HTTPException(status_code=404, detail="result CG not found")
+    return result_asset_metadata(asset)
+
+
+@router.get("/result-assets/{asset_id}/file", response_class=FileResponse)
+def get_result_asset_file(
+    asset_id: int,
+    user: User = Depends(get_current_member),
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> FileResponse:
+    asset = get_unlocked_result_asset_by_id(session, user.id, asset_id)
+    if asset is None:
+        raise HTTPException(status_code=404, detail="result CG not found")
+    path = storage_path(settings.media_root, asset.storage_key)
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="result CG file not found")
+    return FileResponse(
+        path,
+        media_type=asset.mime_type or "application/octet-stream",
+        headers={"Cache-Control": "private, no-store"},
+    )
 
 
 async def send_websocket_error(
@@ -184,6 +227,20 @@ async def send_registered_game_state(
                 if registered.game is None:
                     raise GameRegistryError("completed game result is unavailable")
                 result = registered.game.result()
+            result_asset = None
+            if (
+                registered.settlement.cpu_character_id is not None
+                and registered.settlement.defeat_stage is not None
+            ):
+                with session_factory() as session:
+                    asset = get_unlocked_result_asset(
+                        session,
+                        registered.user_id,
+                        registered.settlement.cpu_character_id,
+                        registered.settlement.defeat_stage,
+                    )
+                    if asset is not None:
+                        result_asset = result_asset_metadata(asset)
             message = {
                 "type": "match_complete",
                 "result": {"scores": result.scores, "ranks": result.ranks},
@@ -195,6 +252,7 @@ async def send_registered_game_state(
                     "game_over": registered.settlement.game_over,
                     "cpu_completed": registered.settlement.cpu_completed,
                 },
+                "result_asset": result_asset,
             }
     await websocket.send_json(message)
 

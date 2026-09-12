@@ -245,6 +245,21 @@ function CompletedTable({
           ? `플레이어 HP ${state.settlement.current_hp}`
           : `CPU 진행 단계 ${state.settlement.defeat_stage}`}
       </p>
+      {state.resultAsset && (
+        <figure className="result-asset">
+          {state.resultAssetObjectUrl
+            ? (
+                <img
+                  alt={`해금된 단계 ${state.resultAsset.defeat_stage} 결과 CG`}
+                  src={state.resultAssetObjectUrl}
+                />
+              )
+            : <p>결과 CG를 불러오는 중입니다.</p>}
+          <figcaption>
+            단계 {state.resultAsset.defeat_stage} 결과
+          </figcaption>
+        </figure>
+      )}
       {onNextGame && (
         <button className="primary-button" onClick={onNextGame} type="button">
           다음 대국 선택

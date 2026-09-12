@@ -1,8 +1,22 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from pathlib import Path
+from typing import Annotated
+
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Path as ApiPath,
+    Response,
+    UploadFile,
+    status,
+)
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import get_current_superadmin, get_session
-from app.db.models import CpuCharacter, CpuDialogue, User
+from app.api.dependencies import get_current_superadmin, get_session, get_settings
+from app.core.config import Settings
+from app.db.models import CpuCharacter, CpuDialogue, CpuResultAsset, User
 from app.schemas.admin import (
     CpuCharacterCreateRequest,
     CpuCharacterResponse,
@@ -10,6 +24,7 @@ from app.schemas.admin import (
     CpuDialogueCreateRequest,
     CpuDialogueResponse,
     CpuDialogueUpdateRequest,
+    CpuResultAssetResponse,
     MemberActiveUpdateRequest,
     MemberResponse,
 )
@@ -26,6 +41,15 @@ from app.services.admin import (
     update_cpu_dialogue,
     update_member_active,
 )
+from app.services.result_assets import (
+    ResultAssetError,
+    ResultAssetFormatError,
+    ResultAssetTooLargeError,
+    list_result_assets,
+    result_asset_url,
+    storage_path,
+    store_result_asset_upload,
+)
 
 
 router = APIRouter(
@@ -37,6 +61,18 @@ router = APIRouter(
 
 def not_found(error: AdminEntityNotFoundError) -> HTTPException:
     return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error))
+
+
+def admin_result_asset_response(asset: CpuResultAsset) -> dict[str, object]:
+    return {
+        "id": asset.id,
+        "cpu_character_id": asset.cpu_character_id,
+        "defeat_stage": asset.defeat_stage,
+        "storage_key": asset.storage_key,
+        "mime_type": asset.mime_type,
+        "active": asset.active,
+        "url": result_asset_url(asset.id),
+    }
 
 
 @router.get("/users", response_model=list[MemberResponse])
@@ -152,4 +188,105 @@ def remove_cpu_dialogue(
         delete_cpu_dialogue(session, dialogue_id)
     except AdminEntityNotFoundError as error:
         raise not_found(error) from None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get(
+    "/cpus/{cpu_id}/result-assets",
+    response_model=list[CpuResultAssetResponse],
+)
+def get_cpu_result_assets(
+    cpu_id: int,
+    session: Session = Depends(get_session),
+) -> list[dict[str, object]]:
+    try:
+        assets = list_result_assets(session, cpu_id)
+    except ResultAssetError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from None
+    return [admin_result_asset_response(asset) for asset in assets]
+
+
+@router.put(
+    "/cpus/{cpu_id}/result-assets/{defeat_stage}",
+    response_model=CpuResultAssetResponse,
+)
+async def put_cpu_result_asset(
+    cpu_id: int,
+    defeat_stage: Annotated[int, ApiPath(ge=1, le=3)],
+    file: Annotated[UploadFile, File()],
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, object]:
+    if session.get(CpuCharacter, cpu_id) is None:
+        raise HTTPException(status_code=404, detail="CPU character not found")
+    try:
+        storage_key, mime_type = await store_result_asset_upload(
+            file,
+            settings.media_root,
+            cpu_id,
+            defeat_stage,
+        )
+    except ResultAssetTooLargeError as error:
+        raise HTTPException(status_code=413, detail=str(error)) from None
+    except ResultAssetFormatError as error:
+        raise HTTPException(status_code=415, detail=str(error)) from None
+
+    previous = session.scalar(
+        select(CpuResultAsset).where(
+            CpuResultAsset.cpu_character_id == cpu_id,
+            CpuResultAsset.defeat_stage == defeat_stage,
+        )
+    )
+    previous_path: Path | None = None
+    if previous is None:
+        asset = CpuResultAsset(
+            cpu_character_id=cpu_id,
+            defeat_stage=defeat_stage,
+            storage_key=storage_key,
+            mime_type=mime_type,
+            active=True,
+        )
+        session.add(asset)
+    else:
+        asset = previous
+        previous_path = storage_path(settings.media_root, previous.storage_key)
+        asset.storage_key = storage_key
+        asset.mime_type = mime_type
+        asset.active = True
+
+    new_path = storage_path(settings.media_root, storage_key)
+    try:
+        session.commit()
+        session.refresh(asset)
+    except Exception:
+        session.rollback()
+        new_path.unlink(missing_ok=True)
+        raise
+    if previous_path is not None and previous_path != new_path:
+        previous_path.unlink(missing_ok=True)
+    return admin_result_asset_response(asset)
+
+
+@router.delete(
+    "/cpus/{cpu_id}/result-assets/{defeat_stage}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def remove_cpu_result_asset(
+    cpu_id: int,
+    defeat_stage: Annotated[int, ApiPath(ge=1, le=3)],
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> Response:
+    asset = session.scalar(
+        select(CpuResultAsset).where(
+            CpuResultAsset.cpu_character_id == cpu_id,
+            CpuResultAsset.defeat_stage == defeat_stage,
+        )
+    )
+    if asset is None:
+        raise HTTPException(status_code=404, detail="result CG not found")
+    asset_path = storage_path(settings.media_root, asset.storage_key)
+    session.delete(asset)
+    session.commit()
+    asset_path.unlink(missing_ok=True)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

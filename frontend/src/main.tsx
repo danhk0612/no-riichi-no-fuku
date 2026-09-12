@@ -6,6 +6,7 @@ import {
   createGameSession,
   gameWebSocketUrl,
   getActiveGameSession,
+  getResultAssetObjectUrl,
   getSelectableCpus,
   loginMember,
   registerMember,
@@ -36,8 +37,21 @@ function App() {
   const [actionPending, setActionPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const socketRef = useRef<WebSocket | null>(null)
+  const resultAssetUrlRef = useRef<string | null>(null)
+  const resultAssetLoadVersionRef = useRef(0)
 
-  useEffect(() => () => socketRef.current?.close(1000), [])
+  useEffect(() => () => {
+    socketRef.current?.close(1000)
+    if (resultAssetUrlRef.current) URL.revokeObjectURL(resultAssetUrlRef.current)
+  }, [])
+
+  function clearResultAssetUrl() {
+    resultAssetLoadVersionRef.current += 1
+    if (resultAssetUrlRef.current) {
+      URL.revokeObjectURL(resultAssetUrlRef.current)
+      resultAssetUrlRef.current = null
+    }
+  }
 
   async function loadCpus(token: string) {
     const choices = await getSelectableCpus(token)
@@ -140,12 +154,38 @@ function App() {
       }
       if (message.type === 'match_complete') {
         completed = true
+        clearResultAssetUrl()
         setGameState({
           status: 'complete',
           result: message.result,
           settlement: message.settlement,
           players: seats,
+          resultAsset: message.result_asset,
+          resultAssetObjectUrl: null,
         })
+        if (message.result_asset) {
+          const asset = message.result_asset
+          const loadVersion = resultAssetLoadVersionRef.current
+          void getResultAssetObjectUrl(token, asset.url)
+            .then((objectUrl) => {
+              if (loadVersion !== resultAssetLoadVersionRef.current) {
+                URL.revokeObjectURL(objectUrl)
+                return
+              }
+              setGameState((current) => {
+                if (
+                  current.status !== 'complete'
+                  || current.resultAsset?.id !== asset.id
+                ) {
+                  URL.revokeObjectURL(objectUrl)
+                  return current
+                }
+                resultAssetUrlRef.current = objectUrl
+                return { ...current, resultAssetObjectUrl: objectUrl }
+              })
+            })
+            .catch((caught) => setError(errorMessage(caught)))
+        }
         setActionPending(false)
         setRecentDialogues([]) // 게임 종료 시 대사 초기화
         socket.close(1000)
@@ -206,6 +246,7 @@ function App() {
     setBusy(true)
     setError(null)
     try {
+      clearResultAssetUrl()
       await loadCpus(accessToken)
       setGameState({ status: 'waiting' })
     } catch (caught) {
@@ -218,6 +259,7 @@ function App() {
   function logout() {
     socketRef.current?.close(1000)
     socketRef.current = null
+    clearResultAssetUrl()
     setAccessToken(null)
     setCpus(null)
     setSelectedCpuIds([])
