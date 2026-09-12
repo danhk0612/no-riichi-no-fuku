@@ -32,7 +32,11 @@ class CpuResultAsset(TimestampMixin, Base):
         ForeignKey("cpu_characters.id", ondelete="CASCADE"), index=True
     )
     defeat_stage: Mapped[int] = mapped_column(Integer)
-    storage_key: Mapped[str] = mapped_column(String(512), unique=True)
+    storage_key: Mapped[str | None] = mapped_column(
+        String(512),
+        unique=True,
+        nullable=True,
+    )
     mime_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
 

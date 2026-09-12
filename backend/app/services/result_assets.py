@@ -32,6 +32,8 @@ def result_asset_url(asset_id: int) -> str:
 
 
 def result_asset_metadata(asset: CpuResultAsset) -> dict[str, object]:
+    if asset.storage_key is None:
+        raise ResultAssetError("result CG slot is empty")
     return {
         "id": asset.id,
         "cpu_character_id": asset.cpu_character_id,
@@ -129,6 +131,7 @@ def get_unlocked_result_asset(
         .where(
             CpuResultAsset.cpu_character_id == cpu_id,
             CpuResultAsset.defeat_stage == defeat_stage,
+            CpuResultAsset.storage_key.is_not(None),
             CpuResultAsset.active.is_(True),
             UserCpuProgress.user_id == user_id,
             UserCpuProgress.defeat_stage >= CpuResultAsset.defeat_stage,
@@ -149,6 +152,7 @@ def get_unlocked_result_asset_by_id(
         )
         .where(
             CpuResultAsset.id == asset_id,
+            CpuResultAsset.storage_key.is_not(None),
             CpuResultAsset.active.is_(True),
             UserCpuProgress.user_id == user_id,
             UserCpuProgress.defeat_stage >= CpuResultAsset.defeat_stage,

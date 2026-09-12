@@ -23,6 +23,10 @@ index with the current action version, and commits every accepted human action. 
 server restart reconstructs an active match by deterministic replay; completed results and 
 settlement remain durable and idempotent. Game dialogue events are extracted from authoritative
 session observations, matched with active CPU dialogues, and delivered with HumanTurn messages.
+The six initial adult CPU characters now have personality-specific Korean seed pools for all
+supported in-match events plus game start/rank/result candidates. CPU fourth-place completion sends
+the newly reached stage dialogue and its stage 1/2/3 CG metadata when uploaded, while an empty
+result slot remains visible without requiring an image file.
 The React client now provides minimal member registration/login, selectable CPU cards, REST game
 creation, first-message-authenticated WebSocket play, authoritative result settlement display,
 speech bubbles during play, and the return-to-selection loop. Access tokens remain in tab memory
@@ -204,7 +208,7 @@ Backend test suite: 49 tests passed. Frontend TypeScript/Vite production build p
   multipart 업로드·교체·삭제를 할 수 있다.
 - 파일은 `MEDIA_ROOT` 아래에 저장하고 기존 `cpu_result_assets` row에는 storage key,
   MIME type, CPU와 단계 연결 metadata만 저장한다. 교체 시 새 key를 사용하고 이전
-  파일을 삭제하며, 삭제 시 DB row와 런타임 파일을 함께 제거한다.
+  파일을 삭제하며, 삭제 시 런타임 파일을 제거하고 DB row는 빈 슬롯으로 유지한다.
 - 회원 metadata/file API는 해당 회원의 `defeat_stage`가 asset 단계 이상인지 서버에서
   확인한다. 잠긴 단계와 존재하지 않는 asset은 같은 404 경계로 응답한다.
 - CPU가 4위인 대국 종료 payload는 방금 해금된 단계의 활성 `result_asset` metadata를
@@ -215,6 +219,29 @@ Backend test suite: 49 tests passed. Frontend TypeScript/Vite production build p
 - 백엔드 전체 suite 76개 통과, 프런트엔드 production build 통과.
 - Docker/Compose, PostgreSQL 컨테이너, 실제 persistent volume 재시작 보존은 이
   작업 범위에서 검증하지 않았다.
+
+## Stage dialogue and empty CG slot integration (2026-09-12)
+
+- 사용자 표시용 패배 단계는 `0 정상·일상복`, `1 자켓/겉옷 벗음`,
+  `2 속옷만 착용`, `3 알몸·최종 완료`로 확정했다. 모든 캐릭터는 기존 규칙대로
+  명시적인 성인이다.
+- `backend/app/seeds/cpu_dialogues.json`에 6개 seed CPU별로 12개 event key,
+  event당 2문장씩 총 144개 한국어 대사를 추가했다. 포함 key는 `game_start`,
+  `riichi`, `chi`, `pon`, `kan`, `ron`, `tsumo`, `match_first`, `match_last`,
+  `defeat_stage_1`, `defeat_stage_2`, `defeat_stage_3`이다.
+- bootstrap은 CPU/event별 기존 관리자 대사를 덮어쓰지 않는 create-only 방식으로
+  기본 대사를 넣는다. 기존의 in-match 확률/cooldown 값은 변경하지 않았다.
+- CPU가 4위가 되어 stage가 증가하면 WebSocket `match_complete`가
+  `result_dialogue`와 `result_asset`을 함께 반환한다. 완료 세션 재접속에서도 같은
+  stage 문장이 선택되도록 session ID와 event key를 기반으로 선택한다.
+- `cpu_result_assets.storage_key`를 nullable로 바꾸는 Alembic revision 0004를 추가했다.
+  bootstrap과 관리자 CPU 생성은 각 CPU에 stage 1/2/3 빈 metadata 슬롯을 만든다.
+  업로드는 해당 슬롯을 채우고 삭제는 슬롯을 `NULL`/inactive 상태로 되돌린다.
+- CPU 선택 카드는 Stage 1/2를 더 이상 미구현으로 막지 않는다. 카드와 결과 화면에
+  네 단계의 복장 문구를 표시하고, 프로필 key가 없을 때 문자 avatar를 표시한다.
+  결과 CG가 등록되지 않은 경우에도 해당 단계의 빈 CG 슬롯과 안내 문구를 표시한다.
+- Git에는 CG, 더미 CG, 프로필 이미지 바이너리를 추가하지 않았다.
+- 실제 운영 CG 업로드와 프로필 이미지 업로드 정책은 여전히 별도 운영/후속 작업이다.
 
 ## Next entry point
 
@@ -324,10 +351,13 @@ Backend test suite: 64 tests passed. Frontend TypeScript/Vite production build p
 1. **Docker/Compose full runtime validation**: Verify `docker compose config/build/up`,
    nginx-proxied web/API/WebSocket behavior, PostgreSQL health, and `postgres_data`/`media_data`
    persistence. Include a runtime-only result CG upload/serve/recreation check.
-2. **Deferred dialogue events**: Add game_start, final_east, and match result event keys without
-   rewriting the completed cooldown/probability policy.
+2. **Deferred dialogue event wiring**: Seed pools for `game_start` and `match_first/match_last`
+   exist, but only the defeat-stage result event is wired outside the six RiichiEnv action events.
+   Wire the remaining candidates only when their exact display timing is decided; do not rewrite
+   the completed cooldown/probability policy.
 3. **Profile images**: Decide member/CPU profile image format, size, and storage rules before
    implementing uploads.
+4. **Real media content**: Upload final CGs through the admin API at runtime. Do not add them to Git.
 
 Read:
 

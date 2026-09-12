@@ -1,4 +1,5 @@
 import type { CpuChoice } from './game/types'
+import { DEFEAT_STAGE_LABELS, defeatStageLabel } from './stages'
 
 type CpuSelectionProps = {
   cpus: CpuChoice[]
@@ -32,7 +33,7 @@ export function CpuSelection({
       <div className="cpu-grid">
         {cpus.map((cpu) => {
           const selectedIndex = selectedIds.indexOf(cpu.id)
-          const unavailable = cpu.defeat_stage > 0
+          const unavailable = cpu.defeat_stage >= 3
           const selectionFull = selectedIds.length === 3 && selectedIndex < 0
           return (
             <button
@@ -43,15 +44,31 @@ export function CpuSelection({
               type="button"
             >
               <span className="cpu-order">
-                {selectedIndex >= 0 ? `${selectedIndex + 1}번 좌석` : `Stage ${cpu.defeat_stage}`}
+                {selectedIndex >= 0 ? `${selectedIndex + 1}번 좌석` : '선택 가능'}
               </span>
-              <strong>{cpu.name}</strong>
+              <span className="cpu-profile">
+                {!cpu.profile_image_key && (
+                  <span
+                    aria-label="프로필 이미지 없음"
+                    className="profile-placeholder"
+                  >
+                    {cpu.name.slice(0, 1)}
+                  </span>
+                )}
+                <strong>{cpu.name}</strong>
+              </span>
+              <span className="cpu-stage">{defeatStageLabel(cpu.defeat_stage)}</span>
               <span>{cpu.style}</span>
               <p>{cpu.short_description}</p>
-              {unavailable && <small>Tier {cpu.defeat_stage} 미구현</small>}
+              {unavailable && <small>최종 완료 · 선택 불가</small>}
             </button>
           )
         })}
+      </div>
+      <div className="stage-guide" aria-label="패배 단계 안내">
+        {DEFEAT_STAGE_LABELS.map((label, stage) => (
+          <span key={label}>Stage {stage}: {label}</span>
+        ))}
       </div>
       {cpus.length === 0 && <p className="empty-message">선택 가능한 CPU가 없습니다.</p>}
       {error && <p className="form-error" role="alert">{error}</p>}

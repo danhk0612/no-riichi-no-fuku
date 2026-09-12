@@ -3,7 +3,13 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.db.models import CpuCharacter, CpuDialogue, User, UserCpuProgress
+from app.db.models import (
+    CpuCharacter,
+    CpuDialogue,
+    CpuResultAsset,
+    User,
+    UserCpuProgress,
+)
 
 
 class AdminEntityNotFoundError(RuntimeError):
@@ -60,6 +66,18 @@ def create_cpu_character(
                 defeat_stage=0,
             )
             for member_id in member_ids
+        ]
+    )
+    session.add_all(
+        [
+            CpuResultAsset(
+                cpu_character_id=cpu.id,
+                defeat_stage=defeat_stage,
+                storage_key=None,
+                mime_type=None,
+                active=False,
+            )
+            for defeat_stage in (1, 2, 3)
         ]
     )
     session.flush()

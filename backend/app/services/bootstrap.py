@@ -7,10 +7,13 @@ from argon2 import PasswordHasher
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.db.models import CpuCharacter, User
+from app.db.models import CpuCharacter, CpuDialogue, CpuResultAsset, User
 
 
 CPU_SEED_PATH = Path(__file__).resolve().parents[1] / "seeds" / "cpu_characters.json"
+CPU_DIALOGUE_SEED_PATH = (
+    Path(__file__).resolve().parents[1] / "seeds" / "cpu_dialogues.json"
+)
 
 
 class BootstrapConflictError(RuntimeError):
@@ -84,6 +87,73 @@ def seed_cpu_characters(
             )
         )
         created += 1
+
+    session.flush()
+    return created
+
+
+def seed_cpu_dialogues(
+    session: Session,
+    seed_path: Path = CPU_DIALOGUE_SEED_PATH,
+) -> int:
+    seed_entries = json.loads(seed_path.read_text(encoding="utf-8"))
+    created = 0
+
+    for slug, event_pools in seed_entries.items():
+        cpu = session.scalar(
+            select(CpuCharacter).where(CpuCharacter.slug == slug)
+        )
+        if cpu is None:
+            raise ValueError(f"Dialogue seed CPU does not exist: {slug}")
+        for event_key, lines in event_pools.items():
+            existing = session.scalar(
+                select(CpuDialogue.id).where(
+                    CpuDialogue.cpu_character_id == cpu.id,
+                    CpuDialogue.event_key == event_key,
+                )
+            )
+            if existing is not None:
+                continue
+            for text in lines:
+                session.add(
+                    CpuDialogue(
+                        cpu_character_id=cpu.id,
+                        event_key=event_key,
+                        text=text,
+                        active=True,
+                    )
+                )
+                created += 1
+
+    session.flush()
+    return created
+
+
+def seed_result_asset_slots(session: Session) -> int:
+    created = 0
+    cpu_ids = session.scalars(select(CpuCharacter.id)).all()
+    existing_slots = set(
+        session.execute(
+            select(
+                CpuResultAsset.cpu_character_id,
+                CpuResultAsset.defeat_stage,
+            )
+        ).all()
+    )
+    for cpu_id in cpu_ids:
+        for defeat_stage in (1, 2, 3):
+            if (cpu_id, defeat_stage) in existing_slots:
+                continue
+            session.add(
+                CpuResultAsset(
+                    cpu_character_id=cpu_id,
+                    defeat_stage=defeat_stage,
+                    storage_key=None,
+                    mime_type=None,
+                    active=False,
+                )
+            )
+            created += 1
 
     session.flush()
     return created
