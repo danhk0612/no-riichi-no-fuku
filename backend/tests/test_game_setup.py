@@ -124,8 +124,8 @@ class GameSetupServiceTest(unittest.TestCase):
         first = self.cpu_ids[0]
         progress = self.session.get(UserCpuProgress, (self.member.id, first))
         assert progress is not None
-        progress.defeat_stage = 1
-        with self.assertRaisesRegex(CpuTierUnavailableError, "tier 1"):
+        progress.defeat_stage = 2
+        with self.assertRaisesRegex(CpuTierUnavailableError, "tier 2"):
             create_game_session(
                 self.session,
                 self.member,
@@ -133,6 +133,7 @@ class GameSetupServiceTest(unittest.TestCase):
                 seed=5,
             )
 
+        progress.defeat_stage = 1
         received: list[tuple[int, int | None]] = []
 
         def test_factory(choice, *, seed):

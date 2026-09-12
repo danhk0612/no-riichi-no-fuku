@@ -10,6 +10,7 @@ from app.db.models import CpuCharacter, User, UserCpuProgress
 from app.mahjong.agent import MahjongAgent
 from app.mahjong.session import AuthoritativeGameSession, CPU_SEATS
 from app.mahjong.tier0 import Tier0Agent
+from app.mahjong.tier1 import Tier1Agent
 
 
 class GameSetupError(RuntimeError):
@@ -81,11 +82,14 @@ def create_production_cpu_agent(
     *,
     seed: int | None,
 ) -> MahjongAgent:
-    if choice.defeat_stage != 0:
+    if choice.defeat_stage == 0:
+        return Tier0Agent(seed=seed)
+    elif choice.defeat_stage == 1:
+        return Tier1Agent(seed=seed)
+    else:
         raise CpuTierUnavailableError(
             f"CPU tier {choice.defeat_stage} is not implemented"
         )
-    return Tier0Agent(seed=seed)
 
 
 def create_game_session(
