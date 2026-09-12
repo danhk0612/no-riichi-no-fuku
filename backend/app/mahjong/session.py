@@ -28,6 +28,13 @@ class HumanTurn:
     legal_actions: tuple[dict[str, object], ...]
 
 
+@dataclass(frozen=True)
+class PendingGameEvents:
+    """마지막 step에서 발생한 게임 이벤트 (대사 생성용)"""
+
+    events: tuple[dict[str, object], ...]
+
+
 class AuthoritativeGameSession:
     def __init__(
         self,
@@ -51,6 +58,7 @@ class AuthoritativeGameSession:
         self._max_steps = max_steps
         self._steps = 0
         self._result_settled = False
+        self._pending_events: list[dict[str, object]] = []
 
     @property
     def started(self) -> bool:
@@ -67,6 +75,15 @@ class AuthoritativeGameSession:
     @property
     def result_settled(self) -> bool:
         return self._result_settled
+
+    def pending_events(self) -> PendingGameEvents:
+        """
+        마지막 step 이후 누적된 게임 이벤트를 반환한다.
+        이 메서드를 호출하면 누적된 이벤트가 소비된다.
+        """
+        events = tuple(self._pending_events)
+        self._pending_events.clear()
+        return PendingGameEvents(events=events)
 
     def start(self) -> None:
         self._adapter.start()
@@ -144,3 +161,15 @@ class AuthoritativeGameSession:
         self._steps += 1
         if self._steps > self._max_steps:
             raise GameSessionStateError("match exceeded the step limit")
+        
+        # 각 좌석의 observation에서 events를 수집
+        for observation in self._adapter.pending_observations.values():
+            obs_dict = observation.to_dict()
+            events = obs_dict.get("events")
+            if isinstance(events, list):
+                for event in events:
+                    if isinstance(event, dict):
+                        self._pending_events.append(event)
+                    # pybind 객체면 dict로 변환 시도
+                    elif hasattr(event, "to_dict"):
+                        self._pending_events.append(event.to_dict())

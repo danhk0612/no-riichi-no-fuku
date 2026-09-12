@@ -26,6 +26,7 @@ from app.schemas.game import (
     CpuChoiceResponse,
     CreateGameSessionRequest,
     CreateGameSessionResponse,
+    DialogueEventResponse,
 )
 from app.services.game_registry import (
     ActiveGameExistsError,
@@ -124,7 +125,38 @@ async def send_registered_game_state(
     session_factory: sessionmaker[Session],
     registry: GameRegistry,
 ) -> None:
+    """게임 상태를 WebSocket으로 전송한다. 대사 이벤트가 있으면 먼저 전송한다."""
     with registered.lock:
+        # 대사 이벤트가 있으면 먼저 전송
+        if registered.game is not None:
+            pending_events = registered.game.pending_events()
+            if pending_events.events:
+                with session_factory() as session:
+                    from app.services.dialogue_service import (
+                        DialogueSelector,
+                        extract_game_events,
+                    )
+
+                    dialogue_selector = DialogueSelector()
+                    dialogue_events = extract_game_events(
+                        events=pending_events.events,
+                        cpu_character_by_seat=dict(
+                            registered.game.cpu_character_by_seat
+                        ),
+                        dialogue_selector=dialogue_selector,
+                        session=session,
+                    )
+                    
+                    # 각 대사 이벤트를 개별 메시지로 전송
+                    for dialogue_event in dialogue_events:
+                        await websocket.send_json({
+                            "type": "dialogue_event",
+                            "cpu_character_id": dialogue_event.cpu_character_id,
+                            "seat": dialogue_event.seat,
+                            "event_key": dialogue_event.event_key,
+                            "text": dialogue_event.text,
+                        })
+
         if not registered.done:
             if registered.game is None:
                 raise GameRegistryError("active game state is unavailable")

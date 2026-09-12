@@ -1,4 +1,5 @@
 import type {
+  DialogueEvent,
   GameScreenState,
   HumanObservation,
   LegalAction,
@@ -64,9 +65,11 @@ function TileRow({ tiles, emptyText }: { tiles: number[]; emptyText: string }) {
 function SeatPanel({
   player,
   observation,
+  dialogue,
 }: {
   player: PlayerSeat
   observation: HumanObservation
+  dialogue?: DialogueEvent
 }) {
   const seat = player.seat
   return (
@@ -80,6 +83,11 @@ function SeatPanel({
       </header>
       <p className="score">{observation.scores[seat].toLocaleString()}점</p>
       {observation.riichi_declared[seat] && <p className="riichi">리치</p>}
+      {dialogue && !player.isHuman && (
+        <div className="speech-bubble">
+          <p>{dialogue.text}</p>
+        </div>
+      )}
       <div className="discards">
         <TileRow tiles={observation.discards[seat]} emptyText="버림패 없음" />
       </div>
@@ -170,11 +178,22 @@ function ActiveTable({
     isHuman: seat === 0,
   }))
 
+  // 각 좌석별 최신 대사 찾기 (좌석별로 가장 최근 대사만)
+  const dialogueBySeat = new Map<number, DialogueEvent>()
+  for (const dialogue of state.recentDialogues) {
+    dialogueBySeat.set(dialogue.seat, dialogue)
+  }
+
   return (
     <>
       <section className="mahjong-table" aria-label="마작 테이블">
         {players.map((player) => (
-          <SeatPanel key={player.seat} player={player} observation={observation} />
+          <SeatPanel
+            key={player.seat}
+            player={player}
+            observation={observation}
+            dialogue={dialogueBySeat.get(player.seat)}
+          />
         ))}
         <div className="round-status">
           <strong>{roundWindLabel(observation.round_wind)}풍전</strong>
