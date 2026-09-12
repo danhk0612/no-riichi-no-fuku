@@ -10,25 +10,27 @@ and process-local authoritative game session foundation are implemented. A minim
 table renders HumanTurn data, legal actions and match results without image assets. The production
 Tier 0 CPU uses shanten, approximate ukeire, a weak riichi-genbutsu bias and seeded weighted
 selection. **Tier 1 CPU is now implemented** with value awareness (dora, yaku potential), improved
-defense (danger levels), basic push/fold decisions, and enhanced riichi/call evaluation. Completed
-authoritative sessions settle exactly one fourth-place outcome: player HP or the mapped user's CPU
-progress. Authenticated members can list active, incomplete CPU choices; validated groups of three
-create a fresh authoritative session through a stage-aware agent factory that maps stage 0 to
-Tier0Agent and stage 1 to Tier1Agent. Authenticated REST creation now persists the session seed,
-CPU/player snapshots and accepted human action log while caching the live RiichiEnv object in an
-owner-scoped registry. The game WebSocket authenticates with its first message, accepts only a
-legal-action index with the current action version, and commits every accepted human action. A cache
-miss or server restart reconstructs an active match by deterministic replay; completed results and
+defense (danger levels), basic push/fold decisions, and enhanced riichi/call evaluation. **Tier 2 
+CPU is now implemented** with suji/wall defense, placement-aware strategies, expected value 
+computation, and endgame ranking conditions. Completed authoritative sessions settle exactly one 
+fourth-place outcome: player HP or the mapped user's CPU progress. Authenticated members can list 
+active, incomplete CPU choices; validated groups of three create a fresh authoritative session 
+through a stage-aware agent factory that maps stage 0 to Tier0Agent, stage 1 to Tier1Agent, and 
+stage 2 to Tier2Agent. Authenticated REST creation now persists the session seed, CPU/player 
+snapshots and accepted human action log while caching the live RiichiEnv object in an owner-scoped 
+registry. The game WebSocket authenticates with its first message, accepts only a legal-action 
+index with the current action version, and commits every accepted human action. A cache miss or 
+server restart reconstructs an active match by deterministic replay; completed results and 
 settlement remain durable and idempotent. Game dialogue events are extracted from authoritative
 session observations, matched with active CPU dialogues, and delivered with HumanTurn messages.
 The React client now provides minimal member registration/login, selectable CPU cards, REST game
 creation, first-message-authenticated WebSocket play, authoritative result settlement display,
 speech bubbles during play, and the return-to-selection loop. Access tokens remain in tab memory
-only, and stage 2 CPU cards are explicitly unavailable until Tier 2 agents exist. After a page
-refresh the member must log in again; the client then discovers the server's active session and
-reconnects to the persisted turn. New members start with current/max HP 3 and stage 0 progress for
-every seeded CPU. Docker/Compose runtime validation is intentionally deferred to the final integration
-stage.
+only. All three CPU tiers (0/1/2) are now available and functional in the selection UI. After a 
+page refresh the member must log in again; the client then discovers the server's active session 
+and reconnects to the persisted turn. New members start with current/max HP 3 and stage 0 progress 
+for every seeded CPU. Docker/Compose runtime validation is intentionally deferred to the final 
+integration stage.
 
 Repository:
 
@@ -108,6 +110,19 @@ danhk0612/no-riichi-no-fuku
 - The nginx `/api/` location is configured to forward WebSocket upgrades, but its actual container
   runtime remains part of the deferred final Docker validation.
 
+## Verified in Tier 2 CPU implementation
+
+- Tier2Agent class implements suji and wall defense calculations.
+- Suji safety: tiles 3 apart from opponent discards are considered safer.
+- Wall safety: tile kinds with 3+ visible copies are considered safer.
+- Game state analysis computes current scores, ranks, remaining tiles, and final round status.
+- Placement-aware strategy: 4th place prioritizes offense, 1st place in final round prioritizes defense.
+- Expected value computation weighs efficiency, value, danger, and placement conditions.
+- Factory maps defeat_stage 2 to Tier2Agent; all three tiers (0/1/2) are now implemented.
+- Fixed-seed match with four Tier2Agent instances completes in under 2000 steps.
+- Backend test suite: 42 core tests passed (9 Tier2Agent tests, all Tier0/Tier1/session/result tests).
+- Frontend TypeScript production build passed.
+
 ## Deferred to final integration
 
 - `docker compose config/build/up`
@@ -174,7 +189,14 @@ Backend test suite: 49 tests passed. Frontend TypeScript/Vite production build p
 
 ## Next entry point
 
-Read:
+All three CPU tiers (0/1/2) are now implemented and functional. The next recommended entry points are:
+
+1. Automated difficulty tuning through fixed-seed tournament simulation
+2. CPU style personality parameter integration (aggression, defense, call_preference, etc.)
+3. CG result asset upload and display integration
+4. Docker/Compose full runtime validation
+
+For guidance, read:
 
 1. `AGENTS.md`
 2. `docs/WORK_INSTRUCTIONS.md`
