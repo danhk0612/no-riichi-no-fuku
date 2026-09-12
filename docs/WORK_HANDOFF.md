@@ -299,17 +299,24 @@ Stage/Tier 매핑은 불변(stage 0→Tier0, 1→Tier1, 2→Tier2)이며, 동일
 
 Backend test suite: 64 tests passed. Frontend TypeScript/Vite production build passed.
 
-## Next entry point
+## Next entry points
 
-**Decide the unresolved profile/CG media policy, then implement result asset upload and display
-integration.** The dialogue WebSocket contract, speech bubbles, and server-side cooldown/probability
-policy are complete; do not rebuild them.
+Recommended work (in any order):
+
+1. **CG result asset upload and display integration**: First decide the unresolved upload format,
+   size, and storage-key rules. Store metadata only in DB and files in the persistent volume.
+   Do NOT add CG binary files to the Git repository.
+
+2. **Deferred dialogue events**: Add keys such as game_start, final_east, and match result events.
+   The WebSocket contract, speech bubbles, and cooldown/probability policy are complete; do not
+   rebuild them.
+
+3. **Docker/Compose full runtime validation**: Verify `docker compose config/build/up`, nginx-proxied
+   `/api/health`, PostgreSQL container health, and `postgres_data`/`media_data` persistence.
+   Full Docker validation has been intentionally deferred until feature implementation completes.
 
 Read:
 
 1. `AGENTS.md`
 2. `docs/WORK_INSTRUCTIONS.md`
 3. `docs/WORK_START.md`
-
-Profile/CPU image upload and CG management remain undecided. Do not implement media upload paths
-or add CG binary files to the repository.
