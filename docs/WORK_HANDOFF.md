@@ -139,6 +139,8 @@ danhk0612/no-riichi-no-fuku
   administrator password, CPU progress, asset metadata, and the uploaded media file.
 - `postgres_data` is mounted at `/var/lib/postgresql/data`; `media_data` is mounted at
   `/data/media`.
+- The current backend suite passed all 66 discovered tests inside the built API image. The
+  frontend production build passed as part of the Docker image build.
 - No CG binary was created in or committed to the repository.
 - Cloud VM setup caveat: Docker was initially absent. After installing it, stale legacy iptables
   rules dropped traffic handled by Docker's nftables bridge and caused an initial nginx 504.
