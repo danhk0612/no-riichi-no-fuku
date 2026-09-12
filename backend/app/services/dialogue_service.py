@@ -68,7 +68,7 @@ class DialogueSelector:
 
 def extract_game_events(
     *,
-    events: Sequence[dict[str, object]],
+    events: Sequence[dict[str, object] | str],
     cpu_character_by_seat: dict[int, int],
     dialogue_selector: DialogueSelector,
     session: Session,
@@ -76,8 +76,10 @@ def extract_game_events(
     """
     RiichiEnv 이벤트 목록에서 대사를 생성할 게임 이벤트를 추출한다.
     
+    RiichiEnv 0.4.8의 events는 JSON 문자열 리스트로 반환된다.
+    
     Args:
-        events: RiichiEnv observation의 events 필드
+        events: RiichiEnv observation의 events 필드 (JSON 문자열 또는 dict)
         cpu_character_by_seat: 좌석 번호 -> CPU 캐릭터 ID 매핑
         dialogue_selector: 대사 선택기
         session: DB 세션
@@ -85,10 +87,20 @@ def extract_game_events(
     Returns:
         대사 이벤트 목록
     """
+    import json
+    
     dialogue_events: list[DialogueEvent] = []
 
-    for event in events:
-        if not isinstance(event, dict):
+    for event_raw in events:
+        # RiichiEnv 0.4.8은 이벤트를 JSON 문자열로 반환
+        if isinstance(event_raw, str):
+            try:
+                event = json.loads(event_raw)
+            except json.JSONDecodeError:
+                continue
+        elif isinstance(event_raw, dict):
+            event = event_raw
+        else:
             continue
 
         event_type = event.get("type")
@@ -125,47 +137,48 @@ def _map_event_type_to_key(
     event: dict[str, object],
 ) -> str | None:
     """
-    RiichiEnv 이벤트 타입을 대사 이벤트 키로 매핑한다.
+    RiichiEnv 0.4.8 이벤트 타입을 대사 이벤트 키로 매핑한다.
     
-    초기 후보 이벤트:
-    - riichi (리치 선언)
-    - chi (치)
-    - pon (퐁)
-    - kan (깡: 대명깡/암깡/가깡 통합)
-    - ron (론 화료)
-    - tsumo (쯔모 화료)
-    - deal_in (방총 - 타인의 ron 이벤트에서 방총한 사람)
+    검증된 RiichiEnv 0.4.8 이벤트 타입:
+    - reach: 리치 선언 → riichi
+    - reach_accepted: 리치 수리 (현재 대사 없음)
+    - chi: 치 → chi
+    - pon: 퐁 → pon
+    - ankan: 암깡 → kan
+    - kakan: 가깡 → kan
+    - daiminkan: 대명깡 → kan
+    - hora: 화료 (target 필드로 ron/tsumo 구분)
+      - target이 있고 actor와 다름 → ron
+      - 그 외 → tsumo
     
-    추가 후보:
-    - game_start (게임 시작 - 외부에서 처리)
-    - final_east (동4국 진입 - 외부에서 처리)
-    - match_first, match_last (최종 순위 - 외부에서 처리)
-    - large_win (만관 이상 화료 - 외부에서 처리)
-    - defeat_stage_N (결과 화면 - 외부에서 처리)
+    참고: 이벤트는 JSON 문자열로 반환되므로 파싱 필요
     """
     if not isinstance(event_type, str):
         return None
 
-    # RiichiEnv/MJAI 이벤트 타입을 대사 키로 매핑
-    # 실제 RiichiEnv 이벤트 타입은 확인 필요하지만 일반적인 MJAI 형식을 따름
     event_type_lower = event_type.lower()
 
-    if event_type_lower in ("reach", "riichi"):
+    # 리치 선언
+    if event_type_lower == "reach":
         return "riichi"
+    # 치
     elif event_type_lower == "chi":
         return "chi"
+    # 퐁
     elif event_type_lower == "pon":
         return "pon"
-    elif event_type_lower in ("daiminkan", "ankan", "kakan", "kan"):
+    # 깡 (모든 타입 통합)
+    elif event_type_lower in ("ankan", "kakan", "daiminkan"):
         return "kan"
-    elif event_type_lower in ("hora", "agari"):
-        # hora 이벤트에서 ron/tsumo 구분
+    # 화료 (ron/tsumo 구분)
+    elif event_type_lower == "hora":
         target = event.get("target")
-        if isinstance(target, int) and target != event.get("actor"):
-            # target이 있고 actor와 다르면 ron
+        actor = event.get("actor")
+        # target이 있고 actor와 다르면 ron (타인의 버린 패로 화료)
+        if isinstance(target, int) and isinstance(actor, int) and target != actor:
             return "ron"
         else:
-            # 그 외는 tsumo
+            # 그 외는 tsumo (자신이 뽑은 패로 화료)
             return "tsumo"
     else:
         return None

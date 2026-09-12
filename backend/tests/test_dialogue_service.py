@@ -113,7 +113,9 @@ def test_dialogue_selector_returns_none_when_no_dialogue(session: Session) -> No
 
 
 def test_extract_game_events_extracts_riichi(session: Session) -> None:
-    """extract_game_events가 리치 이벤트를 추출한다"""
+    """extract_game_events가 리치 이벤트를 추출한다 (RiichiEnv 0.4.8 JSON 문자열)"""
+    import json
+    
     cpu = CpuCharacter(
         slug="test-cpu",
         name="테스트 CPU",
@@ -140,9 +142,10 @@ def test_extract_game_events_extracts_riichi(session: Session) -> None:
     session.add(dialogue)
     session.flush()
 
+    # RiichiEnv 0.4.8은 이벤트를 JSON 문자열로 반환
     events = [
-        {"type": "riichi", "actor": 1},
-        {"type": "dahai", "actor": 0},  # 사람 좌석, 무시됨
+        json.dumps({"type": "reach", "actor": 1}),
+        json.dumps({"type": "dahai", "actor": 0}),  # 사람 좌석, 무시됨
     ]
     cpu_character_by_seat = {1: cpu.id}
     selector = DialogueSelector(rng=random.Random(42))
@@ -163,6 +166,8 @@ def test_extract_game_events_extracts_riichi(session: Session) -> None:
 
 def test_extract_game_events_ignores_human_seat(session: Session) -> None:
     """extract_game_events가 사람 좌석 이벤트는 무시한다"""
+    import json
+    
     cpu = CpuCharacter(
         slug="test-cpu",
         name="테스트 CPU",
@@ -181,7 +186,7 @@ def test_extract_game_events_ignores_human_seat(session: Session) -> None:
     session.flush()
 
     events = [
-        {"type": "riichi", "actor": 0},  # 사람 좌석
+        json.dumps({"type": "reach", "actor": 0}),  # 사람 좌석
     ]
     cpu_character_by_seat = {1: cpu.id}
     selector = DialogueSelector()
@@ -198,6 +203,8 @@ def test_extract_game_events_ignores_human_seat(session: Session) -> None:
 
 def test_extract_game_events_handles_multiple_events(session: Session) -> None:
     """extract_game_events가 여러 이벤트를 처리한다"""
+    import json
+    
     cpu1 = CpuCharacter(
         slug="test-cpu-1",
         name="테스트 CPU 1",
@@ -245,8 +252,8 @@ def test_extract_game_events_handles_multiple_events(session: Session) -> None:
     session.flush()
 
     events = [
-        {"type": "riichi", "actor": 1},
-        {"type": "pon", "actor": 2},
+        json.dumps({"type": "reach", "actor": 1}),
+        json.dumps({"type": "pon", "actor": 2}),
     ]
     cpu_character_by_seat = {1: cpu1.id, 2: cpu2.id}
     selector = DialogueSelector(rng=random.Random(42))
@@ -265,3 +272,116 @@ def test_extract_game_events_handles_multiple_events(session: Session) -> None:
     assert dialogue_events[1].seat == 2
     assert dialogue_events[1].event_key == "pon"
     assert dialogue_events[1].text == "퐁!"
+
+
+def test_extract_game_events_handles_kan_types(session: Session) -> None:
+    """extract_game_events가 모든 깡 타입을 kan으로 매핑한다"""
+    import json
+    
+    cpu = CpuCharacter(
+        slug="test-cpu",
+        name="테스트 CPU",
+        age_adult=True,
+        style="테스트",
+        short_description="테스트 캐릭터",
+        active=True,
+        aggression=0.5,
+        defense=0.5,
+        call_preference=0.5,
+        riichi_preference=0.5,
+        hand_value_preference=0.5,
+        speed_preference=0.5,
+    )
+    session.add(cpu)
+    session.flush()
+
+    dialogue = CpuDialogue(
+        cpu_character_id=cpu.id,
+        event_key="kan",
+        text="깡!",
+        active=True,
+    )
+    session.add(dialogue)
+    session.flush()
+
+    # ankan, kakan, daiminkan 모두 kan으로 매핑
+    events = [
+        json.dumps({"type": "ankan", "actor": 1}),
+        json.dumps({"type": "kakan", "actor": 1}),
+        json.dumps({"type": "daiminkan", "actor": 1}),
+    ]
+    cpu_character_by_seat = {1: cpu.id}
+    selector = DialogueSelector(rng=random.Random(42))
+
+    dialogue_events = extract_game_events(
+        events=events,
+        cpu_character_by_seat=cpu_character_by_seat,
+        dialogue_selector=selector,
+        session=session,
+    )
+
+    assert len(dialogue_events) == 3
+    for event in dialogue_events:
+        assert event.event_key == "kan"
+        assert event.text == "깡!"
+
+
+def test_extract_game_events_distinguishes_ron_tsumo(session: Session) -> None:
+    """extract_game_events가 hora 이벤트를 ron과 tsumo로 구분한다"""
+    import json
+    
+    cpu = CpuCharacter(
+        slug="test-cpu",
+        name="테스트 CPU",
+        age_adult=True,
+        style="테스트",
+        short_description="테스트 캐릭터",
+        active=True,
+        aggression=0.5,
+        defense=0.5,
+        call_preference=0.5,
+        riichi_preference=0.5,
+        hand_value_preference=0.5,
+        speed_preference=0.5,
+    )
+    session.add(cpu)
+    session.flush()
+
+    ron_dialogue = CpuDialogue(
+        cpu_character_id=cpu.id,
+        event_key="ron",
+        text="론!",
+        active=True,
+    )
+    tsumo_dialogue = CpuDialogue(
+        cpu_character_id=cpu.id,
+        event_key="tsumo",
+        text="쯔모!",
+        active=True,
+    )
+    session.add_all([ron_dialogue, tsumo_dialogue])
+    session.flush()
+
+    # target이 있고 actor와 다르면 ron, 그 외는 tsumo
+    events = [
+        json.dumps({"type": "hora", "actor": 1, "target": 0}),  # ron
+        json.dumps({"type": "hora", "actor": 1}),  # tsumo (target 없음)
+        json.dumps({"type": "hora", "actor": 1, "target": 1}),  # tsumo (target == actor)
+    ]
+    cpu_character_by_seat = {1: cpu.id}
+    selector = DialogueSelector(rng=random.Random(42))
+
+    dialogue_events = extract_game_events(
+        events=events,
+        cpu_character_by_seat=cpu_character_by_seat,
+        dialogue_selector=selector,
+        session=session,
+    )
+
+    assert len(dialogue_events) == 3
+    assert dialogue_events[0].event_key == "ron"
+    assert dialogue_events[0].text == "론!"
+    assert dialogue_events[1].event_key == "tsumo"
+    assert dialogue_events[1].text == "쯔모!"
+    assert dialogue_events[2].event_key == "tsumo"
+    assert dialogue_events[2].text == "쯔모!"
