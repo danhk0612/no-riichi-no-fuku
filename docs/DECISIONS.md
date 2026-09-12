@@ -424,8 +424,26 @@ hand_value_preference, speed_preference)를 Tier 0/1/2 Agent의 의사결정에 
 - 최종 전체 완료 후 엔딩 처리
 - CG 실제 이미지/연출
 - 캐릭터 최종 이름/설정/프로필 이미지
-- 프로필/CPU 이미지의 허용 형식, 용량 제한과 저장 key 정책
+- 프로필/CPU 프로필 이미지의 허용 형식, 용량 제한과 저장 key 정책
 - Mortal 사용 여부
+
+## 결과 CG 미디어 정책 (2026-09-12)
+
+- 결과 CG 업로드 형식은 JPEG, PNG, WebP만 허용한다. 서버는 요청의 파일명이나
+  `Content-Type`만 신뢰하지 않고 파일 signature로 형식을 판별한다.
+- 파일 하나의 최대 크기는 5 MiB (`5 * 1024 * 1024` bytes)이다.
+- 런타임 media volume의 storage key는
+  `/cpu/{cpu_id}/result/stage-{1|2|3}/{uuid}.{jpg|png|webp}` 형식으로 서버가 생성한다.
+  클라이언트가 storage key를 지정할 수 없다.
+- 업로드·교체·삭제와 전체 metadata 조회는 최초 비밀번호 변경을 마친 활성
+  superadmin만 할 수 있다.
+- 일반 회원은 자신의 `user_cpu_progress.defeat_stage` 이하인 단계의 활성 결과 CG
+  metadata와 인증된 파일 URL만 받을 수 있다. 대국 종료 응답은 방금 해금된 단계의
+  asset만 포함한다.
+- CG 바이너리와 더미 CG는 Git에 저장하지 않는다. 테스트는 실제 CG 대신 작은
+  synthetic signature와 metadata fixture만 사용한다.
+- 현재 미디어 구현 범위는 `defeat_stage` 1/2/3 결과 CG로 한정한다. 회원/CPU 프로필
+  이미지 업로드는 정책이 정해질 때까지 계속 범위 밖으로 둔다.
 
 ## 자동화된 난이도 튜닝 시뮬레이션
 
