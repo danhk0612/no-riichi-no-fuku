@@ -37,6 +37,12 @@ class CpuChoice:
     long_description: str | None
     profile_image_key: str | None
     defeat_stage: int
+    aggression: float
+    defense: float
+    call_preference: float
+    riichi_preference: float
+    hand_value_preference: float
+    speed_preference: float
 
 
 class CpuAgentFactory(Protocol):
@@ -73,6 +79,12 @@ def list_selectable_cpus(db_session: Session, user_id: int) -> list[CpuChoice]:
             long_description=cpu.long_description,
             profile_image_key=cpu.profile_image_key,
             defeat_stage=defeat_stage,
+            aggression=cpu.aggression,
+            defense=cpu.defense,
+            call_preference=cpu.call_preference,
+            riichi_preference=cpu.riichi_preference,
+            hand_value_preference=cpu.hand_value_preference,
+            speed_preference=cpu.speed_preference,
         )
         for cpu, defeat_stage in rows
     ]
@@ -84,11 +96,35 @@ def create_production_cpu_agent(
     seed: int | None,
 ) -> MahjongAgent:
     if choice.defeat_stage == 0:
-        return Tier0Agent(seed=seed)
+        return Tier0Agent(
+            seed=seed,
+            aggression=choice.aggression,
+            defense=choice.defense,
+            call_preference=choice.call_preference,
+            riichi_preference=choice.riichi_preference,
+            hand_value_preference=choice.hand_value_preference,
+            speed_preference=choice.speed_preference,
+        )
     elif choice.defeat_stage == 1:
-        return Tier1Agent(seed=seed)
+        return Tier1Agent(
+            seed=seed,
+            aggression=choice.aggression,
+            defense=choice.defense,
+            call_preference=choice.call_preference,
+            riichi_preference=choice.riichi_preference,
+            hand_value_preference=choice.hand_value_preference,
+            speed_preference=choice.speed_preference,
+        )
     elif choice.defeat_stage == 2:
-        return Tier2Agent(seed=seed)
+        return Tier2Agent(
+            seed=seed,
+            aggression=choice.aggression,
+            defense=choice.defense,
+            call_preference=choice.call_preference,
+            riichi_preference=choice.riichi_preference,
+            hand_value_preference=choice.hand_value_preference,
+            speed_preference=choice.speed_preference,
+        )
     else:
         raise CpuTierUnavailableError(
             f"CPU tier {choice.defeat_stage} is not implemented"

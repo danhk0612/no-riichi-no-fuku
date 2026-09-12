@@ -244,3 +244,63 @@ rates range from 23.4% to 27.1%, and fourth-place rates from 24.0% to 26.6%. The
 worst-move easy mode" principle is preserved. No tuning adjustments were needed.
 
 Backend test suite: 65 tests passed. Frontend TypeScript/Vite production build passed.
+
+## CPU Personality Parameter Integration (2026-09-12)
+
+CPU 캐릭터별 성향 파라미터(aggression, defense, call_preference, riichi_preference,
+hand_value_preference, speed_preference)가 Tier 0/1/2 Agent 의사결정에 연결되었다.
+
+### Implementation
+
+- `app/services/game_setup.py`: `CpuChoice` dataclass에 6개 personality 파라미터 추가
+- `list_selectable_cpus()`가 DB의 personality 필드를 포함하도록 수정
+- `create_production_cpu_agent()`가 선택된 CPU의 성향값을 각 Tier agent 생성자에 전달
+- `app/mahjong/tier0.py`: riichi 선언 판단, call 수용 threshold, defense/speed 가중치
+- `app/mahjong/tier1.py`: push/fold 판단 threshold, value/speed 밸런스, call 확률 조정
+- `app/mahjong/tier2.py`: EV 계산 가중치, placement 판단 urgency, defense threshold
+- `tests/test_personality_integration.py`: 파라미터 저장 및 영향 검증 7개 테스트
+
+### Integration Points
+
+**Tier0Agent:**
+- `_should_declare_riichi()`: riichi_preference/defense 비율로 선언 확률 조정
+- `_choose_discard()`: defense로 안전패 가중치, speed_preference로 유효패 가중치
+- `_improving_calls()`: call_preference < 0.8이면 거부, < 1.0이면 확률적 거부
+
+**Tier1Agent:**
+- `_should_riichi()`: riichi_preference/defense 비율, aggression 반영한 점수 threshold
+- `_choose_discard()`: speed/value/defense 가중치 분리
+- `_should_fold()`: aggression/defense 비율로 fold threshold 조정
+- `_improving_calls()`: call_preference/hand_value_preference로 call 확률 조정
+
+**Tier2Agent:**
+- `_should_riichi()`: riichi_preference/defense/aggression으로 종반 리치 판단
+- `_compute_expected_value()`: 6개 파라미터로 EV 가중치 분리
+- `_should_fold()`: aggression/defense/hand_value_preference로 fold 판단
+- `_improving_calls()`: call_preference/hand_value_preference/aggression으로 call 판단
+
+### Personality Separation
+
+Stage/Tier 매핑은 불변(stage 0→Tier0, 1→Tier1, 2→Tier2)이며, 동일 Tier 내에서도
+캐릭터별 성향 차이가 의사결정에 반영된다. seed data의 6개 CPU:
+- tachibana-rin: balanced (모든 파라미터 1.0)
+- kurokawa-mio: defensive (defense 1.25, aggression 0.8)
+- amamiya-yuna: aggressive (aggression 1.25, defense 0.8, riichi 1.1)
+- shirogane-rei: menzen-riichi (call 0.7, riichi 1.3, value 1.1)
+- kanzaki-aya: fast-call (call 1.3, speed 1.3, riichi 0.8)
+- saionji-kaede: high-value (value 1.35, call 0.75, speed 0.8)
+
+Backend test suite: 64 tests passed. Frontend TypeScript/Vite production build passed.
+
+## Next entry point
+
+**Game dialogue event contract and speech-bubble integration**.
+
+Read:
+
+1. `AGENTS.md`
+2. `docs/WORK_INSTRUCTIONS.md`
+3. `docs/WORK_START.md`
+
+Profile/CPU image upload and CG management remain undecided. Do not implement media upload paths
+or add CG binary files to the repository.

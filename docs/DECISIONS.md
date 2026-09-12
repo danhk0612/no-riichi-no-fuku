@@ -374,6 +374,37 @@ Tenhou 계열 기본 규칙
 - factory는 `defeat_stage == 2`를 `Tier2Agent`로 매핑하며, stage 0/1/2 모두 구현되어
   선택 가능하다. stage 3은 여전히 최종 완료로 선택 불가이다.
 
+## CPU Personality Parameter Integration
+
+CPU 캐릭터 성향 파라미터(aggression, defense, call_preference, riichi_preference, 
+hand_value_preference, speed_preference)를 Tier 0/1/2 Agent의 의사결정에 연결했다.
+
+### 통합 범위
+
+- `CpuChoice` dataclass에 6개 personality 파라미터 추가
+- `Tier0Agent`, `Tier1Agent`, `Tier2Agent` 생성자에 파라미터 전달
+- 각 Tier의 핵심 의사결정 지점에 파라미터 가중치 적용:
+  - Tier0: riichi 선언, call 수용, defense 가중치
+  - Tier1: push/fold 판단, value/speed 밸런스, call 평가
+  - Tier2: EV 계산, placement 판단, defense 임계값
+
+### 파라미터 영향
+
+각 파라미터는 0.5~1.5 범위를 권장하며 1.0이 기본값이다. 예:
+- `riichi_preference=1.3`: 리치 선언을 더 적극적으로 선택
+- `defense=1.2`: 수비 가중치 증가, fold 판단 빠름
+- `call_preference=0.7`: 울기를 덜 선호, 멘젠 성향
+- `aggression=1.3`, `defense=0.8`: 공격적 push 성향
+
+동일 Tier라도 캐릭터별 파라미터 차이로 플레이 느낌이 달라진다. Stage/Tier 매핑은 
+기존과 동일하게 유지(stage 0→Tier0, 1→Tier1, 2→Tier2)한다.
+
+### 검증
+
+- `test_personality_integration.py`로 파라미터 저장 및 의사결정 영향 검증
+- 기존 64개 backend test 전체 통과
+- Frontend production build 정상
+
 ## 아직 결정하지 않음
 
 - 게임 오버 후 진행 초기화/재시작 정책

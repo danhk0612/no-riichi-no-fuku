@@ -37,8 +37,24 @@ class GameState:
 class Tier2Agent:
     """Advanced agent with placement awareness, suji/wall defense, and expected value."""
 
-    def __init__(self, *, seed: int | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        seed: int | None = None,
+        aggression: float = 1.0,
+        defense: float = 1.0,
+        call_preference: float = 1.0,
+        riichi_preference: float = 1.0,
+        hand_value_preference: float = 1.0,
+        speed_preference: float = 1.0,
+    ) -> None:
         self._rng = random.Random(seed)
+        self._aggression = aggression
+        self._defense = defense
+        self._call_preference = call_preference
+        self._riichi_preference = riichi_preference
+        self._hand_value_preference = hand_value_preference
+        self._speed_preference = speed_preference
 
     def choose_action(self, observation: Observation) -> Action:
         legal_actions = observation.legal_actions()
@@ -132,27 +148,30 @@ class Tier2Agent:
         dora_indicators = data.get("dora_indicators", [])
         dora_count = self._count_dora(observation.hand, dora_indicators)
 
+        defense_factor = self._defense / max(0.5, self._riichi_preference)
+        
         if game_state.opponent_riichi_count >= 2:
-            if dora_count >= 2 and game_state.my_score >= 8000:
+            if dora_count >= max(1, int(3 - self._riichi_preference)) and game_state.my_score >= 8000 * self._aggression:
                 return True
             return False
 
         if game_state.is_final_round:
-            if game_state.my_rank == 4 and game_state.remaining_tiles > 10:
+            if game_state.my_rank == 4 and game_state.remaining_tiles > 10 * self._aggression:
                 return True
-            if game_state.my_rank == 1 and game_state.my_score >= 30000:
+            if game_state.my_rank == 1 and game_state.my_score >= 30000 and defense_factor > 1.0:
                 return False
 
-        if dora_count >= 2:
+        dora_threshold = max(1, int(3 - self._riichi_preference))
+        if dora_count >= dora_threshold:
             return True
 
-        if game_state.my_score < 10000:
+        if game_state.my_score < 10000 * self._aggression:
             return True
 
         if game_state.opponent_riichi_count == 0:
             return True
 
-        return dora_count >= 1 or game_state.my_score < 15000
+        return dora_count >= 1 or game_state.my_score < 15000 * self._aggression
 
     def _choose_discard(
         self,
@@ -210,32 +229,38 @@ class Tier2Agent:
         evaluation: DiscardEvaluation,
         game_state: GameState,
     ) -> float:
+        efficiency_weight = 2.0 * self._speed_preference
+        dora_weight = 4.0 * self._hand_value_preference
+        yaku_weight = 3.0 * self._hand_value_preference
+        danger_weight = 2.0 * self._defense
+        safety_weight = 4.0 * self._defense
+        
         ev = 0.0
         
-        ev += evaluation.ukeire * 2.0
-        ev += evaluation.dora_count * 4.0
-        ev += evaluation.potential_yaku_bonus * 3.0
+        ev += evaluation.ukeire * efficiency_weight
+        ev += evaluation.dora_count * dora_weight
+        ev += evaluation.potential_yaku_bonus * yaku_weight
         
-        ev -= evaluation.danger_score * 2.0
-        ev += evaluation.safe_against_riichi * 4.0
+        ev -= evaluation.danger_score * danger_weight
+        ev += evaluation.safe_against_riichi * safety_weight
         
         if game_state.my_rank == 4:
-            ev += evaluation.ukeire * 1.5
-            ev += evaluation.dora_count * 2.0
+            ev += evaluation.ukeire * 1.5 * self._aggression
+            ev += evaluation.dora_count * 2.0 * self._hand_value_preference
         elif game_state.my_rank == 1 and game_state.is_final_round:
-            ev -= evaluation.danger_score * 1.5
-            ev += evaluation.safe_against_riichi * 2.0
+            ev -= evaluation.danger_score * 1.5 * self._defense
+            ev += evaluation.safe_against_riichi * 2.0 * self._defense
         
         if game_state.is_final_round:
             if game_state.my_rank == 4:
                 score_gap = game_state.scores[game_state.ranks.index(3)] - game_state.my_score
                 if score_gap > 0:
-                    urgency = min(3.0, score_gap / 4000)
+                    urgency = min(3.0, score_gap / 4000) * self._aggression
                     ev += evaluation.ukeire * urgency
         
         if game_state.remaining_tiles < 20:
-            danger_weight = (20 - game_state.remaining_tiles) / 10
-            ev -= evaluation.danger_score * danger_weight
+            danger_factor = (20 - game_state.remaining_tiles) / 10 * self._defense
+            ev -= evaluation.danger_score * danger_factor
         
         return ev
 
@@ -516,19 +541,24 @@ class Tier2Agent:
         if best_shanten < current_shanten:
             improving = [action for shanten, _, action in evaluated if shanten == best_shanten]
             
-            if game_state.is_final_round and game_state.my_rank == 4:
+            if game_state.is_final_round and game_state.my_rank == 4 and self._aggression > 0.9:
                 return improving
             
-            if game_state.opponent_riichi_count == 0:
+            if game_state.opponent_riichi_count == 0 or self._call_preference > 1.0:
+                if self._call_preference < 1.0:
+                    threshold = 0.6 + (self._call_preference * 0.4)
+                    if self._rng.random() > threshold:
+                        return []
                 return improving
             
             return []
 
         candidates = [action for shanten, dora, action in evaluated if shanten == best_shanten and dora > 0]
-        if candidates:
-            return candidates
+        if candidates and self._hand_value_preference > 0.9:
+            if self._call_preference >= 1.0 or self._rng.random() < (0.5 + self._call_preference * 0.5):
+                return candidates
 
-        if action.action_type == ActionType.PON and game_state.my_rank == 4:
+        if action.action_type == ActionType.PON and game_state.my_rank == 4 and self._aggression > 1.0:
             return [action for shanten, _, action in evaluated if shanten == best_shanten]
 
         return []
