@@ -75,6 +75,8 @@ export type GameScreenState =
       result: MatchResult
       settlement: MatchSettlement
       players: PlayerSeat[]
+      resultAsset: ResultAsset | null
+      resultAssetObjectUrl: string | null
     }
 
 export type MatchSettlement = {
@@ -84,6 +86,14 @@ export type MatchSettlement = {
   defeat_stage: number | null
   game_over: boolean
   cpu_completed: boolean
+}
+
+export type ResultAsset = {
+  id: number
+  cpu_character_id: number
+  defeat_stage: number
+  mime_type: string | null
+  url: string
 }
 
 export type GameClientMessage =
@@ -99,6 +109,11 @@ export type DialogueEvent = {
 
 export type GameServerMessage =
   | { type: 'human_turn'; action_version: number; turn: HumanTurn }
-  | { type: 'match_complete'; result: MatchResult; settlement: MatchSettlement }
+  | {
+      type: 'match_complete'
+      result: MatchResult
+      settlement: MatchSettlement
+      result_asset: ResultAsset | null
+    }
   | { type: 'dialogue_event'; cpu_character_id: number; seat: number; event_key: string; text: string }
   | { type: 'error'; code: string; message: string }

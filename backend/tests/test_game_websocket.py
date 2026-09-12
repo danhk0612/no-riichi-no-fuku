@@ -17,6 +17,7 @@ from app.core.config import Settings
 from app.db.base import Base
 from app.db.models import (
     CpuCharacter,
+    CpuResultAsset,
     GameSessionRecord,
     GameSetting,
     User,
@@ -243,6 +244,20 @@ class GameWebSocketApiTest(unittest.TestCase):
             self.assertEqual(websocket.receive_json(), first_turn)
 
     def test_fixed_seed_match_completes_and_persists_server_settlement(self) -> None:
+        with self.session_factory() as session:
+            session.add_all(
+                [
+                    CpuResultAsset(
+                        cpu_character_id=cpu_id,
+                        defeat_stage=1,
+                        storage_key=f"/metadata-fixture/{cpu_id}/stage-1.png",
+                        mime_type="image/png",
+                        active=True,
+                    )
+                    for cpu_id in self.cpu_ids
+                ]
+            )
+            session.commit()
         created = self.create_game()
         path = f"/api/game/sessions/{created['session_id']}/ws"
         with self.client.websocket_connect(path) as websocket:
@@ -280,10 +295,16 @@ class GameWebSocketApiTest(unittest.TestCase):
             if last_place_seat == 0:
                 self.assertEqual(member.current_hp, 2)
                 self.assertTrue(all(stage == 0 for stage in stages.values()))
+                self.assertIsNone(message["result_asset"])
             else:
                 defeated_cpu_id = self.cpu_ids[last_place_seat - 1]
                 self.assertEqual(settlement["cpu_character_id"], defeated_cpu_id)
                 self.assertEqual(stages[defeated_cpu_id], 1)
+                self.assertEqual(
+                    message["result_asset"]["cpu_character_id"],
+                    defeated_cpu_id,
+                )
+                self.assertEqual(message["result_asset"]["defeat_stage"], 1)
             record = session.get(GameSessionRecord, created["session_id"])
             assert record is not None
             self.assertEqual(record.status, "completed")

@@ -76,3 +76,16 @@ export function gameWebSocketUrl(sessionId: string): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   return `${protocol}//${window.location.host}/api/game/sessions/${sessionId}/ws`
 }
+
+export async function getResultAssetObjectUrl(
+  accessToken: string,
+  url: string,
+): Promise<string> {
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!response.ok) {
+    throw new Error(`결과 CG를 불러오지 못했습니다. (${response.status})`)
+  }
+  return URL.createObjectURL(await response.blob())
+}

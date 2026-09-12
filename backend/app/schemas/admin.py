@@ -101,3 +101,13 @@ class CpuDialogueUpdateRequest(BaseModel):
             if getattr(self, field) is None:
                 raise ValueError(f"{field} cannot be null")
         return self
+
+
+class CpuResultAssetResponse(BaseModel):
+    id: int
+    cpu_character_id: int
+    defeat_stage: int
+    storage_key: str
+    mime_type: str | None
+    active: bool
+    url: str

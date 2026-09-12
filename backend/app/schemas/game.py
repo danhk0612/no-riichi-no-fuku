@@ -39,3 +39,11 @@ class DialogueEventResponse(BaseModel):
     seat: int
     event_key: str
     text: str
+
+
+class ResultAssetResponse(BaseModel):
+    id: int
+    cpu_character_id: int
+    defeat_stage: int
+    mime_type: str | None
+    url: str
