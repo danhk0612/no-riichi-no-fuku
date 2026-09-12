@@ -25,8 +25,24 @@ class DiscardEvaluation:
 class Tier1Agent:
     """Improved agent with value awareness, better defense, and basic push/fold."""
 
-    def __init__(self, *, seed: int | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        seed: int | None = None,
+        aggression: float = 1.0,
+        defense: float = 1.0,
+        call_preference: float = 1.0,
+        riichi_preference: float = 1.0,
+        hand_value_preference: float = 1.0,
+        speed_preference: float = 1.0,
+    ) -> None:
         self._rng = random.Random(seed)
+        self._aggression = aggression
+        self._defense = defense
+        self._call_preference = call_preference
+        self._riichi_preference = riichi_preference
+        self._hand_value_preference = hand_value_preference
+        self._speed_preference = speed_preference
 
     def choose_action(self, observation: Observation) -> Action:
         legal_actions = observation.legal_actions()
@@ -86,19 +102,21 @@ class Tier1Agent:
             if declared and seat != observation.player_id
         )
 
-        if opponent_riichi_count >= 2:
+        defense_factor = self._defense / self._riichi_preference
+        if opponent_riichi_count >= 2 and defense_factor > 1.1:
             return False
 
         dora_indicators = data.get("dora_indicators", [])
         dora_count = self._count_dora(observation.hand, dora_indicators)
 
-        if dora_count >= 1 or my_score < 15000:
+        dora_threshold = max(0, int(2 - self._riichi_preference))
+        if dora_count >= dora_threshold or my_score < 15000 * self._aggression:
             return True
 
-        if opponent_riichi_count == 0 and my_score >= 15000:
+        if opponent_riichi_count == 0 and my_score >= 15000 / self._riichi_preference:
             return True
 
-        return my_score < 10000
+        return my_score < 10000 * self._aggression
 
     def _choose_discard(
         self,
@@ -147,13 +165,19 @@ class Tier1Agent:
             if candidate.ukeire >= best_ukeire - 4
         ]
 
+        ukeire_weight = 2.0 * self._speed_preference
+        dora_weight = 3.0 * self._hand_value_preference
+        yaku_weight = 2.0 * self._hand_value_preference
+        danger_weight = 1.5 * self._defense
+        safety_weight = 3.0 * self._defense
+        
         for candidate in rational:
             score = (
-                candidate.ukeire * 2.0
-                + candidate.dora_count * 3.0
-                + candidate.potential_yaku_bonus * 2.0
-                - candidate.danger_level * 1.5
-                + candidate.safe_against_riichi * 3.0
+                candidate.ukeire * ukeire_weight
+                + candidate.dora_count * dora_weight
+                + candidate.potential_yaku_bonus * yaku_weight
+                - candidate.danger_level * danger_weight
+                + candidate.safe_against_riichi * safety_weight
             )
             candidate.__dict__["_score"] = score
 
@@ -179,16 +203,18 @@ class Tier1Agent:
         my_score = scores[observation.player_id]
         shanten = calculate_shanten(list(observation.hand))
 
-        if shanten >= 2 and opponent_riichi_count >= 1:
+        aggression_factor = self._aggression / self._defense
+        
+        if shanten >= 2 and opponent_riichi_count >= 1 and aggression_factor < 1.0:
             return True
 
-        if my_score < 5000 and opponent_riichi_count >= 1:
+        if my_score < 5000 * aggression_factor and opponent_riichi_count >= 1:
             return True
 
         dora_indicators = data.get("dora_indicators", [])
         dora_count = self._count_dora(observation.hand, dora_indicators)
 
-        if shanten == 1 and dora_count == 0 and opponent_riichi_count >= 2:
+        if shanten == 1 and dora_count == 0 and opponent_riichi_count >= 2 and self._defense > 1.1:
             return True
 
         return False
@@ -349,8 +375,8 @@ class Tier1Agent:
             if declared and seat != observation.player_id
         ]
 
-    @staticmethod
     def _improving_calls(
+        self,
         observation: Observation,
         calls: list[Action],
     ) -> list[Action]:
@@ -383,14 +409,22 @@ class Tier1Agent:
             return []
 
         if best_shanten < current_shanten:
-            return [action for shanten, _, action in evaluated if shanten == best_shanten]
+            improving = [action for shanten, _, action in evaluated if shanten == best_shanten]
+            if self._call_preference < 1.0:
+                threshold = 0.6 + (self._call_preference * 0.4)
+                if self._rng.random() > threshold:
+                    return []
+            return improving
 
         candidates = [action for shanten, dora, action in evaluated if shanten == best_shanten and dora > 0]
-        if candidates:
+        if candidates and self._hand_value_preference > 0.9:
             return candidates
 
-        if action.action_type == ActionType.PON:
-            return [action for shanten, _, action in evaluated if shanten == best_shanten]
+        if self._call_preference > 1.0:
+            return [action for shanten, _, action in evaluated if shanten == best_shanten if action.action_type == ActionType.PON]
+
+        if self._call_preference < 1.1:
+            return []
 
         return []
 

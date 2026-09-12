@@ -175,6 +175,12 @@ class Tier2AgentTest(unittest.TestCase):
             long_description=None,
             profile_image_key=None,
             defeat_stage=2,
+            aggression=1.0,
+            defense=1.0,
+            call_preference=1.0,
+            riichi_preference=1.0,
+            hand_value_preference=1.0,
+            speed_preference=1.0,
         )
 
         agent = create_production_cpu_agent(choice, seed=42)
