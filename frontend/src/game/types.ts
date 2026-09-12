@@ -68,6 +68,7 @@ export type GameScreenState =
       actionVersion: number
       turn: HumanTurn
       players: PlayerSeat[]
+      recentDialogues: DialogueEvent[]
     }
   | {
       status: 'complete'
@@ -89,7 +90,15 @@ export type GameClientMessage =
   | { type: 'authenticate'; access_token: string }
   | { type: 'action'; legal_action_index: number; action_version: number }
 
+export type DialogueEvent = {
+  cpu_character_id: number
+  seat: number
+  event_key: string
+  text: string
+}
+
 export type GameServerMessage =
   | { type: 'human_turn'; action_version: number; turn: HumanTurn }
   | { type: 'match_complete'; result: MatchResult; settlement: MatchSettlement }
+  | { type: 'dialogue_event'; cpu_character_id: number; seat: number; event_key: string; text: string }
   | { type: 'error'; code: string; message: string }

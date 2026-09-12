@@ -113,6 +113,34 @@ danhk0612/no-riichi-no-fuku
 
 These remain unverified until the final Docker integration task succeeds.
 
+## Dialogue system integration (2026-09-12)
+
+Game dialogue event contract and speech-bubble integration is complete. The server detects RiichiEnv
+events (riichi, chi, pon, kan, ron, tsumo) from `Observation.to_dict()["events"]`, selects matching
+active CPU dialogues from the database, and sends `dialogue_event` WebSocket messages to the client.
+The React frontend displays speech bubbles above each CPU seat with the most recent dialogue for that
+seat. Speech bubbles have CSS fade-in animation and seat-specific tail positioning.
+
+`AuthoritativeGameSession` accumulates events from each step and exposes them via `pending_events()`.
+The WebSocket sends dialogue events before the turn state. The client maintains up to 10 recent
+dialogues and maps the latest per seat to the active table display. Dialogue selection uses a seeded
+`DialogueSelector` that randomly chooses from active `cpu_dialogues` rows matching the CPU character
+and event key.
+
+Event mapping covers riichi, chi, pon, kan (all types), ron, and tsumo. Events like game_start,
+final_east, match_first/last, large_win, and defeat_stage_N are not yet implemented and remain as
+future candidates. No probability throttling or cooldown policy is applied; every matched event triggers
+dialogue selection if a matching row exists.
+
+Backend tests cover dialogue selection, active/inactive filtering, event extraction, and multi-event
+handling. Frontend types include `DialogueEvent` and `dialogue_event` in `GameServerMessage`. The
+implementation added:
+- `backend/app/services/dialogue_service.py`
+- `backend/tests/test_dialogue_service.py`
+- `PendingGameEvents` dataclass and `pending_events()` method in `AuthoritativeGameSession`
+- `dialogue_event` WebSocket message handling in `game.py`
+- `DialogueEvent` type, `recentDialogues` state, and speech-bubble UI in the frontend
+
 ## Next entry point
 
 Read:
@@ -120,7 +148,13 @@ Read:
 1. `AGENTS.md`
 2. `docs/WORK_INSTRUCTIONS.md`
 3. `docs/WORK_START.md`
-4. Game dialogue event contract and speech-bubble integration
+4. Tier 1 CPU agent implementation
 
-Profile/CPU image upload requirements remain undecided. Do not implement that media path or
-begin CG generation, and do not add CG binaries to the repository.
+Tier 1 agent should build on Tier 0 foundation (shanten, ukeire, riichi priority) and add:
+- Expected hand value estimation (dora, yaku potential)
+- Basic defensive safety (genbutsu, suji, kabe)
+- Basic push/fold decisions based on hand strength vs. opponent riichi
+- Chi/pon/kan decisions considering both shanten reduction and hand value
+
+Profile/CPU image upload and CG management remain undecided. Do not implement media upload paths
+or add CG binary files to the repository.

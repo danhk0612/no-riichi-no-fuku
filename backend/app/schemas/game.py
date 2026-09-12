@@ -30,3 +30,12 @@ class GamePlayerResponse(BaseModel):
 class CreateGameSessionResponse(BaseModel):
     session_id: str
     players: tuple[GamePlayerResponse, ...]
+
+
+class DialogueEventResponse(BaseModel):
+    """CPU 대사 이벤트"""
+
+    cpu_character_id: int
+    seat: int
+    event_key: str
+    text: str

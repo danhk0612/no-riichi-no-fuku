@@ -484,4 +484,80 @@ button.tile:disabled {
   .human-controls {
     padding: 16px;
   }
+
+  .speech-bubble {
+    max-width: 200px;
+    font-size: 0.75rem;
+  }
+}
+
+/* 말풍선 스타일 */
+.speech-bubble {
+  position: relative;
+  max-width: 260px;
+  margin: 8px auto;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #071712;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  animation: fadeInBubble 0.3s ease-out;
+}
+
+.speech-bubble p {
+  margin: 0;
+}
+
+.speech-bubble::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 8px solid transparent;
+}
+
+/* 좌석별 말풍선 꼬리 위치 */
+.seat-0 .speech-bubble::before {
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-top-color: rgba(255, 255, 255, 0.95);
+  border-bottom: 0;
+}
+
+.seat-1 .speech-bubble::before {
+  left: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-right-color: rgba(255, 255, 255, 0.95);
+  border-left: 0;
+}
+
+.seat-2 .speech-bubble::before {
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-bottom-color: rgba(255, 255, 255, 0.95);
+  border-top: 0;
+}
+
+.seat-3 .speech-bubble::before {
+  right: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left-color: rgba(255, 255, 255, 0.95);
+  border-right: 0;
+}
+
+@keyframes fadeInBubble {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
