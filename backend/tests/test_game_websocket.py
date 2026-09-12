@@ -211,6 +211,16 @@ class GameWebSocketApiTest(unittest.TestCase):
 
         self.registry = GameRegistry(seed_factory=lambda: 999)
         app.dependency_overrides[get_game_registry] = lambda: self.registry
+        with self.session_factory() as session:
+            member = session.scalar(select(User).where(User.login_id == "member-one"))
+            assert member is not None
+            restored = self.registry.get_owned(
+                session,
+                created["session_id"],
+                user_id=member.id,
+            )
+            assert restored.game is not None
+            self.assertEqual(restored.game.pending_events().events, ())
         with self.client.websocket_connect(path) as websocket:
             self.authenticate(websocket)
             self.assertEqual(websocket.receive_json(), expected_turn)

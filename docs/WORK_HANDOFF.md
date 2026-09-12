@@ -148,8 +148,11 @@ and event key.
 
 Event mapping covers riichi, chi, pon, kan (all types), ron, and tsumo. Events like game_start,
 final_east, match_first/last, large_win, and defeat_stage_N are not yet implemented and remain as
-future candidates. No probability throttling or cooldown policy is applied; every matched event triggers
-dialogue selection if a matching row exists.
+future candidates. The server now applies a session-scoped policy before selecting from the
+admin-managed dialogue pool: ron/tsumo 100%, riichi 90%, kan 75%, pon 45%, and chi 35%.
+Call events use per-CPU and per-event action-version cooldowns. Each state delivery emits at most
+one line, prioritized as win, riichi, kan, pon, then chi. Recovery replay discards historical
+events so reconnecting does not burst old dialogue.
 
 Backend tests cover dialogue selection, active/inactive filtering, event extraction, and multi-event
 handling. Frontend types include `DialogueEvent` and `dialogue_event` in `GameServerMessage`. The
@@ -194,10 +197,10 @@ through fixed-seed tournament simulation has been completed with balanced result
 
 Recommended next entry points:
 
-1. CPU style personality parameter integration (aggression, defense, call_preference, etc.)
-2. CG result asset upload and display integration
-3. Game dialogue event cooldown/probability policies
-4. Docker/Compose full runtime validation
+1. Decide profile/CG upload format, size, and storage-key rules, then implement result asset upload
+   and display integration
+2. Add currently deferred dialogue keys such as game_start, final_east, and match result events
+3. Docker/Compose full runtime validation
 
 For guidance, read:
 
@@ -294,7 +297,9 @@ Backend test suite: 64 tests passed. Frontend TypeScript/Vite production build p
 
 ## Next entry point
 
-**Game dialogue event contract and speech-bubble integration**.
+**Decide the unresolved profile/CG media policy, then implement result asset upload and display
+integration.** The dialogue WebSocket contract, speech bubbles, and server-side cooldown/probability
+policy are complete; do not rebuild them.
 
 Read:
 

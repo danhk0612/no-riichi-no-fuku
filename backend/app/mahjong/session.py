@@ -32,7 +32,7 @@ class HumanTurn:
 class PendingGameEvents:
     """마지막 step에서 발생한 게임 이벤트 (대사 생성용)"""
 
-    events: tuple[dict[str, object], ...]
+    events: tuple[dict[str, object] | str, ...]
 
 
 class AuthoritativeGameSession:
@@ -58,7 +58,7 @@ class AuthoritativeGameSession:
         self._max_steps = max_steps
         self._steps = 0
         self._result_settled = False
-        self._pending_events: list[dict[str, object]] = []
+        self._pending_events: list[dict[str, object] | str] = []
 
     @property
     def started(self) -> bool:
@@ -168,7 +168,7 @@ class AuthoritativeGameSession:
             events = obs_dict.get("events")
             if isinstance(events, list):
                 for event in events:
-                    if isinstance(event, dict):
+                    if isinstance(event, (dict, str)):
                         self._pending_events.append(event)
                     # pybind 객체면 dict로 변환 시도
                     elif hasattr(event, "to_dict"):
