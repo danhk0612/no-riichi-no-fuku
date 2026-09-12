@@ -9,22 +9,26 @@ management foundation APIs are also implemented. The RiichiEnv adapter, MahjongA
 and process-local authoritative game session foundation are implemented. A minimal React Mahjong
 table renders HumanTurn data, legal actions and match results without image assets. The production
 Tier 0 CPU uses shanten, approximate ukeire, a weak riichi-genbutsu bias and seeded weighted
-selection. Completed authoritative sessions settle exactly one fourth-place outcome: player HP
-or the mapped user's CPU progress. Authenticated members can list active, incomplete CPU choices;
-validated groups of three create a fresh authoritative session through a stage-aware agent factory.
-Authenticated REST creation now persists the session seed, CPU/player snapshots and accepted human
-action log while caching the live RiichiEnv object in an owner-scoped registry. The game WebSocket
-authenticates with its first message, accepts only a legal-action index with the current action
-version, and commits every accepted human action. A cache miss or server restart reconstructs an
-active match by deterministic replay; completed results and settlement remain durable and
-idempotent.
+selection. **Tier 1 CPU is now implemented** with value awareness (dora, yaku potential), improved
+defense (danger levels), basic push/fold decisions, and enhanced riichi/call evaluation. Completed
+authoritative sessions settle exactly one fourth-place outcome: player HP or the mapped user's CPU
+progress. Authenticated members can list active, incomplete CPU choices; validated groups of three
+create a fresh authoritative session through a stage-aware agent factory that maps stage 0 to
+Tier0Agent and stage 1 to Tier1Agent. Authenticated REST creation now persists the session seed,
+CPU/player snapshots and accepted human action log while caching the live RiichiEnv object in an
+owner-scoped registry. The game WebSocket authenticates with its first message, accepts only a
+legal-action index with the current action version, and commits every accepted human action. A cache
+miss or server restart reconstructs an active match by deterministic replay; completed results and
+settlement remain durable and idempotent. Game dialogue events are extracted from authoritative
+session observations, matched with active CPU dialogues, and delivered with HumanTurn messages.
 The React client now provides minimal member registration/login, selectable CPU cards, REST game
-creation, first-message-authenticated WebSocket play, authoritative result settlement display and
-the return-to-selection loop. Access tokens remain in tab memory only, and stage 1/2 CPU cards are
-explicitly unavailable until those agents exist. After a page refresh the member must log in again;
-the client then discovers the server's active session and reconnects to the persisted turn.
-New members start with current/max HP 3 and stage 0 progress for every seeded CPU. Docker/Compose
-runtime validation is intentionally deferred to the final integration stage.
+creation, first-message-authenticated WebSocket play, authoritative result settlement display,
+speech bubbles during play, and the return-to-selection loop. Access tokens remain in tab memory
+only, and stage 2 CPU cards are explicitly unavailable until Tier 2 agents exist. After a page
+refresh the member must log in again; the client then discovers the server's active session and
+reconnects to the persisted turn. New members start with current/max HP 3 and stage 0 progress for
+every seeded CPU. Docker/Compose runtime validation is intentionally deferred to the final integration
+stage.
 
 Repository:
 
@@ -141,6 +145,33 @@ implementation added:
 - `dialogue_event` WebSocket message handling in `game.py`
 - `DialogueEvent` type, `recentDialogues` state, and speech-bubble UI in the frontend
 
+## Tier 1 CPU implementation (2026-09-12)
+
+Tier 1 CPU agent is now implemented in `backend/app/mahjong/tier1.py`. The `create_production_cpu_agent`
+factory in `game_setup.py` maps `defeat_stage == 1` to `Tier1Agent` and `defeat_stage == 2` continues
+to raise `CpuTierUnavailableError`.
+
+### Tier 1 features beyond Tier 0
+
+- **Hand value evaluation**: Counts dora, estimates yaku potential (tanyao, pinfu, chinitsu, etc.)
+- **Improved defense**: Danger level estimation based on tile types and opponent riichi; prioritizes
+  safe tiles when folding
+- **Push/fold decisions**: Considers shanten, score, opponent riichi count, and dora holdings to
+  decide when to fold
+- **Riichi decisions**: Evaluates tenpai state, opponent riichi count, dora, and score to decide
+  whether to declare riichi
+- **Enhanced call evaluation**: Prefers chi/pon with dora; pon is considered even when shanten does
+  not improve
+
+### Verification
+
+- Fixed-seed match (seed 7, CPU seeds 601/602/603) completes with Tier 1 agents
+- Fixed-seed comparison (seed 15) shows Tier 1 produces different final scores from Tier 0
+- Stage 1 selection successfully creates `Tier1Agent` and completes matches
+- Stage 2 continues to explicitly fail with `CpuTierUnavailableError`
+
+Backend test suite: 49 tests passed. Frontend TypeScript/Vite production build passed.
+
 ## Next entry point
 
 Read:
@@ -148,13 +179,14 @@ Read:
 1. `AGENTS.md`
 2. `docs/WORK_INSTRUCTIONS.md`
 3. `docs/WORK_START.md`
-4. Tier 1 CPU agent implementation
+4. Tier 2 CPU agent implementation
 
-Tier 1 agent should build on Tier 0 foundation (shanten, ukeire, riichi priority) and add:
-- Expected hand value estimation (dora, yaku potential)
-- Basic defensive safety (genbutsu, suji, kabe)
-- Basic push/fold decisions based on hand strength vs. opponent riichi
-- Chi/pon/kan decisions considering both shanten reduction and hand value
+**Tier 2 CPU** should build on Tier 1 foundation and add advanced evaluation:
+- Full danger estimation using suji, kabe, and visible tile analysis
+- Opponent riichi and attack signal awareness
+- Remaining rounds and score situation awareness
+- Terminal round (East 4) final placement conditions
+- Near-expected-value scoring for action candidates
 
 Profile/CPU image upload and CG management remain undecided. Do not implement media upload paths
 or add CG binary files to the repository.
