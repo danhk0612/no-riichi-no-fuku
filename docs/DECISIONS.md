@@ -340,7 +340,16 @@ Tenhou 계열 기본 규칙
 
 - 게임 중 발생하는 이벤트(riichi, chi, pon, kan, ron, tsumo 등)를 감지하여 CPU 말풍선으로 표시한다.
 - RiichiEnv 0.4.8의 `Observation.to_dict()["events"]` 필드에서 이벤트를 추출한다.
-- 각 이벤트는 MJAI 형식을 따르며 `type`, `actor` 등의 필드를 포함한다.
+- **검증 완료 (2026-09-12)**: RiichiEnv 0.4.8 이벤트는 **JSON 문자열 리스트**로 반환되며, `json.loads()`로 파싱해야 한다.
+- 검증된 이벤트 타입:
+  - `reach`: 리치 선언 → `riichi` 대사 키
+  - `reach_accepted`: 리치 수리 (대사 키 없음)
+  - `chi`: 치 → `chi`
+  - `pon`: 퐁 → `pon`
+  - `ankan`, `kakan`, `daiminkan`: 깡 (통합) → `kan`
+  - `hora`: 화료, `target` 필드로 구분
+    - `target`이 있고 `actor`와 다름 → `ron`
+    - 그 외 → `tsumo`
 - `AuthoritativeGameSession`은 각 step에서 발생한 이벤트를 누적하고, `pending_events()` 메서드로 소비한다.
 - `DialogueSelector`는 DB의 `cpu_dialogues` 테이블에서 해당 CPU와 이벤트 키에 맞는 활성 대사 중 하나를 랜덤으로 선택한다.
 - WebSocket은 게임 상태 전송 전에 대사 이벤트를 `dialogue_event` 메시지로 먼저 전송한다.
