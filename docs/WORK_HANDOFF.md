@@ -292,15 +292,24 @@ Stage/Tier 매핑은 불변(stage 0→Tier0, 1→Tier1, 2→Tier2)이며, 동일
 
 Backend test suite: 64 tests passed. Frontend TypeScript/Vite production build passed.
 
-## Next entry point
+## Next entry points
 
-**Game dialogue event contract and speech-bubble integration**.
+Recommended work (in any order):
+
+1. **Game dialogue event cooldown/probability policies**: Implement runtime policies for dialogue
+   display frequency, cooldown timers, and event-specific probabilities. The dialogue event system
+   and speech bubbles are already implemented (PR #25).
+
+2. **CG result asset upload and display integration**: Implement admin upload for CG result assets
+   (metadata only in DB, files in persistent volume). Add display integration for CPU defeat stage
+   completion screens. Do NOT add CG binary files to the Git repository.
+
+3. **Docker/Compose full runtime validation**: Verify `docker compose config/build/up`, nginx-proxied
+   `/api/health`, PostgreSQL container health, and `postgres_data`/`media_data` persistence.
+   Full Docker validation has been intentionally deferred until feature implementation completes.
 
 Read:
 
 1. `AGENTS.md`
 2. `docs/WORK_INSTRUCTIONS.md`
 3. `docs/WORK_START.md`
-
-Profile/CPU image upload and CG management remain undecided. Do not implement media upload paths
-or add CG binary files to the repository.
