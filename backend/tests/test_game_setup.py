@@ -125,13 +125,14 @@ class GameSetupServiceTest(unittest.TestCase):
         progress = self.session.get(UserCpuProgress, (self.member.id, first))
         assert progress is not None
         progress.defeat_stage = 2
-        with self.assertRaisesRegex(CpuTierUnavailableError, "tier 2"):
-            create_game_session(
-                self.session,
-                self.member,
-                self.cpu_ids[:3],
-                seed=5,
-            )
+        # Tier 2 is now implemented, so this should succeed
+        game = create_game_session(
+            self.session,
+            self.member,
+            self.cpu_ids[:3],
+            seed=5,
+        )
+        self.assertTrue(game.started)
 
         progress.defeat_stage = 1
         received: list[tuple[int, int | None]] = []

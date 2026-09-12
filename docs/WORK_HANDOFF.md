@@ -189,11 +189,14 @@ Backend test suite: 49 tests passed. Frontend TypeScript/Vite production build p
 
 ## Next entry point
 
-All three CPU tiers (0/1/2) are now implemented and functional. The next recommended entry points are:
+All three CPU tiers (0/1/2) are now implemented and functional. Automated difficulty tuning
+through fixed-seed tournament simulation has been completed with balanced results.
 
-1. Automated difficulty tuning through fixed-seed tournament simulation
-2. CPU style personality parameter integration (aggression, defense, call_preference, etc.)
-3. CG result asset upload and display integration
+Recommended next entry points:
+
+1. CPU style personality parameter integration (aggression, defense, call_preference, etc.)
+2. CG result asset upload and display integration
+3. Game dialogue event cooldown/probability policies
 4. Docker/Compose full runtime validation
 
 For guidance, read:
@@ -201,14 +204,43 @@ For guidance, read:
 1. `AGENTS.md`
 2. `docs/WORK_INSTRUCTIONS.md`
 3. `docs/WORK_START.md`
-4. Tier 2 CPU agent implementation
-
-**Tier 2 CPU** should build on Tier 1 foundation and add advanced evaluation:
-- Full danger estimation using suji, kabe, and visible tile analysis
-- Opponent riichi and attack signal awareness
-- Remaining rounds and score situation awareness
-- Terminal round (East 4) final placement conditions
-- Near-expected-value scoring for action candidates
+4. Tournament simulation results in `docs/DECISIONS.md`
 
 Profile/CPU image upload and CG management remain undecided. Do not implement media upload paths
 or add CG binary files to the repository.
+
+## Automated Difficulty Tuning Simulation (2026-09-12)
+
+A fixed-seed tournament simulation harness was implemented to measure relative performance among
+Tier 0/1/2 agents.
+
+### Implementation
+
+- `backend/app/simulation/tournament.py`: Tournament execution and metric collection
+- `backend/scripts/run_simulation.py`: Standalone simulation script with JSON/markdown output
+- `backend/tests/test_tournament_simulation.py`: 7 simulation tests covering single matches,
+  homogeneous/heterogeneous combinations, statistics computation, and small integration
+
+### Methodology
+
+- 16 fixed seeds: 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61
+- 9 seat combinations per seed (homogeneous + balanced mixed tiers)
+- 144 total matches (16 seeds × 9 combinations)
+- Each tier played 192 matches
+
+### Results
+
+| Tier | Matches | Avg Rank | Avg Score | 1st Rate | 4th Rate | Rank Distribution |
+|------|---------|----------|-----------|----------|----------|-------------------|
+| Tier0 | 192 | 2.510 | 25162.5 | 27.1% | 26.6% | 1위:52, 2위:41, 3위:48, 4위:51 |
+| Tier1 | 192 | 2.531 | 24988.0 | 23.4% | 24.5% | 1위:45, 2위:47, 3위:53, 4위:47 |
+| Tier2 | 192 | 2.458 | 24844.3 | 24.5% | 24.0% | 1위:47, 2위:56, 3위:43, 4위:46 |
+
+### Analysis
+
+All three tiers are well-balanced with average ranks within 0.073 of each other (near-perfect
+balance at 2.5). Tier2 shows slight superiority (2.458) but not dominating performance. First-place
+rates range from 23.4% to 27.1%, and fourth-place rates from 24.0% to 26.6%. The "no intentional
+worst-move easy mode" principle is preserved. No tuning adjustments were needed.
+
+Backend test suite: 65 tests passed. Frontend TypeScript/Vite production build passed.
