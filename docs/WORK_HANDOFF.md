@@ -144,6 +144,8 @@ danhk0612/no-riichi-no-fuku
 - After the stage dialogue/empty-slot change landed, the latest image upgraded the existing
   PostgreSQL volume to Alembic `20260912_0004` and still served the pre-existing CG with the same
   SHA-256.
+- The latest backend suite passed all 66 discovered tests inside the built API image, and the
+  frontend production build passed during the latest image build.
 - No CG binary was created in or committed to the repository.
 - Cloud VM setup caveat: Docker was initially absent. After installation, stale legacy iptables
   rules dropped traffic handled by Docker's nftables bridge and caused an initial nginx 504.
