@@ -242,6 +242,10 @@ Backend test suite: 49 tests passed. Frontend TypeScript/Vite production build p
   결과 CG가 등록되지 않은 경우에도 해당 단계의 빈 CG 슬롯과 안내 문구를 표시한다.
 - Git에는 CG, 더미 CG, 프로필 이미지 바이너리를 추가하지 않았다.
 - 실제 운영 CG 업로드와 프로필 이미지 업로드 정책은 여전히 별도 운영/후속 작업이다.
+- 이 변경 후 `python3 -m unittest discover -s tests -v` 전체 66개 테스트가 통과했다.
+- `npm run build`로 TypeScript/Vite production build가 통과했다.
+- 새 Alembic revision을 포함한 SQLite `upgrade head`와 `downgrade base` 왕복이
+  통과했다. Docker/Compose와 PostgreSQL runtime 검증은 수행하지 않았다.
 
 ## Next entry point
 
