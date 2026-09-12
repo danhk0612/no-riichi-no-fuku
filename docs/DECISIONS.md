@@ -355,7 +355,20 @@ Tenhou 계열 기본 규칙
 - WebSocket은 게임 상태 전송 전에 대사 이벤트를 `dialogue_event` 메시지로 먼저 전송한다.
 - 프론트엔드는 `recentDialogues` 상태로 최근 10개 대사를 관리하고, 각 좌석별 최신 대사를 말풍선으로 표시한다.
 - 말풍선은 CSS 애니메이션과 좌석별 꼬리 위치를 가진다.
-- 대사 이벤트 확률/cooldown 정책은 현재 구현하지 않았으며, 모든 매칭 이벤트에 대해 대사를 선택한다. 필요 시 추후 추가 가능하다.
+- 대사 노출 여부는 서버의 게임 세션별 `DialogueEventPolicy`가 결정하며 클라이언트는
+  정책을 계산하지 않는다.
+- cooldown은 wall-clock 시간이 아니라 authoritative `action_version` 단위로 계산한다.
+  따라서 테스트와 고정 seed replay에서 동일한 turn 경계를 사용한다.
+- 기본 이벤트 확률은 `ron`/`tsumo` 100%, `riichi` 90%, `kan` 75%, `pon` 45%,
+  `chi` 35%이다. 활성 `cpu_dialogues` 후보가 없으면 노출 기록을 남기지 않는다.
+- 일반 호출 대사는 CPU별 2 action-version cooldown을 적용한다. 이벤트별 cooldown은
+  `kan` 2, `pon`/`chi` 3 action-version이며, 화료와 리치는 희소한 중요 이벤트이므로
+  CPU/event cooldown을 적용하지 않는다.
+- 같은 상태 전송에 여러 이벤트가 몰리면 `ron`/`tsumo`, `riichi`, `kan`, `pon`,
+  `chi` 순으로 우선하며 대사는 최대 1개만 전송한다. 이 rapid-event 제한 뒤에도
+  기존 `dialogue_event` WebSocket 필드와 관리자 관리 `cpu_dialogues` pool을 그대로 쓴다.
+- 프로세스 재시작 복구 시 DB action log replay에서 생긴 과거 이벤트는 폐기한다.
+  이미 지나간 대사를 재접속 시 한꺼번에 보내지 않으며 정책 상태 자체는 DB에 저장하지 않는다.
 - 게임 시작, 최종 순위, 만관 이상 화료, defeat_stage 결과 등은 별도 이벤트로 처리 가능하지만 초기 구현에서는 게임 중 행동 이벤트만 처리한다.
 
 ## Tier 2 CPU 정책

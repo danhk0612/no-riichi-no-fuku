@@ -148,8 +148,11 @@ and event key.
 
 Event mapping covers riichi, chi, pon, kan (all types), ron, and tsumo. Events like game_start,
 final_east, match_first/last, large_win, and defeat_stage_N are not yet implemented and remain as
-future candidates. No probability throttling or cooldown policy is applied; every matched event triggers
-dialogue selection if a matching row exists.
+future candidates. The server now applies a session-scoped policy before selecting from the
+admin-managed dialogue pool: ron/tsumo 100%, riichi 90%, kan 75%, pon 45%, and chi 35%.
+Call events use per-CPU and per-event action-version cooldowns. Each state delivery emits at most
+one line, prioritized as win, riichi, kan, pon, then chi. Recovery replay discards historical
+events so reconnecting does not burst old dialogue.
 
 Backend tests cover dialogue selection, active/inactive filtering, event extraction, and multi-event
 handling. Frontend types include `DialogueEvent` and `dialogue_event` in `GameServerMessage`. The
@@ -159,6 +162,10 @@ implementation added:
 - `PendingGameEvents` dataclass and `pending_events()` method in `AuthoritativeGameSession`
 - `dialogue_event` WebSocket message handling in `game.py`
 - `DialogueEvent` type, `recentDialogues` state, and speech-bubble UI in the frontend
+
+After the server-side policy change, the complete backend suite passes with 74 tests and the
+frontend TypeScript/Vite production build passes. Docker/Compose remains explicitly unverified
+until the deferred final integration task.
 
 ## Tier 1 CPU implementation (2026-09-12)
 
@@ -194,10 +201,10 @@ through fixed-seed tournament simulation has been completed with balanced result
 
 Recommended next entry points:
 
-1. CPU style personality parameter integration (aggression, defense, call_preference, etc.)
-2. CG result asset upload and display integration
-3. Game dialogue event cooldown/probability policies
-4. Docker/Compose full runtime validation
+1. Decide profile/CG upload format, size, and storage-key rules, then implement result asset upload
+   and display integration
+2. Add currently deferred dialogue keys such as game_start, final_east, and match result events
+3. Docker/Compose full runtime validation
 
 For guidance, read:
 
@@ -296,13 +303,13 @@ Backend test suite: 64 tests passed. Frontend TypeScript/Vite production build p
 
 Recommended work (in any order):
 
-1. **Game dialogue event cooldown/probability policies**: Implement runtime policies for dialogue
-   display frequency, cooldown timers, and event-specific probabilities. The dialogue event system
-   and speech bubbles are already implemented (PR #25).
+1. **CG result asset upload and display integration**: First decide the unresolved upload format,
+   size, and storage-key rules. Store metadata only in DB and files in the persistent volume.
+   Do NOT add CG binary files to the Git repository.
 
-2. **CG result asset upload and display integration**: Implement admin upload for CG result assets
-   (metadata only in DB, files in persistent volume). Add display integration for CPU defeat stage
-   completion screens. Do NOT add CG binary files to the Git repository.
+2. **Deferred dialogue events**: Add keys such as game_start, final_east, and match result events.
+   The WebSocket contract, speech bubbles, and cooldown/probability policy are complete; do not
+   rebuild them.
 
 3. **Docker/Compose full runtime validation**: Verify `docker compose config/build/up`, nginx-proxied
    `/api/health`, PostgreSQL container health, and `postgres_data`/`media_data` persistence.

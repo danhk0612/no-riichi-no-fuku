@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Mapping
 
 from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
@@ -22,6 +22,86 @@ class DialogueEvent:
     seat: int
     event_key: str
     text: str
+
+
+@dataclass(frozen=True)
+class DialogueEventRule:
+    """이벤트별 대사 노출 규칙."""
+
+    probability: float
+    cpu_cooldown_turns: int
+    event_cooldown_turns: int
+    priority: int
+
+
+DEFAULT_DIALOGUE_EVENT_RULES: Mapping[str, DialogueEventRule] = {
+    "ron": DialogueEventRule(1.0, 0, 0, 60),
+    "tsumo": DialogueEventRule(1.0, 0, 0, 60),
+    "riichi": DialogueEventRule(0.9, 0, 0, 50),
+    "kan": DialogueEventRule(0.75, 2, 2, 40),
+    "pon": DialogueEventRule(0.45, 2, 3, 30),
+    "chi": DialogueEventRule(0.35, 2, 3, 20),
+}
+
+
+class DialogueEventPolicy:
+    """게임 세션별 대사 확률, cooldown, rapid-event 제한 정책."""
+
+    def __init__(
+        self,
+        *,
+        rng: random.Random | None = None,
+        rules: Mapping[str, DialogueEventRule] = DEFAULT_DIALOGUE_EVENT_RULES,
+    ) -> None:
+        self._rng = rng or random.Random()
+        self._rules = rules
+        self._last_cpu_turn: dict[int, int] = {}
+        self._last_event_turn: dict[tuple[int, str], int] = {}
+        self._last_emission_turn: int | None = None
+
+    def ordered_candidates(
+        self,
+        candidates: Sequence[tuple[int, int, str]],
+    ) -> list[tuple[int, int, str]]:
+        """같은 전송에 묶인 이벤트를 중요도 순으로 정렬한다."""
+        return sorted(
+            candidates,
+            key=lambda candidate: self._rules[candidate[2]].priority,
+            reverse=True,
+        )
+
+    def allows(self, cpu_character_id: int, event_key: str, turn: int) -> bool:
+        rule = self._rules.get(event_key)
+        if rule is None or self._last_emission_turn == turn:
+            return False
+
+        last_cpu_turn = self._last_cpu_turn.get(cpu_character_id)
+        if (
+            last_cpu_turn is not None
+            and turn - last_cpu_turn < rule.cpu_cooldown_turns
+        ):
+            return False
+
+        last_event_turn = self._last_event_turn.get(
+            (cpu_character_id, event_key)
+        )
+        if (
+            last_event_turn is not None
+            and turn - last_event_turn < rule.event_cooldown_turns
+        ):
+            return False
+
+        return self._rng.random() < rule.probability
+
+    def record_emission(
+        self,
+        cpu_character_id: int,
+        event_key: str,
+        turn: int,
+    ) -> None:
+        self._last_cpu_turn[cpu_character_id] = turn
+        self._last_event_turn[(cpu_character_id, event_key)] = turn
+        self._last_emission_turn = turn
 
 
 class DialogueSelector:
@@ -71,6 +151,8 @@ def extract_game_events(
     events: Sequence[dict[str, object] | str],
     cpu_character_by_seat: dict[int, int],
     dialogue_selector: DialogueSelector,
+    dialogue_policy: DialogueEventPolicy,
+    event_turn: int,
     session: Session,
 ) -> list[DialogueEvent]:
     """
@@ -89,7 +171,7 @@ def extract_game_events(
     """
     import json
     
-    dialogue_events: list[DialogueEvent] = []
+    candidates: list[tuple[int, int, str]] = []
 
     for event_raw in events:
         # RiichiEnv 0.4.8은 이벤트를 JSON 문자열로 반환
@@ -116,10 +198,30 @@ def extract_game_events(
         if event_key is None:
             continue
 
+        candidates.append((cpu_character_id, actor, event_key))
+
+    dialogue_events: list[DialogueEvent] = []
+    for cpu_character_id, actor, event_key in dialogue_policy.ordered_candidates(
+        candidates
+    ):
+        if not dialogue_policy.allows(
+            cpu_character_id,
+            event_key,
+            event_turn,
+        ):
+            continue
+
         text = dialogue_selector.select_dialogue(
-            session, cpu_character_id, event_key
+            session,
+            cpu_character_id,
+            event_key,
         )
         if text is not None:
+            dialogue_policy.record_emission(
+                cpu_character_id,
+                event_key,
+                event_turn,
+            )
             dialogue_events.append(
                 DialogueEvent(
                     cpu_character_id=cpu_character_id,
@@ -128,6 +230,7 @@ def extract_game_events(
                     text=text,
                 )
             )
+            break
 
     return dialogue_events
 

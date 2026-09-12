@@ -5,9 +5,27 @@ from sqlalchemy.orm import Session
 
 from app.db.models import CpuCharacter, CpuDialogue, User, UserCpuProgress
 from app.services.dialogue_service import (
+    DEFAULT_DIALOGUE_EVENT_RULES,
+    DialogueEventPolicy,
+    DialogueEventRule,
     DialogueSelector,
     extract_game_events,
 )
+
+
+def permissive_policy() -> DialogueEventPolicy:
+    return DialogueEventPolicy(
+        rng=random.Random(42),
+        rules={
+            event_key: DialogueEventRule(
+                probability=1.0,
+                cpu_cooldown_turns=0,
+                event_cooldown_turns=0,
+                priority=rule.priority,
+            )
+            for event_key, rule in DEFAULT_DIALOGUE_EVENT_RULES.items()
+        },
+    )
 
 
 def test_dialogue_selector_selects_active_dialogue(session: Session) -> None:
@@ -154,6 +172,8 @@ def test_extract_game_events_extracts_riichi(session: Session) -> None:
         events=events,
         cpu_character_by_seat=cpu_character_by_seat,
         dialogue_selector=selector,
+        dialogue_policy=permissive_policy(),
+        event_turn=1,
         session=session,
     )
 
@@ -195,6 +215,8 @@ def test_extract_game_events_ignores_human_seat(session: Session) -> None:
         events=events,
         cpu_character_by_seat=cpu_character_by_seat,
         dialogue_selector=selector,
+        dialogue_policy=permissive_policy(),
+        event_turn=1,
         session=session,
     )
 
@@ -262,16 +284,15 @@ def test_extract_game_events_handles_multiple_events(session: Session) -> None:
         events=events,
         cpu_character_by_seat=cpu_character_by_seat,
         dialogue_selector=selector,
+        dialogue_policy=permissive_policy(),
+        event_turn=1,
         session=session,
     )
 
-    assert len(dialogue_events) == 2
+    assert len(dialogue_events) == 1
     assert dialogue_events[0].seat == 1
     assert dialogue_events[0].event_key == "riichi"
     assert dialogue_events[0].text == "리치!"
-    assert dialogue_events[1].seat == 2
-    assert dialogue_events[1].event_key == "pon"
-    assert dialogue_events[1].text == "퐁!"
 
 
 def test_extract_game_events_handles_kan_types(session: Session) -> None:
@@ -313,12 +334,17 @@ def test_extract_game_events_handles_kan_types(session: Session) -> None:
     cpu_character_by_seat = {1: cpu.id}
     selector = DialogueSelector(rng=random.Random(42))
 
-    dialogue_events = extract_game_events(
-        events=events,
-        cpu_character_by_seat=cpu_character_by_seat,
-        dialogue_selector=selector,
-        session=session,
-    )
+    dialogue_events = [
+        extract_game_events(
+            events=[event],
+            cpu_character_by_seat=cpu_character_by_seat,
+            dialogue_selector=selector,
+            dialogue_policy=permissive_policy(),
+            event_turn=turn,
+            session=session,
+        )[0]
+        for turn, event in enumerate(events, start=1)
+    ]
 
     assert len(dialogue_events) == 3
     for event in dialogue_events:
@@ -371,12 +397,18 @@ def test_extract_game_events_distinguishes_ron_tsumo(session: Session) -> None:
     cpu_character_by_seat = {1: cpu.id}
     selector = DialogueSelector(rng=random.Random(42))
 
-    dialogue_events = extract_game_events(
-        events=events,
-        cpu_character_by_seat=cpu_character_by_seat,
-        dialogue_selector=selector,
-        session=session,
-    )
+    policy = permissive_policy()
+    dialogue_events = [
+        extract_game_events(
+            events=[event],
+            cpu_character_by_seat=cpu_character_by_seat,
+            dialogue_selector=selector,
+            dialogue_policy=policy,
+            event_turn=turn,
+            session=session,
+        )[0]
+        for turn, event in enumerate(events, start=1)
+    ]
 
     assert len(dialogue_events) == 3
     assert dialogue_events[0].event_key == "ron"
@@ -385,3 +417,29 @@ def test_extract_game_events_distinguishes_ron_tsumo(session: Session) -> None:
     assert dialogue_events[1].text == "쯔모!"
     assert dialogue_events[2].event_key == "tsumo"
     assert dialogue_events[2].text == "쯔모!"
+
+
+def test_dialogue_policy_applies_cpu_and_event_cooldowns() -> None:
+    rules = {
+        "pon": DialogueEventRule(1.0, 2, 3, 30),
+        "chi": DialogueEventRule(1.0, 2, 3, 20),
+    }
+    policy = DialogueEventPolicy(rng=random.Random(42), rules=rules)
+
+    assert policy.allows(10, "pon", 1)
+    policy.record_emission(10, "pon", 1)
+
+    assert not policy.allows(20, "chi", 1)
+    assert not policy.allows(10, "chi", 2)
+    assert policy.allows(10, "chi", 3)
+    assert not policy.allows(10, "pon", 3)
+    assert policy.allows(10, "pon", 4)
+
+
+def test_dialogue_policy_applies_event_probability() -> None:
+    policy = DialogueEventPolicy(
+        rng=random.Random(42),
+        rules={"chi": DialogueEventRule(0.0, 0, 0, 20)},
+    )
+
+    assert not policy.allows(10, "chi", 1)

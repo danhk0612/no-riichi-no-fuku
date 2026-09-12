@@ -37,6 +37,7 @@ from app.services.game_registry import (
     StaleGameActionError,
     get_game_registry,
 )
+from app.services.dialogue_service import DialogueSelector, extract_game_events
 from app.services.game_setup import (
     CpuChoice,
     CpuTierUnavailableError,
@@ -132,11 +133,6 @@ async def send_registered_game_state(
             pending_events = registered.game.pending_events()
             if pending_events.events:
                 with session_factory() as session:
-                    from app.services.dialogue_service import (
-                        DialogueSelector,
-                        extract_game_events,
-                    )
-
                     dialogue_selector = DialogueSelector()
                     dialogue_events = extract_game_events(
                         events=pending_events.events,
@@ -144,6 +140,8 @@ async def send_registered_game_state(
                             registered.game.cpu_character_by_seat
                         ),
                         dialogue_selector=dialogue_selector,
+                        dialogue_policy=registered.dialogue_policy,
+                        event_turn=registered.action_version,
                         session=session,
                     )
                     

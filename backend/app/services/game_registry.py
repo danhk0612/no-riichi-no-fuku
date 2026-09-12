@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import secrets
 from collections.abc import Callable
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from functools import lru_cache
 from threading import RLock
 from uuid import uuid4
@@ -15,6 +15,7 @@ from app.db.models import GameSessionRecord, User
 from app.mahjong.riichienv_adapter import MatchResult
 from app.mahjong.session import AuthoritativeGameSession, CPU_SEATS, HUMAN_SEAT
 from app.services.game_result import MatchSettlement, settle_completed_match
+from app.services.dialogue_service import DialogueEventPolicy
 from app.services.game_setup import (
     CpuChoice,
     create_game_session,
@@ -55,6 +56,10 @@ class RegisteredGame:
     game: AuthoritativeGameSession | None = None
     result: MatchResult | None = None
     settlement: MatchSettlement | None = None
+    dialogue_policy: DialogueEventPolicy = field(
+        default_factory=DialogueEventPolicy,
+        repr=False,
+    )
 
     def __post_init__(self) -> None:
         self.lock = RLock()
@@ -270,6 +275,8 @@ class GameRegistry:
             )
             for legal_action_index in record.human_action_indices:
                 game.submit_human_action(legal_action_index)
+            # 복구 replay에서 발생한 과거 이벤트는 재전송하지 않는다.
+            game.pending_events()
             registered = RegisteredGame(
                 session_id=record.id,
                 user_id=record.user_id,
