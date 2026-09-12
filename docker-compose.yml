@@ -19,6 +19,8 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-nrnf}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-no_riichi_no_fuku}
       SUPERADMIN_LOGIN_ID: ${SUPERADMIN_LOGIN_ID}
       SUPERADMIN_INITIAL_PASSWORD: ${SUPERADMIN_INITIAL_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
       MEDIA_ROOT: /data/media
     volumes:
       - media_data:/data/media
