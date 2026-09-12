@@ -130,14 +130,15 @@ class ResultAssetApiTest(unittest.IsolatedAsyncioTestCase):
         old_storage_key = metadata["storage_key"]
         old_path = storage_path(self.settings.media_root, old_storage_key)
         self.assertEqual(old_path.read_bytes(), PNG_FIXTURE)
+        member_metadata_url = f"/api/game/result-assets/{metadata['id']}"
 
         locked = await self.client.get(
-            metadata["url"],
+            member_metadata_url,
             headers=self.member_headers,
         )
         self.assertEqual(locked.status_code, 404)
         locked_file = await self.client.get(
-            f"{metadata['url']}/file",
+            metadata["url"],
             headers=self.member_headers,
         )
         self.assertEqual(locked_file.status_code, 404)
@@ -152,13 +153,13 @@ class ResultAssetApiTest(unittest.IsolatedAsyncioTestCase):
             session.commit()
 
         unlocked = await self.client.get(
-            metadata["url"],
+            member_metadata_url,
             headers=self.member_headers,
         )
         self.assertEqual(unlocked.status_code, 200, unlocked.text)
         self.assertNotIn("storage_key", unlocked.json())
         served = await self.client.get(
-            f"{metadata['url']}/file",
+            metadata["url"],
             headers=self.member_headers,
         )
         self.assertEqual(served.status_code, 200, served.text)
