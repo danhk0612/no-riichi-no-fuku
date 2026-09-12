@@ -30,8 +30,8 @@ only. All three CPU tiers (0/1/2) are now available and functional in the select
 page refresh the member must log in again; the client then discovers the server's active session 
 and reconnects to the persisted turn. New members start with current/max HP 3 and stage 0 progress 
 for every seeded CPU. Superadmin result CG upload/replace/delete and member-unlocked result display
-are implemented against the runtime media volume without Git image assets. Docker/Compose runtime
-validation is intentionally deferred to the final integration stage.
+are implemented against the runtime media volume without Git image assets. Docker/Compose runtime,
+nginx proxy, PostgreSQL health and both persistent volumes are now validated end to end.
 
 Repository:
 
@@ -124,14 +124,28 @@ danhk0612/no-riichi-no-fuku
 - Backend test suite: 42 core tests passed (9 Tier2Agent tests, all Tier0/Tier1/session/result tests).
 - Frontend TypeScript production build passed.
 
-## Deferred to final integration
+## Verified in final Docker integration (2026-09-12)
 
-- `docker compose config/build/up`
-- Web root and nginx-proxied `/api/health`
-- PostgreSQL container health
-- `postgres_data` and `media_data` persistence
-
-These remain unverified until the final Docker integration task succeeds.
+- `docker compose config`, image build and detached stack startup passed with `web`, `api`, and
+  `db`.
+- The API image now includes Alembic migrations and runs migration plus idempotent superadmin/CPU
+  bootstrap before Uvicorn. Compose passes JWT settings required by runtime authentication.
+- The nginx web root and nginx-proxied `/api/health` returned HTTP 200.
+- PostgreSQL 17 reported container `healthy` and `pg_isready` accepting connections.
+- Runtime member/admin authentication and a synthetic PNG-signature result CG upload completed.
+  The locked member boundary returned 404 and the unlocked file returned 200 with matching
+  SHA-256.
+- Recreating all three services without deleting volumes preserved PostgreSQL users, the changed
+  administrator password, CPU progress, asset metadata, and the uploaded media file.
+- `postgres_data` is mounted at `/var/lib/postgresql/data`; `media_data` is mounted at
+  `/data/media`.
+- The current backend suite passed all 66 discovered tests inside the built API image. The
+  frontend production build passed as part of the Docker image build.
+- No CG binary was created in or committed to the repository.
+- Cloud VM setup caveat: Docker was initially absent. After installing it, stale legacy iptables
+  rules dropped traffic handled by Docker's nftables bridge and caused an initial nginx 504.
+  Allowing forwarding on that VM bridge restored container networking; this was a host firewall
+  issue, not a Compose/nginx code defect.
 
 ## Dialogue system integration (2026-09-12)
 
@@ -218,13 +232,10 @@ Backend test suite: 49 tests passed. Frontend TypeScript/Vite production build p
 
 ## Next entry point
 
-Docker/Compose full runtime validation is the next entry point. Verify `docker compose
-config/build/up`, nginx-proxied web/API/WebSocket behavior, PostgreSQL health, and
-`postgres_data`/`media_data` persistence across service recreation. Include an actual runtime
-result CG upload/serve/persistence check, but do not commit that file.
-
-Deferred dialogue keys such as game_start/final_east and profile image upload remain separate
-follow-up work and must not be folded into Docker validation.
+The planned project feature backlog and its final Docker integration validation are complete.
+The next entry point is polish and release-readiness review. Deferred dialogue keys such as
+`game_start`/`final_east` and profile image upload remain separately scoped, unapproved feature
+work and must not be folded into polish without an explicit request.
 
 For guidance, read:
 
@@ -232,9 +243,6 @@ For guidance, read:
 2. `docs/WORK_INSTRUCTIONS.md`
 3. `docs/WORK_START.md`
 4. Tournament simulation results in `docs/DECISIONS.md`
-
-Profile/CPU image upload and CG management remain undecided. Do not implement media upload paths
-or add CG binary files to the repository.
 
 ## Automated Difficulty Tuning Simulation (2026-09-12)
 
@@ -319,15 +327,10 @@ Stage/Tier 매핑은 불변(stage 0→Tier0, 1→Tier1, 2→Tier2)이며, 동일
 
 Backend test suite: 64 tests passed. Frontend TypeScript/Vite production build passed.
 
-## Next entry points
+## Next entry point (current)
 
-1. **Docker/Compose full runtime validation**: Verify `docker compose config/build/up`,
-   nginx-proxied web/API/WebSocket behavior, PostgreSQL health, and `postgres_data`/`media_data`
-   persistence. Include a runtime-only result CG upload/serve/recreation check.
-2. **Deferred dialogue events**: Add game_start, final_east, and match result event keys without
-   rewriting the completed cooldown/probability policy.
-3. **Profile images**: Decide member/CPU profile image format, size, and storage rules before
-   implementing uploads.
+**Project feature backlog complete / polish.** Start with release-readiness review and only take
+deferred dialogue events or profile image uploads as separately approved feature work.
 
 Read:
 
