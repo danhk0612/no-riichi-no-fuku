@@ -445,6 +445,26 @@ hand_value_preference, speed_preference)를 Tier 0/1/2 Agent의 의사결정에 
 - 현재 미디어 구현 범위는 `defeat_stage` 1/2/3 결과 CG로 한정한다. 회원/CPU 프로필
   이미지 업로드는 정책이 정해질 때까지 계속 범위 밖으로 둔다.
 
+### 결과 CG 구현
+
+- 기존 `cpu_result_assets` table을 그대로 사용하며 별도 schema migration은 추가하지
+  않는다. CPU와 단계 조합의 unique row를 업로드 시 생성하고 교체 시 같은 row의 새
+  storage key와 MIME type으로 갱신한다.
+- superadmin API는 `GET /api/admin/cpus/{cpu_id}/result-assets`,
+  `PUT /api/admin/cpus/{cpu_id}/result-assets/{defeat_stage}`,
+  `DELETE /api/admin/cpus/{cpu_id}/result-assets/{defeat_stage}`를 사용한다.
+- 회원 API는 `GET /api/game/result-assets/{asset_id}`와
+  `GET /api/game/result-assets/{asset_id}/file`에서 회원별 해금 단계를 다시 검사한다.
+  파일 응답은 shared cache를 금지하기 위해 `Cache-Control: private, no-store`를
+  사용한다.
+- `match_complete.result_asset`은 CPU가 4위이고 새 `defeat_stage`와 일치하는 활성
+  asset이 있을 때만 metadata와 인증 파일 URL을 포함한다.
+- React는 access token을 URL에 넣지 않고 Authorization header로 파일을 fetch해
+  object URL로 표시한다.
+- 2026-09-12 기준 backend 전체 76 tests와 frontend production build가 통과했다.
+  Docker/Compose 및 실제 persistent volume 재시작 보존은 후속 최종 통합에서
+  검증한다.
+
 ## 자동화된 난이도 튜닝 시뮬레이션
 
 2026-09-12에 고정 시드 토너먼트 시뮬레이션 하네스를 구현하고 Tier 0/1/2 에이전트 간 상대 성능을 측정했다.

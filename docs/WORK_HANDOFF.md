@@ -29,8 +29,9 @@ speech bubbles during play, and the return-to-selection loop. Access tokens rema
 only. All three CPU tiers (0/1/2) are now available and functional in the selection UI. After a 
 page refresh the member must log in again; the client then discovers the server's active session 
 and reconnects to the persisted turn. New members start with current/max HP 3 and stage 0 progress 
-for every seeded CPU. Docker/Compose runtime validation is intentionally deferred to the final 
-integration stage.
+for every seeded CPU. Superadmin result CG upload/replace/delete and member-unlocked result display
+are implemented against the runtime media volume without Git image assets. Docker/Compose runtime
+validation is intentionally deferred to the final integration stage.
 
 Repository:
 
@@ -194,17 +195,36 @@ to raise `CpuTierUnavailableError`.
 
 Backend test suite: 49 tests passed. Frontend TypeScript/Vite production build passed.
 
+## Result CG asset integration (2026-09-12)
+
+- 결과 CG는 JPEG/PNG/WebP만 허용하고 signature로 판별하며, 파일당 최대 크기는 5 MiB이다.
+- storage key는 서버가
+  `/cpu/{cpu_id}/result/stage-{1|2|3}/{uuid}.{jpg|png|webp}`로 생성한다.
+- 최초 비밀번호를 변경한 활성 superadmin만 CPU/단계별 asset 목록 조회 및
+  multipart 업로드·교체·삭제를 할 수 있다.
+- 파일은 `MEDIA_ROOT` 아래에 저장하고 기존 `cpu_result_assets` row에는 storage key,
+  MIME type, CPU와 단계 연결 metadata만 저장한다. 교체 시 새 key를 사용하고 이전
+  파일을 삭제하며, 삭제 시 DB row와 런타임 파일을 함께 제거한다.
+- 회원 metadata/file API는 해당 회원의 `defeat_stage`가 asset 단계 이상인지 서버에서
+  확인한다. 잠긴 단계와 존재하지 않는 asset은 같은 404 경계로 응답한다.
+- CPU가 4위인 대국 종료 payload는 방금 해금된 단계의 활성 `result_asset` metadata를
+  포함한다. 플레이어가 4위이거나 등록 asset이 없으면 `null`이다.
+- React 종료 화면은 JWT를 포함한 별도 fetch로 바이너리를 받은 뒤 object URL로
+  표시하고 다음 대국/로그아웃/unmount 시 URL을 해제한다.
+- 테스트에는 실제 CG가 아닌 synthetic signature 및 metadata fixture만 사용했다.
+- 백엔드 전체 suite 76개 통과, 프런트엔드 production build 통과.
+- Docker/Compose, PostgreSQL 컨테이너, 실제 persistent volume 재시작 보존은 이
+  작업 범위에서 검증하지 않았다.
+
 ## Next entry point
 
-All three CPU tiers (0/1/2) are now implemented and functional. Automated difficulty tuning
-through fixed-seed tournament simulation has been completed with balanced results.
+Docker/Compose full runtime validation is the next entry point. Verify `docker compose
+config/build/up`, nginx-proxied web/API/WebSocket behavior, PostgreSQL health, and
+`postgres_data`/`media_data` persistence across service recreation. Include an actual runtime
+result CG upload/serve/persistence check, but do not commit that file.
 
-Recommended next entry points:
-
-1. Decide profile/CG upload format, size, and storage-key rules, then implement result asset upload
-   and display integration
-2. Add currently deferred dialogue keys such as game_start, final_east, and match result events
-3. Docker/Compose full runtime validation
+Deferred dialogue keys such as game_start/final_east and profile image upload remain separate
+follow-up work and must not be folded into Docker validation.
 
 For guidance, read:
 
@@ -301,19 +321,13 @@ Backend test suite: 64 tests passed. Frontend TypeScript/Vite production build p
 
 ## Next entry points
 
-Recommended work (in any order):
-
-1. **CG result asset upload and display integration**: First decide the unresolved upload format,
-   size, and storage-key rules. Store metadata only in DB and files in the persistent volume.
-   Do NOT add CG binary files to the Git repository.
-
-2. **Deferred dialogue events**: Add keys such as game_start, final_east, and match result events.
-   The WebSocket contract, speech bubbles, and cooldown/probability policy are complete; do not
-   rebuild them.
-
-3. **Docker/Compose full runtime validation**: Verify `docker compose config/build/up`, nginx-proxied
-   `/api/health`, PostgreSQL container health, and `postgres_data`/`media_data` persistence.
-   Full Docker validation has been intentionally deferred until feature implementation completes.
+1. **Docker/Compose full runtime validation**: Verify `docker compose config/build/up`,
+   nginx-proxied web/API/WebSocket behavior, PostgreSQL health, and `postgres_data`/`media_data`
+   persistence. Include a runtime-only result CG upload/serve/recreation check.
+2. **Deferred dialogue events**: Add game_start, final_east, and match result event keys without
+   rewriting the completed cooldown/probability policy.
+3. **Profile images**: Decide member/CPU profile image format, size, and storage rules before
+   implementing uploads.
 
 Read:
 
