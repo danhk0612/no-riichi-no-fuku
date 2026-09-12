@@ -46,6 +46,29 @@
   volume 검증은 기능 구현이 완료된 최종 통합 단계에서 수행한다.
 - 최종 Docker 검증 전에는 Docker 배포 완료로 간주하지 않는다.
 
+## Docker 최종 통합 검증 (2026-09-12)
+
+- `docker compose config`, `docker compose build`, `docker compose up -d --build`를 실제
+  Docker 29.1.3 / Compose 2.40.3 환경에서 실행해 `web`, `api`, `db` 3개 서비스를
+  기동했다.
+- API image는 Alembic 파일을 포함하고 시작 시 `alembic upgrade head`,
+  `python -m app.bootstrap`을 순서대로 실행한 뒤 Uvicorn을 시작한다. Compose는
+  `JWT_SECRET`과 `ACCESS_TOKEN_EXPIRE_MINUTES`도 API에 전달한다.
+- nginx web root와 nginx 경유 `/api/health`가 HTTP 200을 반환했고 PostgreSQL 17
+  container는 `healthy` 및 `pg_isready` accepting 상태였다.
+- 런타임에서 회원 가입/로그인, 최고 관리자 최초 비밀번호 변경, CPU 조회와 synthetic
+  PNG signature를 사용한 결과 CG 업로드를 실행했다. 잠긴 회원 요청은 404, 해금 후
+  파일 요청은 200이었으며 응답 SHA-256이 업로드 입력과 일치했다.
+- `docker compose up -d --force-recreate`로 세 container를 재생성한 뒤에도 변경된
+  관리자 비밀번호, 회원/진행도/asset metadata와 결과 CG 파일이 모두 보존됐다.
+  `postgres_data`는 `/var/lib/postgresql/data`, `media_data`는 `/data/media`에
+  mount된다.
+- 검증용 CG bytes는 pipe로만 전송했으며 Git working tree에 CG binary를 생성하지 않았다.
+- Cloud VM은 최초에 Docker가 설치되어 있지 않았고, 설치 후 기존 legacy iptables와
+  Docker nftables 규칙 충돌로 container 간 traffic이 drop되어 nginx 504가 발생했다.
+  VM의 해당 bridge에 legacy FORWARD 허용 규칙을 적용한 뒤 정상화됐으며 이는 repository
+  구성 문제가 아닌 검증 host 방화벽 문제로 기록한다.
+
 ## 백엔드 기반
 
 - SQLAlchemy 2.x 동기 session과 `psycopg` 드라이버를 사용한다.
