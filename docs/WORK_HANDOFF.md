@@ -34,8 +34,8 @@ only. All three CPU tiers (0/1/2) are now available and functional in the select
 page refresh the member must log in again; the client then discovers the server's active session 
 and reconnects to the persisted turn. New members start with current/max HP 3 and stage 0 progress 
 for every seeded CPU. Superadmin result CG upload/replace/delete and member-unlocked result display
-are implemented against the runtime media volume without Git image assets. Docker/Compose runtime
-validation is intentionally deferred to the final integration stage.
+are implemented against the runtime media volume without Git image assets. Docker/Compose runtime,
+nginx proxy, PostgreSQL health and both persistent volumes are now validated end to end.
 
 Repository:
 
@@ -128,14 +128,27 @@ danhk0612/no-riichi-no-fuku
 - Backend test suite: 42 core tests passed (9 Tier2Agent tests, all Tier0/Tier1/session/result tests).
 - Frontend TypeScript production build passed.
 
-## Deferred to final integration
+## Verified in final Docker integration (2026-09-12)
 
-- `docker compose config/build/up`
-- Web root and nginx-proxied `/api/health`
-- PostgreSQL container health
-- `postgres_data` and `media_data` persistence
-
-These remain unverified until the final Docker integration task succeeds.
+- `docker compose config`, image build and detached stack startup passed with `web`, `api`, and
+  `db`. The API image runs Alembic migration and idempotent bootstrap before Uvicorn, and Compose
+  passes the JWT settings required by authentication.
+- The nginx web root and nginx-proxied `/api/health` returned HTTP 200. PostgreSQL 17 reported
+  container `healthy` and `pg_isready` accepting connections.
+- Runtime member/admin authentication and a synthetic PNG-signature result CG upload completed.
+  The locked member boundary returned 404 and the unlocked file returned 200 with matching
+  SHA-256.
+- Recreating all three services preserved PostgreSQL users, the changed administrator password,
+  CPU progress, asset metadata, and the uploaded media file. `postgres_data` is mounted at
+  `/var/lib/postgresql/data`; `media_data` is mounted at `/data/media`.
+- After the stage dialogue/empty-slot change landed, the latest image upgraded the existing
+  PostgreSQL volume to Alembic `20260912_0004` and still served the pre-existing CG with the same
+  SHA-256.
+- No CG binary was created in or committed to the repository.
+- Cloud VM setup caveat: Docker was initially absent. After installation, stale legacy iptables
+  rules dropped traffic handled by Docker's nftables bridge and caused an initial nginx 504.
+  Allowing forwarding on that VM bridge restored container networking; this was a host firewall
+  issue, not a Compose/nginx code defect.
 
 ## Dialogue system integration (2026-09-12)
 
@@ -169,8 +182,8 @@ implementation added:
 - `DialogueEvent` type, `recentDialogues` state, and speech-bubble UI in the frontend
 
 After the server-side policy change, the complete backend suite passes with 74 tests and the
-frontend TypeScript/Vite production build passes. Docker/Compose remains explicitly unverified
-until the deferred final integration task.
+frontend TypeScript/Vite production build passes. Docker/Compose was unverified in that change
+and was subsequently validated in the final integration recorded above.
 
 ## Tier 1 CPU implementation (2026-09-12)
 
@@ -217,8 +230,8 @@ Backend test suite: 49 tests passed. Frontend TypeScript/Vite production build p
   표시하고 다음 대국/로그아웃/unmount 시 URL을 해제한다.
 - 테스트에는 실제 CG가 아닌 synthetic signature 및 metadata fixture만 사용했다.
 - 백엔드 전체 suite 76개 통과, 프런트엔드 production build 통과.
-- Docker/Compose, PostgreSQL 컨테이너, 실제 persistent volume 재시작 보존은 이
-  작업 범위에서 검증하지 않았다.
+- Docker/Compose와 persistent volume 보존은 이 CG 작업에서는 검증하지 않았으며,
+  이후 위 최종 통합에서 실제 업로드/제공/재생성까지 검증했다.
 
 ## Stage dialogue and empty CG slot integration (2026-09-12)
 
@@ -245,17 +258,15 @@ Backend test suite: 49 tests passed. Frontend TypeScript/Vite production build p
 - 이 변경 후 `python3 -m unittest discover -s tests -v` 전체 66개 테스트가 통과했다.
 - `npm run build`로 TypeScript/Vite production build가 통과했다.
 - 새 Alembic revision을 포함한 SQLite `upgrade head`와 `downgrade base` 왕복이
-  통과했다. Docker/Compose와 PostgreSQL runtime 검증은 수행하지 않았다.
+  통과했다. 이후 최종 Docker 통합에서 PostgreSQL 기존 volume의 revision 0004
+  upgrade와 CG 보존을 추가로 검증했다.
 
 ## Next entry point
 
-Docker/Compose full runtime validation is the next entry point. Verify `docker compose
-config/build/up`, nginx-proxied web/API/WebSocket behavior, PostgreSQL health, and
-`postgres_data`/`media_data` persistence across service recreation. Include an actual runtime
-result CG upload/serve/persistence check, but do not commit that file.
-
-Deferred dialogue keys such as game_start/final_east and profile image upload remain separate
-follow-up work and must not be folded into Docker validation.
+The planned project feature backlog and final Docker integration validation are complete.
+The next entry point is polish and release-readiness review. Deferred dialogue timing, profile
+image upload, and real media operations remain separately scoped work and must not be folded into
+polish without an explicit request.
 
 For guidance, read:
 
@@ -263,9 +274,6 @@ For guidance, read:
 2. `docs/WORK_INSTRUCTIONS.md`
 3. `docs/WORK_START.md`
 4. Tournament simulation results in `docs/DECISIONS.md`
-
-Profile/CPU image upload and CG management remain undecided. Do not implement media upload paths
-or add CG binary files to the repository.
 
 ## Automated Difficulty Tuning Simulation (2026-09-12)
 
@@ -350,18 +358,11 @@ Stage/Tier 매핑은 불변(stage 0→Tier0, 1→Tier1, 2→Tier2)이며, 동일
 
 Backend test suite: 64 tests passed. Frontend TypeScript/Vite production build passed.
 
-## Next entry points
+## Next entry point (current)
 
-1. **Docker/Compose full runtime validation**: Verify `docker compose config/build/up`,
-   nginx-proxied web/API/WebSocket behavior, PostgreSQL health, and `postgres_data`/`media_data`
-   persistence. Include a runtime-only result CG upload/serve/recreation check.
-2. **Deferred dialogue event wiring**: Seed pools for `game_start` and `match_first/match_last`
-   exist, but only the defeat-stage result event is wired outside the six RiichiEnv action events.
-   Wire the remaining candidates only when their exact display timing is decided; do not rewrite
-   the completed cooldown/probability policy.
-3. **Profile images**: Decide member/CPU profile image format, size, and storage rules before
-   implementing uploads.
-4. **Real media content**: Upload final CGs through the admin API at runtime. Do not add them to Git.
+**Project feature backlog complete / polish.** Start with release-readiness review. Deferred
+dialogue timing, profile images, and real runtime media remain separately approved work; real CG
+files must continue to stay out of Git.
 
 Read:
 
