@@ -1,5 +1,19 @@
 # Initial Decisions
 
+## 2026-10-14 출시 준비 점검: 저장 실패와 정산 전 재시작
+
+- WebSocket 행동 처리에서 DB commit 실패를 주입했다. 서버는 `persistence_failed`와
+  close code 1011을 반환하며, DB에는 행동이 추가되지 않는다. 같은 registry로
+  재접속하면 실패 전 턴과 action version이 그대로 복원되고 재시도는 정상 저장된다.
+- production CPU 고정 seed 대국의 최종 행동까지 commit한 뒤 정산하지 않은 상태에서
+  registry를 교체했다. 접속 시 행동 로그로 동일 점수·순위를 복구하고 정산한다.
+  다시 registry를 교체해 접속해도 HP/CPU 진행도가 중복 반영되지 않는다.
+- `backend/tests/test_game_websocket.py`에 위 두 회귀 검사를 추가했다. 전체 백엔드
+  68개 테스트, compileall 및 diff 검사가 통과했다. SQLite/TestClient에서 확인한
+  장애 경계이며 실제 PostgreSQL 장애나 프로세스 강제 종료를 수행한 것은 아니다.
+- 제품 코드·DB 스키마·대사 정책 변경은 필요하지 않았다. Docker 재검증 및 미디어
+  생성은 수행하지 않았다.
+
 ## 2026-10-14 출시 준비 점검: 실시간 말풍선 수정
 
 - WebSocket 콜백이 연결 시점의 React `recentDialogues` 배열을 캡처해 서버 대사를
