@@ -78,6 +78,7 @@ export type GameScreenState =
       players: PlayerSeat[]
       resultAsset: ResultAsset | null
       resultAssetObjectUrl: string | null
+      resultAssetLoadFailed: boolean
       resultDialogue: ResultDialogue | null
     }
 

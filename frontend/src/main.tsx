@@ -162,6 +162,7 @@ function App() {
           players: seats,
           resultAsset: message.result_asset,
           resultAssetObjectUrl: null,
+          resultAssetLoadFailed: false,
           resultDialogue: message.result_dialogue,
         })
         if (message.result_asset) {
@@ -185,7 +186,15 @@ function App() {
                 return { ...current, resultAssetObjectUrl: objectUrl }
               })
             })
-            .catch((caught) => setError(errorMessage(caught)))
+            .catch((caught) => {
+              if (loadVersion !== resultAssetLoadVersionRef.current) return
+              setError(errorMessage(caught))
+              setGameState((current) => (
+                current.status === 'complete' && current.resultAsset?.id === asset.id
+                  ? { ...current, resultAssetLoadFailed: true }
+                  : current
+              ))
+            })
         }
         setActionPending(false)
         socket.close(1000)

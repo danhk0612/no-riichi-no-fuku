@@ -2,6 +2,14 @@
 
 ## Latest verification — 2026-10-14
 
+- Failed result-CG requests now replace the loading placeholder with a failure notice while
+  retaining final scores and next-match controls. The existing asset-load version guard also
+  covers failures, preventing an old response from adding errors to the next selection screen.
+- `frontend/tests/result-asset.browser.mjs` covers immediate HTTP 503 and delayed failure after
+  navigation with metadata/error responses only. Old main `080e4e0` fails at the failure notice;
+  the fix passes. All three browser regressions, frontend build and diff checks passed.
+  No image files, retry feature or backend changes; server/Docker/real-media checks were not rerun.
+
 - Issue #47 fixed for new games with CPU policy 2: only East 4 and sudden-death South rounds
   trigger Tier2 endgame logic. Real RiichiEnv `kyoku_index` resets to 0 in each wind; actual
   seed 5 spike observations cover East 1 through South 4. Old main fails at East 1.

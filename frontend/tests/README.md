@@ -20,6 +20,7 @@ Run the check in another terminal:
 ```sh
 node tests/dialogue.browser.mjs
 node tests/connection.browser.mjs
+node tests/result-asset.browser.mjs
 ```
 
 For a different Vite address, set `TEST_BASE_URL`.
@@ -41,3 +42,7 @@ without a next-match button. Progress reset and HP recovery policies are not imp
 controls lock and the refresh/re-login recovery notice appears. Refresh and login discover the
 same active session; the next action uses the restored server action version. It uses routed
 REST/WebSocket fixtures rather than a real server restart.
+
+`result-asset.browser.mjs` uses metadata and HTTP 503 responses without image files. It checks
+that CG failure replaces the loading message while scores/next-match controls remain available,
+and that a failed asset response arriving after next-match selection cannot display an old error.

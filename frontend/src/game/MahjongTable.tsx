@@ -275,7 +275,13 @@ function CompletedTable({
                 />
               )
             : state.resultAsset
-              ? <p className="result-asset-placeholder">결과 CG를 불러오는 중입니다.</p>
+              ? (
+                  <p className="result-asset-placeholder">
+                    {state.resultAssetLoadFailed
+                      ? '결과 CG를 불러오지 못했습니다.'
+                      : '결과 CG를 불러오는 중입니다.'}
+                  </p>
+                )
               : (
                   <p className="result-asset-placeholder">
                     이 단계의 결과 CG는 아직 등록되지 않았습니다.
