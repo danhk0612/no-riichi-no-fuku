@@ -2,16 +2,29 @@
 
 ## Latest verification — 2026-10-14
 
+- Issue #47 fixed for new games with CPU policy 2: only East 4 and sudden-death South rounds
+  trigger Tier2 endgame logic. Real RiichiEnv `kyoku_index` resets to 0 in each wind; actual
+  seed 5 spike observations cover East 1 through South 4. Old main fails at East 1.
+- CPU-choice JSON snapshots now store `policy_version=2`; missing versions default to policy 1
+  for exact legacy replay. No schema migration, stage remapping or personality/weight tuning.
+- A pre-change main `e357c01` fixture verifies all 108 original human-turn hashes, a mid-game
+  registry replacement and final replay: scores `[17000,27700,24700,30600]`, ranks `[4,2,3,1]`.
+  New policy stage 2 recovery is also tested. See `backend/tests/fixtures/README.md`.
+- All 72 backend tests, both Chromium regressions, frontend build, compileall and diff checks
+  passed. Existing round-index checks/fixtures were corrected for South's reset to index 0.
+- Same four seeds × nine combinations compared 36 matches per policy. Tier2 mean rank was
+  2.4583 before and 2.5208 after (48 appearances each). This bounded sample does not establish
+  difficulty ordering or statistical significance; no extra tuning was performed. Full numbers
+  are in DECISIONS.md. Docker/PostgreSQL outage checks were not rerun.
+
 - Human-turn transport now includes the real RiichiEnv `Observation.kyoku_index` (absent from
   `to_dict()`), so the table shows the current round rather than only the prevailing wind.
   Actual seed 5 observations matched start_kyoku events through East 1-4 and honba repeats.
 - Backend 68 tests, both Chromium regressions, TypeScript/Vite build and diff checks passed.
   The browser regression covers East 1/East 4 with honba/South 1; old main `ea41944` fails
   at East 1. No CPU decision policy or rules changed; Docker was not rerun.
-- **Next concrete defect: Issue #47.** Tier2 currently treats every East round as final.
-  Fixing CPU decisions requires preserving existing active-session deterministic replay;
-  first inspect a policy-version boundary or another compatible approach. Do not silently
-  replay old logs with changed CPU logic or invalidate active games.
+- Issue #47 was subsequently resolved with the policy boundary recorded above. Preserve that
+  boundary for future CPU changes; do not replay old logs with changed decisions.
 
 - Unfinished WebSocket disconnects now lock action controls and explain the existing recovery
   path (refresh and re-login), including normal code 1000 closure. Current-socket guards also

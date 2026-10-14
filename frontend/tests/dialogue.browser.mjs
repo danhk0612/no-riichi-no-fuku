@@ -74,7 +74,7 @@ try {
   await page.locator('.round-status strong').getByText('동4국', { exact: true }).waitFor()
   await page.locator('.round-status').getByText('본장 2', { exact: true }).waitFor()
   const south = turn(2)
-  south.turn.observation.kyoku_index = 4
+  south.turn.observation.kyoku_index = 0
   south.turn.observation.round_wind = 1
   send(sockets[0], south)
   await page.locator('.round-status strong').getByText('남1국', { exact: true }).waitFor()

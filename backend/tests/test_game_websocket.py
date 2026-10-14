@@ -1,6 +1,9 @@
 import json
+import hashlib
 import unittest
 from collections.abc import Generator
+from dataclasses import asdict
+from pathlib import Path
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
@@ -146,6 +149,7 @@ class GameWebSocketApiTest(unittest.TestCase):
             assert record is not None
             self.assertEqual(record.status, "active")
             self.assertEqual(record.human_action_indices, [])
+            self.assertTrue(all(choice["policy_version"] == 2 for choice in record.cpu_choices))
         duplicate = self.client.post(
             "/api/game/sessions",
             headers={"Authorization": f"Bearer {self.member_token}"},
@@ -251,6 +255,41 @@ class GameWebSocketApiTest(unittest.TestCase):
             error = websocket.receive_json()
             self.assertEqual(error["code"], "stale_action")
             self.assertEqual(websocket.receive_json(), first_turn)
+
+    def test_legacy_tier2_snapshot_replays_every_original_turn(self) -> None:
+        fixture = json.loads((Path(__file__).parent / "fixtures/tier2_legacy_replay.json").read_text())
+        created = self.create_game()
+        with self.session_factory() as session:
+            record = session.get(GameSessionRecord, created["session_id"])
+            record.match_seed = fixture["seed"]
+            record.cpu_choices = fixture["cpu_choices"]
+            session.commit()
+            user_id = record.user_id
+        self.registry = GameRegistry()
+        for index, action_index in enumerate(fixture["actions"]):
+            # Simulate a restart in the middle of a pre-versioned Tier2 game.
+            if index == 12:
+                self.registry = GameRegistry()
+            with self.session_factory() as session:
+                registered = self.registry.get_owned(session, created["session_id"], user_id)
+                turn = registered.game.human_turn()
+                digest = hashlib.sha256(json.dumps(asdict(turn), sort_keys=True).encode()).hexdigest()
+                self.assertEqual(digest, fixture["turn_sha256"][index], f"legacy turn {index}")
+                self.registry.submit_action(session, registered, action_index, index)
+                session.commit()
+        with self.session_factory() as session:
+            restored = GameRegistry().get_owned(session, created["session_id"], user_id)
+            self.assertTrue(restored.done)
+            result = restored.game.result()
+            self.assertEqual(list(result.scores), fixture["result"]["scores"])
+            self.assertEqual(list(result.ranks), fixture["result"]["ranks"])
+
+    def test_new_tier2_policy_survives_registry_restart(self) -> None:
+        with self.session_factory() as session:
+            for progress in session.scalars(select(UserCpuProgress)):
+                progress.defeat_stage = 2
+            session.commit()
+        self.test_persisted_action_restores_same_turn_with_fresh_registry()
 
     def test_failed_action_commit_recovers_only_persisted_turn(self) -> None:
         created = self.create_game()
@@ -364,7 +403,7 @@ class GameWebSocketApiTest(unittest.TestCase):
                 if starts:
                     self.assertEqual(
                         observation["kyoku_index"],
-                        observation["round_wind"] * 4 + starts[-1]["kyoku"] - 1,
+                        starts[-1]["kyoku"] - 1,
                     )
                 action_index = choose_human_action_index(
                     message["turn"]["legal_actions"]

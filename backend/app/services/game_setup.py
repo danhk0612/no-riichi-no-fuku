@@ -43,6 +43,8 @@ class CpuChoice:
     riichi_preference: float
     hand_value_preference: float
     speed_preference: float
+    # Missing in pre-versioned persisted snapshots: preserve the original policy.
+    policy_version: int = 1
 
 
 class CpuAgentFactory(Protocol):
@@ -85,6 +87,7 @@ def list_selectable_cpus(db_session: Session, user_id: int) -> list[CpuChoice]:
             riichi_preference=cpu.riichi_preference,
             hand_value_preference=cpu.hand_value_preference,
             speed_preference=cpu.speed_preference,
+            policy_version=2,
         )
         for cpu, defeat_stage in rows
     ]
@@ -117,6 +120,7 @@ def create_production_cpu_agent(
         )
     elif choice.defeat_stage == 2:
         return Tier2Agent(
+            policy_version=choice.policy_version,
             seed=seed,
             aggression=choice.aggression,
             defense=choice.defense,

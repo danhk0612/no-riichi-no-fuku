@@ -1,9 +1,11 @@
 import unittest
+import random
 
 from riichienv import Action, ActionType, GameRule, RiichiEnv
 
 from app.mahjong.session import AuthoritativeGameSession
 from app.mahjong.tier2 import Tier2Agent
+from app.spikes.riichienv_0_4_8 import choose_action as choose_spike_action
 
 
 class StubObservation:
@@ -11,6 +13,8 @@ class StubObservation:
         self._legal_actions = legal_actions
         self.hand = hand if hand is not None else []
         self.player_id = 0
+        self.kyoku_index = 0
+        self.round_wind = 0
 
     def legal_actions(self) -> list[Action]:
         return self._legal_actions
@@ -26,7 +30,7 @@ class StubObservation:
             "riichi_declared": [False, False, False, False],
             "honba": 0,
             "riichi_sticks": 0,
-            "round_wind": 0,
+            "round_wind": self.round_wind,
             "oya": 0,
         }
 
@@ -46,6 +50,37 @@ def choose_human_action_index(actions: tuple[dict[str, object], ...]) -> int:
 
 
 class Tier2AgentTest(unittest.TestCase):
+    def test_endgame_round_boundary_and_legacy_policy(self) -> None:
+        observation = StubObservation([])
+        for index in range(8):
+            observation.kyoku_index = index % 4
+            observation.round_wind = index // 4
+            with self.subTest(index=index):
+                self.assertEqual(
+                    Tier2Agent()._analyze_game_state(observation).is_final_round,
+                    index >= 3,
+                )
+                self.assertEqual(Tier2Agent(policy_version=1)._analyze_game_state(observation).is_final_round, index < 4)
+
+    def test_real_engine_east_and_sudden_death_rounds(self) -> None:
+        env = RiichiEnv(game_mode="4p-red-east", rule=GameRule.default_tenhou(), seed=5)
+        observations = env.reset()
+        rngs = {seat: random.Random(50 + seat) for seat in range(4)}
+        agent = Tier2Agent()
+        seen = set()
+        for _ in range(5000):
+            if env.done():
+                break
+            for observation in observations.values():
+                seen.add((observation.round_wind, observation.kyoku_index))
+                self.assertEqual(
+                    agent._analyze_game_state(observation).is_final_round,
+                    observation.round_wind > 0 or observation.kyoku_index == 3,
+                )
+            observations = env.step({seat: choose_spike_action(obs, rngs[seat]) for seat, obs in observations.items()})
+        self.assertTrue(env.done())
+        self.assertEqual(seen, {(wind, index) for wind in (0, 1) for index in range(4)})
+
     def test_winning_action_is_prioritized(self) -> None:
         discard = Action(type=ActionType.DISCARD, tile=0, actor=1)
         ron = Action(type=ActionType.RON, actor=1)
