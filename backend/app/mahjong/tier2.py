@@ -47,7 +47,11 @@ class Tier2Agent:
         riichi_preference: float = 1.0,
         hand_value_preference: float = 1.0,
         speed_preference: float = 1.0,
+        policy_version: int = 2,
     ) -> None:
+        if policy_version not in (1, 2):
+            raise ValueError(f"unsupported Tier2 policy version: {policy_version}")
+        self._policy_version = policy_version
         self._rng = random.Random(seed)
         self._aggression = aggression
         self._defense = defense
@@ -109,8 +113,13 @@ class Tier2Agent:
         my_rank = ranks[observation.player_id]
         
         round_wind = data.get("round_wind", 0)
-        oya = data.get("oya", 0)
-        is_final_round = round_wind == 0
+        # Policy 1 must reproduce existing action logs exactly. In East-only
+        # matches East 4 and any sudden-death South extension are endgame rounds.
+        is_final_round = (
+            round_wind == 0
+            if self._policy_version == 1
+            else round_wind > 0 or observation.kyoku_index >= 3
+        )
         
         opponent_riichi_count = sum(
             1
