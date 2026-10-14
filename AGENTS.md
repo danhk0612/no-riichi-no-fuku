@@ -1,28 +1,38 @@
 # Repository Agent Instructions
 
-이 저장소에서 작업하는 개발 에이전트는 작업 전 반드시 다음 문서를 순서대로 확인한다.
+작업 전 다음 순서로 확인한다.
 
 1. `README.md`
-2. `docs/PROJECT_PLAN.md`
-3. `docs/WORK_INSTRUCTIONS.md`
-4. `docs/DECISIONS.md`
-5. `docs/WORK_START.md`
+2. `PROJECT.md`
+3. `REQUIREMENTS.md`
+4. `ARCHITECTURE.md`
+5. `CURRENT_STATE.md`
+6. `TASKS.md`
+7. `AI_WORKFLOW.md`
+8. 관련 코드·테스트 및 필요한 기존 `docs/` 검증 근거
+
+현재 방향은 Windows 오프라인 게임 전환이다. 현재 제품이 웹판이라는 사실과
+미구현 목표를 구분한다. 위 루트 문서가 Windows 개발의 기준이며 기존 `docs/`의
+웹 운영·초기 계획은 참고/검증 증거다. 사용자 최신 지시와 현재 코드/검증을 우선한다.
 
 핵심 원칙:
 
-- GitHub의 현재 코드를 source of truth로 사용한다.
-- 요청된 범위만 수정한다.
-- 4인 일본 리치마작 동풍전, 사람 1명 + CPU 3명 구조를 유지한다.
-- 게임 상태와 규칙의 최종 판정은 서버가 담당한다.
-- CPU 마작 판단에 외부 LLM/API를 사용하지 않는다.
-- 캐릭터 성향과 CPU 난이도를 분리한다.
-- CPU가 동풍전 최종 4위일 때만 해당 사용자 기준 `defeat_stage`를 1 올린다.
-- 플레이어가 최종 4위일 때만 HP를 1 줄인다.
-- `defeat_stage == 3`인 CPU는 이후 선택할 수 없다.
-- CG 파일/더미 CG/성인 이미지는 Git 저장소에 생성하거나 커밋하지 않는다.
-- 미디어는 런타임 persistent volume + DB metadata 방식으로 관리한다.
-- 최고 관리자 초기 ID/암호는 환경변수로만 주입하고 최초 로그인 후 비밀번호 변경을 강제한다.
-- 새 GPL/AGPL 의존성이 핵심 기능에 결합되면 라이선스 호환성을 검토하고 필요 시 프로젝트 라이선스도 전환한다.
-- 완료 전 diff와 관련 테스트를 확인한다.
+- 지정 Task·선행 조건·승인 범위만 수행한다. 미확정 기술/정책을 임의 채택하지 않는다.
+- 기본 게임은 인터넷·외부 서버·Docker·ComfyUI 없이 가능해야 한다.
+- 규칙·게임 상태 최종 판정은 UI가 아닌 게임 엔진이 담당한다. 현재는 서버,
+  Windows 목표는 로컬 엔진이다. CPU에 외부 LLM/API를 사용하지 않는다.
+- 4인 일본 리치마작 동풍전, 사람 1명 + CPU 3명, 성향/난이도 분리를 유지한다.
+- CPU 최종 4위만 사용자별 stage +1, 사람 최종 4위만 HP -1.
+- 기존 stage 3 선택 제외/HP 0 게임 오버는 진행 정책 결정 전 유지한다.
+- CPU는 모두 명시적 성인이다. defeat_stage와 새 이미지 Level의 대응은 미확정이다.
+- CPU policy/엔진/seed/action replay 호환을 보존한다. 생성 기능은 규칙/정산/RNG와 분리한다.
+- CG/더미 이미지/성인 이미지·사용자 데이터/비밀값을 Git에 생성·커밋하지 않는다.
+- 미디어는 DB metadata와 별도 런타임 파일로 보관한다. Windows 경로/삭제 정책은 결정 전 보류한다.
+- 기존 웹 관리자 환경변수·최초 암호 변경 보안을 임의 제거하지 않는다.
+  Windows 로컬 프로필/인증은 확정 후 해당 Task에서 전환한다.
+- 기존 코드/검증 증거·사용자 파일을 임의 삭제하지 않는다.
+- 새 GPL/AGPL 핵심 의존성은 라이선스 호환/필요한 전환을 검토한다. 파일 유래·고지를 유지한다.
+- 완료 전 diff·관련 검증과 문서 상태를 확인한다. Windows 실기/CI/개발 환경을 구분한다.
+- Git push/PR은 현재 허용 범위에서, 직접 병합·Release/tag는 명시 허용된 작업에서만 한다.
 
-상세 규칙은 `docs/WORK_INSTRUCTIONS.md`가 우선한다.
+상세 작업·검증·인계는 `AI_WORKFLOW.md`를 따른다.
