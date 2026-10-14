@@ -1,3 +1,6 @@
+> Windows 전환 기준은 [REQUIREMENTS.md](../REQUIREMENTS.md) / [ARCHITECTURE.md](../ARCHITECTURE.md) 및 루트 AGENTS.md를 따른다.
+> 아래는 기존 웹판의 계획/시점별 기록으로 보존한다. 오래된 미구현·다음 작업·Docker 정책을 현재 지시로 적용하지 않는다.
+
 # Initial Decisions
 
 ## 2026-10-14 실제 브라우저·서버 재시작 통합 검증

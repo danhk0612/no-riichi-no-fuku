@@ -1,3 +1,6 @@
+> Windows 전환 기준은 [AI_WORKFLOW.md](../AI_WORKFLOW.md) 및 루트 AGENTS.md를 따른다.
+> 아래는 기존 웹판의 계획/시점별 기록으로 보존한다. 오래된 미구현·다음 작업·Docker 정책을 현재 지시로 적용하지 않는다.
+
 # No Riichi No Fuku - Work 개발 지침
 
 이 문서는 새 ChatGPT Work 또는 다른 개발 에이전트가 이 저장소에서 작업할 때 따라야 하는 프로젝트 기준이다.

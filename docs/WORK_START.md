@@ -1,3 +1,6 @@
+> Windows 전환 기준은 [TASKS.md](../TASKS.md) / [AI_WORKFLOW.md](../AI_WORKFLOW.md) 및 루트 AGENTS.md를 따른다.
+> 아래는 기존 웹판의 계획/시점별 기록으로 보존한다. 오래된 미구현·다음 작업·Docker 정책을 현재 지시로 적용하지 않는다.
+
 # 첫 Work 시작 절차
 
 이 문서는 새 ChatGPT Work에서 이 저장소를 연결한 직후 수행할 첫 개발 순서를 정의한다.

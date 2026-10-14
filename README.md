@@ -1,6 +1,8 @@
 # No Riichi No Fuku
 
-`No Riichi No Fuku`는 웹 기반 1인용 4인 일본 리치마작 게임 프로젝트입니다.
+`No Riichi No Fuku`는 1인용 4인 일본 리치마작 게임 프로젝트입니다.
+현재 구현은 웹 서비스이며, 앞으로 Windows 독립 실행 오프라인 게임으로 전환합니다.
+Windows판과 로컬 ComfyUI 이미지 생성 확장은 아직 구현되지 않았습니다.
 플레이어 1명과 선택한 CPU 캐릭터 3명이 동풍전을 진행하며, 최종 4위 결과에 따라 캐릭터 진행도 또는 플레이어 HP가 변화합니다.
 
 ## 현재 사용 가능한 기능
@@ -13,7 +15,7 @@
 로그인하면 저장된 대국에 복귀합니다. 관리자 기능은 현재 API로 제공하며 별도의
 관리자 웹 화면과 프로필 이미지 업로드는 아직 제공하지 않습니다.
 
-## 실행하기
+## 현재 웹판 실행하기
 
 Docker와 Docker Compose가 설치된 환경에서 저장소 루트에서 실행합니다.
 
@@ -137,19 +139,21 @@ API를 사용할 수 있습니다. 변경 후 초기 환경변수 암호로 다�
 - 서버 저장은 seed와 행동 로그의 재생 방식입니다. CPU 정책 변경 시 기존 대국의 정책을 보존해야 합니다.
 - 여러 API worker를 동시에 사용하는 운영 구성은 검증하지 않았습니다.
 
-## 문서
+## 개발 기준 문서
 
-- [프로젝트 계획](docs/PROJECT_PLAN.md)
-- [Work 개발 지침](docs/WORK_INSTRUCTIONS.md)
-- [첫 Work 시작 절차](docs/WORK_START.md)
-- [아키텍처](docs/ARCHITECTURE.md)
-- [오픈소스/라이선스 검토](docs/OPEN_SOURCE_REVIEW.md)
-- [초기 결정 및 미확정 사항](docs/DECISIONS.md)
-- [현재 인수인계와 검증 결과](docs/WORK_HANDOFF.md)
-- [브라우저 회귀·실제 서버 재시작 검사 실행법](frontend/tests/README.md)
+- [프로젝트 목적](PROJECT.md)
+- [확정 요구사항·결정 대기](REQUIREMENTS.md)
+- [현재 구조·전환 권고](ARCHITECTURE.md)
+- [현재 구현·검증·차단](CURRENT_STATE.md)
+- [Task·선행 조건·다음 지시문](TASKS.md)
+- [Chat/Work 작업·인계 규칙](AI_WORKFLOW.md)
+- [브라우저 회귀·실제 서버 재시작 실행법](frontend/tests/README.md)
 
-기존 Docker/Compose 통합 검증과 최근 직접 실행한 FastAPI·Vite·SQLite 재시작 검증은
-서로 범위가 다릅니다. 실제 검증 시점과 제한은 인수인계 문서에 기록되어 있습니다.
+Windows 개발은 위 루트 문서를 기준으로 시작합니다. 기존 웹판의
+[계획](docs/PROJECT_PLAN.md), [구조](docs/ARCHITECTURE.md),
+[결정](docs/DECISIONS.md), [검증 인계](docs/WORK_HANDOFF.md),
+[라이선스 검토](docs/OPEN_SOURCE_REVIEW.md)는 참고·검증 증거로 보존합니다.
+기존 Docker 통합·직접 FastAPI/Vite/SQLite 재시작과 Windows 실기 검증은 서로 다릅니다.
 
 ## 라이선스
 
