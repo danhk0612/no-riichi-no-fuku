@@ -9,7 +9,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | ID | 작업 | 우선순위/상태 | 선행 | 권장 환경 |
 |---|---|---|---|---|
 | W01 | 기존 기능·회귀 기준 확정 | P0 / 기준 확정 완료(브라우저 환경 차단) | W00 | 저성능 Work |
-| W02 | Windows 실행·엔진 번들 기술 검증 | P0 / 다음 착수 대상(Windows 실기 경로 필요) | W01 | 고성능 Work |
+| W02 | Windows 실행·엔진 번들 기술 검증 | P0 / 기술 검증 완료(Windows CI, 사용자 실기 미검증) | W01 | 고성능 Work |
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 결정 대기 | W02 | 고성능 Chat |
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 대기 | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 대기 | W04 | 저성능 Work |
@@ -47,6 +47,15 @@ W05가 먼저 확정한다. W08/W09는 공유 schema·UI를 만지므로 순차 
 - 환경: 저성능 Work. 설계 선택 없이 코드/테스트 대조·기존 검사 실행·Git/문서 작업 중심.
 
 ### W02 — Windows 실행·엔진 번들 기술 검증
+
+- 결과: code `a9268d4b3b5eed3b55b8b40e2f06bbf28a549cb5`, Windows Server 2022 x64 CI
+  [38567208066](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38567208066) 전체 통과.
+  Python 3.12.10/RiichiEnv 0.4.8 frozen + Electron 44.7.2, 한글/공백 ZIP 해제·health·same-origin
+  REST/WS 108행동·12행동 복구·완료 정산 보존·포트 충돌/owned child 종료 확인.
+  원본 source/frozen 72 unittest·10 대사 pytest 및 기존 browser 4개 통과.
+  격리 spike/전용 CI뿐이며 제품 통합·기술 채택 없음. 정확한 hash/용량/조건은 CURRENT_STATE.
+  clean Windows 10/11·OS 인터넷 차단·사용자 X 클릭/강제 종료 등은 미검증;
+  사용자 증거는 PR #59 또는 Work 채팅, 실행법은 `spikes/w02/README.md`.
 
 - 목적: 기존 엔진이 Python 사전 설치 없는 Windows에서 재사용 가능한지 증거 확보.
 - 범위: 격리 spike에서 RiichiEnv 0.4.8/Python 3.12 x64 번들, Electron 우선 shell,
@@ -166,32 +175,34 @@ W05가 먼저 확정한다. W08/W09는 공유 schema·UI를 만지므로 순차 
 ## 다음 Work에 입력할 지시문
 
 ```text
-https://github.com/danhk0612/no-riichi-no-fuku 의 W02만 수행해.
+https://github.com/danhk0612/no-riichi-no-fuku 의 W03만 진행해.
 
 최신 main·열린 PR·현재 브랜치와 AGENTS.md, README.md, PROJECT.md, REQUIREMENTS.md,
 ARCHITECTURE.md, CURRENT_STATE.md, TASKS.md, AI_WORKFLOW.md를 먼저 확인해.
-PR #56(W00)과 #57(W01)은 main에 병합됐다. 최신 main에서 시작하고 병합 이후 변경도 확인해.
-W01 제품 baseline은 5762267e2366fa5bdbdd69bc6f38672d141dcbc8이다.
-W01의 unittest 72개/대사 pytest 10개/build 통과와 Chromium 차단 미검증을 구분해서 이어받아.
+W02 PR #59의 병합 여부와 최신 head/Windows CI·artifact를 확인해. 미병합이면 W02 증거를
+검토하되 그 head를 W03 문서 기반으로 사용할지 사용자와 확인하고 제품 변경은 시작하지 마.
+W01 제품 baseline 5762267e2366fa5bdbdd69bc6f38672d141dcbc8을 보존해.
 
-task/w02-windows-runtime-spike에서 격리 기술 검증만 해.
-Windows x64 실행 환경 또는 사용자 실기 결과를 받을 경로를 먼저 확보해.
-Python 3.12/RiichiEnv 0.4.8을 사전 Python 설치 없이 번들 실행할 수 있는지 검증하고,
-editable package 발견 오류·native DLL·migration/seed 포함·의존성 재현 조건을 조사해.
-Electron 우선 후보의 같은 origin REST/WS·엔진 ready·포트 충돌·owned process 종료와
-WebView2 대안의 오프라인 런타임 요구를 비교해. 기술은 임의 확정하지 마.
+W02 code a9268d4b3b5eed3b55b8b40e2f06bbf28a549cb5는 Windows Server 2022 x64에서
+Python 3.12.10/RiichiEnv 0.4.8 frozen + Electron 44.7.2 격리 후보를 검증했다.
+source/frozen 각각 72 unittest·10 대사 pytest, 기존 browser 4개, ZIP 압축 해제 기동·health·
+same-origin REST/WS 108행동·12행동 재시작 동등 복구·완료 정산 보존·포트/소유 종료가 통과했다.
+제품 Windows 구현·최종 기술 채택이 아니다. clean Windows 10/11·OS 인터넷 차단·사용자
+X 클릭·host crash/전원 차단·SQLite 동시 writer/FK는 미검증이다. artifact는 14일 보존이다.
+추가 실기가 필요하면 spike README 경로로 결과를 받고 실제 증거만 CURRENT_STATE에 반영해.
 
-W01의 policy 1/2, legacy fixture, seed/action/CPU snapshot, 정산/복구 경계를 보존해.
-검증 환경에는 대사 pytest 명령도 포함하고 Chromium이 확보되면 기존 browser/live-game
-4개를 재현해. CPU 3명 미만/HP 0 이후는 D04 미확정으로 유지해.
-실제 Windows 압축 해제 기동·health·동풍전·저장 재시작, 인터넷 차단 여부를 구분해 기록해.
-실기가 불가하면 정확한 차단·재개 조건만 남기고 성공으로 기록하지 마.
+고성능 Chat 중심으로 D01~D03/D09를 사용자와 확정해.
+Electron/Python 번들 및 same-origin REST/WS 우선 후보, WebView2 오프라인 요구/배포 부담,
+지원 Windows·3.12 security patch binary 공급, 설치/포터블·data/미디어 경로,
+로컬 인증/관리자 권한·프로필/슬롯·중복 instance/engine 수명·기존 데이터 이전 범위를
+선택지와 영향으로 제시해. 단순히 W02가 통과했다는 이유로 자동 채택하지 마.
+승인된 계약·W04/W05 파일 경계·회귀 기준과 보류 사항을 기준 문서에 반영해.
 
-라이브 사용자 DB/미디어·원본 웹 데이터 변경, 본 게임 재작성, CPU/룰/진행 정책 변경,
-정식 패키징·Release/tag·직접 병합은 하지 마. W01에서 발견한 범위 밖 누락은 섞지 마.
-후보별 재사용 범위·배포 부담·변경 파일 경계·W03 선택 근거와 미검증을 기준 문서에 갱신해.
-Git push/PR은 새 작업에서 허용된 범위를 확인하고 수행해.
-최종 보고에 정확한 SHA/PR, 명령·환경·실측/미검증 및 W03 선행 조건을 포함해.
+W04/W05 제품 구현·본 게임 재작성·원본 DB/미디어 수정·CPU/룰/진행/이미지 정책 변경,
+Release/tag·직접 병합은 하지 마. policy 1/2·legacy replay·seed/action snapshot·정산 경계를
+보존하고 CPU 3명 미만/HP 0 이후는 D04/W06 미확정으로 유지해.
+Git push/PR은 새 작업의 허용 범위를 확인해. 결과·사용자 결정·미검증·다음 Task를 인계해.
 ```
 
-권장 환경: **고성능 Work**. W02는 native 번들·host 수명·저장 경계의 첫 기술 검증이다.
+권장 환경: **고성능 Chat**. W03은 W02 증거로 좁혀진 기술·저장·프로필 정책 결정이며
+구현은 하지 않는다. 복합 재설계가 필요하면 고성능 Work로 분리한다.

@@ -36,7 +36,8 @@ seed/action replay 및 CPU policy 1/2 snapshot을 보존한다. 규칙·CPU·진
 게임이 ComfyUI 없는 상태에서 실행되는 검사를 유지한다.
 Linux 개발 성공, CI 성공, 실제 Windows 압축 해제 실행, 전원 차단 보존은 각각 구분한다.
 환경 부족 시 미검증으로 남기며 실패를 숨기거나 제품 범위 밖 수정으로 해결하지 않는다.
-새 CI 추가는 해당 Task 범위에서 수행한다. 현재 저장소에 Actions workflow가 없다.
+새 CI 추가는 해당 Task 범위에서 수행한다. W02 전용 `w02-spike.yml`은 격리 Windows
+시험/14일 artifact 수집 경로이며 제품 CI·정식 배포가 아니다. 실행 결과는 CURRENT_STATE에 둔다.
 
 현재 검증 시작점(backend 패키지 build 오류가 있으므로 선언 의존성 설치 경로):
 

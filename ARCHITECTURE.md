@@ -54,6 +54,46 @@ Python EXE/번들 런타임 실행·회수는 host의 자식 프로세스 관리
 노출하지 않고 로컬 제어 권한/세션을 결정한다. 웹 회원 체계를 임의로 제거하거나
 하드코딩된 관리자/JWT로 대체하지 않는다. 인증은 D02 결정 사항이다.
 
+## W02 격리 실행 후보와 W03 경계
+
+`spikes/w02`와 `.github/workflows/w02-spike.yml`만 실행 시험 코드다. 제품 entry point·
+pyproject·React/CPU/정산/migration은 수정하지 않는다. 실측과 차단은 CURRENT_STATE에 둔다.
+
+| 후보 | 재사용 범위 | 오프라인 실행/배포 부담 | W03 판단 조건 |
+|---|---|---|---|
+| Electron + PyInstaller onedir | 기존 React production build와 FastAPI API/WS, ORM/seed/replay·native RiichiEnv | Chromium/Node/Python·native DLL 동봉, 큰 폴더와 런타임 보안 업데이트; installer/signing은 미구현 | 우선 후보 유지, Windows 실행 증거와 실제 용량 확인 후 사용자 채택 |
+| Python embeddable + Electron | 동일 게임 자산, Python 소스 및 wheel vendoring | `python312._pth`의 import 경로·package/DLL·UCRT 포함을 직접 관리; pip 기본 미포함/일반 pip 관리 미지원 | 이번 executable 후보보다 단순한지는 미실측. 3.12 보안 patch binary 공급 경로 비교 필요 |
+| Tauri + WebView2 | 동일 React 및 Python sidecar 가능 | Rust host/권한/sidecar 수명 추가. 미설치 PC 오프라인은 Evergreen standalone installer 또는 Fixed Runtime 필요 | shell 미구현·크기/속도 미실측. 시스템 WebView2만 가정하면 R01 충족 보장 불가 |
+| .NET + WebView2 | 동일 React/Python 가능 | .NET self-contained 또는 runtime 설치, WebView2 loader·관리 assembly·offline runtime 조건 추가 | C#/수명 코드를 새로 작성하는 비용과 supported OS 검증 필요 |
+
+spike는 socket을 먼저 bind(127.0.0.1, port 0)하고 기존 Alembic/bootstrap 뒤 정적 build를 `/`에
+mount한다. host는 ready 파일의 identity/PID와 실제 identity/health 응답을 모두 대조한다.
+상대 REST와 `location.host` 기반 WS를 유지하며 renderer Node 비활성/contextIsolation/sandbox,
+외부 요청·새 창·navigation 제한을 시험한다. 이 제한은 OS 인터넷 차단 증거가 아니다.
+stdin EOF로 owned Python child 종료를 요청하고, timeout 때 해당 child만 종료한다.
+현재 spike는 instance마다 새로운 marker-owned 임시 DB를 만들고 smoke 안에서만 같은 DB로
+재기동한다. 이 경로·인증 유지·test seed/stage 주입은 제품 저장/프로필 정책의 채택이 아니다.
+
+**W03 후 구현 파일 경계:** W04는 `db/session.py`, 저장/복구 services, migration/bootstrap와
+확정 경로 계약을 담당한다. W05는 새 host/엔진 launcher·static serving·startup/shutdown과
+transport 연결을 담당한다. `api/game.py`·CPU agents·legacy fixture·frontend table의 규칙/대국
+로직은 우선 재사용한다. spike 코드를 그대로 제품 entry point로 승격하지 않는다.
+보안/인증·중복 instance·writer/FK·강제 종료 복구와 지원 OS는 아직 결정/검증이 필요하다.
+D01~D03/D09 채택 및 D04 진행 정책은 W02가 결정하지 않는다.
+
+공식 근거(2026-10-14 접속·내용 확인; 후보 설명이며 이 게임 실측과 별개):
+- [Python 3.12.10 release](https://www.python.org/downloads/release/python-31210/):
+  Windows x64 installer/embeddable 제공. 이후 3.12는 security-only다. W01 Linux 3.12.14와
+  동일 patch 공급을 Windows Actions에서 가정하지 않는다.
+- [Python embeddable 설명](https://docs.python.org/3.12/using/windows.html#the-embeddable-package):
+  pip 미포함, vendoring 및 Microsoft C Runtime 제공 책임.
+- [PyInstaller usage](https://pyinstaller.org/en/stable/usage.html): onedir/data/hidden imports 수집.
+- [Electron security](https://www.electronjs.org/docs/latest/tutorial/security): renderer 격리·Node 비활성 근거.
+- [WebView2 distribution](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/distribution):
+  Evergreen offline standalone 또는 Fixed Version 동봉. Fixed Version은 자동 업데이트하지 않고
+  공식 문서상 250 MB 초과이며 UNC/network 경로 제약·Windows 10 v120+ ACL 조건이 있다.
+  이를 이 게임의 bundle 크기/호환성 실측으로 기록하지 않는다.
+
 ## 저장 전환에서 해결할 점
 
 - SQLite tests와 실제 프로세스 재시작 test가 있지만 제품 기본은 PostgreSQL이다.
