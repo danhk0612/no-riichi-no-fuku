@@ -2,6 +2,17 @@
 
 ## Latest verification — 2026-10-14
 
+- README now describes the implemented player flow, Compose startup/environment values,
+  disconnect recovery, all CPU tiers, actual admin API scope and result-CG limits. It distinguishes
+  missing admin/profile-image UI and unresolved policies from working features. Local links and
+  listed admin paths/methods were checked against repository files and generated OpenAPI;
+  environment/ports/volumes/startup were compared to Compose, settings and the API Dockerfile.
+  Diff checks passed. Documentation-only; runtime tests were not repeated.
+- **Decision needed before implementing the final progression loop:** completed CPUs are excluded
+  and each match requires three distinct selectable CPUs. With two or fewer incomplete CPUs,
+  another match cannot start, so completing every CPU requires an explicit rule decision.
+  Do not silently add filler opponents, reopen completed CPUs or change the player count.
+
 - Added and passed a real full-stack browser check in `frontend/tests/live-game.browser.mjs`:
   owned temporary SQLite, Alembic/bootstrap, real FastAPI/Vite, signup/login/CPU selection,
   three production policy-2 Tier2 CPUs and DOM action controls. No response routing/mocks.
