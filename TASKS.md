@@ -10,7 +10,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 |---|---|---|---|---|
 | W01 | 기존 기능·회귀 기준 확정 | P0 / 기준 확정 완료(브라우저 환경 차단) | W00 | 저성능 Work |
 | W02 | Windows 실행·엔진 번들 기술 검증 | P0 / 기술 검증 완료(Windows CI, 사용자 실기 미검증) | W01 | 고성능 Work |
-| W03 | 실행·저장·프로필 정책 확정 | P0 / 결정 대기 | W02 | 고성능 Chat |
+| W03 | 실행·저장·프로필 정책 확정 | P0 / 결정안 준비·사용자 답변 대기 | W02 | 고성능 Chat |
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 대기 | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 대기 | W04 | 저성능 Work |
 | W06 | 진행 규칙 결정·게임 회귀 | P0 / 결정 대기 | W05, D04 | 고성능 Chat → 저성능 Work |
@@ -68,6 +68,9 @@ W05가 먼저 확정한다. W08/W09는 공유 schema·UI를 만지므로 순차 
 - 환경: 고성능 Work. native/host/runtime/저장 경계가 얽힌 최초 검증.
 
 ### W03 — 실행·저장·프로필 정책 확정
+
+- 현재: W02 PR #59 검토·병합 완료. REQUIREMENTS의 W03 결정안은 미승인 권고다.
+  사용자 선택 후 확정 계약을 기록하며 W04/W05는 아직 착수하지 않는다.
 
 - 목적: W04/W05가 설계 선택 없이 구현할 수 있도록 사용자 결정 확보.
 - 범위: D01~D03와 관리 UI 통합/분리(D09), 지원 Windows·배포/데이터 경로·인증/프로필/슬롯·
@@ -179,8 +182,9 @@ https://github.com/danhk0612/no-riichi-no-fuku 의 W03만 진행해.
 
 최신 main·열린 PR·현재 브랜치와 AGENTS.md, README.md, PROJECT.md, REQUIREMENTS.md,
 ARCHITECTURE.md, CURRENT_STATE.md, TASKS.md, AI_WORKFLOW.md를 먼저 확인해.
-W02 PR #59의 병합 여부와 최신 head/Windows CI·artifact를 확인해. 미병합이면 W02 증거를
-검토하되 그 head를 W03 문서 기반으로 사용할지 사용자와 확인하고 제품 변경은 시작하지 마.
+W02 PR #59는 eb5faae로 main에 병합됐다. 최신 main의 이후 변경도 확인해.
+REQUIREMENTS.md의 W03 결정안을 읽고 사용자 답변으로 확정된 부분만 계약에 반영해.
+답변이 없으면 미확정으로 유지하고 W04/W05 제품 변경은 시작하지 마.
 W01 제품 baseline 5762267e2366fa5bdbdd69bc6f38672d141dcbc8을 보존해.
 
 W02 code a9268d4b3b5eed3b55b8b40e2f06bbf28a549cb5는 Windows Server 2022 x64에서
