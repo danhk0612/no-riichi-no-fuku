@@ -2,10 +2,14 @@
 
 ## 기준
 
-- 확인일: 2026-10-14, W02 시작 main `7523d4177140d303c5f4681c5ff94d92610db227`.
+- 확인일: 2026-10-14, W02 검토 후 main `eb5faae08bc6d6ea92078ba768b684343cb2fa1f`.
+  W02 시작/제품 baseline main은 `7523d4177140d303c5f4681c5ff94d92610db227`이다.
 - PR #56(W00)·#57(W01)·#58(인계)는 main에 병합됐다. 열린 #35는 기존 Docker 문서이며 건드리지 않는다.
 - W01 제품/검사 baseline `5762267e2366fa5bdbdd69bc6f38672d141dcbc8`과 현재 backend/frontend
   tree가 동일하다. legacy fixture SHA256도 보존한다. W02는 시험 코드·workflow·기준 문서만 변경한다.
+- W02 PR #59를 병합했다. 검증 code SHA 이후 변경은 기준 문서 4개뿐이며,
+  CI job/다운로드 artifact의 source SHA·내외 ZIP hash·browser/frozen/renderer 증거를 다시 대조했다.
+  이번 검토는 기존 Windows 실행 증거 검토이며 Windows를 새로 실행한 결과가 아니다.
 - 제품 Windows 전환은 미구현이다. W02 Windows Actions/PR #59 artifact·사용자 증거 첨부 경로와
   격리 후보 검증은 아래에 기록한다. 후보 통과를 제품 완료 또는 최종 기술 채택으로 해석하지 않는다.
 - Wayward 참고는 W00의 `5d80f118c590319881be34faba8214a0c3765fc2` 조사뿐이다.
@@ -290,9 +294,11 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 
 ## 다음
 
-W02 격리 기술 검증 완료(위 Windows CI/실측 범위); W03 기술·저장·프로필 선택은 미착수다.
-[TASKS.md](TASKS.md)의 다음 지시문으로 W02 PR #59의 main 반영 여부와 최신 기준을 확인한다.
-W03은 D01~D03/D09, 지원 Windows·3.12 보안 patch 공급·배포/data 경로·인증/프로필·슬롯·
-기존 데이터 이전을 사용자와 확정한다. clean Windows 10/11·OS 오프라인·X 클릭 실기는
+W02 격리 기술 검증 완료(위 Windows CI/실측 범위), PR #59 main 반영 완료.
+2026-10-14 사용자 답변으로 W03의 여섯 정책을 확정했다. [REQUIREMENTS.md](REQUIREMENTS.md)에
+승인을 기록하고 ARCHITECTURE에 W04/W05 구현 계약을 정리했다. 제품 코드는 변경하지 않았다.
+다음 W04는 로컬 저장/프로필/runtime 권한·소유 잠금·복구 구현이며 저성능 Work에 인계한다.
+D01~D03/관리 UI의 승인 범위는 REQUIREMENTS를 따른다. 지원 Windows와 배포용 Python patch
+공급 조건은 W05 번들 준비/W12 배포 전에 확인할 잔여 조건이다. clean Windows 10/11·OS 오프라인·X 클릭 실기는
 spike README의 artifact/결과 경로로 보완한다. 미검증을 요구 충족으로 올리지 않는다.
 D04는 W06, 콘텐츠 세부 정책은 W07; 진행·이미지 생성·제품 통합을 본 작업에 섞지 않았다.
