@@ -2,6 +2,15 @@
 
 ## Latest verification — 2026-10-14
 
+- Table review fixed missing meld rendering: `SeatPanel` now displays the authoritative meld
+  tiles at all four seats, including human calls and open/concealed kans. Existing tile rendering
+  preserves red fives. The server and rules are unchanged.
+- The extended Chromium regression fails on main `71d963d` at the first meld, and passes after
+  the fix for all seats, three/four-tile groups, honors/red fives, multiple groups, next-turn
+  replacement and new-round clearing. Desktop/mobile overflow checks (1180px/360px), temporary
+  layout captures, TypeScript/Vite build and diff checks passed. No repository media was created;
+  backend engine matches and Docker were not rerun for this frontend-only change.
+
 - Persistence fault-boundary review added two WebSocket integration regressions in
   `backend/tests/test_game_websocket.py`: failed action commit restores the original persisted
   turn and accepts a retry; a restart after the final action commit but before settlement

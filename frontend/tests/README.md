@@ -1,4 +1,4 @@
-# Dialogue browser regression
+# Table browser regression
 
 This check runs the real React client in Chromium and supplies REST/WebSocket responses through
 Playwright routing. It verifies message-to-screen behavior, not backend game simulation.
@@ -26,3 +26,7 @@ For a different Vite address, set `TEST_BASE_URL`.
 Covered sequences: dialogue before the first turn, preservation on the next turn, immediate
 dialogue updates on an existing turn, latest line per CPU seat, and empty dialogue history when
 starting the next match. No media files are created.
+
+Also covers server-supplied melds at all four seats: three-tile calls, open/concealed kans,
+red fives, honor tiles, multiple groups, turn replacement and new-round clearing. Checks page
+overflow at desktop and mobile widths. These fixtures verify rendering, not engine rules.

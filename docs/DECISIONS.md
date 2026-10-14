@@ -1,5 +1,18 @@
 # Initial Decisions
 
+## 2026-10-14 출시 준비 점검: 좌석별 조합 표시 누락 수정
+
+- 서버 `observation.melds`는 치·퐁·깡을 제공하지만 기존 `SeatPanel`이 이를 표시하지
+  않았다. 네 좌석 모두 서버가 보낸 조합의 패를 기존 `TileRow`로 표시한다.
+  `opened`에 따라 부로/암깡을 구분하며 게임 규칙·서버 상태·행동 index는 변경하지 않는다.
+- `frontend/tests/dialogue.browser.mjs`에 플레이어 포함 네 좌석, 3/4장 조합,
+  적도라·자패·복수 조합, 다음 턴 교체와 다음 국 초기화 검사를 추가했다.
+  기존 main `71d963d`는 첫 조합 표시에서 실패하고 수정본은 전체 검사를 통과했다.
+- Chromium에서 1180px/360px 가로 넘침 검사와 임시 화면 캡처로 배치를 확인했다.
+  TypeScript/Vite production build와 diff 검사도 통과했다. 서버 응답 fixture를
+  사용하는 화면 회귀 검사이며 실제 엔진 대국·Docker는 이번 변경에서 재검증하지 않았다.
+  미디어 파일은 저장소에 추가하지 않았다.
+
 ## 2026-10-14 출시 준비 점검: 저장 실패와 정산 전 재시작
 
 - WebSocket 행동 처리에서 DB commit 실패를 주입했다. 서버는 `persistence_failed`와

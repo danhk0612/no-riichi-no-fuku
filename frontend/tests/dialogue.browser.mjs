@@ -77,6 +77,39 @@ try {
   assert.equal(await bubble(1).getByText('첫 대사', { exact: true }).count(), 0)
   assert.equal(await bubble(2).innerText(), '다른 좌석 대사')
 
+  // Public melds belong to their seats, including the player's exposed groups.
+  const meldTurn = turn(3)
+  meldTurn.turn.observation.melds = [
+    [{ meld_type: 0, tiles: [8, 12, 16], called_tile: 16, from_who: 3, opened: true }],
+    [{ meld_type: 1, tiles: [108, 109, 110], called_tile: 108, from_who: 0, opened: true }],
+    [{ meld_type: 2, tiles: [36, 37, 38, 39], called_tile: 36, from_who: 1, opened: true }],
+    [{ meld_type: 3, tiles: [72, 73, 74, 75], called_tile: -1, from_who: -1, opened: false }],
+  ]
+  send(sockets[0], meldTurn)
+  for (const seat of [0, 1, 2, 3]) {
+    await page.locator(`.seat-${seat} .melds`).waitFor()
+    assert.equal(await page.locator(`.seat-${seat} .meld .tile`).count(), seat < 2 ? 3 : 4)
+    assert.equal(await page.locator(`.seat-${seat} .meld small`).innerText(), seat === 3 ? '암깡' : '부로')
+  }
+  assert.deepEqual(await page.locator('.seat-0 .meld .tile').allTextContents(), ['3만', '4만', '5만'])
+  assert.equal(await page.locator('.seat-0 .meld .tile-red').count(), 1)
+  assert.equal(await page.locator('.seat-1 .meld .tile-honor').count(), 3)
+
+  // Server snapshots replace groups on each turn; a new round clears old melds.
+  const updatedTurn = structuredClone(meldTurn)
+  updatedTurn.action_version = 4
+  updatedTurn.turn.observation.melds[1].push({
+    meld_type: 1, tiles: [112, 113, 114], called_tile: 112, from_who: 2, opened: true,
+  })
+  send(sockets[0], updatedTurn)
+  await page.waitForFunction(() => document.querySelectorAll('.seat-1 .meld').length === 2)
+  for (const viewport of [{ width: 1180, height: 1000 }, { width: 360, height: 800 }]) {
+    await page.setViewportSize(viewport)
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true)
+  }
+  send(sockets[0], turn(5))
+  await page.waitForFunction(() => document.querySelectorAll('.meld').length === 0)
+
   // Completing and starting a new match must not reuse previous dialogue.
   send(sockets[0], {
     type: 'match_complete', result: { scores: [25000, 25000, 25000, 25000], ranks: [1, 2, 3, 4] },
@@ -100,7 +133,7 @@ try {
   send(sockets[1], turn(1))
   await bubble(3).getByText('새 대국 대사', { exact: true }).waitFor()
   assert.deepEqual(errors, [])
-  console.log('PASS: dialogue before/after turn, persistence, latest per seat, new-match isolation')
+  console.log('PASS: dialogue lifecycle; four-seat melds, red fives, kan, snapshot replacement and round reset')
 } finally {
   await browser.close()
 }
