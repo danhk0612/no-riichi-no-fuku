@@ -2,6 +2,15 @@
 
 ## Latest verification — 2026-10-14
 
+- Unfinished WebSocket disconnects now lock action controls and explain the existing recovery
+  path (refresh and re-login), including normal code 1000 closure. Current-socket guards also
+  cover open/error/close callbacks. Completed matches still close without a connection error.
+- `frontend/tests/connection.browser.mjs` covers closure codes 1000/1011, disabled controls,
+  re-login lookup of the same active session and sending the restored server action version.
+  It fails on main `d10b8a9` at the recovery notice and passes with the fix. Existing table
+  regression, TypeScript/Vite build and diff checks passed. These are browser fixtures;
+  backend restart/Docker were not rerun. No automatic reconnect or token persistence was added.
+
 - Result screen now honors the server's `game_over` flag: it displays the game-over notice and
   keeps final scores visible without offering the next-match button. Ordinary CPU defeats and
   player losses with HP remaining retain the existing next-match loop.

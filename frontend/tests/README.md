@@ -19,6 +19,7 @@ Run the check in another terminal:
 
 ```sh
 node tests/dialogue.browser.mjs
+node tests/connection.browser.mjs
 ```
 
 For a different Vite address, set `TEST_BASE_URL`.
@@ -34,3 +35,8 @@ overflow at desktop and mobile widths. These fixtures verify rendering, not engi
 Result checks cover CPU defeat, a player loss with HP remaining and server-declared game over:
 ordinary results keep the next-match loop, while game over shows the notice and final scores
 without a next-match button. Progress reset and HP recovery policies are not implemented here.
+
+`connection.browser.mjs` checks unfinished WebSocket closure with codes 1000 and 1011:
+controls lock and the refresh/re-login recovery notice appears. Refresh and login discover the
+same active session; the next action uses the restored server action version. It uses routed
+REST/WebSocket fixtures rather than a real server restart.
