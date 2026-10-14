@@ -9,7 +9,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | ID | 작업 | 우선순위/상태 | 선행 | 권장 환경 |
 |---|---|---|---|---|
 | W01 | 기존 기능·회귀 기준 확정 | P0 / 기준 확정 완료(브라우저 환경 차단) | W00 | 저성능 Work |
-| W02 | Windows 실행·엔진 번들 기술 검증 | P0 / 다음 후보(환경·기준 head 확인 필요) | W01 | 고성능 Work |
+| W02 | Windows 실행·엔진 번들 기술 검증 | P0 / 다음 착수 대상(Windows 실기 경로 필요) | W01 | 고성능 Work |
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 결정 대기 | W02 | 고성능 Chat |
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 대기 | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 대기 | W04 | 저성능 Work |
@@ -170,8 +170,8 @@ https://github.com/danhk0612/no-riichi-no-fuku 의 W02만 수행해.
 
 최신 main·열린 PR·현재 브랜치와 AGENTS.md, README.md, PROJECT.md, REQUIREMENTS.md,
 ARCHITECTURE.md, CURRENT_STATE.md, TASKS.md, AI_WORKFLOW.md를 먼저 확인해.
-PR #56(W00) 및 W01 문서가 main에 반영됐는지 확인하고 미반영이면 정확한 head 사용 허용을
-확인한 뒤 시작해. W01 baseline은 5762267e2366fa5bdbdd69bc6f38672d141dcbc8이다.
+PR #56(W00)과 #57(W01)은 main에 병합됐다. 최신 main에서 시작하고 병합 이후 변경도 확인해.
+W01 제품 baseline은 5762267e2366fa5bdbdd69bc6f38672d141dcbc8이다.
 W01의 unittest 72개/대사 pytest 10개/build 통과와 Chromium 차단 미검증을 구분해서 이어받아.
 
 task/w02-windows-runtime-spike에서 격리 기술 검증만 해.
