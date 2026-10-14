@@ -31,6 +31,7 @@ starting the next match. No media files are created.
 Also covers server-supplied melds at all four seats: three-tile calls, open/concealed kans,
 red fives, honor tiles, multiple groups, turn replacement and new-round clearing. Checks page
 overflow at desktop and mobile widths. These fixtures verify rendering, not engine rules.
+Round labels cover East 1, East 4 with two honba and South 1 using the server kyoku index.
 
 Result checks cover CPU defeat, a player loss with HP remaining and server-declared game over:
 ordinary results keep the next-match loop, while game over shows the notice and final scores

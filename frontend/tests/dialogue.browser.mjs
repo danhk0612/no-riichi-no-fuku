@@ -48,7 +48,7 @@ try {
         discards: [[], [], [], []], dora_indicators: [],
         scores: [25000, 25000, 25000, 25000],
         riichi_declared: [false, false, false, false],
-        legal_actions: [], honba: 0, riichi_sticks: 0, round_wind: 0, oya: 0,
+        legal_actions: [], honba: 0, riichi_sticks: 0, round_wind: 0, kyoku_index: 0, oya: 0,
       },
       legal_actions: [],
     },
@@ -65,6 +65,19 @@ try {
   send(sockets[0], dialogue(1, '첫 대사'))
   send(sockets[0], turn(0))
   await bubble(1).getByText('첫 대사', { exact: true }).waitFor()
+  await page.locator('.round-status strong').getByText('동1국', { exact: true }).waitFor()
+  const finalEast = turn(1)
+  finalEast.turn.observation.kyoku_index = 3
+  finalEast.turn.observation.oya = 3
+  finalEast.turn.observation.honba = 2
+  send(sockets[0], finalEast)
+  await page.locator('.round-status strong').getByText('동4국', { exact: true }).waitFor()
+  await page.locator('.round-status').getByText('본장 2', { exact: true }).waitFor()
+  const south = turn(2)
+  south.turn.observation.kyoku_index = 4
+  south.turn.observation.round_wind = 1
+  send(sockets[0], south)
+  await page.locator('.round-status strong').getByText('남1국', { exact: true }).waitFor()
   send(sockets[0], turn(1))
   await bubble(1).getByText('첫 대사', { exact: true }).waitFor()
 

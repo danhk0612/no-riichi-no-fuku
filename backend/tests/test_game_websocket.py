@@ -1,3 +1,4 @@
+import json
 import unittest
 from collections.abc import Generator
 from unittest.mock import patch
@@ -179,6 +180,7 @@ class GameWebSocketApiTest(unittest.TestCase):
             self.authenticate(websocket)
             first_turn = websocket.receive_json()
             self.assertEqual(first_turn["type"], "human_turn")
+            self.assertEqual(first_turn["turn"]["observation"]["kyoku_index"], 0)
             websocket.send_json(
                 {
                     "type": "action",
@@ -354,6 +356,16 @@ class GameWebSocketApiTest(unittest.TestCase):
                     message = websocket.receive_json()
                     continue
                 self.assertEqual(message["type"], "human_turn")
+                observation = message["turn"]["observation"]
+                starts = [
+                    event for raw in observation["events"]
+                    if (event := json.loads(raw)).get("type") == "start_kyoku"
+                ]
+                if starts:
+                    self.assertEqual(
+                        observation["kyoku_index"],
+                        observation["round_wind"] * 4 + starts[-1]["kyoku"] - 1,
+                    )
                 action_index = choose_human_action_index(
                     message["turn"]["legal_actions"]
                 )

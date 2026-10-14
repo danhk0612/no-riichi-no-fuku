@@ -1,5 +1,21 @@
 # Initial Decisions
 
+## 2026-10-14 출시 준비 점검: 현재 국 번호 표시
+
+- 기존 화면은 동1~4국을 모두 동풍전으로 표시했다. RiichiEnv 0.4.8에서
+  `Observation.kyoku_index`는 동1~4국에 0~3이고 본장 연장 시 유지되지만
+  `to_dict()`에는 없다. 서버의 human turn 직렬화에 이 값을 추가하고 프런트는
+  기존 `round_wind`와 함께 현재 국 번호를 표시한다. 규칙과 CPU 판단은 변경하지 않는다.
+- 실제 seed 5 Tier0 네 좌석 대국에서 index/본장 순서는 `(0,0), (0,1), (1,0),
+  (2,0), (2,1), (3,0)`이었고 `start_kyoku.kyoku`와 일치했다. 기존 WebSocket
+  완주 회귀에도 start_kyoku 이벤트와 전달 index 대조를 추가했다.
+- 백엔드 68개, 두 Chromium 회귀, TypeScript/Vite build와 diff 검사 통과.
+  화면 검사에서는 동1국·동4국 본장 2·남1국을 확인했다. 기존 main `ea41944`는
+  동1국 표시에서 실패했다. Docker는 재검증하지 않았다.
+- 별도 발견: Tier2의 `is_final_round = round_wind == 0`은 동장 전체를 최종 국으로
+  취급한다. Issue #47로 분리했으며 기존 active 대국의 결정론적 replay 호환성을
+  보존하는 방안을 먼저 검토해야 한다. 이번 변경에서는 CPU 정책을 수정하지 않았다.
+
 ## 2026-10-14 출시 준비 점검: 연결 종료 후 행동 상태
 
 - 기존 클라이언트는 WebSocket 종료 후에도 행동 버튼이 활성화돼 클릭이 무시됐고,

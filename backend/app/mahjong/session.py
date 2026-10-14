@@ -98,6 +98,7 @@ class AuthoritativeGameSession:
         if observation is None:
             raise GameSessionStateError("session is not waiting for the human seat")
         serialized_observation = observation.to_dict()
+        serialized_observation["kyoku_index"] = observation.kyoku_index
         serialized_observation["melds"] = [
             [
                 {

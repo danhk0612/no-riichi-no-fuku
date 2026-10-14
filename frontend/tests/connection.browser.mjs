@@ -48,7 +48,7 @@ try {
           discards: [[], [], [], []], dora_indicators: [],
           scores: [25000, 25000, 25000, 25000],
           riichi_declared: [false, false, false, false],
-          legal_actions: [], honba: 0, riichi_sticks: 0, round_wind: 0, oya: 0,
+          legal_actions: [], honba: 0, riichi_sticks: 0, round_wind: 0, kyoku_index: 0, oya: 0,
         },
         legal_actions: [{ type: 0, tile: 0, consume_tiles: [], actor: 0 }],
       },
