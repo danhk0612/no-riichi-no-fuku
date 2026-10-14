@@ -132,8 +132,37 @@ try {
   send(sockets[1], dialogue(3, '새 대국 대사'))
   send(sockets[1], turn(1))
   await bubble(3).getByText('새 대국 대사', { exact: true }).waitFor()
+
+  // A player loss with HP remaining must still allow the next match.
+  const playerLoss = (hp, gameOver) => ({
+    type: 'match_complete',
+    result: { scores: [10000, 40000, 30000, 20000], ranks: [4, 1, 2, 3] },
+    settlement: {
+      last_place_seat: 0, current_hp: hp, cpu_character_id: null,
+      defeat_stage: null, game_over: gameOver, cpu_completed: false,
+    },
+    result_asset: null, result_dialogue: null,
+  })
+  send(sockets[1], playerLoss(1, false))
+  await page.getByText('플레이어 HP 1', { exact: true }).waitFor()
+  assert.equal(await page.getByRole('status').count(), 0)
+  await page.getByRole('button', { name: '다음 대국 선택' }).click()
+  for (const id of [1, 2, 3]) {
+    await page.locator('.cpu-card').filter({ hasText: `CPU ${id}` }).click()
+  }
+  await page.getByRole('button', { name: '동풍전 시작' }).click()
+  await page.waitForFunction(() => !document.querySelector('.selection-panel'))
+  assert.equal(sockets.length, 3)
+
+  // The authoritative game-over flag ends the loop without resetting progress.
+  send(sockets[2], playerLoss(0, true))
+  await page.getByRole('status').getByText('게임 오버 · HP가 모두 소진되었습니다.', { exact: true }).waitFor()
+  await page.getByText('플레이어 HP 0', { exact: true }).waitFor()
+  assert.equal(await page.getByRole('button', { name: '다음 대국 선택' }).count(), 0)
+  assert.equal(await page.locator('.match-result li').count(), 4)
+  assert.equal(await page.locator('.selection-panel').count(), 0)
   assert.deepEqual(errors, [])
-  console.log('PASS: dialogue lifecycle; four-seat melds, red fives, kan, snapshot replacement and round reset')
+  console.log('PASS: dialogue lifecycle, four-seat melds, round reset, normal result loop and game-over boundary')
 } finally {
   await browser.close()
 }

@@ -2,6 +2,14 @@
 
 ## Latest verification — 2026-10-14
 
+- Result screen now honors the server's `game_over` flag: it displays the game-over notice and
+  keeps final scores visible without offering the next-match button. Ordinary CPU defeats and
+  player losses with HP remaining retain the existing next-match loop.
+- Extended Chromium regression fails on main `856381b` at the game-over notice and passes
+  after the fix, including the ordinary-result branches. TypeScript/Vite build and diff checks
+  passed. These are routed server-response fixtures; backend matches and Docker were not rerun.
+  Progress reset, HP recovery and post-game-over restart remain undecided and unimplemented.
+
 - Table review fixed missing meld rendering: `SeatPanel` now displays the authoritative meld
   tiles at all four seats, including human calls and open/concealed kans. Existing tile rendering
   preserves red fives. The server and rules are unchanged.
