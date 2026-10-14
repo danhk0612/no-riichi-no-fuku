@@ -25,6 +25,7 @@ export type HumanObservation = {
   honba: number
   riichi_sticks: number
   round_wind: number
+  kyoku_index: number
   oya: number
 }
 

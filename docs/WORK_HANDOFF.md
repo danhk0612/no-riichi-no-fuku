@@ -2,6 +2,17 @@
 
 ## Latest verification — 2026-10-14
 
+- Human-turn transport now includes the real RiichiEnv `Observation.kyoku_index` (absent from
+  `to_dict()`), so the table shows the current round rather than only the prevailing wind.
+  Actual seed 5 observations matched start_kyoku events through East 1-4 and honba repeats.
+- Backend 68 tests, both Chromium regressions, TypeScript/Vite build and diff checks passed.
+  The browser regression covers East 1/East 4 with honba/South 1; old main `ea41944` fails
+  at East 1. No CPU decision policy or rules changed; Docker was not rerun.
+- **Next concrete defect: Issue #47.** Tier2 currently treats every East round as final.
+  Fixing CPU decisions requires preserving existing active-session deterministic replay;
+  first inspect a policy-version boundary or another compatible approach. Do not silently
+  replay old logs with changed CPU logic or invalidate active games.
+
 - Unfinished WebSocket disconnects now lock action controls and explain the existing recovery
   path (refresh and re-login), including normal code 1000 closure. Current-socket guards also
   cover open/error/close callbacks. Completed matches still close without a connection error.

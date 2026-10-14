@@ -207,7 +207,7 @@ function ActiveTable({
           />
         ))}
         <div className="round-status">
-          <strong>{roundWindLabel(observation.round_wind)}풍전</strong>
+          <strong>{roundWindLabel(observation.round_wind)}{observation.kyoku_index % 4 + 1}국</strong>
           <span>본장 {observation.honba}</span>
           <span>리치봉 {observation.riichi_sticks}</span>
           <span>도라</span>
