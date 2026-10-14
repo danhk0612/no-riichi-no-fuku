@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12.14'
+          python-version: '3.12.10'
           architecture: x64
       - uses: actions/setup-node@v4
         with:
@@ -60,6 +60,8 @@ jobs:
           npm run build
           exit $LASTEXITCODE
       - name: Existing browser checks
+        id: browser
+        continue-on-error: true
         run: |
           npm install --prefix spikes/w02/out/browser playwright@1.62.1
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -83,6 +85,8 @@ jobs:
           "W02_EXTRACTED=$target/W02-Spike-win32-x64" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
           Get-ChildItem "$target/W02-Spike-win32-x64/resources/app/engine" -Recurse | Where-Object Extension -In '.dll','.pyd','.json','.ini' | Select-Object @{n='File';e={$_.FullName.Substring($target.Length)}},Length | ConvertTo-Json | Out-File spikes/w02/out/evidence/native-data-inventory.json
       - name: Frozen regression without Python in PATH
+        id: frozen
+        continue-on-error: true
         run: |
           $env:PATH = "$env:SystemRoot/System32"
           $env:PYTHONHOME = ''
@@ -99,6 +103,11 @@ jobs:
           if ($p.ExitCode -ne 0) { throw "Electron spike exit=$($p.ExitCode)" }
           $evidence = Get-Content $env:W02_EVIDENCE -Raw | ConvertFrom-Json
           if ($evidence.passed -ne $true) { throw 'No passing renderer evidence' }
+      - name: Require independent browser and frozen checks
+        if: always()
+        run: |
+          'browser=${{ steps.browser.outcome }}; frozen=${{ steps.frozen.outcome }}' | Out-File spikes/w02/out/evidence/check-outcomes.txt
+          if ('${{ steps.browser.outcome }}' -ne 'success' -or '${{ steps.frozen.outcome }}' -ne 'success') { throw 'Independent checks not all passed' }
       - name: Upload bounded evidence and test-only ZIP (no Release)
         if: always()
         uses: actions/upload-artifact@v4

@@ -1,7 +1,9 @@
 # W02 Windows runtime spike — 제품 아님
 
 기준 제품 `7523d4177140d303c5f4681c5ff94d92610db227`을 변경하지 않고 실행 후보를 검증한다.
-Python 3.12.14 x64 / RiichiEnv 0.4.8 / PyInstaller 6.22.3 onedir / Electron 44.7.2 후보다.
+Python 3.12.10 x64 / RiichiEnv 0.4.8 / PyInstaller 6.22.3 onedir / Electron 44.7.2 후보다.
+W01 Linux 3.12.14와 patch가 다르다. Windows Actions가 3.12.14를 제공하지 않아
+3.12 계열의 공식 Windows binary가 있는 3.12.10을 격리 시험 후보로 사용한다.
 지원 OS·저장·프로필·인증·배포 방식은 W03 미확정이다. 이 폴더를 제품 entry point로 쓰지 않는다.
 
 ## Windows 실측·결과 수집 경로
