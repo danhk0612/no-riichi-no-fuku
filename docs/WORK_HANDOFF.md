@@ -2,6 +2,19 @@
 
 ## Latest verification — 2026-10-14
 
+- Added and passed a real full-stack browser check in `frontend/tests/live-game.browser.mjs`:
+  owned temporary SQLite, Alembic/bootstrap, real FastAPI/Vite, signup/login/CPU selection,
+  three production policy-2 Tier2 CPUs and DOM action controls. No response routing/mocks.
+- After 12 committed actions, SIGTERM/restart of the API plus page refresh/re-login restored
+  the identical session URL and entire human turn. The match finished after 108 actions with
+  scores `[17000,27700,24700,30600]`, ranks `[4,2,3,1]`, HP 3→2 and CPU stages unchanged at 2.
+- DB results/action count/policy snapshots matched transport and screen. A second API restart
+  and completed-session reconnect returned the same result with unchanged DB settlement;
+  next selection also passed. Node syntax and diff checks passed. No product changes needed.
+- Reproduction/requirements are in `frontend/tests/README.md`. The test refuses occupied ports
+  8000/5193 and cleans up only its own processes/temp DB. No media, Docker/nginx/PostgreSQL,
+  power-loss or multi-worker validation was performed.
+
 - Failed result-CG requests now replace the loading placeholder with a failure notice while
   retaining final scores and next-match controls. The existing asset-load version guard also
   covers failures, preventing an old response from adding errors to the next selection screen.

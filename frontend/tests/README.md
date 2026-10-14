@@ -46,3 +46,28 @@ REST/WebSocket fixtures rather than a real server restart.
 `result-asset.browser.mjs` uses metadata and HTTP 503 responses without image files. It checks
 that CG failure replaces the loading message while scores/next-match controls remain available,
 and that a failed asset response arriving after next-match selection cannot display an old error.
+
+## Real-server browser integration
+
+`live-game.browser.mjs` starts its own FastAPI and Vite processes, applies real Alembic
+migrations to a temporary SQLite database and removes the database/processes on completion.
+Ports 8000 and 5193 must be unused; it refuses to reuse an existing service. Install backend
+dependencies in a Python environment and run `npm ci` before this test.
+
+```sh
+TEST_PYTHON=/path/to/backend-venv/bin/python node tests/live-game.browser.mjs
+```
+
+Use the same `PLAYWRIGHT_MODULE_PATH` and `TEST_CHROMIUM_EXECUTABLE` environment options as
+the other browser checks if needed. This test manages its own servers; no separate Vite is needed.
+
+It signs up through the UI, seeds stage 2 progress only in its temporary test DB, logs in again,
+selects three production Tier2 CPUs (policy 2), and plays a seed 5 match through actual DOM
+controls and the Vite REST/WebSocket proxy. It restarts the API process after 12 accepted actions,
+refreshes/re-logs in, and compares the entire restored turn and session URL. After completion it
+compares result/HP/progress to DB rows, restarts the API again, reopens the completed session,
+and verifies that its response and DB settlement remain unchanged before returning to selection.
+
+No REST/WebSocket responses are mocked. Test seed injection fixes only the registry's match seed;
+production agents, game rules, auth, migrations and persistence code are used. No images are
+created. This is direct FastAPI/Vite with SQLite, not Docker/nginx/PostgreSQL or a power-loss test.
