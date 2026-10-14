@@ -32,7 +32,6 @@ function App() {
   const [selectedCpuIds, setSelectedCpuIds] = useState<number[]>([])
   const [players, setPlayers] = useState<PlayerSeat[]>([])
   const [gameState, setGameState] = useState<GameScreenState>({ status: 'waiting' })
-  const [recentDialogues, setRecentDialogues] = useState<DialogueEvent[]>([])
   const [busy, setBusy] = useState(false)
   const [actionPending, setActionPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -114,6 +113,7 @@ function App() {
     const socket = new WebSocket(gameWebSocketUrl(sessionId))
     socketRef.current = socket
     let completed = false
+    let recentDialogues: DialogueEvent[] = []
 
     socket.addEventListener('open', () => {
       const message: GameClientMessage = {
@@ -123,21 +123,19 @@ function App() {
       socket.send(JSON.stringify(message))
     })
     socket.addEventListener('message', (event) => {
+      if (socketRef.current !== socket) return
       const message = JSON.parse(event.data as string) as GameServerMessage
       if (message.type === 'dialogue_event') {
-        // 대사 이벤트를 recentDialogues에 추가 (최대 10개 유지)
-        setRecentDialogues((current) => {
-          const updated = [
-            ...current,
-            {
-              cpu_character_id: message.cpu_character_id,
-              seat: message.seat,
-              event_key: message.event_key,
-              text: message.text,
-            },
-          ]
-          return updated.slice(-10) // 최근 10개만 유지
-        })
+        recentDialogues = [...recentDialogues, {
+          cpu_character_id: message.cpu_character_id,
+          seat: message.seat,
+          event_key: message.event_key,
+          text: message.text,
+        }].slice(-10)
+        const dialogues = recentDialogues
+        setGameState((current) => current.status === 'human_turn'
+          ? { ...current, recentDialogues: dialogues }
+          : current)
         return
       }
       if (message.type === 'human_turn') {
@@ -188,7 +186,6 @@ function App() {
             .catch((caught) => setError(errorMessage(caught)))
         }
         setActionPending(false)
-        setRecentDialogues([]) // 게임 종료 시 대사 초기화
         socket.close(1000)
         return
       }
@@ -215,7 +212,6 @@ function App() {
       const created = await createGameSession(accessToken, selectedCpuIds)
       setPlayers(created.players)
       setGameState({ status: 'waiting' })
-      setRecentDialogues([]) // 새 게임 시작 시 대사 초기화
       setCpus(null)
       connectGame(created.session_id, accessToken, created.players)
     } catch (caught) {

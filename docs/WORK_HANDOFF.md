@@ -1,5 +1,21 @@
 # Work Handoff
 
+## Latest verification — 2026-10-14
+
+- Release-readiness review found and fixed a stale React closure in the game WebSocket callback:
+  dialogue events reached the client but the rendered turn kept the initial empty history.
+- Dialogue history now belongs to each connection and updates the current table immediately,
+  survives subsequent turns, and starts empty for a new match. Late messages from a superseded
+  socket are ignored. Server dialogue probabilities/cooldowns and DB game persistence are unchanged.
+- `frontend/tests/dialogue.browser.mjs` exercises the real React client with routed REST/WebSocket
+  responses in Chromium. It fails on main `1999a4b` at the first speech bubble, and passes after
+  the fix for before/after-turn delivery, history preservation, latest-per-seat display and new-match
+  isolation. See `frontend/tests/README.md` for reproduction.
+- TypeScript/Vite production build and `git diff --check` passed. No media was generated.
+- Previous Docker validation remains completed; this frontend-only change did not rerun Docker
+  or a backend match. Continue release-readiness review; deferred event timing and profile-image
+  upload policy remain separately scoped decisions.
+
 ## Current status
 
 GitHub bootstrap and the RiichiEnv 0.4.8 spike are complete. Backend settings, initial
