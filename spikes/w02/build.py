@@ -22,6 +22,6 @@ shell.mkdir(exist_ok=True)
 for name in ["main.cjs", "package.json"]:
     shutil.copy2(root / "spikes/w02" / name, shell / name)
 shutil.copytree(out / "engine/w02-engine", shell / "engine", dirs_exist_ok=True)
-subprocess.run([shutil.which("node"), str(root / "spikes/w02/node_modules/@electron/packager/bin/electron-packager.js"),
+subprocess.run([shutil.which("node"), str(root / "spikes/w02/node_modules/@electron/packager/bin/electron-packager.mjs"),
                 str(shell), "W02-Spike", "--platform=win32", "--arch=x64", "--electron-version=44.7.2",
                 f"--out={out / 'shell'}", "--overwrite", "--no-prune"], check=True)
