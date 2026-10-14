@@ -1,5 +1,20 @@
 # Initial Decisions
 
+## 2026-10-14 출시 준비 점검: 실시간 말풍선 수정
+
+- WebSocket 콜백이 연결 시점의 React `recentDialogues` 배열을 캡처해 서버 대사를
+  받아도 화면에 표시하지 못하는 결함을 확인했다. 대사 기록은 연결별 지역 배열로
+  보관하고, 수신 즉시 현재 테이블 상태와 다음 `human_turn`에 반영한다.
+- 최근 10개 유지와 좌석별 최신 문장 표시는 기존 정책을 유지한다. 새 연결마다 기록을
+  비우며, 현재 연결이 아닌 소켓의 늦은 메시지는 무시한다. 서버 확률/cooldown과
+  RiichiEnv 행동·DB 저장 경로는 변경하지 않았다.
+- 실제 React 클라이언트와 Chromium에서 REST/WebSocket 응답을 제어한 회귀 검사로
+  턴 전 대사, 턴 후 즉시 갱신, 다음 턴 유지, 좌석별 교체, 다음 대국 격리를 검증했다.
+  기존 main `1999a4b`에서는 첫 말풍선 표시 검사가 실패했고 수정본은 통과했다.
+- 실행 방법은 `frontend/tests/README.md`, 검사는 `frontend/tests/dialogue.browser.mjs`에
+  둔다. TypeScript/Vite production build와 `git diff --check`가 통과했다. 이번 검사는
+  프런트 메시지 처리 검증이며 실제 서버 완주나 Docker 재검증을 수행한 것은 아니다.
+
 ## 확정
 
 - 게임명: No Riichi No Fuku
