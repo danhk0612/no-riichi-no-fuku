@@ -33,7 +33,7 @@
 프로필 key가 없으면 문자 avatar를 표시한다. 프로필 이미지 업로드 및 관리자 웹 UI는 없다.
 기본 대국 기능을 재사용할 수 있는 상태이지만 최종 진행 루프/완성 콘텐츠/Windows판 완료가 아니다.
 
-## W04 로컬 저장·복구 전환 — 구현 중
+## W04 로컬 저장·복구 전환 — 구현·검증 완료, PR #61 open
 
 기준 main `373b82cb0b74b0adb88130678d04d94a7bb85eb5`에서 `task/w04-local-storage`를 진행한다.
 기존 PostgreSQL 웹 runtime은 그대로 두고, 별도 `create_local_runtime` 경계가 SQLite 파일,
@@ -48,10 +48,19 @@ LocalAppData 하위 `game.db`/`media`/`config`, Alembic head, 기존 seed와 단
 Linux/Python 3.12.14 임시 venv 검사: backend unittest 78개, 대사 pytest 10개, TypeScript/Vite
 production build 통과. 추가 local-runtime 검사에는 migration 반복, 파일 DB 동등 turn 복구,
 profile name edit, REST/WS의 잘못된·이전 capability 거절, hidden admin/member 경계, FK/index,
-중복 엔진 잠금, 동시 active-session 쓰기 경쟁이 포함된다. 전원 차단 durability는 검사하지 않았다.
-Windows hosted CI workflow `.github/workflows/w04-local-storage.yml`은 생성했으며, 정확한
-branch SHA의 CI/artifact 결과는 PR push 후 기록한다. 실제 Windows·UI browser·사용자 LocalAppData는
-검사하지 않았다.
+프로세스 간 엔진 잠금, 동시 active-session 쓰기 경쟁이 포함된다. 기존 회귀가 policy 1/2·legacy
+snapshot, stale action, action commit 실패 후 cache eviction, 마지막 행동 뒤 재기동 정산 exactly-once를
+통과한다. 전원 차단 durability는 검사하지 않았다.
+
+최종 코드 SHA `3081dc56a2be95dd30ce0fa78a413da9b4bfeb29`의 Windows hosted CI
+[run 38572718064](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38572718064)이
+Windows Server 2022 Datacenter x64(build 20348), Python 3.12.10, Node 24.19.0에서 통과했다.
+backend unittest 78개(54.438초), 대사 pytest 10개(0.13초), TypeScript/Vite build와 프로세스 간
+data-root 잠금 검사가 포함됐다. artifact `w04-windows-3081dc56a2be95dd30ce0fa78a413da9b4bfeb29`
+(ID `11897978928`, SHA256 `a4bb5b49a4a4886c415c0883e4b20b7601371d139abda261f3edba8c4e5bdca8`,
+2026-10-28 만료) 안의 source-sha와 test 로그를 확인했다. 이는 hosted Windows의 백엔드/빌드 CI이며,
+Windows 사용자 PC의 실행창·번들·인터넷 차단 검증이 아니다. 실제 Windows·UI browser·사용자
+LocalAppData·전원 차단 durability는 검사하지 않았다. PR #61은 main 병합 전이다.
 
 ## W02 Windows runtime spike — 기술 검증 완료, 사용자 실기 미검증
 
@@ -315,8 +324,8 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 ## 다음
 
 W02 격리 기술 검증 완료(위 Windows CI/실측 범위), PR #59 main 반영 완료. W03 정책은 PR #60,
-main `373b82c`에 확정 반영됐다. 현재 `task/w04-local-storage`의 저장·복구 구현과 정확한
-Windows CI/artifact 확인이 진행 중이며, W05 실행창·화면 연결은 착수하지 않았다.
+main `373b82c`에 확정 반영됐다. W04 구현/검증은 PR #61로 제출했고 아직 병합되지 않았다.
+다음은 PR #61 병합 후 W05 Windows shell·오프라인 게임 통합이다. 이 작업에서 W05를 시작하지 않았다.
 D01~D03/관리 UI의 승인 범위는 REQUIREMENTS를 따른다. 지원 Windows와 배포용 Python patch
 공급 조건은 W05 번들 준비/W12 배포 전에 확인할 잔여 조건이다. clean Windows 10/11·OS 오프라인·X 클릭 실기는
 spike README의 artifact/결과 경로로 보완한다. 미검증을 요구 충족으로 올리지 않는다.
