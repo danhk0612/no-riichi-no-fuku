@@ -28,6 +28,10 @@ jobs:
           New-Item -ItemType Directory -Force spikes/w02/out/evidence | Out-Null
           git rev-parse HEAD | Out-File spikes/w02/out/evidence/source-sha.txt
           Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion, OsBuildNumber, OsArchitecture | ConvertTo-Json | Out-File spikes/w02/out/evidence/windows.json
+          python -m venv spikes/w02/out/build-venv
+          $venvScripts = Join-Path (Get-Location) 'spikes/w02/out/build-venv/Scripts'
+          $venvScripts | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+          $env:PATH = "$venvScripts;$env:PATH"
           python -c "import tomllib,pathlib; p=tomllib.loads(pathlib.Path('backend/pyproject.toml').read_text()); pathlib.Path('spikes/w02/out/requirements.txt').write_text('\n'.join(p['project']['dependencies']+p['project']['optional-dependencies']['test']+['pytest==9.1.1','pyinstaller==6.22.3','setuptools==80.9.0']))"
           python -m pip install -r spikes/w02/out/requirements.txt --report spikes/w02/out/evidence/pip-report.json
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -45,6 +49,7 @@ jobs:
           "exit=$result" | Add-Content ../spikes/w02/out/evidence/editable.txt
           if ($result -eq 0) { throw 'Expected known discovery failure; inspect changed environment' }
           if (-not (Select-String -Path ../spikes/w02/out/evidence/editable.txt -Pattern 'Multiple top-level packages' -Quiet)) { throw 'Different editable failure; investigate' }
+          exit 0
       - name: Source regression baseline
         working-directory: backend
         run: |
