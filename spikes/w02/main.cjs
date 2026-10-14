@@ -9,6 +9,7 @@ const { createServer } = require('node:net')
 const assert = require('node:assert/strict')
 const smoke = process.argv.includes('--smoke')
 const data = mkdtempSync(join(tmpdir(), 'nrnf-w02-'))
+const engineData = join(data, 'engine-data')
 app.setPath('userData', join(data, 'electron'))
 const binary = join(__dirname, 'engine', 'w02-engine.exe')
 const evidence = { platform: process.platform, arch: process.arch, versions: process.versions,
@@ -25,7 +26,7 @@ async function until(check, ms = 60000) {
 }
 async function start(port = 0) {
   const identity = randomUUID(), ready = join(data, `${identity}.json`), started = Date.now()
-  const child = spawn(binary, ['serve', '--data', data, '--ready', ready, '--identity', identity,
+  const child = spawn(binary, ['serve', '--data', engineData, '--ready', ready, '--identity', identity,
     '--port', String(port), ...(smoke ? ['--smoke'] : [])],
     { cwd: data, windowsHide: true, env: { ...process.env, PATH: process.env.SystemRoot + '\\System32', PYTHONPATH: '', PYTHONHOME: '' } })
   let log = '', failure
@@ -71,7 +72,7 @@ async function stop() {
   if (smoke) assert.equal(forced, false, 'graceful shutdown failed')
 }
 function engineCommand(mode) {
-  const result = spawnSync(binary, [mode, '--data', data], {
+  const result = spawnSync(binary, [mode, '--data', engineData], {
     cwd: data, encoding: 'utf8', windowsHide: true,
     env: { ...process.env, PATH: process.env.SystemRoot + '\\System32', PYTHONPATH: '', PYTHONHOME: '' } })
   assert.equal(result.status, 0, result.stderr || result.error?.message)
