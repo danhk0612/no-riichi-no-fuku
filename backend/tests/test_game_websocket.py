@@ -1,8 +1,10 @@
 import unittest
 from collections.abc import Generator
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 from riichienv import ActionType
@@ -247,6 +249,85 @@ class GameWebSocketApiTest(unittest.TestCase):
             error = websocket.receive_json()
             self.assertEqual(error["code"], "stale_action")
             self.assertEqual(websocket.receive_json(), first_turn)
+
+    def test_failed_action_commit_recovers_only_persisted_turn(self) -> None:
+        created = self.create_game()
+        path = f"/api/game/sessions/{created['session_id']}/ws"
+        with self.client.websocket_connect(path) as websocket:
+            self.authenticate(websocket)
+            first_turn = websocket.receive_json()
+            with patch.object(Session, "commit", side_effect=SQLAlchemyError("fixture")):
+                websocket.send_json({
+                    "type": "action",
+                    "legal_action_index": 0,
+                    "action_version": first_turn["action_version"],
+                })
+                self.assertEqual(websocket.receive_json()["code"], "persistence_failed")
+                with self.assertRaises(WebSocketDisconnect) as closed:
+                    websocket.receive_json()
+                self.assertEqual(closed.exception.code, 1011)
+
+        with self.session_factory() as session:
+            record = session.get(GameSessionRecord, created["session_id"])
+            self.assertEqual(record.human_action_indices, [])
+            self.assertEqual(record.status, "active")
+        # The live engine advanced before commit failed; reconnect must discard it.
+        with self.client.websocket_connect(path) as websocket:
+            self.authenticate(websocket)
+            self.assertEqual(websocket.receive_json(), first_turn)
+            websocket.send_json({
+                "type": "action",
+                "legal_action_index": 0,
+                "action_version": first_turn["action_version"],
+            })
+            self.assertEqual(websocket.receive_json()["action_version"], 1)
+
+    def test_restart_after_final_action_before_settlement_settles_once(self) -> None:
+        created = self.create_game()
+        with self.session_factory() as session:
+            member = session.scalar(select(User).where(User.login_id == "member-one"))
+            registered = self.registry.get_owned(session, created["session_id"], member.id)
+            for _ in range(1000):
+                if registered.done:
+                    break
+                turn = registered.game.human_turn()
+                action_index = choose_human_action_index(list(turn.legal_actions))
+                self.registry.submit_action(
+                    session, registered, action_index, registered.action_version
+                )
+                session.commit()
+            self.assertTrue(registered.done)
+            result = registered.game.result()
+            record = session.get(GameSessionRecord, created["session_id"])
+            self.assertEqual(record.status, "active")
+            self.assertIsNone(record.settlement)
+            self.assertEqual(member.current_hp, 3)
+            self.assertTrue(all(stage == 0 for stage in session.scalars(
+                select(UserCpuProgress.defeat_stage).where(UserCpuProgress.user_id == member.id)
+            )))
+
+        path = f"/api/game/sessions/{created['session_id']}/ws"
+        for _ in range(2):
+            self.registry = GameRegistry()
+            with self.client.websocket_connect(path) as websocket:
+                self.authenticate(websocket)
+                message = websocket.receive_json()
+                self.assertEqual(message["type"], "match_complete")
+                self.assertEqual(message["result"]["scores"], list(result.scores))
+                self.assertEqual(message["result"]["ranks"], list(result.ranks))
+            with self.session_factory() as session:
+                record = session.get(GameSessionRecord, created["session_id"])
+                self.assertEqual(record.status, "completed")
+                member = session.get(User, record.user_id)
+                stages = dict(session.execute(select(
+                    UserCpuProgress.cpu_character_id, UserCpuProgress.defeat_stage
+                ).where(UserCpuProgress.user_id == member.id)).all())
+                last_seat = result.ranks.index(4)
+                self.assertEqual(member.current_hp, 2 if last_seat == 0 else 3)
+                expected = {cpu_id: 0 for cpu_id in stages}
+                if last_seat:
+                    expected[self.cpu_ids[last_seat - 1]] = 1
+                self.assertEqual(stages, expected)
 
     def test_fixed_seed_match_completes_and_persists_server_settlement(self) -> None:
         with self.session_factory() as session:

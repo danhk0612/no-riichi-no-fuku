@@ -2,6 +2,14 @@
 
 ## Latest verification — 2026-10-14
 
+- Persistence fault-boundary review added two WebSocket integration regressions in
+  `backend/tests/test_game_websocket.py`: failed action commit restores the original persisted
+  turn and accepts a retry; a restart after the final action commit but before settlement
+  reconstructs the same result and settles only once across repeated fresh registries.
+- All 68 backend tests, compileall and diff checks passed. These checks use SQLite/TestClient,
+  commit fault injection and registry replacement, not a real PostgreSQL outage or process kill.
+  No production code, schema or media changes were needed; Docker was not rerun.
+
 - Release-readiness review found and fixed a stale React closure in the game WebSocket callback:
   dialogue events reached the client but the rendered turn kept the initial empty history.
 - Dialogue history now belongs to each connection and updates the current table immediately,
