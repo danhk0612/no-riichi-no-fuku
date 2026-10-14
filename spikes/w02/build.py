@@ -8,6 +8,7 @@ root = Path(__file__).resolve().parents[2]
 out = root / "spikes/w02/out"
 out.mkdir(exist_ok=True)
 args = [sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--onedir", "--noupx",
+        "--python-option", "X utf8",
         "--name", "w02-engine", "--distpath", str(out / "engine"), "--workpath", str(out / "work"),
         "--specpath", str(out), "--paths", str(root / "backend")]
 for name in ["app", "riichienv", "uvicorn", "sqlalchemy", "alembic", "pytest", "httpx", "psycopg", "psycopg_binary"]:

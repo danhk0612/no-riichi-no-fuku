@@ -7,6 +7,8 @@ on:
     paths: ['spikes/w02/**', '.github/workflows/w02-spike.yml']
 permissions:
   contents: read
+env:
+  PYTHONUTF8: '1'
 jobs:
   windows-spike:
     runs-on: windows-2022

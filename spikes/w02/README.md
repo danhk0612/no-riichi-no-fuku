@@ -63,6 +63,9 @@ dependency ranges를 매 build 재해석하므로 **서로 다른 날짜의 buil
   PyInstaller `--paths backend`/`--collect-all app`으로 소스 import를 명시한다.
 - seed JSON은 `app/seeds`, Alembic 설정과 0001~0004는 원래 상대 구조에 포함한다.
   frontend build는 `/`에, 기존 API/WS는 `/api`에 두어 같은 origin을 유지한다.
+- Windows 기본 cp1252에서 legacy fixture의 encoding 미지정 `read_text()`가 실패했다.
+  원본 fixture/검사는 보존하고 source 시험은 `PYTHONUTF8=1`, frozen interpreter는
+  PyInstaller `--python-option 'X utf8'`로 UTF-8 모드를 명시한다.
 - RiichiEnv/argon2/psycopg/SQLite/Python native DLL·pyd와 migration/seed 목록을 기록한다.
   frozen unittest/pytest는 native engine·legacy fixture·policy 1/2를 원본 그대로 검사한다.
 - 임시 W02 marker 폴더만 DB/미디어 경로로 사용한다. 기존 `.env`나 사용자 폴더를 읽지 않도록
