@@ -286,7 +286,10 @@ function CompletedTable({
           </figcaption>
         </figure>
       )}
-      {onNextGame && (
+      {state.settlement.game_over && (
+        <p className="settlement-summary" role="status">게임 오버 · HP가 모두 소진되었습니다.</p>
+      )}
+      {onNextGame && !state.settlement.game_over && (
         <button className="primary-button" onClick={onNextGame} type="button">
           다음 대국 선택
         </button>
