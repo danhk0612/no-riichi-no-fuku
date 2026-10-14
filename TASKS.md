@@ -10,8 +10,8 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 |---|---|---|---|---|
 | W01 | 기존 기능·회귀 기준 확정 | P0 / 기준 확정 완료(브라우저 환경 차단) | W00 | 저성능 Work |
 | W02 | Windows 실행·엔진 번들 기술 검증 | P0 / 기술 검증 완료(Windows CI, 사용자 실기 미검증) | W01 | 고성능 Work |
-| W03 | 실행·저장·프로필 정책 확정 | P0 / 결정안 준비·사용자 답변 대기 | W02 | 고성능 Chat |
-| W04 | 로컬 저장·복구 기반 전환 | P0 / 대기 | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
+| W03 | 실행·저장·프로필 정책 확정 | P0 / 정책·W04/W05 계약 확정 | W02 | 고성능 Chat |
+| W04 | 로컬 저장·복구 기반 전환 | P0 / 다음 착수 | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 대기 | W04 | 저성능 Work |
 | W06 | 진행 규칙 결정·게임 회귀 | P0 / 결정 대기 | W05, D04 | 고성능 Chat → 저성능 Work |
 | W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
@@ -69,8 +69,9 @@ W05가 먼저 확정한다. W08/W09는 공유 schema·UI를 만지므로 순차 
 
 ### W03 — 실행·저장·프로필 정책 확정
 
-- 현재: W02 PR #59 검토·병합 완료. REQUIREMENTS의 W03 결정안은 미승인 권고다.
-  사용자 선택 후 확정 계약을 기록하며 W04/W05는 아직 착수하지 않는다.
+- 결과: 2026-10-14 사용자 승인으로 여섯 정책 확정. REQUIREMENTS/ARCHITECTURE의
+  로컬 저장·권한·writer·host 경계 계약을 따른다. 제품은 아직 미구현이다. 지원 OS/배포용
+  Python patch 공급 조건은 W05 준비에서 확인하고 W12 전 확정한다.
 
 - 목적: W04/W05가 설계 선택 없이 구현할 수 있도록 사용자 결정 확보.
 - 범위: D01~D03와 관리 UI 통합/분리(D09), 지원 Windows·배포/데이터 경로·인증/프로필/슬롯·
@@ -85,11 +86,11 @@ W05가 먼저 확정한다. W08/W09는 공유 schema·UI를 만지므로 순차 
 - 목적: 확정 로컬 저장에서 행동 commit과 복구·진행 보존을 유지.
 - 범위: W03 저장/프로필 계약 구현, Alembic/bootstrap/paths, 로컬 writer/동시 요청 제어,
   외래키/index/rollback·마지막 행동 후 정산 재시작, policy 1/2. 기존 데이터 이전은 승인 범위만.
-- 선행: W03 저장·인증·경로·이전 결정, W01 baseline.
+- 선행: W03 확정 정책/구현 계약, W01 baseline. Windows UI/번들 버전 확정은 W05에서 다룸.
 - 완료: schema/migration 재현, 진행/세션 동등 복구와 exactly-once, 동시·commit 실패 회귀 통과;
   사용자 자료 보존/전환 실패 재개 기준. 전원 차단 검증은 실측한 범위만 기록.
 - 금지: CPU/룰/HP·완료 규칙, 공유 콘텐츠, ComfyUI, 미승인 기존 DB 덮어쓰기.
-- 환경: 저성능 Work. 저장 잠금 설계가 아직 열려 있으면 고성능 Work에서 먼저 확정.
+- 환경: 저성능 Work. ARCHITECTURE의 확정 경계로 구현하고 계약을 바꿔야 하면 별도 검토.
 
 ### W05 — Windows shell·오프라인 게임 통합
 
@@ -178,35 +179,31 @@ W05가 먼저 확정한다. W08/W09는 공유 schema·UI를 만지므로 순차 
 ## 다음 Work에 입력할 지시문
 
 ```text
-https://github.com/danhk0612/no-riichi-no-fuku 의 W03만 진행해.
+https://github.com/danhk0612/no-riichi-no-fuku 의 W04만 수행해.
 
-최신 main·열린 PR·현재 브랜치와 AGENTS.md, README.md, PROJECT.md, REQUIREMENTS.md,
+최신 main·열린 PR·브랜치와 AGENTS.md, README.md, PROJECT.md, REQUIREMENTS.md,
 ARCHITECTURE.md, CURRENT_STATE.md, TASKS.md, AI_WORKFLOW.md를 먼저 확인해.
-W02 PR #59는 eb5faae로 main에 병합됐다. 최신 main의 이후 변경도 확인해.
-REQUIREMENTS.md의 W03 결정안을 읽고 사용자 답변으로 확정된 부분만 계약에 반영해.
-답변이 없으면 미확정으로 유지하고 W04/W05 제품 변경은 시작하지 마.
-W01 제품 baseline 5762267e2366fa5bdbdd69bc6f38672d141dcbc8을 보존해.
+W03 PR #60의 사용자 확정 정책과 W04/W05 계약이 main에 반영됐는지 확인해.
+branch task/w04-local-storage에서 해당 계약대로 로컬 저장·복구 기반을 구현해.
 
-W02 code a9268d4b3b5eed3b55b8b40e2f06bbf28a549cb5는 Windows Server 2022 x64에서
-Python 3.12.10/RiichiEnv 0.4.8 frozen + Electron 44.7.2 격리 후보를 검증했다.
-source/frozen 각각 72 unittest·10 대사 pytest, 기존 browser 4개, ZIP 압축 해제 기동·health·
-same-origin REST/WS 108행동·12행동 재시작 동등 복구·완료 정산 보존·포트/소유 종료가 통과했다.
-제품 Windows 구현·최종 기술 채택이 아니다. clean Windows 10/11·OS 인터넷 차단·사용자
-X 클릭·host crash/전원 차단·SQLite 동시 writer/FK는 미검증이다. artifact는 14일 보존이다.
-추가 실기가 필요하면 spike README 경로로 결과를 받고 실제 증거만 CURRENT_STATE에 반영해.
+SQLite game.db/media/config를 LocalAppData 아래 분리하고 실제 검사는 명시한 임시 폴더만 써.
+Alembic/bootstrap·단일 로컬 플레이 프로필·기존 이름/HP/stage/active 대국 보존을 구현해.
+로컬 전용 runtime/app에서 REST/WS capability·member/관리 principal 경계를 구현하되
+웹 JWT/회원/관리자 동작을 전역 변경하지 마. host private channel·preload·로그인 없는 UI는 W05다.
+engine별 data-root 소유 잠금·FK·active unique index·BEGIN IMMEDIATE 쓰기 직렬화를 검증해.
+CPU policy 1/2·legacy seed/action snapshot·rollback/cache eviction·정산 exactly-once를 보존해.
+초기화 반복/이름 편집/프로세스 재시작 동등 복구/최종 행동 뒤 미정산 복구·정산 commit 실패,
+중복 엔진·동시 요청/stale action·FK·잘못된/이전 실행 capability 거절을 의미 있는 회귀로 확인해.
+기존 unittest 72개/대사 pytest 10개, 영향 검사와 TypeScript/Vite build를 실행하고
+Windows CI·artifact를 실제 검증 SHA와 대조해. UI browser 환경 부족은 미검증으로 남겨.
 
-고성능 Chat 중심으로 D01~D03/D09를 사용자와 확정해.
-Electron/Python 번들 및 same-origin REST/WS 우선 후보, WebView2 오프라인 요구/배포 부담,
-지원 Windows·3.12 security patch binary 공급, 설치/포터블·data/미디어 경로,
-로컬 인증/관리자 권한·프로필/슬롯·중복 instance/engine 수명·기존 데이터 이전 범위를
-선택지와 영향으로 제시해. 단순히 W02가 통과했다는 이유로 자동 채택하지 마.
-승인된 계약·W04/W05 파일 경계·회귀 기준과 보류 사항을 기준 문서에 반영해.
-
-W04/W05 제품 구현·본 게임 재작성·원본 DB/미디어 수정·CPU/룰/진행/이미지 정책 변경,
-Release/tag·직접 병합은 하지 마. policy 1/2·legacy replay·seed/action snapshot·정산 경계를
-보존하고 CPU 3명 미만/HP 0 이후는 D04/W06 미확정으로 유지해.
-Git push/PR은 새 작업의 허용 범위를 확인해. 결과·사용자 결정·미검증·다음 Task를 인계해.
+Windows shell/React 로그인 화면 변경/정식 패키징은 W05로 남겨. 기존 웹 DB/미디어 자동 이전,
+다중 프로필/수동 슬롯/백업 UI, CPU·룰·HP 0/완료 규칙·공유 콘텐츠·ComfyUI를 추가하지 마.
+사용자 LocalAppData나 웹 .env/DB를 검사에 연결하거나 기존 자료를 임의 삭제하지 마.
+배포용 Python 버전/지원 OS·엔진 업그레이드를 임의 확정하지 마.
+문서를 실제 구현·검증에 맞춰 갱신하고 branch commit/push와 PR 제출까지 진행해.
+직접 병합·Release/tag·W05 착수는 하지 마. 최종 보고에 SHA/PR·검증/미검증과 W05 인계를 포함해.
 ```
 
-권장 환경: **고성능 Chat**. W03은 W02 증거로 좁혀진 기술·저장·프로필 정책 결정이며
-구현은 하지 않는다. 복합 재설계가 필요하면 고성능 Work로 분리한다.
+권장 환경: **저성능 Work**. 확정된 저장/runtime 계약에 따른 코드·테스트·CI/Git 구현 작업이다.
+계약 변경이 필요한 복합 문제만 고성능 Work/Chat으로 분리한다.

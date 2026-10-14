@@ -295,9 +295,10 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 ## 다음
 
 W02 격리 기술 검증 완료(위 Windows CI/실측 범위), PR #59 main 반영 완료.
-W03 결정안을 [REQUIREMENTS.md](REQUIREMENTS.md)에 준비했다. 사용자 선택 대기이며
-기술/저장/프로필 채택과 W04/W05 제품 구현은 진행하지 않았다.
-W03은 D01~D03/D09, 지원 Windows·3.12 보안 patch 공급·배포/data 경로·인증/프로필·슬롯·
-기존 데이터 이전을 사용자와 확정한다. clean Windows 10/11·OS 오프라인·X 클릭 실기는
+2026-10-14 사용자 답변으로 W03의 여섯 정책을 확정했다. [REQUIREMENTS.md](REQUIREMENTS.md)에
+승인을 기록하고 ARCHITECTURE에 W04/W05 구현 계약을 정리했다. 제품 코드는 변경하지 않았다.
+다음 W04는 로컬 저장/프로필/runtime 권한·소유 잠금·복구 구현이며 저성능 Work에 인계한다.
+D01~D03/관리 UI의 승인 범위는 REQUIREMENTS를 따른다. 지원 Windows와 배포용 Python patch
+공급 조건은 W05 번들 준비/W12 배포 전에 확인할 잔여 조건이다. clean Windows 10/11·OS 오프라인·X 클릭 실기는
 spike README의 artifact/결과 경로로 보완한다. 미검증을 요구 충족으로 올리지 않는다.
 D04는 W06, 콘텐츠 세부 정책은 W07; 진행·이미지 생성·제품 통합을 본 작업에 섞지 않았다.

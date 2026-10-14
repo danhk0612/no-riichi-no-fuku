@@ -31,10 +31,11 @@ game_settings, game_sessions다. 기존 대사는 **CPU별 event 문장**이며 
 CG는 CPU·stage 1/2/3별 단일 metadata 슬롯; 파일은 `MEDIA_ROOT` 아래 별도 저장한다.
 다중 이미지 조합 캐시나 캐릭터 외모/복장 프롬프트 구조는 없다.
 
-## 권장 목표 구조 — 사용자 채택 전
+## 채택한 목표 구조 — 제품 미구현
 
-첫 검증 후보는 **Electron + 기존 React + 번들 Python/FastAPI/RiichiEnv + SQLite**다.
-저장/실행 기술 확정은 W02의 Windows 증거와 W03 사용자 결정을 거친다.
+W02 검증 후 2026-10-14 사용자 승인으로 **Electron + 기존 React + 번들 Python/FastAPI/RiichiEnv
++ SQLite**를 채택했다. ZIP 실행·LocalAppData 저장·단일 로컬 프로필·게임 내부 관리 UI다.
+아래 대안 비교는 선택 근거이며 지금 추가 대안 구현을 지시하지 않는다.
 
 | 후보 | 재사용/유지보수 | 실행·배포 고려 | 판단 |
 |---|---|---|---|
@@ -52,7 +53,7 @@ Python EXE/번들 런타임 실행·회수는 host의 자식 프로세스 관리
 우선 검증하면 상대 REST/WS를 가장 많이 재사용할 수 있다. 엔진 자동 기동, 준비 확인,
 단일 소유 프로세스, 포트 충돌, 종료·미완료 저장 보존을 검증한다. API를 외부 인터페이스에
 노출하지 않고 로컬 제어 권한/세션을 결정한다. 웹 회원 체계를 임의로 제거하거나
-하드코딩된 관리자/JWT로 대체하지 않는다. 인증은 D02 결정 사항이다.
+하드코딩된 관리자/JWT로 대체하지 않는다. 로컬 인증/저장 구현 계약은 아래 W03 절을 따른다.
 
 ## W02 격리 실행 후보와 W03 경계
 
@@ -79,7 +80,7 @@ stdin EOF로 owned Python child 종료를 요청하고, timeout 때 해당 child
 transport 연결을 담당한다. `api/game.py`·CPU agents·legacy fixture·frontend table의 규칙/대국
 로직은 우선 재사용한다. spike 코드를 그대로 제품 entry point로 승격하지 않는다.
 보안/인증·중복 instance·writer/FK·강제 종료 복구와 지원 OS는 아직 결정/검증이 필요하다.
-D01~D03/D09 채택 및 D04 진행 정책은 W02가 결정하지 않는다.
+D01~D03/관리 UI는 이후 W03에서 사용자 승인됐다. D04 진행 정책은 여전히 미확정이다.
 
 공식 근거(2026-10-14 접속·내용 확인; 후보 설명이며 이 게임 실측과 별개):
 - [Python 3.12.10 release](https://www.python.org/downloads/release/python-31210/):
@@ -93,6 +94,55 @@ D01~D03/D09 채택 및 D04 진행 정책은 W02가 결정하지 않는다.
   Evergreen offline standalone 또는 Fixed Version 동봉. Fixed Version은 자동 업데이트하지 않고
   공식 문서상 250 MB 초과이며 UNC/network 경로 제약·Windows 10 v120+ ACL 조건이 있다.
   이를 이 게임의 bundle 크기/호환성 실측으로 기록하지 않는다.
+
+## W03 구현 계약 — W04/W05 인계
+
+이 절은 승인된 여섯 정책을 구현할 기술 경계다. 제품 코드는 아직 없다.
+
+### W04 로컬 DB·프로필·권한
+
+- LocalAppData 루트 아래 `game.db`, `media/`, `config/`를 분리한다. DB 안의 미디어 key는
+  기존 상대 key 정책을 재사용한다. 실행/빌드 폴더·cwd·웹 `.env`에서 자료를 자동 수집하지 않는다.
+  개발 검사는 명시적으로 전달한 임시 data root만 사용한다. 기본 사용자 폴더를 검사에 쓰지 않는다.
+- 로컬 전용 초기화가 Alembic head→기존 CPU/대사/CG 슬롯 seed→로컬 플레이 프로필 생성
+  순서로 실행된다. 반복 실행은 기존 이름/HP/stage/설정/이미지/active session을 보존한다.
+  초기 이름은 고정 개인정보 대신 `플레이어`를 사용하며 기존 이름 편집 API로 변경 가능하다.
+- 기존 users/progress/session 관계를 우선 재사용한다. 플레이 가능한 member 프로필은 1개다.
+  기존 관리자 API 재사용에 필요한 내부 관리 principal은 별도 플레이 프로필로 표시하지 않는다.
+  사용자 입력 비밀번호/웹 로그인은 필요하지 않고 로컬 실행에서 회원가입·회원관리 기능은 노출하지 않는다.
+- 로컬 전용 app/runtime 경계에서 기존 member 게임·profile API와 관리 API를 재사용한다.
+  loopback이라는 이유만으로 무인증 admin을 열거나 웹 get_current_user/role 검사를 전역 해제하지 않는다.
+  현재 엔진 실행마다 임의 local capability를 메모리에서 발급해 소유 host에 private channel로
+  전달한다. REST와 WS 모두 현재 capability와 해당 내부 principal을 확인한다. URL·명령줄·
+  사용자 DB/일반 로그에 secret을 넣지 않는다. 이전 실행의 capability는 새 실행에서 거절한다.
+  같은 실행의 장시간 대국에 웹 JWT의 60분 만료를 그대로 적용하지 않는다. 웹 JWT 규칙은 유지한다.
+  실제 host 채널/preload·화면 진입은 W05, local runtime 발급/확인과 검사는 W04다.
+- DB 쓰기는 하나의 소유 engine process만 한다. 동일 data root에 두 엔진이 쓰기 시작하지
+  못하도록 local runtime이 프로세스 간 소유 잠금을 먼저 확보하고 종료 시 해제한다.
+  잠금 실패 시 DB 초기화/정산은 시작하지 않는다. host 중복 창 처리는 W05다.
+- SQLite 연결마다 FK를 활성화하고 partial unique active-user index를 검증한다.
+  쓰기 transaction은 BEGIN IMMEDIATE로 시작해 요청별 직렬화한다. lock 대기와 commit 실패 시
+  DB rollback/cache eviction을 유지하고 실패를 성공 응답으로 바꾸지 않는다.
+  엔진 전역 lock을 event-loop thread에서 다른 coroutine을 막는 방식으로 추가하지 않는다.
+- 기존 사람 행동 commit과 최종 정산 commit은 별개다. 최종 행동 저장 뒤 미정산 재시작은
+  replay 후 정산하고 결과/HP 또는 stage를 같은 정산 transaction으로 한 번만 반영한다.
+  policy 1/2·seed/좌석/성향·legal action index 순서와 fixture는 그대로 보존한다.
+- 기본 SQLite journal/durability를 약화시키지 않는다. WAL·새 백업/복원·export·수동 슬롯은
+  이번 최소 구현에 추가하지 않는다. 전원 차단 보장은 실측 없이 주장하지 않는다.
+
+### W05 실행창·번들·자동 진입
+
+Electron은 한 data root의 단일 소유 host로 동작하고 번들 engine을 자동 기동한다.
+같은 loopback origin에서 정적 React와 기존 API/WS를 제공한다. 준비 identity/health를
+확인한 뒤 local capability를 제한된 host 채널로 전달해 로그인 화면 없이 profile/active
+session으로 진입한다. renderer Node 비활성/contextIsolation/sandbox를 유지한다.
+engine/DB 구현은 W04 결과를 사용하며 spike의 임시 DB·시험 seed/stage·시험 helper를
+제품 진입점으로 복사하지 않는다. 이름 편집·일반 대국 화면은 기존 자산을 활용한다.
+정상 종료 시 새 입력을 멈추고 이미 승인된 transaction을 마친 뒤 owned engine의 종료를
+요청/대기한다. 다른 프로그램·ComfyUI를 종료하지 않는다. 강제 종료 후 복구 범위는 마지막
+commit까지이며 host crash/전원 차단의 실기 검증은 별도로 한다.
+배포용 Python binary/지원 OS의 남은 조건은 번들 검증 전에 확인하고 필요한 선택 변경은 사용자에게 제시한다.
+캐릭터/공유 목록/생성 설정 관리 화면의 실제 기능은 W08~W11이며 W05에 앞당겨 구현하지 않는다.
 
 ## 저장 전환에서 해결할 점
 
