@@ -2,8 +2,8 @@
 
 ## 기준
 
-- 확인일: 2026-10-14, W02 검토 후 main `eb5faae08bc6d6ea92078ba768b684343cb2fa1f`.
-  W02 시작/제품 baseline main은 `7523d4177140d303c5f4681c5ff94d92610db227`이다.
+- 확인일: 2026-10-14. W03 PR #60이 병합된 main은
+  `373b82cb0b74b0adb88130678d04d94a7bb85eb5`이다.
 - PR #56(W00)·#57(W01)·#58(인계)는 main에 병합됐다. 열린 #35는 기존 Docker 문서이며 건드리지 않는다.
 - W01 제품/검사 baseline `5762267e2366fa5bdbdd69bc6f38672d141dcbc8`과 현재 backend/frontend
   tree가 동일하다. legacy fixture SHA256도 보존한다. W02는 시험 코드·workflow·기준 문서만 변경한다.
@@ -32,6 +32,26 @@
 `game_start`, `match_first/last` seed 문장은 있으나 그 시작/순위 이벤트 표시 연결은 없다.
 프로필 key가 없으면 문자 avatar를 표시한다. 프로필 이미지 업로드 및 관리자 웹 UI는 없다.
 기본 대국 기능을 재사용할 수 있는 상태이지만 최종 진행 루프/완성 콘텐츠/Windows판 완료가 아니다.
+
+## W04 로컬 저장·복구 전환 — 구현 중
+
+기준 main `373b82cb0b74b0adb88130678d04d94a7bb85eb5`에서 `task/w04-local-storage`를 진행한다.
+기존 PostgreSQL 웹 runtime은 그대로 두고, 별도 `create_local_runtime` 경계가 SQLite 파일,
+LocalAppData 하위 `game.db`/`media`/`config`, Alembic head, 기존 seed와 단일 로컬 member 및
+별도 내부 admin principal을 준비한다. 개발/검사는 명시적 임시 data root만 사용한다.
+이름/HP/stage/active 세션을 반복 초기화에서 보존하며 local REST와 WS는 프로세스 메모리의
+실행별 capability로 제한한다. 웹 JWT 경로와 웹 회원·관리자 인증은 변경하지 않는다.
+각 SQLite 연결은 FK와 5초 busy timeout을 설정하고 쓰기 transaction은 `BEGIN IMMEDIATE`로
+시작한다. 한 data root의 엔진 소유 잠금과 active-user partial unique index를 사용한다.
+기존 행동 commit, replay, policy 1/2, rollback 후 registry eviction과 정산 transaction은 재사용한다.
+
+Linux/Python 3.12.14 임시 venv 검사: backend unittest 78개, 대사 pytest 10개, TypeScript/Vite
+production build 통과. 추가 local-runtime 검사에는 migration 반복, 파일 DB 동등 turn 복구,
+profile name edit, REST/WS의 잘못된·이전 capability 거절, hidden admin/member 경계, FK/index,
+중복 엔진 잠금, 동시 active-session 쓰기 경쟁이 포함된다. 전원 차단 durability는 검사하지 않았다.
+Windows hosted CI workflow `.github/workflows/w04-local-storage.yml`은 생성했으며, 정확한
+branch SHA의 CI/artifact 결과는 PR push 후 기록한다. 실제 Windows·UI browser·사용자 LocalAppData는
+검사하지 않았다.
 
 ## W02 Windows runtime spike — 기술 검증 완료, 사용자 실기 미검증
 
@@ -294,10 +314,9 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 
 ## 다음
 
-W02 격리 기술 검증 완료(위 Windows CI/실측 범위), PR #59 main 반영 완료.
-2026-10-14 사용자 답변으로 W03의 여섯 정책을 확정했다. [REQUIREMENTS.md](REQUIREMENTS.md)에
-승인을 기록하고 ARCHITECTURE에 W04/W05 구현 계약을 정리했다. 제품 코드는 변경하지 않았다.
-다음 W04는 로컬 저장/프로필/runtime 권한·소유 잠금·복구 구현이며 저성능 Work에 인계한다.
+W02 격리 기술 검증 완료(위 Windows CI/실측 범위), PR #59 main 반영 완료. W03 정책은 PR #60,
+main `373b82c`에 확정 반영됐다. 현재 `task/w04-local-storage`의 저장·복구 구현과 정확한
+Windows CI/artifact 확인이 진행 중이며, W05 실행창·화면 연결은 착수하지 않았다.
 D01~D03/관리 UI의 승인 범위는 REQUIREMENTS를 따른다. 지원 Windows와 배포용 Python patch
 공급 조건은 W05 번들 준비/W12 배포 전에 확인할 잔여 조건이다. clean Windows 10/11·OS 오프라인·X 클릭 실기는
 spike README의 artifact/결과 경로로 보완한다. 미검증을 요구 충족으로 올리지 않는다.

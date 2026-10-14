@@ -300,9 +300,13 @@ async def game_session_websocket(
             )
             await websocket.close(code=4401)
             return
-        user = authenticate_websocket_member(
-            message.get("access_token"), settings, session_factory
-        )
+        local_runtime = getattr(websocket.app.state, "local_runtime", None)
+        if local_runtime is not None:
+            user = local_runtime.websocket_member(message.get("capability"))
+        else:
+            user = authenticate_websocket_member(
+                message.get("access_token"), settings, session_factory
+            )
         if user is None:
             await send_websocket_error(
                 websocket, "invalid_authentication", "invalid authentication credentials"

@@ -97,7 +97,8 @@ D01~D03/관리 UI는 이후 W03에서 사용자 승인됐다. D04 진행 정책�
 
 ## W03 구현 계약 — W04/W05 인계
 
-이 절은 승인된 여섯 정책을 구현할 기술 경계다. 제품 코드는 아직 없다.
+이 절은 승인된 여섯 정책을 구현할 기술 경계다. W04의 실제 구현·검증 상태는
+`CURRENT_STATE.md`를 기준으로 한다. 아래 W05는 미착수 계약이다.
 
 ### W04 로컬 DB·프로필·권한
 
@@ -129,6 +130,11 @@ D01~D03/관리 UI는 이후 W03에서 사용자 승인됐다. D04 진행 정책�
   policy 1/2·seed/좌석/성향·legal action index 순서와 fixture는 그대로 보존한다.
 - 기본 SQLite journal/durability를 약화시키지 않는다. WAL·새 백업/복원·export·수동 슬롯은
   이번 최소 구현에 추가하지 않는다. 전원 차단 보장은 실측 없이 주장하지 않는다.
+
+W04 코드는 `backend/app/local_runtime.py`에서 로컬 data root·소유 잠금·SQLite/Alembic/seed·
+로컬 profile/capability 경계를 구성한다. `backend/app/db/session.py`의 SQLite 연결 설정과
+`backend/app/api/game.py`의 local WS capability 경로만 추가됐으며 웹 JWT 인증은 유지한다.
+W04는 UI, Electron host channel/preload, 실행창, 제품 번들 entry point를 포함하지 않는다.
 
 ### W05 실행창·번들·자동 진입
 
