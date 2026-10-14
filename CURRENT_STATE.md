@@ -2,13 +2,15 @@
 
 ## 기준
 
-- 확인일: 2026-10-14. 최신 main `ba4fc43a89a39a328c7c308d6c90e145ab489d58` (#55).
-- PR #56은 시작 시 미병합, 최신 head `5762267e2366fa5bdbdd69bc6f38672d141dcbc8`가
-  사용자 준비 SHA와 일치했다. 사용자가 허용한 이 head에서 `task/w01-regression-baseline` 시작.
-  열린 PR은 #56 및 #35(기존 `docs/` 웹 인계); 해당 문서 본문은 변경하지 않았다.
-- **W01 코드/검사 baseline은 위 PR head SHA**다. main과 backend/frontend 제품·검사 tree는 동일하다.
-  이번 변경은 CURRENT_STATE/TASKS뿐이며 제품·테스트·의존성·migration 변경은 없다.
-  문서 commit/PR 상태는 Git에서 확인한다. Windows 전환 구현은 없다.
+- 확인일: 2026-10-14. 이번 검토 기준 main `4fab0abe9177847c6835db5635bbde90f4a49c2e`.
+- 초기 기준 문서 PR #56은 `dd4f1e3`, W01 PR #57은 `4fab0ab`로 병합됐다.
+  #56 병합 후 #57 추가 diff가 CURRENT_STATE/TASKS 두 파일뿐임을 확인했다.
+- W01 코드/검사 baseline은 `5762267e2366fa5bdbdd69bc6f38672d141dcbc8`이다.
+  현재 main과 backend/frontend 제품·검사 tree가 동일하며 legacy fixture SHA256도 대조했다.
+  이번 검토에서 대사 pytest 10개를 재실행해 통과했다. W01의 다른 실행 결과는 아래 기록을
+  검토했으며 반복 실행하지 않았다. 문서 diff/로컬 링크 확인. 제품 변경·배포 없음.
+- Windows 전환 구현은 없다. 현재 검토 환경은 Linux이며 Windows x64 실기 또는 실행 결과
+  수집 경로가 아직 확보되지 않아 W02 기술 spike 착수는 환경 확인 후 진행한다.
 - Wayward 참고는 W00의 `5d80f118c590319881be34faba8214a0c3765fc2` 조사뿐이다.
   W01은 외부 참고 코드/ZIP 조사나 이미지 생성을 수행하지 않았다.
 
@@ -173,7 +175,7 @@ Actions workflow가 없으므로 CI 통과를 주장하지 않는다.
 
 W01 코드/검사 대응·실행 가능한 baseline 확정 완료, browser/live-game은 위 환경 차단을 인계한다.
 다음 Task는 [TASKS.md](TASKS.md)의 **W02 격리 Windows 실행·엔진 번들 검증**이다.
-W00 PR #56과 W01 문서의 main 반영 또는 정확한 head 사용 허용, Windows x64 실행 환경 또는
-사용자 실기 결과 경로가 선행 조건이다. Chromium 재현 경로와 W01의 pytest 수집 조건도 준비한다.
+W00/W01 문서는 main에 반영됐다. 남은 W02 선행 조건은 Windows x64 실행 환경 또는
+사용자 실기 결과 경로 확보다. Chromium 재현 경로와 W01의 pytest 수집 조건도 준비한다.
 기술 채택/프로필은 W03, 진행 규칙 D04는 W06, 콘텐츠 세부 정책은 W07에서 결정한다.
 W02가 기존 CPU 부족·HP 0 정책을 임의 변경하거나 W01 미검증을 완료로 바꾸지 않는다.
