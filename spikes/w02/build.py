@@ -28,4 +28,4 @@ for name in ["main.cjs", "package.json"]:
 shutil.copytree(out / "engine/w02-engine", shell / "engine", dirs_exist_ok=True)
 subprocess.run([shutil.which("node"), str(root / "spikes/w02/node_modules/@electron/packager/bin/electron-packager.mjs"),
                 str(shell), "W02-Spike", "--platform=win32", "--arch=x64", "--electron-version=44.7.2",
-                f"--out={out / 'shell'}", "--overwrite", "--no-prune"], check=True)
+                f"--out={out / 'shell'}", "--overwrite", "--no-prune", "--no-asar"], check=True)
