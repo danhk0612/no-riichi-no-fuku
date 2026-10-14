@@ -8,8 +8,8 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 
 | ID | 작업 | 우선순위/상태 | 선행 | 권장 환경 |
 |---|---|---|---|---|
-| W01 | 기존 기능·회귀 기준 확정 | P0 / 다음 착수 가능 | W00 | 저성능 Work |
-| W02 | Windows 실행·엔진 번들 기술 검증 | P0 / 대기 | W01 | 고성능 Work |
+| W01 | 기존 기능·회귀 기준 확정 | P0 / 기준 확정 완료(브라우저 환경 차단) | W00 | 저성능 Work |
+| W02 | Windows 실행·엔진 번들 기술 검증 | P0 / 다음 후보(환경·기준 head 확인 필요) | W01 | 고성능 Work |
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 결정 대기 | W02 | 고성능 Chat |
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 대기 | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 대기 | W04 | 저성능 Work |
@@ -30,6 +30,10 @@ W05가 먼저 확정한다. W08/W09는 공유 schema·UI를 만지므로 순차 
 ## Task 명세
 
 ### W01 — 기존 기능·회귀 기준 확정
+
+- 결과: `5762267e2366fa5bdbdd69bc6f38672d141dcbc8`에서 unittest 72개, 대사 pytest 10개,
+  frontend npm ci/build 통과. browser 4개는 Chromium 부재로 미검증. 코드→검사 대응·policy 1/2·
+  legacy 보존·검증 누락/후속 조건은 [CURRENT_STATE.md](CURRENT_STATE.md)에 기록했다. 제품 변경 없음.
 
 - 목적: 전환 중 보존해야 할 실제 동작과 재현 검증을 저성능 Work가 독립 사용하도록 정리.
 - 범위: 기존 unittest·browser/live integration·legacy fixture를 읽고 실행 가능한 기존 검사 재현,
@@ -162,27 +166,32 @@ W05가 먼저 확정한다. W08/W09는 공유 schema·UI를 만지므로 순차 
 ## 다음 Work에 입력할 지시문
 
 ```text
-https://github.com/danhk0612/no-riichi-no-fuku 의 W01만 수행해.
+https://github.com/danhk0612/no-riichi-no-fuku 의 W02만 수행해.
 
-최신 main과 열린 PR·현재 branch를 확인하고 AGENTS.md, README.md, PROJECT.md,
-REQUIREMENTS.md, ARCHITECTURE.md, CURRENT_STATE.md, TASKS.md, AI_WORKFLOW.md를 읽어.
-Windows 초기 문서 PR이 main에 없으면 해당 PR의 정확한 head와 사용 허용을 확인한 뒤 시작해.
-새 branch task/w01-regression-baseline에서 기존 기능과 회귀 기준을 정리해.
+최신 main·열린 PR·현재 브랜치와 AGENTS.md, README.md, PROJECT.md, REQUIREMENTS.md,
+ARCHITECTURE.md, CURRENT_STATE.md, TASKS.md, AI_WORKFLOW.md를 먼저 확인해.
+PR #56(W00) 및 W01 문서가 main에 반영됐는지 확인하고 미반영이면 정확한 head 사용 허용을
+확인한 뒤 시작해. W01 baseline은 5762267e2366fa5bdbdd69bc6f38672d141dcbc8이다.
+W01의 unittest 72개/대사 pytest 10개/build 통과와 Chromium 차단 미검증을 구분해서 이어받아.
 
-기존 backend unittest, frontend build, frontend/tests의 browser/live-game 검사를
-관련 문서대로 실행 가능한 범위에서 재현하고 정확한 SHA·명령·환경·결과·미검증을 기록해.
-규칙/Tier·성향/HP/stage/정산/복구/CG 실패의 코드→검사 대응표와 policy 1/2 및
-legacy replay 보존 기준을 CURRENT_STATE.md에 간결하게 반영해.
-기존 검증 기록을 반복 누적하지 말고, CPU 3명 미만·HP 0 이후 정책은 미확정으로 보존해.
-새 결함/누락은 정확한 원인·영향·후속 조건으로 기록하고 제품은 수정하지 마.
+task/w02-windows-runtime-spike에서 격리 기술 검증만 해.
+Windows x64 실행 환경 또는 사용자 실기 결과를 받을 경로를 먼저 확보해.
+Python 3.12/RiichiEnv 0.4.8을 사전 Python 설치 없이 번들 실행할 수 있는지 검증하고,
+editable package 발견 오류·native DLL·migration/seed 포함·의존성 재현 조건을 조사해.
+Electron 우선 후보의 같은 origin REST/WS·엔진 ready·포트 충돌·owned process 종료와
+WebView2 대안의 오프라인 런타임 요구를 비교해. 기술은 임의 확정하지 마.
 
-제품 코드·의존성·migration·규칙/CPU/진행 정책 변경, Windows 기능 구현,
-이미지 생성/바이너리·사용자 데이터 변경, 직접 병합·Release/tag는 하지 마.
-환경 부족은 미검증으로 구분하고 editable 설치 오류를 수정하는 작업으로 확대하지 마.
-문서 diff/링크와 실제 수행 결과를 검증하고 CURRENT_STATE.md/TASKS.md를 필요한 범위만
-갱신해. 허용된 branch commit/push와 main 대상 PR 제출까지 진행해.
-최종 보고는 SHA/PR, 실행 검증·미검증, 다음 W02 선행 조건을 포함해.
+W01의 policy 1/2, legacy fixture, seed/action/CPU snapshot, 정산/복구 경계를 보존해.
+검증 환경에는 대사 pytest 명령도 포함하고 Chromium이 확보되면 기존 browser/live-game
+4개를 재현해. CPU 3명 미만/HP 0 이후는 D04 미확정으로 유지해.
+실제 Windows 압축 해제 기동·health·동풍전·저장 재시작, 인터넷 차단 여부를 구분해 기록해.
+실기가 불가하면 정확한 차단·재개 조건만 남기고 성공으로 기록하지 마.
+
+라이브 사용자 DB/미디어·원본 웹 데이터 변경, 본 게임 재작성, CPU/룰/진행 정책 변경,
+정식 패키징·Release/tag·직접 병합은 하지 마. W01에서 발견한 범위 밖 누락은 섞지 마.
+후보별 재사용 범위·배포 부담·변경 파일 경계·W03 선택 근거와 미검증을 기준 문서에 갱신해.
+Git push/PR은 새 작업에서 허용된 범위를 확인하고 수행해.
+최종 보고에 정확한 SHA/PR, 명령·환경·실측/미검증 및 W03 선행 조건을 포함해.
 ```
 
-권장 환경: **저성능 Work**. 기존 코드/검사 대조와 재현·문서/Git 수행으로 범위가 정해졌다.
-W01에서 기술·정책을 확정하지 않으므로 고성능 Work의 구조 판단을 반복할 필요가 없다.
+권장 환경: **고성능 Work**. W02는 native 번들·host 수명·저장 경계의 첫 기술 검증이다.

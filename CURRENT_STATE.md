@@ -2,11 +2,15 @@
 
 ## 기준
 
-- 확인일: 2026-10-14. 조사한 main: `ba4fc43a89a39a328c7c308d6c90e145ab489d58` (#55).
-- 초기 문서 작업 branch: `task/windows-offline-foundation`. 문서 commit/PR 상태는 Git에서 확인한다.
-- 제품 코드·의존성·테스트는 이번 초기 작업에서 변경하지 않았다. Windows 전환 구현은 없다.
-- Wayward 참고 main: `5d80f118c590319881be34faba8214a0c3765fc2` (Manager package 0.4.28).
-  원본 Wayward ZIP은 이번 입력에서 분석하지 않았다. 참고 저장소도 변경하지 않았다.
+- 확인일: 2026-10-14. 최신 main `ba4fc43a89a39a328c7c308d6c90e145ab489d58` (#55).
+- PR #56은 시작 시 미병합, 최신 head `5762267e2366fa5bdbdd69bc6f38672d141dcbc8`가
+  사용자 준비 SHA와 일치했다. 사용자가 허용한 이 head에서 `task/w01-regression-baseline` 시작.
+  열린 PR은 #56 및 #35(기존 `docs/` 웹 인계); 해당 문서 본문은 변경하지 않았다.
+- **W01 코드/검사 baseline은 위 PR head SHA**다. main과 backend/frontend 제품·검사 tree는 동일하다.
+  이번 변경은 CURRENT_STATE/TASKS뿐이며 제품·테스트·의존성·migration 변경은 없다.
+  문서 commit/PR 상태는 Git에서 확인한다. Windows 전환 구현은 없다.
+- Wayward 참고는 W00의 `5d80f118c590319881be34faba8214a0c3765fc2` 조사뿐이다.
+  W01은 외부 참고 코드/ZIP 조사나 이미지 생성을 수행하지 않았다.
 
 ## 코드로 확인한 구현
 
@@ -26,19 +30,121 @@
 프로필 key가 없으면 문자 avatar를 표시한다. 프로필 이미지 업로드 및 관리자 웹 UI는 없다.
 기본 대국 기능을 재사용할 수 있는 상태이지만 최종 진행 루프/완성 콘텐츠/Windows판 완료가 아니다.
 
-## 이번 실행 검증
+## W01 실행 검증 및 재현
 
-- Python 3.12.14 / RiichiEnv 0.4.8: backend `unittest discover -s tests -v` **72개 통과**.
-  임시 venv에 `uv pip install -r pyproject.toml --extra test`로 선언 의존성을 설치했다.
-- Node 24.19.0, frontend `npm ci` 및 `npm run build` 통과 (TypeScript/Vite).
-- `uv pip install -e '.[test]'`는 setuptools의 app/alembic flat-layout package 자동 탐색
-  오류로 실패했다. 제품을 수정하지 않고 의존성만 설치해 test했다. W02 빌드 검증에 인계한다.
-- 문서 링크·Task 의존성·legacy 본문 보존 및 `git diff --check` 검사 대상은 문서 변경이다.
-- Chromium 실행 파일을 이 환경에서 확보하지 않아 브라우저 회귀/실제 서버 재시작을 이번에
-  재실행하지 않았다. 기존 검증 기록과 이번 직접 실행 결과를 혼합하지 않는다.
-- 이번 작업에서 Windows, ComfyUI/StabilityMatrix 실기, Docker/nginx/PostgreSQL,
-  실제 미디어, 전원 차단, 복수 worker, EXE 패키징/CI는 검증하지 않았다.
-  저장소에는 `.github/workflows`가 없다; CI 통과 결과를 주장하지 않는다.
+모든 아래 검사는 baseline `5762267e2366fa5bdbdd69bc6f38672d141dcbc8`에서 실행했다.
+환경은 Ubuntu 24.04.3 / Linux 6.18.44 x86_64, Python 3.12.14, uv 0.12.23,
+Node 24.19.0 / npm 11.9.0이다. 프로젝트 자체 패키지를 설치하지 않고 선언 의존성만 임시 venv에
+설치하고 backend 작업 디렉터리에서 app을 import했다. editable 설치는 W00에서 실패한
+app/alembic flat-layout 자동 탐색 문제를 그대로 인계하며 W01에서 재시도/수정하지 않았다.
+
+주요 실제 설치 버전: RiichiEnv 0.4.8, FastAPI 0.143.0, Starlette 1.8.0,
+SQLAlchemy 2.1.4, Alembic 1.20.0, Uvicorn 0.54.0, psycopg/binary 3.3.6,
+Pydantic 2.14.1 / settings 2.15.0, httpx 0.28.1, PyJWT 2.15.1,
+argon2-cffi 25.1.0, python-multipart 0.0.32, websockets 17.2.
+pytest 9.1.1은 기존 함수 검사 실행용으로 임시 venv에만 추가했다.
+frontend lockfile 기준 React/ReactDOM 19.3.0, TypeScript 7.0.2, Vite 8.3.0,
+plugin-react 6.1.1, React/ReactDOM types 19.3.0이다.
+Python 범위 의존성은 lock되지 않았으므로 동일 명령의 미래 해석 결과까지 고정된 것은 아니다.
+
+```sh
+# 저장소 루트에서 시작; 전용 임시 환경이며 사용자 DB/미디어 사용 없음
+uv venv /tmp/nrnf-w01-verify
+cd backend
+uv pip install --python /tmp/nrnf-w01-verify/bin/python -r pyproject.toml --extra test
+/tmp/nrnf-w01-verify/bin/python -m unittest discover -s tests -v
+uv pip install --python /tmp/nrnf-w01-verify/bin/python pytest
+/tmp/nrnf-w01-verify/bin/python -m pytest tests/test_dialogue_service.py -v
+cd ../frontend
+npm ci
+npm run build
+```
+
+| 검사 | 이번 결과 | 보장 범위/제한 |
+|---|---|---|
+| backend unittest | **72개 통과**, 32.760초, exit 0 | 실제 엔진·SQLite 메모리 DB·TestClient/ASGI 및 stub/mock. pytest 함수는 수집하지 않음 |
+| 대사 pytest | **10개 통과**, 0.09초, exit 0 | 기존 선택/추출/확률/cooldown 검사. 실제 브라우저 표시와 별개 |
+| npm ci / build | **각 exit 0** | TypeScript 및 Vite production build; 실행 배포/Windows 증거는 아님 |
+| routed browser 3개 | **각 exit 1 / 환경 차단** | Chromium launch 실패, DOM assertion 미실행 |
+| live-game browser | **exit 1 / 환경 차단** | 임시 SQLite Alembic head/bootstrap, API health·Vite 준비까지 진행. Chromium launch에서 중단; 회원가입·대국·12행동 후 재시작·정산 비교 미실행 |
+
+브라우저 재현에 사용한 명령(Playwright는 저장소 밖 runtime의 1.62.1):
+
+```sh
+# frontend에서 별도 터미널; live-game은 자체 서버를 사용
+npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
+export PLAYWRIGHT_MODULE_PATH=/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright
+node tests/dialogue.browser.mjs
+node tests/connection.browser.mjs
+node tests/result-asset.browser.mjs
+TEST_PYTHON=/tmp/nrnf-w01-verify/bin/python node tests/live-game.browser.mjs
+# Chromium 확보 시 위 명령에 TEST_CHROMIUM_EXECUTABLE=/실제/실행파일 사용 가능
+```
+
+네 검사 모두 `chromium_headless_shell-1234/.../chrome-headless-shell` 실행 파일 부재다.
+`node "$PLAYWRIGHT_MODULE_PATH/cli.js" install chromium`도 시도했지만 Chrome for Testing
+151.0.7922.34 ZIP의 `End of central directory record signature not found` 이후 다운로드 실패
+(exit 1)했다. 원격 응답 오류의 원인은 확정하지 않는다. 정상 Chromium을 제공한 환경에서
+[기존 실행법](frontend/tests/README.md)대로 4개를 다시 실행해야 한다. live-game은 포트 8000/5193을
+독점 사용하고 자신의 임시 DB·프로세스를 정리했다. 별도 Vite도 종료했다.
+
+Windows EXE/번들, 인터넷 차단 실행, ComfyUI/StabilityMatrix, Docker/nginx/PostgreSQL,
+실제 CG 디코딩, 전원 차단/SIGKILL, 복수 worker·동시 요청은 이번에 미검증이다.
+Actions workflow가 없으므로 CI 통과를 주장하지 않는다.
+
+## 보존 불변조건과 코드 → 검사 대응
+
+경로는 backend의 경우 `backend/app/`, 검사는 `backend/tests/` 기준이다.
+아래 통과는 unittest/대사 pytest에 한정한다. browser는 코드 대조만 했고 이번 미검증이다.
+
+| 보존 영역 | 실제 코드 | 기존 대응 검사와 보장 한계 |
+|---|---|---|
+| 규칙·합법행동 | [adapter](backend/app/mahjong/riichienv_adapter.py), [session](backend/app/mahjong/session.py) | [test_riichienv_session](backend/tests/test_riichienv_session.py): pending 좌석 전체 행동 요구, 불법 행동/index 거절·상태 불변, 4좌석 동풍전 완료. RiichiEnv 0.4.8 / `4p-red-east` / Tenhou 기본값 유지; 역·부·동점·유국 전체를 독립 대조한 검사는 아님 |
+| stage→Tier·CPU 성향 | [game_setup](backend/app/services/game_setup.py), [Tier0](backend/app/mahjong/tier0.py) / [Tier1](backend/app/mahjong/tier1.py) / [Tier2](backend/app/mahjong/tier2.py) | [setup](backend/tests/test_game_setup.py), [Tier0](backend/tests/test_tier0_agent.py) / [Tier1](backend/tests/test_tier1_agent.py) / [Tier2](backend/tests/test_tier2_agent.py), [personality](backend/tests/test_personality_integration.py), [tournament](backend/tests/test_tournament_simulation.py): stage 0/1/2, seed 결정성·합법 선택·대국 완료·성향 일부 평가. 모든 성향이 선택을 변화시킴 또는 Tier 강도 단조 증가를 증명하지 않음 |
+| HP/stage·진행 경계 | [game_result](backend/app/services/game_result.py), game_setup, [결과 UI](frontend/src/game/MahjongTable.tsx) | [test_game_result](backend/tests/test_game_result.py): 사람 4위만 HP -1, CPU 4위만 매핑된 progress +1, 미완료/HP 0/완료 CPU 거절. setup: stage 2→3 완료 제외, 서로 다른 활성 CPU 3명·HP 필요. [dialogue.browser](frontend/tests/dialogue.browser.mjs): 결과 loop/game over UI fixtures(이번 미실행). CPU 부족 이후/HP 회복 정책은 D04 미확정 |
+| 정산 exactly-once | [registry](backend/app/services/game_registry.py), [game API](backend/app/api/game.py), game_result | [test_game_websocket](backend/tests/test_game_websocket.py)의 `test_restart_after_final_action_before_settlement_settles_once`, `test_fixed_seed_match_completes_and_persists_server_settlement` 및 result 중복 검사: 최종 행동 commit 후 미정산 복구, 완료 재접속·HP/stage 중복 방지. 행동 commit과 완료·진행 정산 commit은 **별도 transaction**이며 결과/HP 또는 stage는 정산 transaction에 함께 저장됨 |
+| 저장·복구·접속 | registry, game API, [record](backend/app/db/models/game_session_record.py), [프런트 연결](frontend/src/main.tsx) | websocket의 `test_persisted_action_restores_same_turn_with_fresh_registry`, `test_stale_action_is_rejected_and_latest_turn_is_resent`, `test_failed_action_commit_recovers_only_persisted_turn`: DB 행동까지 동등 복구, 과거 이벤트 비전송, stale/commit 실패 rollback 후 cache 제거. 단일 active/소유자 검사도 통과. [connection.browser](frontend/tests/connection.browser.mjs), [live-game](frontend/tests/live-game.browser.mjs)은 각각 routed 복귀/실제 process 재시작용(이번 미검증) |
+| 대사 독립성 | [dialogue_service](backend/app/services/dialogue_service.py), game API/session | [test_dialogue_service](backend/tests/test_dialogue_service.py) 10 pytest: 활성/누락·CPU 이벤트·깡/론/쯔모·확률/cooldown. 별도 대사 RNG를 CPU RNG에 합치지 않음. chi 단독 매핑 assertion/모든 실제 이벤트 end-to-end는 별도 보강 조건 |
+| CG 실패와 정산 분리 | [result_assets](backend/app/services/result_assets.py), game API, main.tsx/MahjongTable.tsx | [test_result_assets](backend/tests/test_result_assets.py): 권한/해금·교체/삭제·형식/크기, 임시 metadata byte fixture 사용(실제 이미지 생성 없음). websocket: 결과 metadata/대사. [result-asset.browser](frontend/tests/result-asset.browser.mjs): HTTP 503에도 순위/다음 선택 유지, 늦은 실패 차단(이번 미실행). 성공 응답 후 이미지 디코딩 실패·ComfyUI 실패 검사는 아님 |
+
+### policy 1/2 및 legacy replay 보존
+
+- 새 선택/snapshot은 `policy_version=2`; `CpuChoice` 기본값 1이 버전 없는 기존 DB snapshot을
+  복원한다. 새 기본값으로 오래된 snapshot을 다시 저장하거나 현재 CPU DB 값으로 치환하지 않는다.
+- Tier2 policy 1은 기존 `round_wind == 0` 분기를 그대로 재현하고, policy 2는 동4 및 남장 연장
+  (`round_wind > 0 or kyoku_index >= 3`)을 종반으로 판단한다.
+  `test_endgame_round_boundary_and_legacy_policy` / `test_real_engine_east_and_sudden_death_rounds` 통과.
+- 저장된 match seed, CPU 선택 순서/좌석 1·2·3, stage와 여섯 성향 snapshot, policy,
+  CPU seed `match_seed * 10 + seat`, 사람 합법행동 index/순서를 유지한다.
+  RiichiEnv 버전·합법행동 순서·agent RNG 소비 변경은 replay 호환 변경으로 취급한다.
+- [legacy fixture](backend/tests/fixtures/tier2_legacy_replay.json)는 원본 `e357c01`, seed 5,
+  stage 2 CPU 3명, policy 필드 누락, 108행동이다. 파일 SHA256:
+  `b51447422f5522d4c16e0bab0aa27cfabe90c5923018cf583411d39e478ce64e`.
+  `test_legacy_tier2_snapshot_replays_every_original_turn`이 매 턴 hash와 12행동 후 registry 교체,
+  최종 재생을 확인했다. 점수 `[17000,27700,24700,30600]`, 순위 `[4,2,3,1]` 일치.
+  [원본 계약](backend/tests/fixtures/README.md)대로 현재 policy로 fixture를 재생성하지 않는다.
+- policy 2는 `test_new_tier2_policy_survives_registry_restart`에서 1행동 복구를 검사했다.
+  전체 대국·12행동 후 실제 API 재시작·완료 재접속은 live-game 검사 영역이며 이번 미검증이다.
+- UI/이미지·대사 RNG와 생성 요청은 엔진 행동 log/CPU RNG/정산에 끼워 넣지 않는다.
+  완료 record의 결과/정산과 replay에서 소비한 과거 이벤트 비전송도 보존한다.
+
+## 새로 확인한 검증 누락과 후속 조건
+
+제품 결함을 새로 확정하거나 수정하지 않았다. 다음은 현재 검사의 한계이며 해당 후속 Task에서 다룬다.
+
+- **검사 수집:** 기존 unittest 72개는 pytest 대사 함수 10개를 포함하지 않는다.
+  `pyproject.toml` test extra에도 pytest가 없다. 후속 검증 환경은 두 명령과 pytest 설치를 명시해야 한다.
+  의존성/CI 변경은 이번 범위 밖이며 별도 허용 범위에서 처리한다.
+- **복구/정산:** 행동 commit 실패 회귀는 있으나 정산 commit 자체의 실패 주입/재시도,
+  실제 동시 socket/writer·중복 프로세스, SQLite FK 적용·잠금/전원 차단 durability는 보장되지 않는다.
+  W04는 저장 계약 결정 후 이를 검증해야 한다. 메모리 DB `create_all` 통과와 migration/Windows 저장을 혼동하지 않는다.
+- **CPU/규칙:** 일부 성향 검사는 파라미터 저장/선택 non-null만 확인한다. 소규모 tournament는
+  Tier 강도 순서 보장이 아니다. 엔진 교체·CPU 튜닝 시 독립 규칙/행동·통계 증거가 추가로 필요하다.
+- **CG:** HTTP 503/늦은 실패 fixture와 실제 이미지 디코딩 실패는 다르다. 현재 `<img>`에는
+  onError 대응이 없으므로 성공 HTTP 뒤 디코딩 실패 표시는 별도 확인/수정 Task가 필요하다.
+  W10/W11의 생성 실패 독립성은 아직 구현·검증하지 않았다.
+- **실기:** Chromium 확보 후 기존 browser 4개 재실행; Windows 런타임/번들 증거는 W02에서
+  별도 확보한다. W01 환경 차단을 제품 오류나 Windows 성공으로 해석하지 않는다.
 
 ## 기존 검증 증거 (재실행 아님)
 
@@ -65,7 +171,9 @@
 
 ## 다음
 
-초기 기준 문서 준비 W00 완료. 다음 허용 범위는 [TASKS.md](TASKS.md)의
-**W01 기존 기능·회귀 기준 확정**이며 저성능 Work에 적합하다.
-W02 격리 Windows 검증은 W01 결과를 기준으로 시작한다. 기술 최종 채택/로컬 프로필 정책은
-W03, 진행 규칙은 D04, 콘텐츠 세부 정책은 W07 전에 각각 결정한다.
+W01 코드/검사 대응·실행 가능한 baseline 확정 완료, browser/live-game은 위 환경 차단을 인계한다.
+다음 Task는 [TASKS.md](TASKS.md)의 **W02 격리 Windows 실행·엔진 번들 검증**이다.
+W00 PR #56과 W01 문서의 main 반영 또는 정확한 head 사용 허용, Windows x64 실행 환경 또는
+사용자 실기 결과 경로가 선행 조건이다. Chromium 재현 경로와 W01의 pytest 수집 조건도 준비한다.
+기술 채택/프로필은 W03, 진행 규칙 D04는 W06, 콘텐츠 세부 정책은 W07에서 결정한다.
+W02가 기존 CPU 부족·HP 0 정책을 임의 변경하거나 W01 미검증을 완료로 바꾸지 않는다.
