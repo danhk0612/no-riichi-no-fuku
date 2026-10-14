@@ -112,10 +112,12 @@ function App() {
   function connectGame(sessionId: string, token: string, seats: PlayerSeat[]) {
     const socket = new WebSocket(gameWebSocketUrl(sessionId))
     socketRef.current = socket
+    setActionPending(true)
     let completed = false
     let recentDialogues: DialogueEvent[] = []
 
     socket.addEventListener('open', () => {
+      if (socketRef.current !== socket) return
       const message: GameClientMessage = {
         type: 'authenticate',
         access_token: token,
@@ -193,14 +195,17 @@ function App() {
       setActionPending(false)
     })
     socket.addEventListener('error', () => {
+      if (socketRef.current !== socket) return
       setError('게임 서버 연결에 실패했습니다.')
-      setActionPending(false)
+      setActionPending(true)
     })
     socket.addEventListener('close', (event) => {
-      if (!completed && event.code !== 1000) {
-        setError(`게임 연결이 종료되었습니다. (${event.code})`)
+      if (socketRef.current !== socket) return
+      if (!completed) {
+        setActionPending(true)
+        setError(`게임 연결이 종료되었습니다. (${event.code}) 새로고침 후 다시 로그인하면 저장된 대국에 복귀할 수 있습니다.`)
       }
-      if (socketRef.current === socket) socketRef.current = null
+      socketRef.current = null
     })
   }
 
