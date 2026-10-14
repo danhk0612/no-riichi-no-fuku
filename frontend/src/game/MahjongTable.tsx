@@ -89,6 +89,16 @@ function SeatPanel({
           <p>{dialogue.text}</p>
         </div>
       )}
+      {observation.melds[seat].length > 0 && (
+        <div className="melds" aria-label={`${player.name} 공개 조합`}>
+          {observation.melds[seat].map((meld, index) => (
+            <div className="meld" key={index} aria-label={`조합 ${index + 1}`}>
+              <small>{meld.opened ? '부로' : '암깡'}</small>
+              <TileRow tiles={meld.tiles} emptyText="" />
+            </div>
+          ))}
+        </div>
+      )}
       <div className="discards">
         <TileRow tiles={observation.discards[seat]} emptyText="버림패 없음" />
       </div>

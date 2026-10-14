@@ -339,6 +339,22 @@ button {
   min-height: 98px;
 }
 
+.melds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 8px 0 14px;
+}
+
+.meld {
+  display: grid;
+  gap: 5px;
+}
+
+.meld small {
+  color: #d7b96e;
+}
+
 .tile-row,
 .hand {
   display: flex;
