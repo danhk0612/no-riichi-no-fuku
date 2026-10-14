@@ -5,6 +5,8 @@ import threading
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+import subprocess
+import sys
 
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select, text
@@ -89,6 +91,21 @@ class LocalRuntimeTests(unittest.TestCase):
             try:
                 with self.assertRaisesRegex(RuntimeError, "another engine owns"):
                     create_local_runtime(root)
+                child = subprocess.run(
+                    [
+                        sys.executable,
+                        "-c",
+                        "import sys; from pathlib import Path; from app.local_runtime import DataRootLock; "
+                        "lock=DataRootLock(Path(sys.argv[1])); "
+                        "\ntry: lock.acquire()\nexcept RuntimeError: sys.exit(0)\n"
+                        "else: lock.release(); sys.exit(2)",
+                        str(root / ".engine.lock"),
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                self.assertEqual(child.returncode, 0, child.stderr)
                 with first.session_factory.begin() as session:
                     member = session.get(User, first.member_id)
                     session.add(
