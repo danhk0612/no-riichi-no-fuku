@@ -55,6 +55,12 @@ Windows packaged smoke의 추가 두 검사는 설정 화면/무음·미등록 �
   병합하지 않았고 Release/tag/W07은 수행하지 않았다. 이후 문서 전용 commit의 exact-SHA Windows 결과는
   아래 추가 기록으로 남긴다.
 
+문서 전용 head `46478adf02f82b8ed90d6e9e4a4f71e55d340c04`에서도 W05 push run
+`38824131192`가 통과했다. artifact `12014620725` source SHA는 해당 head와 일치하고 outer archive
+SHA256 `741e25cb2b30cbf501624e9c3235bfcad6918997a7d6471a12f83546c4cf4541`, 내부 Windows ZIP SHA256
+`7eb0393d43d2158c95d83f29655125f3b587346f7952335ebc8eb4d8ff40c0ee`를 대조했다. 이 문서 추가는
+제품 코드·검사 경로를 바꾸지 않는다.
+
 ## W06-B PR #68 — 최종 검토 통과
 
 확인일 2026-10-15. 최신 기준 main은 `1646bd9580d7aaa34d1d793b7272d74163fc57f2`;
