@@ -672,6 +672,13 @@ async function smokeRun() {
     }).then(response => response.json())
     if (!activeAfterFailedReset) throw new Error('uncommitted reset recovery lost the active match')
     addCheck('renderer restored active turn after uncommitted reset failure')
+    await window.webContents.reload()
+    await waitForRenderer("Boolean(document.querySelector('.human-controls'))", 90000)
+    const reconnectedTurn = await fetch(`${origin}/api/game/sessions/active`, {
+      headers: { 'X-Local-Capability': capability },
+    }).then(response => response.json())
+    if (!reconnectedTurn) throw new Error('active turn was lost while reconnecting after reset failure')
+    addCheck('active turn reconnected after reset failure recovery')
   }
   if (await window.webContents.executeJavaScript("Boolean(document.querySelector('.human-controls'))")) {
     let recoveryCheckpoint = false
