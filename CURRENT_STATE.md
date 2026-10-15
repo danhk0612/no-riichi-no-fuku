@@ -33,7 +33,8 @@ Windows Server 2022 x64(build 20348)/Python 3.12.10/Node 24.19.0에서 unittest 
 `3c628bcf53b70c10538b43732277400a790cc253a5805afae13a2cdb407b0631`이 Actions digest와
 일치하고 source-sha 및 로그의 81/10 통과를 대조했다. 이후 인계 commit은 문서만 바꾸며
 이 code SHA와 동일한 제품/검사/workflow에 한해 위 결과를 이어받는다.
-기존 성공 이력은 아래에 보존한다. W05 shell/사용자 Windows/전원 차단 성공으로 해석하지 않는다.
+기존 성공 이력은 아래에 보존한다. 이 W04 결과 자체는 W05 shell/UI 통합이나 전원 차단 성공 증거가 아니다.
+W05 hosted renderer 결과는 별도 절에 기록한다.
 
 이전 W04 검증 이력: code SHA `3081dc56a2be95dd30ce0fa78a413da9b4bfeb29`에서 Linux backend
 unittest 78/대사 pytest 10/frontend build를 통과했다. Windows Server 2022 Datacenter x64
