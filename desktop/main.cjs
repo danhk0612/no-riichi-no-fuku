@@ -25,7 +25,6 @@ let window
 let quitting = false
 let quitCoordinator
 let rendererExternalRequestBlocked = false
-let smokeOccupiedPortServer
 const evidence = { platform: process.platform, arch: process.arch, checks: [] }
 const delay = ms => new Promise(resolveDelay => setTimeout(resolveDelay, ms))
 let bootstrapError
@@ -402,9 +401,7 @@ async function smokePreflight() {
     throw new Error(`port collision did not reach bind failure: ${collisionError}`)
   }
   addCheck('occupied port rejected; unrelated listener remained open', collisionError)
-  // Keep the port unavailable until the normal port-0 engine has bound. Windows can
-  // immediately recycle a just-closed listener's port for the next bind attempt.
-  smokeOccupiedPortServer = occupied
+  await new Promise(resolveClose => occupied.close(resolveClose))
 }
 
 async function smokeRun() {
@@ -580,9 +577,13 @@ async function smokeRun() {
     if (resetState.phase !== 'roster_required') throw new Error('ending smoke cleanup did not reset its temporary local progress')
 
     await window.webContents.executeJavaScript(`(() => {
-      Array.from(document.querySelectorAll('button.cpu-card:not([disabled])')).slice(0, 3).forEach(button => button.click())
-      document.querySelector('button.start-button:not([disabled])')?.click()
+      const cards = Array.from(document.querySelectorAll('button.cpu-card:not([disabled])'))
+      const selected = cards.filter(button => button.classList.contains('selected'))
+      selected.slice(3).forEach(button => button.click())
+      cards.filter(button => !button.classList.contains('selected')).slice(0, Math.max(0, 3 - selected.length)).forEach(button => button.click())
     })()`)
+    await waitForRenderer("document.querySelectorAll('button.cpu-card.selected').length === 3 && document.querySelector('button.start-button:not([disabled])')", 30000)
+    await window.webContents.executeJavaScript("document.querySelector('button.start-button:not([disabled])')?.click()")
     await waitForRenderer("document.querySelector('.selection-panel h2')?.innerText.includes('대국 상대')", 30000)
     await window.webContents.executeJavaScript(`(() => {
       Array.from(document.querySelectorAll('button.cpu-card:not([disabled])')).slice(0, 3).forEach(button => button.click())
@@ -721,10 +722,6 @@ quitCoordinator = createQuitCoordinator({
   stopEngine,
   onStart: async reason => {
     quitting = true
-    if (smokeOccupiedPortServer) {
-      await new Promise(resolveClose => smokeOccupiedPortServer.close(resolveClose))
-      smokeOccupiedPortServer = undefined
-    }
     evidence.shutdownStarted = { reason, at: Date.now(), hostPid: process.pid, enginePid: child?.process.pid }
     if (window && !window.isDestroyed()) window.setEnabled(false)
     if (lifecycleTest) {
@@ -779,10 +776,6 @@ else {
       if (smoke) await smokePreflight()
       if (lifecycleTest) await testPackagedTimeoutCleanup()
       await spawnEngine(dataRoot)
-      if (smokeOccupiedPortServer) {
-        await new Promise(resolveClose => smokeOccupiedPortServer.close(resolveClose))
-        smokeOccupiedPortServer = undefined
-      }
       evidence.startup = 'engine ready'
       writeEvidence()
       configureRequestBoundary()
