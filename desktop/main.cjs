@@ -5,6 +5,7 @@ const { mkdirSync, writeFileSync, existsSync } = require('node:fs')
 const { join, resolve } = require('node:path')
 const { randomUUID } = require('node:crypto')
 const readline = require('node:readline')
+const { createQuitCoordinator } = require('./quit.cjs')
 
 const args = process.argv.slice(1)
 const valueAfter = name => {
@@ -12,6 +13,7 @@ const valueAfter = name => {
   return index >= 0 ? args[index + 1] : undefined
 }
 const smoke = args.includes('--smoke')
+const lifecycleTest = args.includes('--lifecycle-test')
 const explicitDataRoot = valueAfter('--data')
 const evidencePath = valueAfter('--evidence')
 let dataRoot
@@ -21,7 +23,7 @@ let origin
 let capability
 let window
 let quitting = false
-let closeRequested = false
+let quitCoordinator
 let rendererExternalRequestBlocked = false
 const evidence = { platform: process.platform, arch: process.arch, checks: [] }
 const delay = ms => new Promise(resolveDelay => setTimeout(resolveDelay, ms))
@@ -33,11 +35,20 @@ function addCheck(name, detail = 'passed') {
 }
 
 function writeEvidence() {
-  if (!smoke || !evidencePath) return
+  if (!evidencePath) return
   try {
     mkdirSync(require('node:path').dirname(resolve(evidencePath)), { recursive: true })
     writeFileSync(resolve(evidencePath), JSON.stringify({ ...evidence, argv: process.argv }, null, 2))
   } catch { /* preserve the original launch error */ }
+}
+
+if (lifecycleTest) {
+  evidence.lifecycleTest = true
+  evidence.hostPid = process.pid
+  process.once('exit', exitCode => {
+    evidence.hostExit = { pid: process.pid, exitCode, at: Date.now() }
+    writeEvidence()
+  })
 }
 
 if (smoke) {
@@ -159,6 +170,7 @@ async function spawnEngine(root, port = 0) {
     }
     origin = candidateOrigin
     capability = privateMessage.value
+    if (lifecycleTest) evidence.enginePid = processChild.pid
     return ready
   } catch (error) {
     await stopSpecificChild(record, 5000).catch(() => {})
@@ -185,7 +197,13 @@ async function verifyDuplicateEngineIsRejected(root) {
 
 async function stopSpecificChild(record, timeoutMs = 15000) {
   if (record.process.exitCode !== null || record.process.signalCode !== null) return false
-  const closed = new Promise(resolveClosed => record.process.once('close', resolveClosed))
+  const closed = new Promise(resolveClosed => record.process.once('close', (code, signal) => {
+    if (lifecycleTest) {
+      evidence.childClose = { pid: record.process.pid, code, signal, at: Date.now() }
+      writeEvidence()
+    }
+    resolveClosed({ code, signal })
+  }))
   let forced = false
   try { record.process.stdin.write(`${JSON.stringify({ type: 'shutdown' })}\n`) } catch { /* process already closing */ }
   try {
@@ -201,6 +219,24 @@ async function stopSpecificChild(record, timeoutMs = 15000) {
     record.lines.close()
   }
   return forced
+}
+
+async function testPackagedTimeoutCleanup() {
+  const stuckChild = spawn('ping.exe', ['-t', '127.0.0.1'], {
+    windowsHide: true,
+    stdio: ['pipe', 'ignore', 'ignore'],
+  })
+  await new Promise((resolveSpawn, rejectSpawn) => {
+    stuckChild.once('spawn', resolveSpawn)
+    stuckChild.once('error', rejectSpawn)
+  })
+  const pid = stuckChild.pid
+  const forced = await stopSpecificChild({ process: stuckChild, lines: { close() {} } }, 150)
+  if (!forced || (stuckChild.exitCode === null && stuckChild.signalCode === null)) {
+    throw new Error('packaged general-mode timeout cleanup did not reap the owned child')
+  }
+  evidence.timeoutChild = { pid, reaped: true, at: Date.now() }
+  addCheck('general-mode timeout cleanup reaped only its owned child')
 }
 
 async function stopEngine() {
@@ -258,10 +294,13 @@ function makeWindow(show = true) {
     if (!origin || !url.startsWith(`${origin}/`)) event.preventDefault()
   })
   window.on('close', event => {
-    if (quitting || closeRequested) return
+    if (quitting) return
     event.preventDefault()
-    closeRequested = true
-    void finishQuit()
+    if (lifecycleTest) {
+      evidence.windowCloseRequested = { pid: process.pid, at: Date.now() }
+      writeEvidence()
+    }
+    void finishQuit('window-close')
   })
   return window
 }
@@ -446,25 +485,37 @@ async function smokeRun() {
   window.close()
 }
 
-async function finishQuit() {
-  if (quitting) return
-  quitting = true
-  if (window && !window.isDestroyed()) {
-    window.destroy()
-    window = undefined
-    await delay(100)
-  }
-  const hadOwnedEngine = Boolean(child)
-  try {
-    await stopEngine()
-    if (smoke && hadOwnedEngine) addCheck('window close gracefully stopped the owned local engine')
-  } catch (error) {
+quitCoordinator = createQuitCoordinator({
+  app,
+  stopEngine,
+  onStart: async reason => {
+    quitting = true
+    evidence.shutdownStarted = { reason, at: Date.now(), hostPid: process.pid, enginePid: child?.process.pid }
+    if (window && !window.isDestroyed()) window.setEnabled(false)
+    if (lifecycleTest) {
+      writeEvidence()
+      await delay(600)
+    }
+  },
+  onFailure: error => {
+    quitting = false
     evidence.shutdownError = error.message
     if (smoke) evidence.passed = false
-  }
-  writeEvidence()
-  if (smoke) app.exit(evidence.passed ? 0 : 1)
-  else app.quit()
+    if (window && !window.isDestroyed()) window.setEnabled(true)
+    writeEvidence()
+  },
+  onComplete: async () => {
+    if (smoke && evidence.shutdownStarted?.enginePid) addCheck('window close gracefully stopped the owned local engine')
+    if (window && !window.isDestroyed()) window.destroy()
+    window = undefined
+    if (lifecycleTest) evidence.windowDestroyed = { at: Date.now(), childCloseAt: evidence.childClose?.at }
+    writeEvidence()
+  },
+  exit: smoke ? () => app.exit(evidence.passed ? 0 : 1) : undefined,
+})
+
+function finishQuit(reason = 'requested') {
+  return quitCoordinator.requestQuit(reason)
 }
 
 try {
@@ -482,7 +533,6 @@ else {
   app.on('window-all-closed', () => {
     evidence.windowAllClosed = true
     writeEvidence()
-    if (!smoke && process.platform !== 'darwin') app.quit()
   })
   app.on('second-instance', () => { if (window) { if (window.isMinimized()) window.restore(); window.focus() } })
   app.whenReady().then(async () => {
@@ -492,17 +542,23 @@ else {
       if (bootstrapError) throw bootstrapError
       mkdirSync(dataRoot, { recursive: true })
       if (smoke) await smokePreflight()
+      if (lifecycleTest) await testPackagedTimeoutCleanup()
       await spawnEngine(dataRoot)
       evidence.startup = 'engine ready'
       writeEvidence()
       configureRequestBoundary()
-      makeWindow(!smoke)
+      makeWindow(!smoke && !lifecycleTest)
       await loadApplication()
       evidence.startup = 'renderer loaded'
       writeEvidence()
       if (smoke) {
         await smokeRun()
         await finishQuit()
+      } else if (lifecycleTest) {
+        await waitForRenderer("Boolean(document.querySelector('.selection-panel') || document.querySelector('.human-controls') || document.querySelector('.match-result'))")
+        addCheck('packaged general mode loaded without --smoke')
+        setTimeout(() => { if (window && !window.isDestroyed()) window.close() }, 1000)
+        setTimeout(() => { app.quit(); app.quit() }, 1050)
       }
     } catch (error) {
       if (smoke) {
@@ -514,10 +570,5 @@ else {
         await finishQuit()
       }
     }
-  })
-  app.on('before-quit', event => {
-    if (quitting) return
-    event.preventDefault()
-    void finishQuit()
   })
 }

@@ -33,7 +33,7 @@ shell = out / "shell-source"
 if shell.exists():
     shutil.rmtree(shell)
 shell.mkdir(parents=True)
-for name in ["main.cjs", "preload.cjs"]:
+for name in ["main.cjs", "preload.cjs", "quit.cjs"]:
     shutil.copy2(root / "desktop" / name, shell / name)
 (shell / "package.json").write_text(
     '{"name":"no-riichi-no-fuku-desktop","version":"0.1.0","private":true,"main":"main.cjs","license":"MIT"}\n',
