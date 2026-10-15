@@ -60,11 +60,24 @@ function App() {
   const resultAssetLoadVersionRef = useRef(0)
   const desktopStartedRef = useRef(false)
   const localGenerationRef = useRef<string | null>(null)
+  const localRequestTokenRef = useRef(0)
   const isDesktop = window.nrnfDesktop?.isDesktop === true
 
-  function storeLocalPlay(play: LocalPlayState) {
+  function beginLocalRequest(): number {
+    localRequestTokenRef.current += 1
+    return localRequestTokenRef.current
+  }
+
+  function isCurrentLocalRequest(requestToken: number, generation?: string): boolean {
+    return requestToken === localRequestTokenRef.current
+      && (generation === undefined || localGenerationRef.current === generation)
+  }
+
+  function storeLocalPlay(play: LocalPlayState, requestToken?: number): boolean {
+    if (requestToken !== undefined && requestToken !== localRequestTokenRef.current) return false
     localGenerationRef.current = play.generation
     setLocalPlay(play)
+    return true
   }
 
   useEffect(() => () => {
@@ -86,30 +99,87 @@ function App() {
     setSelectedCpuIds([])
   }
 
-  async function loadLocalCpus(token: string, play: LocalPlayState) {
+  async function loadLocalCpus(token: string, play: LocalPlayState, requestToken: number) {
     const expectedGeneration = play.generation
     const choices = await getRosterCandidates(token)
-    if (localGenerationRef.current !== expectedGeneration) return
+    if (!isCurrentLocalRequest(requestToken, expectedGeneration)) return
     const rosterIds = new Set(play.roster.map((item) => item.cpu_character_id))
     const shown = play.phase === 'roster_required' ? choices : choices.filter((cpu) => rosterIds.has(cpu.id))
     setCpus(shown)
     setSelectedCpuIds([])
     setRosterMode(play.phase === 'roster_required')
+    setPlayers([])
+    setGameState({ status: 'waiting' })
+  }
+
+  async function reconcileLocalPlay(token: string, requestToken: number) {
+    try {
+      const play = await getLocalPlay(token)
+      if (!isCurrentLocalRequest(requestToken)) return
+      await restoreLocalPlay(token, play, requestToken)
+    } catch {
+      if (requestToken === localRequestTokenRef.current) {
+        setError('현재 진행 상태를 다시 불러오지 못했습니다. 새로고침 후 복구하세요.')
+      }
+    }
+  }
+
+  async function restoreLocalPlay(token: string, play: LocalPlayState, requestToken: number) {
+    const generation = play.generation
+    if (!storeLocalPlay(play, requestToken)) return
+    const activeGame = await getActiveGameSession(token)
+    if (!isCurrentLocalRequest(requestToken, generation)) return
+    if (activeGame && activeGame.generation === generation) {
+      setAccessToken(token)
+      setPlayers(activeGame.players)
+      setCpus(null)
+      setGameState({ status: 'waiting' })
+      connectGame(activeGame.session_id, token, activeGame.players, activeGame.generation)
+      return
+    }
+    if (play.phase === 'ending_pending' && play.ending_event_id) {
+      socketRef.current?.close(1000)
+      socketRef.current = null
+      setAccessToken(token)
+      setPlayers([])
+      setCpus(null)
+      setGameState({ status: 'ending', generation, eventId: play.ending_event_id, payload: play.ending_payload })
+      return
+    }
+    if (play.phase === 'omake') {
+      await loadLocalCpus(token, play, requestToken)
+      if (isCurrentLocalRequest(requestToken, generation)) setAccessToken(token)
+      return
+    }
+    if (play.recent_session_id) {
+      const recentGame = await getRecentGameSession(token)
+      if (!isCurrentLocalRequest(requestToken, generation)) return
+      if (recentGame && recentGame.generation === generation) {
+        setAccessToken(token)
+        setPlayers(recentGame.players)
+        setCpus(null)
+        setGameState({ status: 'waiting' })
+        connectGame(recentGame.session_id, token, recentGame.players, recentGame.generation)
+        return
+      }
+    }
+    await loadLocalCpus(token, play, requestToken)
+    if (isCurrentLocalRequest(requestToken, generation)) setAccessToken(token)
   }
 
   async function enterAuthenticated(token: string) {
+    const requestToken = isDesktop ? beginLocalRequest() : 0
     if (isDesktop) {
       const profile = await getProfile(token)
+      if (!isCurrentLocalRequest(requestToken)) return
       setDesktopProfile(profile.player_name ?? '플레이어')
       setProfileName(profile.player_name ?? '플레이어')
+      const play = await getLocalPlay(token)
+      if (!isCurrentLocalRequest(requestToken)) return
+      await restoreLocalPlay(token, play, requestToken)
+      return
     }
     let activeGame = await getActiveGameSession(token)
-    let play: LocalPlayState | null = null
-    if (isDesktop) {
-      play = await getLocalPlay(token)
-      storeLocalPlay(play)
-      if (!activeGame && play.recent_session_id) activeGame = await getRecentGameSession(token)
-    }
     if (activeGame) {
       setAccessToken(token)
       setPlayers(activeGame.players)
@@ -118,13 +188,7 @@ function App() {
       connectGame(activeGame.session_id, token, activeGame.players, activeGame.generation)
       return
     }
-    if (isDesktop && play?.phase === 'ending_pending' && play.ending_event_id) {
-      setAccessToken(token)
-      setGameState({ status: 'ending', generation: play.generation, eventId: play.ending_event_id, payload: play.ending_payload })
-      return
-    }
-    if (isDesktop && play) await loadLocalCpus(token, play)
-    else await loadCpus(token)
+    await loadCpus(token)
     setAccessToken(token)
   }
 
@@ -190,13 +254,14 @@ function App() {
 
   function connectGame(sessionId: string, token: string, seats: PlayerSeat[], sessionGeneration?: string | null) {
     const socket = new WebSocket(gameWebSocketUrl(sessionId))
+    const requestToken = localRequestTokenRef.current
     socketRef.current = socket
     setActionPending(true)
     let completed = false
     let recentDialogues: DialogueEvent[] = []
 
     socket.addEventListener('open', () => {
-      if (socketRef.current !== socket) return
+      if (socketRef.current !== socket || (isDesktop && requestToken !== localRequestTokenRef.current)) return
       const message: GameClientMessage = {
         type: 'authenticate',
         access_token: token,
@@ -207,7 +272,7 @@ function App() {
       socket.send(JSON.stringify(message))
     })
     socket.addEventListener('message', (event) => {
-      if (socketRef.current !== socket) return
+      if (socketRef.current !== socket || (isDesktop && requestToken !== localRequestTokenRef.current)) return
       const message = JSON.parse(event.data as string) as GameServerMessage
       if (isDesktop && 'generation' in message && message.generation && localGenerationRef.current
         && message.generation !== localGenerationRef.current) return
@@ -254,7 +319,8 @@ function App() {
         if (isDesktop) {
           const completedGeneration = message.generation ?? localGenerationRef.current
           void getLocalPlay(token).then((play) => {
-            if (play.generation === completedGeneration && localGenerationRef.current === completedGeneration) storeLocalPlay(play)
+            if (completedGeneration && isCurrentLocalRequest(requestToken, completedGeneration)
+              && play.generation === completedGeneration) storeLocalPlay(play, requestToken)
           }).catch(() => {})
         }
         if (message.result_asset) {
@@ -262,7 +328,8 @@ function App() {
           const loadVersion = resultAssetLoadVersionRef.current
           void getResultAssetObjectUrl(token, asset.url)
             .then((objectUrl) => {
-              if (loadVersion !== resultAssetLoadVersionRef.current) {
+              if (loadVersion !== resultAssetLoadVersionRef.current
+                || (isDesktop && requestToken !== localRequestTokenRef.current)) {
                 URL.revokeObjectURL(objectUrl)
                 return
               }
@@ -279,7 +346,8 @@ function App() {
               })
             })
             .catch((caught) => {
-              if (loadVersion !== resultAssetLoadVersionRef.current) return
+              if (loadVersion !== resultAssetLoadVersionRef.current
+                || (isDesktop && requestToken !== localRequestTokenRef.current)) return
               setError(errorMessage(caught))
               setGameState((current) => (
                 current.status === 'complete' && current.resultAsset?.id === asset.id
@@ -296,12 +364,12 @@ function App() {
       setActionPending(false)
     })
     socket.addEventListener('error', () => {
-      if (socketRef.current !== socket) return
+      if (socketRef.current !== socket || (isDesktop && requestToken !== localRequestTokenRef.current)) return
       setError('게임 서버 연결에 실패했습니다.')
       setActionPending(true)
     })
     socket.addEventListener('close', (event) => {
-      if (socketRef.current !== socket) return
+      if (socketRef.current !== socket || (isDesktop && requestToken !== localRequestTokenRef.current)) return
       if (!completed) {
         setActionPending(true)
         const recovery = isDesktop
@@ -315,25 +383,37 @@ function App() {
 
   async function startGame() {
     if (!accessToken || (rosterMode ? selectedCpuIds.length < 3 : selectedCpuIds.length !== 3)) return
+    const requestToken = isDesktop ? beginLocalRequest() : 0
+    const expectedGeneration = isDesktop ? localPlay?.generation : undefined
     setBusy(true)
     setError(null)
     try {
       if (isDesktop && rosterMode && localPlay) {
         const updated = await confirmLocalRoster(accessToken, localPlay.generation, selectedCpuIds)
-        storeLocalPlay(updated)
-        await loadLocalCpus(accessToken, updated)
+        if (!isCurrentLocalRequest(requestToken, expectedGeneration)) return
+        storeLocalPlay(updated, requestToken)
+        if (updated.phase === 'ending_pending' && updated.ending_event_id) {
+          setCpus(null)
+          setPlayers([])
+          setGameState({ status: 'ending', generation: updated.generation, eventId: updated.ending_event_id, payload: updated.ending_payload })
+          setAccessToken(accessToken)
+          setError(null)
+          return
+        }
+        await loadLocalCpus(accessToken, updated, requestToken)
         setError(null)
         return
       }
       const created = await createGameSession(accessToken, selectedCpuIds, isDesktop ? localPlay?.generation : undefined)
+      if (isDesktop && !isCurrentLocalRequest(requestToken, expectedGeneration)) return
       setPlayers(created.players)
       setGameState({ status: 'waiting' })
       setCpus(null)
       connectGame(created.session_id, accessToken, created.players, created.generation)
     } catch (caught) {
-      setError(errorMessage(caught))
+      if (!isDesktop || isCurrentLocalRequest(requestToken, expectedGeneration)) setError(errorMessage(caught))
     } finally {
-      setBusy(false)
+      if (!isDesktop || requestToken === localRequestTokenRef.current) setBusy(false)
     }
   }
 
@@ -357,6 +437,7 @@ function App() {
 
   async function nextGame() {
     if (!accessToken) return
+    const requestToken = isDesktop ? beginLocalRequest() : 0
     setBusy(true)
     setError(null)
     try {
@@ -365,36 +446,42 @@ function App() {
         setGameState({ status: 'ending', generation: localPlay.generation, eventId: localPlay.ending_event_id, payload: localPlay.ending_payload })
         return
       }
-      if (isDesktop && localPlay) await loadLocalCpus(accessToken, localPlay)
+      if (isDesktop && localPlay) await loadLocalCpus(accessToken, localPlay, requestToken)
       else await loadCpus(accessToken)
       setGameState({ status: 'waiting' })
     } catch (caught) {
-      setError(errorMessage(caught))
+      if (!isDesktop || requestToken === localRequestTokenRef.current) setError(errorMessage(caught))
     } finally {
-      setBusy(false)
+      if (!isDesktop || requestToken === localRequestTokenRef.current) setBusy(false)
     }
   }
 
   async function continueFromEnding() {
     if (!accessToken || gameState.status !== 'ending') return
+    const requestToken = beginLocalRequest()
+    const expectedGeneration = gameState.generation
     setBusy(true)
     setError(null)
     try {
       const updated = await acknowledgeLocalEnding(accessToken, gameState.generation, gameState.eventId)
-      storeLocalPlay(updated)
+      if (!isCurrentLocalRequest(requestToken, expectedGeneration)) return
+      await restoreLocalPlay(accessToken, updated, requestToken)
       clearResultAssetUrl()
-      await loadLocalCpus(accessToken, updated)
-      setGameState({ status: 'waiting' })
     } catch (caught) {
-      setError(errorMessage(caught))
+      if (isCurrentLocalRequest(requestToken, expectedGeneration)) {
+        setError(errorMessage(caught))
+        await reconcileLocalPlay(accessToken, requestToken)
+      }
     } finally {
-      setBusy(false)
+      if (requestToken === localRequestTokenRef.current) setBusy(false)
     }
   }
 
   async function resetPlay() {
     if (!accessToken || !isDesktop || !localPlay) return
     if (!window.confirm('현재 대국과 모든 진행도, 참가 명단, 엔딩 상태를 초기화할까요? 등록 자료와 설정, 이미지·음악 파일은 보존됩니다.')) return
+    const requestToken = beginLocalRequest()
+    const expectedGeneration = localPlay.generation
     setBusy(true)
     setError(null)
     socketRef.current?.close(1000)
@@ -402,20 +489,20 @@ function App() {
     clearResultAssetUrl()
     try {
       const updated = await resetLocalPlay(accessToken, localPlay.generation)
-      storeLocalPlay(updated)
-      await loadLocalCpus(accessToken, updated)
-      setGameState({ status: 'waiting' })
-      setPlayers([])
+      if (!isCurrentLocalRequest(requestToken, expectedGeneration)) return
+      await restoreLocalPlay(accessToken, updated, requestToken)
     } catch (caught) {
-      setError(errorMessage(caught))
-      const fresh = await getLocalPlay(accessToken).catch(() => null)
-      if (fresh) storeLocalPlay(fresh)
+      if (requestToken === localRequestTokenRef.current) {
+        setError(errorMessage(caught))
+        await reconcileLocalPlay(accessToken, requestToken)
+      }
     } finally {
-      setBusy(false)
+      if (requestToken === localRequestTokenRef.current) setBusy(false)
     }
   }
 
   function logout() {
+    beginLocalRequest()
     socketRef.current?.close(1000)
     socketRef.current = null
     clearResultAssetUrl()

@@ -446,6 +446,16 @@ async function smokeRun() {
     }).then(response => response.json())
     await window.webContents.executeJavaScript(`(() => {
       window.confirm = () => true
+      const originalFetch = window.fetch.bind(window)
+      window.fetch = async (input, init) => {
+        const response = await originalFetch(input, init)
+        const path = new URL(typeof input === 'string' ? input : input.url, window.location.href).pathname
+        if (path === '/api/local/play/reset' && response.ok) {
+          window.fetch = originalFetch
+          throw new TypeError('injected reset response loss after commit')
+        }
+        return response
+      }
       document.querySelector('.selection-actions button')?.click()
     })()`)
     await waitFor(async () => {
@@ -455,7 +465,169 @@ async function smokeRun() {
       return current.generation !== beforeReset.generation ? current : false
     }, 30000)
     await waitForRenderer("document.querySelector('.selection-panel h2')?.innerText.includes('참가 CPU') && document.querySelectorAll('button.cpu-card:not([disabled])').length >= 3", 30000)
-    addCheck('renderer reset retained roster candidates')
+    addCheck('renderer recovered roster selection after committed reset response loss')
+
+    await window.webContents.executeJavaScript(`(() => {
+      Array.from(document.querySelectorAll('button.cpu-card:not([disabled])')).slice(0, 3).forEach(button => button.click())
+      const originalFetch = window.fetch.bind(window)
+      window.__w06RosterResponseReady = false
+      window.__w06ReleaseRosterResponse = null
+      window.fetch = async (input, init) => {
+        const response = await originalFetch(input, init)
+        const path = new URL(typeof input === 'string' ? input : input.url, window.location.href).pathname
+        if (path !== '/api/local/play/roster' || !response.ok) return response
+        window.fetch = originalFetch
+        const body = await response.text()
+        const headers = new Headers(response.headers)
+        headers.delete('content-length')
+        headers.delete('content-encoding')
+        window.__w06RosterResponseReady = true
+        return await new Promise(resolveResponse => {
+          window.__w06ReleaseRosterResponse = () => resolveResponse(new Response(body, { status: response.status, headers }))
+        })
+      }
+    })()`)
+    await waitForRenderer("document.querySelectorAll('button.cpu-card.selected').length >= 3 && document.querySelector('button.start-button:not([disabled])')", 30000)
+    await window.webContents.executeJavaScript("document.querySelector('button.start-button:not([disabled])')?.click()")
+    await waitFor(async () => window.webContents.executeJavaScript('window.__w06RosterResponseReady === true'), 30000)
+    const generationBeforeStaleConfirm = await fetch(`${origin}/api/local/play`, {
+      headers: { 'X-Local-Capability': capability },
+    }).then(response => response.json())
+    await window.webContents.executeJavaScript(`(() => {
+      window.confirm = () => true
+      const reset = document.querySelector('.selection-actions button')
+      const reactProps = Object.keys(reset).find(key => key.startsWith('__reactProps$'))
+      reset[reactProps].onClick()
+    })()`)
+    await waitFor(async () => {
+      const current = await fetch(`${origin}/api/local/play`, {
+        headers: { 'X-Local-Capability': capability },
+      }).then(response => response.json())
+      return current.generation !== generationBeforeStaleConfirm.generation ? current : false
+    }, 30000)
+    await window.webContents.executeJavaScript('window.__w06ReleaseRosterResponse?.()')
+    await waitForRenderer("document.querySelector('.selection-panel h2')?.innerText.includes('참가 CPU')", 30000)
+    addCheck('stale roster-confirm response could not replace reset generation screen')
+
+    await window.webContents.executeJavaScript(`(() => {
+      const originalFetch = window.fetch.bind(window)
+      window.fetch = async (input, init) => {
+        const response = await originalFetch(input, init)
+        const path = new URL(typeof input === 'string' ? input : input.url, window.location.href).pathname
+        if (path !== '/api/local/play/roster' || !response.ok) return response
+        window.fetch = originalFetch
+        const body = await response.json()
+        const headers = new Headers(response.headers)
+        headers.delete('content-length')
+        headers.delete('content-encoding')
+        return new Response(JSON.stringify({
+          ...body,
+          phase: 'ending_pending',
+          ending_event_id: 'ending-smoke-event',
+          ending_payload: null,
+        }), { status: response.status, headers })
+      }
+      Array.from(document.querySelectorAll('button.cpu-card:not([disabled])')).slice(0, 3).forEach(button => button.click())
+    })()`)
+    await waitForRenderer("document.querySelectorAll('button.cpu-card.selected').length >= 3 && document.querySelector('button.start-button:not([disabled])')", 30000)
+    await window.webContents.executeJavaScript("document.querySelector('button.start-button:not([disabled])')?.click()")
+    await waitForRenderer("Boolean(document.querySelector('.ending-panel'))", 30000)
+    if (await window.webContents.executeJavaScript("Boolean(document.querySelector('.selection-panel'))")) {
+      throw new Error('ending-pending roster confirmation remained in opponent selection')
+    }
+    addCheck('renderer entered ending screen after completed-roster confirmation response')
+
+    await window.webContents.executeJavaScript(`(() => {
+      const originalFetch = window.fetch.bind(window)
+      window.fetch = async (input, init) => {
+        const path = new URL(typeof input === 'string' ? input : input.url, window.location.href).pathname
+        if (path === '/api/local/play/ending/ack') {
+          window.fetch = async (nextInput, nextInit) => {
+            const nextPath = new URL(typeof nextInput === 'string' ? nextInput : nextInput.url, window.location.href).pathname
+            const response = await originalFetch(nextInput, nextInit)
+            if (nextPath !== '/api/local/play' || nextInit?.method) return response
+            window.fetch = originalFetch
+            const body = await response.json()
+            const headers = new Headers(response.headers)
+            headers.delete('content-length')
+            headers.delete('content-encoding')
+            return new Response(JSON.stringify({ ...body, phase: 'omake' }), { status: response.status, headers })
+          }
+          throw new TypeError('injected ending acknowledgement response loss')
+        }
+        return originalFetch(input, init)
+      }
+      document.querySelector('.ending-panel button')?.click()
+    })()`)
+    await waitForRenderer("document.querySelector('.selection-panel h2')?.innerText.includes('대국 상대')", 30000)
+    addCheck('renderer recovered omake selection after ending acknowledgement response loss')
+
+    await window.webContents.executeJavaScript(`(() => {
+      window.confirm = () => true
+      const reset = document.querySelector('.selection-actions button') || document.querySelector('.game-toolbar > button.text-button')
+      reset?.click()
+    })()`)
+    const resetState = await waitFor(async () => {
+      const current = await fetch(`${origin}/api/local/play`, {
+        headers: { 'X-Local-Capability': capability },
+      }).then(response => response.json())
+      return current.phase === 'roster_required' ? current : false
+    }, 30000)
+    await waitForRenderer("document.querySelector('.selection-panel h2')?.innerText.includes('참가 CPU')", 30000)
+    if (resetState.phase !== 'roster_required') throw new Error('ending smoke cleanup did not reset its temporary local progress')
+
+    await window.webContents.executeJavaScript(`(() => {
+      Array.from(document.querySelectorAll('button.cpu-card:not([disabled])')).slice(0, 3).forEach(button => button.click())
+      document.querySelector('button.start-button:not([disabled])')?.click()
+    })()`)
+    await waitForRenderer("document.querySelector('.selection-panel h2')?.innerText.includes('대국 상대')", 30000)
+    await window.webContents.executeJavaScript(`(() => {
+      Array.from(document.querySelectorAll('button.cpu-card:not([disabled])')).slice(0, 3).forEach(button => button.click())
+      const originalFetch = window.fetch.bind(window)
+      window.__w06StartResponseReady = false
+      window.__w06ReleaseStartResponse = null
+      window.fetch = async (input, init) => {
+        const response = await originalFetch(input, init)
+        const path = new URL(typeof input === 'string' ? input : input.url, window.location.href).pathname
+        if (path !== '/api/game/sessions' || init?.method !== 'POST' || !response.ok) return response
+        window.fetch = originalFetch
+        const body = await response.text()
+        const headers = new Headers(response.headers)
+        headers.delete('content-length')
+        headers.delete('content-encoding')
+        window.__w06StartResponseReady = true
+        return await new Promise(resolveResponse => {
+          window.__w06ReleaseStartResponse = () => resolveResponse(new Response(body, { status: response.status, headers }))
+        })
+      }
+    })()`)
+    await waitForRenderer("document.querySelectorAll('button.cpu-card.selected').length === 3 && document.querySelector('button.start-button:not([disabled])')", 30000)
+    await window.webContents.executeJavaScript("document.querySelector('button.start-button:not([disabled])')?.click()")
+    await waitFor(async () => window.webContents.executeJavaScript('window.__w06StartResponseReady === true'), 30000)
+    const generationBeforeStaleStart = await fetch(`${origin}/api/local/play`, {
+      headers: { 'X-Local-Capability': capability },
+    }).then(response => response.json())
+    await window.webContents.executeJavaScript(`(() => {
+      window.confirm = () => true
+      const reset = document.querySelector('.game-toolbar > button.text-button')
+      const reactProps = Object.keys(reset).find(key => key.startsWith('__reactProps$'))
+      reset[reactProps].onClick()
+    })()`)
+    const rosterAfterStartReset = await waitFor(async () => {
+      const current = await fetch(`${origin}/api/local/play`, {
+        headers: { 'X-Local-Capability': capability },
+      }).then(response => response.json())
+      return current.generation !== generationBeforeStaleStart.generation ? current : false
+    }, 30000)
+    await window.webContents.executeJavaScript('window.__w06ReleaseStartResponse?.()')
+    await waitForRenderer("document.querySelector('.selection-panel h2')?.innerText.includes('참가 CPU')", 30000)
+    const activeAfterStaleStart = await fetch(`${origin}/api/game/sessions/active`, {
+      headers: { 'X-Local-Capability': capability },
+    }).then(response => response.json())
+    if (rosterAfterStartReset.phase !== 'roster_required' || activeAfterStaleStart) {
+      throw new Error('stale start response restored a cancelled session after reset')
+    }
+    addCheck('stale start response could not reconnect a cancelled generation')
   }
 
   evidence.phase = 'inspect saved renderer match state'
@@ -465,6 +637,27 @@ async function smokeRun() {
     await startMatchFromRenderer()
   }
   await waitForRenderer("Boolean(document.querySelector('.human-controls') || document.querySelector('.match-result'))", 90000)
+  if (await window.webContents.executeJavaScript("Boolean(document.querySelector('.human-controls'))")) {
+    await window.webContents.executeJavaScript(`(() => {
+      window.confirm = () => true
+      const originalFetch = window.fetch.bind(window)
+      window.fetch = async (input, init) => {
+        const path = new URL(typeof input === 'string' ? input : input.url, window.location.href).pathname
+        if (path === '/api/local/play/reset') {
+          window.fetch = originalFetch
+          throw new TypeError('injected reset failure before request')
+        }
+        return originalFetch(input, init)
+      }
+      document.querySelector('.game-toolbar > button.text-button')?.click()
+    })()`)
+    await waitForRenderer("Boolean(document.querySelector('.human-controls'))", 30000)
+    const activeAfterFailedReset = await fetch(`${origin}/api/game/sessions/active`, {
+      headers: { 'X-Local-Capability': capability },
+    }).then(response => response.json())
+    if (!activeAfterFailedReset) throw new Error('uncommitted reset recovery lost the active match')
+    addCheck('renderer restored active turn after uncommitted reset failure')
+  }
   if (await window.webContents.executeJavaScript("Boolean(document.querySelector('.human-controls'))")) {
     let recoveryCheckpoint = false
     for (let attempt = 0; attempt < 5 && !recoveryCheckpoint; attempt += 1) {

@@ -30,13 +30,20 @@ from app.db.models import (
 from app.local_runtime import create_local_runtime
 from app.db.session import create_database_engine
 from app.mahjong.riichienv_adapter import MatchResult
-from app.services.game_registry import GameRegistry, GamePlayer, RegisteredGame
+from app.services.game_registry import (
+    GameRegistry,
+    GamePlayer,
+    RegisteredGame,
+    RegisteredGameNotFoundError,
+)
 from app.services.game_setup import list_selectable_cpus
-from app.services.local_play import effective_choices, roster_candidates
+from app.services.local_play import LocalPlayConflict, effective_choices, roster_candidates
+from app.services.game_result import MatchSettlement
 
 
 class _FinishedGame:
     cpu_character_by_seat = {1: 1, 2: 2, 3: 3}
+    done = True
 
     def __init__(self, ranks: tuple[int, int, int, int]):
         self._result = MatchResult(scores=(30000, 25000, 23000, 22000), ranks=ranks)
@@ -88,6 +95,31 @@ class LocalPlayTests(unittest.TestCase):
                     LocalPlayRoster.user_id == runtime.member_id,
                     LocalPlayRoster.cpu_character_id == 1,
                 )), 1)
+        finally:
+            client.close()
+            runtime.close()
+            temporary.cleanup()
+
+    def test_confirming_roster_of_completed_cpus_creates_ending_immediately(self):
+        temporary, runtime, client, headers = self._runtime("nrnf-roster-ending-")
+        try:
+            play = client.get("/api/local/play", headers=headers).json()
+            with runtime.session_factory.begin() as session:
+                for cpu_id in range(1, 7):
+                    session.get(UserCpuProgress, (runtime.member_id, cpu_id)).defeat_stage = 3
+
+            response = client.post("/api/local/play/roster", headers=headers, json={
+                "generation": play["generation"], "cpu_character_ids": [1, 2, 3],
+            })
+
+            self.assertEqual(response.status_code, 200, response.text)
+            self.assertEqual(response.json()["phase"], "ending_pending")
+            self.assertTrue(response.json()["ending_event_id"])
+            self.assertEqual(response.json()["roster"], [
+                {"cpu_character_id": 1, "defeat_stage": 3},
+                {"cpu_character_id": 2, "defeat_stage": 3},
+                {"cpu_character_id": 3, "defeat_stage": 3},
+            ])
         finally:
             client.close()
             runtime.close()
@@ -310,6 +342,111 @@ class LocalPlayTests(unittest.TestCase):
                 record = session.get(GameSessionRecord, started.json()["session_id"])
                 self.assertEqual(record.status, "cancelled")
                 self.assertEqual(record.human_action_indices, [])
+        finally:
+            client.close()
+            runtime.close()
+            temporary.cleanup()
+
+    def test_reset_rejects_delayed_legacy_settlement_even_when_cached(self):
+        temporary, runtime, client, headers = self._runtime("nrnf-reset-legacy-settle-")
+        try:
+            play = client.get("/api/local/play", headers=headers).json()
+            candidates = client.get("/api/local/play/roster-candidates", headers=headers).json()
+            ids = [cpu["id"] for cpu in candidates[:3]]
+            self.assertEqual(client.post("/api/local/play/roster", headers=headers, json={
+                "generation": play["generation"], "cpu_character_ids": ids,
+            }).status_code, 200)
+            started = client.post("/api/game/sessions", headers=headers, json={
+                "generation": play["generation"], "cpu_character_ids": ids,
+            })
+            self.assertEqual(started.status_code, 201, started.text)
+            session_id = started.json()["session_id"]
+            with runtime.session_factory.begin() as session:
+                record = session.get(GameSessionRecord, session_id)
+                record.rules_snapshot = None  # legacy active snapshot linked to this local generation
+            with runtime.session_factory() as session:
+                registered = runtime.registry.get_owned(session, session_id, runtime.member_id)
+                registered.game = _FinishedGame((1, 2, 3, 4))
+
+            reset = client.post("/api/local/play/reset", headers=headers, json={
+                "generation": play["generation"], "confirm": True,
+            })
+            self.assertEqual(reset.status_code, 200, reset.text)
+            with runtime.session_factory() as session:
+                record = session.get(GameSessionRecord, session_id)
+                self.assertEqual(record.status, "cancelled")
+                self.assertEqual(session.get(UserCpuProgress, (runtime.member_id, ids[-1])).defeat_stage, 0)
+
+            # The old cached settlement used to return immediately without checking the DB row.
+            registered.settlement = MatchSettlement(3, 3, ids[-1], 1, False, False)
+            restarted_registry = GameRegistry()
+            with runtime.session_factory.begin() as session:
+                with self.assertRaises(RegisteredGameNotFoundError):
+                    restarted_registry.settle(session, registered)
+            with runtime.session_factory() as session:
+                self.assertEqual(session.get(GameSessionRecord, session_id).status, "cancelled")
+                self.assertEqual(session.get(UserCpuProgress, (runtime.member_id, ids[-1])).defeat_stage, 0)
+                self.assertEqual(session.get(LocalPlayState, runtime.member_id).generation, reset.json()["generation"])
+
+            # A retained legacy game without a cached result must also be rejected after reset.
+            registered.settlement = None
+            with runtime.session_factory.begin() as session:
+                with self.assertRaises(RegisteredGameNotFoundError):
+                    restarted_registry.settle(session, registered)
+            with runtime.session_factory() as session:
+                self.assertEqual(session.get(UserCpuProgress, (runtime.member_id, ids[-1])).defeat_stage, 0)
+        finally:
+            client.close()
+            runtime.close()
+            temporary.cleanup()
+
+    def test_local_settlement_commit_failure_rolls_back_and_old_completed_game_is_stale_after_reset(self):
+        temporary, runtime, client, headers = self._runtime("nrnf-settlement-reset-order-")
+        try:
+            play = client.get("/api/local/play", headers=headers).json()
+            candidates = client.get("/api/local/play/roster-candidates", headers=headers).json()
+            ids = [cpu["id"] for cpu in candidates[:3]]
+            confirmed = client.post("/api/local/play/roster", headers=headers, json={
+                "generation": play["generation"], "cpu_character_ids": ids,
+            }).json()
+            started = client.post("/api/game/sessions", headers=headers, json={
+                "generation": confirmed["generation"], "cpu_character_ids": ids,
+            })
+            self.assertEqual(started.status_code, 201, started.text)
+            with runtime.session_factory() as session:
+                registered = runtime.registry.get_owned(session, started.json()["session_id"], runtime.member_id)
+                registered.game = _FinishedGame((1, 2, 3, 4))
+
+            def fail_commit(session: Session):
+                raise SQLAlchemyError("injected settlement commit failure")
+
+            with runtime.session_factory() as session:
+                runtime.registry.settle(session, registered)
+                with patch.object(Session, "commit", new=fail_commit):
+                    with self.assertRaisesRegex(SQLAlchemyError, "injected settlement"):
+                        session.commit()
+                session.rollback()
+
+            with runtime.session_factory() as session:
+                self.assertEqual(session.get(GameSessionRecord, started.json()["session_id"]).status, "active")
+                self.assertEqual(session.get(UserCpuProgress, (runtime.member_id, ids[-1])).defeat_stage, 0)
+
+            with runtime.session_factory.begin() as session:
+                runtime.registry.settle(session, registered)
+            with runtime.session_factory() as session:
+                completed = session.get(GameSessionRecord, started.json()["session_id"])
+                self.assertEqual(completed.status, "completed")
+                self.assertEqual(session.get(UserCpuProgress, (runtime.member_id, ids[-1])).defeat_stage, 1)
+
+            reset = client.post("/api/local/play/reset", headers=headers, json={
+                "generation": confirmed["generation"], "confirm": True,
+            })
+            self.assertEqual(reset.status_code, 200, reset.text)
+            with runtime.session_factory() as session:
+                self.assertEqual(session.get(GameSessionRecord, started.json()["session_id"]).status, "completed")
+                self.assertEqual(session.get(UserCpuProgress, (runtime.member_id, ids[-1])).defeat_stage, 0)
+                with self.assertRaises(LocalPlayConflict):
+                    runtime.registry.settle(session, registered)
         finally:
             client.close()
             runtime.close()

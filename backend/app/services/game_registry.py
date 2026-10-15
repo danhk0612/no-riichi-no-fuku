@@ -18,7 +18,7 @@ from app.services.game_result import MatchSettlement, settle_completed_match
 from app.services.dialogue_service import DialogueEventPolicy
 from app.services.game_setup import (
     CpuChoice,
-    create_game_session,
+    GameSetupError,
     create_game_session_from_choices,
     list_selectable_cpus,
 )
@@ -97,6 +97,11 @@ class GameRegistry:
         *,
         generation: str | None = None,
     ) -> RegisteredGame:
+        if generation is None:
+            if user.role != "member" or user.current_hp is None or user.max_hp is None:
+                raise GameSetupError("member game profile is not initialized")
+            if user.current_hp <= 0:
+                raise GameSetupError("member has no remaining HP")
         with self._lock:
             active_id = db_session.scalar(
                 select(GameSessionRecord.id).where(
@@ -243,8 +248,6 @@ class GameRegistry:
         registered: RegisteredGame,
     ) -> MatchSettlement:
         with registered.lock:
-            if registered.settlement is not None:
-                return registered.settlement
             record = db_session.scalar(
                 select(GameSessionRecord)
                 .where(GameSessionRecord.id == registered.session_id)
@@ -252,9 +255,21 @@ class GameRegistry:
             )
             if record is None:
                 raise RegisteredGameNotFoundError("game session not found")
+            if record.status == "cancelled":
+                raise RegisteredGameNotFoundError("game session was cancelled")
+            if registered.play_generation != record.play_generation:
+                raise LocalPlayConflict("play_generation_stale", "the match generation changed")
+            if record.play_generation is not None:
+                state = db_session.get(LocalPlayState, registered.user_id)
+                if state is None or state.generation != record.play_generation:
+                    raise LocalPlayConflict("play_generation_stale", "the match belongs to an old play generation")
             if record.status == "completed":
                 self._load_completed_state(registered, record)
                 assert registered.settlement is not None
+                return registered.settlement
+            if record.status != "active":
+                raise RegisteredGameNotFoundError("active game session not found")
+            if registered.settlement is not None:
                 return registered.settlement
             if registered.game is None or not registered.game.done:
                 raise GameRegistryError("game session is not complete")

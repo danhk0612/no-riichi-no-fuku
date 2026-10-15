@@ -157,6 +157,27 @@ class GameWebSocketApiTest(unittest.TestCase):
         )
         self.assertEqual(duplicate.status_code, 409, duplicate.text)
 
+    def test_web_session_creation_still_rejects_member_with_zero_hp(self) -> None:
+        with self.session_factory.begin() as session:
+            member = session.scalar(select(User).where(User.login_id == "member-one"))
+            member_id = member.id
+            member.current_hp = 0
+
+        response = self.client.post(
+            "/api/game/sessions",
+            headers={"Authorization": f"Bearer {self.member_token}"},
+            json={"cpu_character_ids": self.cpu_ids},
+        )
+
+        self.assertEqual(response.status_code, 409, response.text)
+        with self.session_factory() as session:
+            self.assertIsNone(session.scalar(
+                select(GameSessionRecord.id).where(
+                    GameSessionRecord.user_id == member_id,
+                    GameSessionRecord.status == "active",
+                )
+            ))
+
     def test_websocket_requires_first_message_authentication_and_owner(self) -> None:
         created = self.create_game()
         path = f"/api/game/sessions/{created['session_id']}/ws"
