@@ -2,17 +2,17 @@
 
 ## 기준
 
-- 확인일: 2026-10-15. 검토 시작 main `2361dd29a31b39cf5ccc89e0acb82299832c47da`.
-- W04 제품 코드 검증 SHA는 `455d400c4a8ddf11eaa0e3d676317c80b9a553b2`이다.
-  실제 PR/병합 상태는 PR #61 및 Git을 따른다. 다음 구현은 W05다.
+- 확인일: 2026-10-15. W05 준비 main은 사용자 제공 기준 `99dd432`이며 W04 PR #61은 병합됐다.
+- W04 제품 코드 검증 SHA는 `455d400c4a8ddf11eaa0e3d676317c80b9a553b2`이다. W05 결과와 정확한
+  Windows SHA/artifact는 아래 `W05 Windows shell` 절에 기록한다. PR #63은 병합 전 검토용으로 열려 있다.
 - PR #56(W00)·#57(W01)·#58(인계)는 main에 병합됐다. 열린 #35는 기존 Docker 문서이며 건드리지 않는다.
 - W01 baseline 이후 W04는 local runtime·DB 연결/권한 경계·관련 회귀만 추가/수정했다.
   CPU/규칙/정산 핵심·legacy fixture·기존 frontend는 보존했다.
 - W02 PR #59를 병합했다. 검증 code SHA 이후 변경은 기준 문서 4개뿐이며,
   CI job/다운로드 artifact의 source SHA·내외 ZIP hash·browser/frozen/renderer 증거를 다시 대조했다.
   이번 검토는 기존 Windows 실행 증거 검토이며 Windows를 새로 실행한 결과가 아니다.
-- 로컬 저장/runtime은 W04에 구현됐고 Windows 실행창·번들·로그인 없는 화면 진입은 아직 없다. W02 Windows Actions/PR #59 artifact·사용자 증거 첨부 경로와
-  격리 후보 검증은 아래에 기록한다. 후보 통과를 제품 완료 또는 최종 기술 채택으로 해석하지 않는다.
+- W04 시점에는 Windows 실행창·번들·로그인 없는 진입이 없었다. W05에서 이를 통합했으며,
+  정확한 Windows hosted renderer 검증과 남은 사용자 PC 제한은 아래 `W05 Windows shell` 절에 기록한다.
 - Wayward 참고는 W00의 `5d80f118c590319881be34faba8214a0c3765fc2` 조사뿐이다.
   W02는 참고 코드 복사·ZIP 분석·이미지 생성·사용자 데이터 연결을 하지 않는다.
 
@@ -75,6 +75,41 @@ Actions artifact digest가 일치하고 unittest/pytest 로그를 확인했다. 
 38659729790도 전체 성공이나 artifact의 source SHA는 pull_request merge ref이므로 exact branch
 검증 근거로는 위 push run을 기록한다. 이는 이전 code SHA의 검증 이력이다. 전원 차단
 durability 및 사용자 Windows UI/LocalAppData는 여전히 미검증이다.
+
+## W05 Windows shell — 구현 및 Windows hosted 검증
+
+W04가 병합된 준비 main `99dd432`에서 `task/w05-windows-shell`을 진행했다.
+검증된 W04 local runtime을 그대로 연결해 Electron 44.7.2 창, frozen FastAPI/RiichiEnv
+engine, React production build, SQLite local profile을 한 same-origin loopback 실행 경로로 묶었다.
+실행마다 새 capability를 private child pipe로 전달하고 host가 확인된 renderer의 같은 origin
+API 요청에만 주입한다. 일반 renderer에는 secret을 노출하지 않으며 웹 JWT 동작은 유지한다.
+첫 진입은 로그인 없이 단일 로컬 프로필을 열고 이름 편집을 저장한다. 실행 시 active 대국을
+먼저 복구하고 없으면 마지막 완료 결과를 재접속한다. 정상 창 종료 시 host가 자신이 시작한
+engine만 정상 종료 요청 후 필요할 때 회수한다. 단일 instance/data-root 소유, 충돌 port,
+startup 실패도 다룬다. 게임 table·규칙·CPU·정산·진행 정책·ComfyUI 및 기존 사용자 자료는 변경하지 않았다.
+
+최종 검증 source SHA `c9cb8515a50c4a2387ca70a5be42b11cf9a7029e`를 Windows workflow가 detached
+checkout해 Windows Server 2022 x64에서 실행했다. [workflow run 38666626946](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38666626946),
+job 116199947741은 **success**다. Source unittest 81개, 대사 pytest 10개, React production build,
+PyInstaller engine freeze, Electron package, packaged renderer smoke와 ZIP/hash 생성이 모두 통과했다.
+Renderer evidence의 `passed=true` 및 필수 검사는 로그인 없는 React 진입, renderer 이름 변경 영속,
+engine 종료/재시작 뒤 active 대국의 commit turn 복구, 실제 renderer를 통한 정상 대국 완료,
+완료 결과 재접속 시 중복 정산 방지, 창 종료 후 owned engine 정상 종료다. 추가로 nonresponsive child
+강제 회수, startup 실패 후 child 회수, 점유 port 거절 및 무관 listener 유지, duplicate data-root
+거절, renderer의 외부 요청 차단도 통과했다. smoke는 host가 차단하는 renderer 요청을 확인했으며
+OS 수준 네트워크 차단을 시뮬레이션하지 않았다.
+
+정확한 source SHA를 이름에 포함한 [Windows artifact 11942211016](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38666626946/artifacts/11942211016)은
+`w05-windows-c9cb8515a50c4a2387ca70a5be42b11cf9a7029e`, 203,236,777 bytes, Actions archive
+SHA256 `edb5521f7d81428a66c790df1f78547bc4e9c01bfe7b9ed7adc14c31906efe74`이며 2026-10-29 만료다.
+artifact에는 Windows test ZIP과 source/test/runtime/renderer evidence가 들어 있다. 이는 hosted
+Windows Server 2022 x64 검증 artifact이며 정식 Release가 아니다. Python 3.12.10 x64는 W02에서
+검증한 Windows full-maintenance binary 입력의 재사용이다. Windows client 최소 버전, 개인 PC,
+물리 창 X 클릭, OS internet-off, clean-machine VC runtime, power-loss durability, 장기 보안 patch
+공급은 확인하지 않았다. 설치 프로그램/서명·배포 가능성도 이번 범위가 아니다.
+
+W05 PR #63은 main에 병합하지 않았으며 Release/tag를 만들지 않았다. TASKS.md의 다음 작업 제한에
+따라 D04가 결정 대기인 동안 W06 구현도 시작하지 않는다.
 
 ## 코드로 확인한 구현
 
@@ -327,8 +362,9 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 - **CG:** HTTP 503/늦은 실패 fixture와 실제 이미지 디코딩 실패는 다르다. 현재 `<img>`에는
   onError 대응이 없으므로 성공 HTTP 뒤 디코딩 실패 표시는 별도 확인/수정 Task가 필요하다.
   W10/W11의 생성 실패 독립성은 아직 구현·검증하지 않았다.
-- **실기:** Chromium 확보 후 기존 browser 4개 재실행; Windows 런타임/번들 증거는 W02에서
-  별도 확보한다. W01 환경 차단을 제품 오류나 Windows 성공으로 해석하지 않는다.
+- **실기:** W01 당시 Chromium 차단으로 실행하지 못한 기존 browser 4개는 별도 재실행 조건이다.
+  W02 격리 증거와 W05 packaged Windows renderer 증거는 서로 다른 실행 범위다. W05 hosted 성공을
+  개인 Windows 지원/OS 인터넷 차단으로 확대 해석하지 않는다.
 
 ## 기존 검증 증거 (재실행 아님)
 
@@ -344,10 +380,10 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 1. **진행:** 선택 가능 CPU 3명이 필요하고 stage 3은 제외된다. 6명 중 4명을 완료하면
    2명만 남아 이후 시작 불가능. 모든 CPU 완료라는 기존 목표와 실제 진행 경로가 충돌한다.
    D04 사용자 결정 전 filler/재선택/인원 변경·HP reset을 구현하지 않는다.
-2. **실행:** 제품 Windows shell·기동/종료 관리는 없다. W02 격리 후보와 Windows 실행 증거는
-   위 별도 기록이며 W03 채택·W05 통합·W12 정식 배포를 완료한 것이 아니다.
-3. **저장:** SQLite 시험 성공과 제품 전환은 다르다. PostgreSQL 행 잠금/환경·웹 인증·
-   `/data/media` 경로와 bootstrap을 Windows 실행 조건에 맞춰 검증해야 한다.
+2. **실행:** W05 Windows hosted shell 통과는 Windows 10/11 개인 PC·OS 인터넷 차단·최소 client OS·
+   전원 차단 증거가 아니다. 설치형·서명·정식 배포 검증은 W12 범위다.
+3. **저장:** W05는 명시된 LocalAppData 루트의 SQLite runtime을 packaged renderer smoke에서 검증했다.
+   기존 웹 PostgreSQL DB/미디어 자동 이전은 하지 않으며, power-loss durability·기존 사용자 자료 전환은 보장하지 않는다.
 4. **콘텐츠:** 공유 Level별 프롬프트·후보·상황/대사 관계·변수·ComfyUI 연결·생성 캐시 미구현.
 5. **문서:** 기존 docs에는 초기 목표 트리, Tier 1/2 미구현 등 시점별 서술과 Docker 완료/보류
    서술이 함께 있다. 루트 기준 문서가 현재 인계점이다. 과거 증거 본문은 보존한다.
@@ -355,7 +391,7 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 
 ## 다음
 
-W04의 이름 저장·capability 정상 거절·local 전용 쓰기/기본 engine 읽기·파일 DB 정산 실패
-복구 보완은 완료했다. 다음 Task는 W05 Windows shell·로컬 runtime·같은 origin UI 통합이다.
-TASKS의 다음 Work 지시문으로 최신 main에 PR #61이 반영됐는지 확인하고 저성능 Work에서 진행한다.
-지원 OS/Python 공급·실제 clean PC/OS 오프라인·전원 차단은 남은 검증이며 완료로 올리지 않는다.
+W05 shell/runtime/renderer 통합과 exact-source Windows hosted CI는 완료했다. 다음은 TASKS.md의
+제한대로 D04 CPU 부족·모든 CPU 완료·HP 0 이후 정책을 사용자와 먼저 결정하는 일이다.
+W06 구현은 시작하지 않는다. Windows client OS/개인 PC/OS 인터넷 차단·전원 차단 및 장기 Python
+보안 patch 공급은 별도 후속 검증이며 완료로 올리지 않는다.
