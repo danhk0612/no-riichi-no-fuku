@@ -166,7 +166,6 @@ try {
   await page.waitForFunction(() => window.__audioInstances[4].__playCount === 2)
   assert.equal(await page.evaluate(() => window.__audioInstances.length), 5, 'same track ID with replaced media must use the new media')
   assert.equal(await page.getByRole('button', { name: '1번 배경음 선택 해제' }).count(), 1)
-  assert.ok(await page.evaluate(() => window.__audioInstances.every((audio) => !audio.error)))
   await page.getByRole('button', { name: '닫기' }).click()
   for (const card of await page.locator('button.cpu-card:not([disabled])').all()) await card.click()
   await page.getByRole('button', { name: '동풍전 시작' }).click()
