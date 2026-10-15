@@ -448,6 +448,7 @@ function App() {
       }
       if (isDesktop && localPlay) await loadLocalCpus(accessToken, localPlay, requestToken)
       else await loadCpus(accessToken)
+      if (isDesktop && !isCurrentLocalRequest(requestToken, localPlay?.generation)) return
       setGameState({ status: 'waiting' })
     } catch (caught) {
       if (!isDesktop || requestToken === localRequestTokenRef.current) setError(errorMessage(caught))
