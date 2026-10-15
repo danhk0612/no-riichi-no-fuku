@@ -424,7 +424,7 @@ W06에 필요한 등록 슬롯/기본 마작 SFX/평문 엔딩만 독립시켰�
 실측·W12 배포 조건이며 B 저장 구현을 막지 않는다. 새 제품 정책 결정을 요구하는 차이가 발견되면
 그 지점만 보류/보고하고 이 계약을 임의 확대하지 않는다.
 
-## W06-B 구현 상태 (2026-10-15)
+## W06-B 구현·보완 상태 (2026-10-15)
 
 W06-A 계약을 local-only service/API 경로로 구현했다. migration `20261015_0005`는
 `local_play_states`, `local_play_roster`, session generation/rules/presentation 및 cancelled status를
@@ -433,13 +433,22 @@ W06-A 계약을 local-only service/API 경로로 구현했다. migration `202610
 함께 저장되며 저장 완료 뒤에만 registry 결과를 공개한다. reset은 이전 active를 cancelled 처리하고
 새 generation을 만든다. CPU/설정/파일과 기존 session/action 이력은 보존한다.
 
-실제 API/화면/저장 필드는 이 절 앞 계약의 의미를 따른다. 테스트는 `backend/tests/test_local_play.py`
-및 `test_local_runtime.py`에 있다. Linux 전체 backend unittest 90개, 대사 pytest 10개와
-frontend production build 통과. 정확한 branch SHA의 Windows run/artifact 증거는 CURRENT_STATE에서
-기록했다: code head `d2740c80a29b694b1f2f00889db46c2cdf19a2a2`의 Windows Server 2022 run 38701271329와
-packaged smoke 통과. exact artifact source SHA와 API digest는 CURRENT_STATE에서 확인한다.
-사용자의 개인 Windows PC/전원 차단 내구성은 별도 미검증이다. C의 사운드 파일 등록,
-setting 및 실제 CG/음악 재생은 아직 구현하지 않았다.
+PR #68 보완에서 legacy/version2 정산의 취소·세대 검증과 cached settlement 차단, 웹 member/HP
+생성 조건, ending_pending 명단 확정, reset/ack 응답 복구, 지연 start/confirm/ack 응답 generation·
+request-token guard를 보강했다. 고정 명단, 초기화, stale 응답, 자료 보존 및 정산 commit 실패 회귀는
+`backend/tests/test_local_play.py`, `backend/tests/test_game_websocket.py`,
+`frontend/src/main.tsx`, `desktop/main.cjs`의 검증 경로에 있다.
+
+정확한 코드 SHA `9bab63ecdfe7775130f98791f44b306e8eaac429`의 Windows Server 2022 W05 run
+[38778254234](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38778254234)은
+backend, frontend build, packaged renderer·일반 종료 smoke 모두 성공했다. W06 reset 오류 복구 뒤
+renderer 재연결, 정상 local 대국 완료, active/completed 재기동 및 종료가 통과했다. artifact
+`11994663467`의 source SHA는 checkout에서 생성한 `source-sha.txt`와 run SHA로 대조했고,
+artifact archive SHA256은 `dc65ae3918d35d28ce6e1e5bf076ea8ede188ac9b5b56d115dd7030375988e5d`.
+보조 Windows storage run [38778254269](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38778254269)도 성공했다. 자세한 pre/post 회귀와 run/artifact 근거는 CURRENT_STATE에 있다.
+
+사용자의 개인 Windows PC, 전원 차단 내구성 및 실제 ending CG/음악은 미검증이다. 실제 ending
+리소스/사운드 연결은 C 범위이며 이번 작업은 시작하지 않았다.
 
 ## 콘텐츠 데이터 구조 권고 — 스키마 미확정
 
