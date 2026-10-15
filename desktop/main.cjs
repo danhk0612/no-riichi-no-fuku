@@ -321,6 +321,7 @@ async function rendererSnapshot() {
     hand: document.querySelector('.hand')?.innerText ?? '',
     round: document.querySelector('.round-status')?.innerText ?? '',
     result: document.querySelector('.match-result')?.innerText ?? '',
+    error: document.querySelector('.form-error')?.innerText ?? '',
   }))()`)
 }
 
@@ -328,10 +329,18 @@ async function clickHumanAction() {
   await waitForRenderer("document.querySelector('.human-controls .hand button:not([disabled])') || document.querySelector('.human-controls .action-bar button:not([disabled])')", 90000)
   const before = await rendererSnapshot()
   await window.webContents.executeJavaScript("(document.querySelector('.human-controls .hand button:not([disabled])') || document.querySelector('.human-controls .action-bar button:not([disabled])'))?.click()")
-  await waitFor(async () => {
-    const next = await rendererSnapshot()
-    return next.result || (next.table !== before.table || next.hand !== before.hand || next.round !== before.round) ? next : false
-  }, 90000)
+  try {
+    const next = await waitFor(async () => {
+      const current = await rendererSnapshot()
+      return current.result || current.error !== before.error
+        || current.table !== before.table || current.hand !== before.hand || current.round !== before.round
+        ? current : false
+    }, 90000)
+    if (next.error !== before.error) throw new Error(`renderer reported an action error: ${next.error}`)
+  } catch (error) {
+    const current = await rendererSnapshot()
+    throw new Error(`${error.message}; renderer after action: ${JSON.stringify(current)}`)
+  }
 }
 
 async function startMatchFromRenderer() {
