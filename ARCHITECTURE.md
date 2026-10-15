@@ -267,6 +267,7 @@ legacy active 정산은 legacy HP/stage 규칙을 보존하는 **기존 한 대�
 | 요청 | 입력 → 응답/거절 |
 |---|---|
 | GET `/api/local/play` | `{generation,phase,roster:[{cpu_character_id,defeat_stage}],ending_event_id,active_session_id,recent_session_id,legacy_active}`. recent는 현재 세대의 completed만, cancelled 제외 |
+| GET `/api/local/play/roster-candidates` | 현재 generation과 등록된 active/adult CPU 목록(ID/이름/설명/현재 stage) 반환. 최초 명단용이므로 stage 3도 포함하며 대국 선택 가능 목록과 구분. 명단 확정은 별도 POST에서 검증 |
 | POST `/api/local/play/roster` | `{generation,cpu_character_ids:[...]}` → play 상태. roster_required·active 없음·고유/active/adult/최소3 검사. 확정 뒤 변경/중복 제출은 409 |
 | POST `/api/game/sessions` (local 확장) | 기존 cpu_character_ids + `generation` → 기존 session_id/players + generation. 명단·phase·3명·가능 인원 검증 후 rules/agents snapshot 저장 |
 | WS authenticate/action (local 확장) | authenticate에 generation, action에 generation + 기존 action_version/index. 모든 human_turn/match_complete/dialogue_event/error 응답은 generation/session_id 포함 |
@@ -296,7 +297,11 @@ writer 순서/수명은 다음을 지킨다.
    await/network/audio/file IO 동안 writer나 registry lock을 잡지 않는다.
 2. DB에서 current generation=요청 generation=record generation, status/phase를 매번 검사한다.
    `get_owned` cache hit도 이 검사를 우회하지 못한다. 객체가 있거나 같은 user라는 이유로 옛 대국을
-   허용하지 않는다. 모든 local HTTP 응답은 dependency commit 완료 뒤 성공으로 확정한다.
+   허용하지 않는다. local mutable HTTP는 endpoint/service의 명시 commit 또는 실제로 response 전
+   실행되는 function-scope dependency로 commit을 완료한 뒤에만 성공 응답을 허용한다. 현재
+   yield dependency override의 후처리가 response 전에 실행된다고 가정하지 않는다. 인증 조회와
+   변경은 같은 Session을 사용하고 기본 웹 dependency 의미는 바꾸지 않는다. start/roster/reset/ack의
+   commit 실패 주입으로 실제 HTTP 성공 응답/새 generation·event가 노출되지 않음을 검사한다.
 3. 행동 log commit 뒤 정산은 기존처럼 별도 transaction. 마지막 행동 뒤 crash면 snapshot replay 후
    정산한다. session completed 결과/진행 stage/결과 presentation/엔딩 생성은 한 정산 commit이다.
    record completed를 먼저 확인해 중복 정산하지 않는다. commit 실패는 rollback+cache eviction,

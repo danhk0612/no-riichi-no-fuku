@@ -13,7 +13,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 정책·W04/W05 계약 확정 | W02 | 고성능 Chat |
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 완료(PR #61 병합) | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows hosted 검증·최종 검토 통과(개인 실기 미검증) | W04 | 저성능 Work |
-| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / W06-A 설계 작성 완료·검토 대기, B/C 미구현 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
+| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / W06-A 설계 검토 통과, B/C 미구현 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
 | W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 목록·후보 관리 | P1 / 대기 | W05, W07 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
@@ -124,10 +124,11 @@ W05가 먼저 확정한다. W08/W09는 공유 schema·UI를 만지므로 순차 
 REQUIREMENTS D04/R16~R19가 확정 정책이다. CPU HP는 별도 시스템이 아니며 기존 stage를 유지한다.
 제품 구현은 저장/정산/초기화·엔딩/사운드의 계약을 좁힌 뒤 순차 진행한다.
 
-#### W06-A — 저장·복구·리소스 구현 계약 설계 (작성 완료·검토 대기)
+#### W06-A — 저장·복구·리소스 구현 계약 설계 (검토 통과)
 
 - 결과: main `e48aae9` 소스와 저장/정산/UI를 대조하고 ARCHITECTURE의 W06-A 계약을 작성했다.
-  제품·migration 실행·새 Windows 검증은 없으며 B/C는 설계 검토 후 별도 착수한다.
+  제품·migration 실행·새 Windows 검증은 없다. 2026-10-15 재검토에서 최초 명단 후보 API와
+  local mutable HTTP의 response 전 commit/실패 검증을 명확히 했다. B는 A 병합 후 착수한다.
 - 환경: 고성능 Work. 제품 코드 변경 없이 문서 설계/작업 분해/소스 대조.
 - 범위: 게임 공통 자료와 고정 참가 명단·한 플레이의 진행 상태·대국 snapshot/action log·상시 사운드
   선택 설정의 최소 관계, schema/migration/API/UI, DB writer/transaction/cache 경계.
@@ -277,6 +278,7 @@ stage와 effective_tier 분리, 엔딩 pending/event/ack와 미등록 화면, �
 자료를 보존하는 초기화 및 기존 저장 호환이야. 웹 legacy/JWT/관리자 보안은 유지해.
 ARCHITECTURE의 필드·API·상태·writer 순서·초기화 세대·표시 payload를 구현해.
 새 프로필/슬롯/CPU HP를 추가하지 마. 기존 local stage는 전환 시 보존하고 명단은 명시 선택해.
+최초 명단 후보 API에는 stage3도 포함해. 대국용 선택 가능 목록으로 명단 후보를 대신하지 마.
 기존 active는 원본 agent/규칙 snapshot으로 끝내고 completed는 재정산하지 마.
 새 대국에만 새 규칙을 적용하고 policy1/2·legacy seed/actions/RNG/fixture를 유지해.
 
@@ -285,6 +287,8 @@ DB writer 예약→play/record 재조회→registry lock→commit→응답 순�
 초기화는 active를 cancelled로 보존하고 local 진행/명단/엔딩만 재시작해.
 이전 generation의 start/action/settlement/socket/cache/fetch/CG callback을 차단해.
 정산 결과·stage·엔딩 event/payload는 같은 commit이며 실패 시 rollback/evict해.
+mutable HTTP는 응답 전 명시 commit/function scope를 보장하고 override 후처리 순서를 가정하지 마.
+start/roster/reset/ack commit 실패 시 HTTP 성공/새 세대·event 비노출 회귀를 추가해.
 명단 CPU 비활성화는 409로 거절하고 새 등록 CPU가 명단·완료 대상에 자동 포함되지 않게 해.
 오마케는 Tier2·진행/CG/캐릭터 대사/추가 이벤트 없음, 기본 마작 규칙/표시는 유지해.
 완료 전 보충 CPU는 Tier0·stage 불변·기존 match_first/last 대사를 저장해 재접속에도 유지해.
