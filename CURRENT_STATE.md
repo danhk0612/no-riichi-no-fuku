@@ -15,6 +15,26 @@
 - Wayward 참고는 W00의 `5d80f118c590319881be34faba8214a0c3765fc2` 조사뿐이다.
   W02는 참고 코드 복사·ZIP 분석·이미지 생성·사용자 데이터 연결을 하지 않는다.
 
+## W04 PR #61 검토 — 보완 전 병합/W05 착수 보류
+
+2026-10-15 PR head `70c6d8bdc031803a713a324889e2f241c95750ac`를 별도 worktree에서 검토했다.
+PR은 main 미병합이다. 이 main에는 W04 제품 코드가 아직 없다. Windows CI run
+38573281946의 job/각 단계 success를 확인했으나 아래 경계가 기존 검사에서 누락됐다.
+Linux Python 3.12.14/RiichiEnv 0.4.8 임시 환경에서 기존 unittest 78개(32.803초)와 대사
+pytest 10개(0.08초)는 통과했다. FastAPI 0.143.1 / settings 2.16.0으로 기존 CI와 범위
+의존성 해석이 일부 다르다. 추가 임시 API 재현은 사용자 data root/DB를 사용하지 않았다.
+
+| 발견 | 실제 재현·원인 | 수정/완료 조건 |
+|---|---|---|
+| 이름 편집 비영속 | PATCH `/api/profile/me` 200 및 새 이름 반환 후 GET/재시작은 `플레이어`. local authenticate가 별도 session에서 expunge한 User를 반환하므로 endpoint의 flush 대상이 아님 | 인증된 User를 해당 요청의 저장 session에 연결. PATCH→새 요청 GET→DB→runtime 재시작 이름 보존 검사 |
+| 잘못된 토큰의 비정상 예외 | `runtime.websocket_member('잘못된 토큰')`가 hmac.compare_digest의 non-ASCII TypeError 발생 | REST/WS의 malformed·non-ASCII·누락/이전 실행 capability를 정상 인증 거절로 처리. 유효 인증은 유지 |
+| 조회 transaction의 배타 잠금 | connection A의 `SELECT 1`을 열어둔 뒤 connection B의 `SELECT 1`도 5초 후 `database is locked`. 공통 create_database_engine의 begin callback이 읽기에도 BEGIN IMMEDIATE 강제 | local SQLite 쓰기만 명시적으로 직렬화, 읽기 동시성/웹 SQLite·PostgreSQL 기본 동작 보존. 요청 User session 공유와 함께 검사 |
+
+local-runtime 파일 DB에서 실제 정산 commit 실패를 주입한 rollback/cache eviction·재시작
+exactly-once 검사는 아직 없다. 기존 마지막 행동 후 미정산 복구 검사와 구분해 보완한다.
+기존 78+10/Windows 성공 이력은 보존한다. 이번 검토에서 frontend/browser/Windows를 새로
+실행한 것으로 기록하지 않는다. 구체적 보완 명세는 TASKS의 현재 우선 작업이다.
+
 ## 코드로 확인한 구현
 
 | 영역 | 상태/근거 |
@@ -294,11 +314,8 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 
 ## 다음
 
-W02 격리 기술 검증 완료(위 Windows CI/실측 범위), PR #59 main 반영 완료.
-2026-10-14 사용자 답변으로 W03의 여섯 정책을 확정했다. [REQUIREMENTS.md](REQUIREMENTS.md)에
-승인을 기록하고 ARCHITECTURE에 W04/W05 구현 계약을 정리했다. 제품 코드는 변경하지 않았다.
-다음 W04는 로컬 저장/프로필/runtime 권한·소유 잠금·복구 구현이며 저성능 Work에 인계한다.
-D01~D03/관리 UI의 승인 범위는 REQUIREMENTS를 따른다. 지원 Windows와 배포용 Python patch
-공급 조건은 W05 번들 준비/W12 배포 전에 확인할 잔여 조건이다. clean Windows 10/11·OS 오프라인·X 클릭 실기는
-spike README의 artifact/결과 경로로 보완한다. 미검증을 요구 충족으로 올리지 않는다.
-D04는 W06, 콘텐츠 세부 정책은 W07; 진행·이미지 생성·제품 통합을 본 작업에 섞지 않았다.
+현재 우선 작업은 **W04 PR #61 보완**이다. 기존 `task/w04-local-storage`에서 TASKS의
+보완 지시문을 수행하고 수정 SHA의 Windows CI·artifact를 확인해 같은 PR을 갱신한다.
+PR #61은 위 재현 결함과 검증 누락 해소 전 병합하지 않는다. W05도 착수하지 않는다.
+W03의 여섯 정책·현재 main 제품·W02/기존 검증 증거는 보존한다.
+지원 OS/Python 공급과 실제 Windows 오프라인 UI 검증은 W05/W12의 별도 잔여 조건이다.
