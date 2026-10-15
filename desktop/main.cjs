@@ -383,10 +383,14 @@ async function smokePreflight() {
   const occupied = createServer()
   await new Promise((resolveListen, rejectListen) => occupied.once('error', rejectListen).listen(0, '127.0.0.1', resolveListen))
   const occupiedPort = occupied.address().port
-  let collisionRejected = false
-  try { await spawnEngine(join(scratch, 'collision-data'), occupiedPort) } catch { collisionRejected = true }
-  if (!collisionRejected || !occupied.listening) throw new Error('port collision affected an unrelated listener')
-  addCheck('occupied port rejected; unrelated listener remained open')
+  const collisionRoot = join(scratch, 'collision-data')
+  mkdirSync(collisionRoot, { recursive: true })
+  let collisionError = ''
+  try { await spawnEngine(collisionRoot, occupiedPort) } catch (error) { collisionError = error.message }
+  if (!/10048|address already in use/i.test(collisionError) || !occupied.listening) {
+    throw new Error(`port collision did not reach bind failure: ${collisionError}`)
+  }
+  addCheck('occupied port rejected; unrelated listener remained open', collisionError)
   await new Promise(resolveClose => occupied.close(resolveClose))
 }
 
