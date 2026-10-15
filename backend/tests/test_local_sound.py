@@ -207,6 +207,8 @@ class LocalSoundTests(unittest.TestCase):
             "version": 1, "cg_asset_id": image["id"], "music_asset_id": audio["id"],
             "dialogue_text": "이 문장은 평문으로 고정됩니다.",
         })
+        deactivated = self.client.patch(f"/api/local/background-tracks/{track['id']}", headers=self.headers, json={"active": False})
+        self.assertEqual(deactivated.status_code, 200, deactivated.text)
         self.client.put("/api/local/ending-resources", headers=self.headers, json={
             "cg_asset_id": None, "music_track_id": None, "dialogue_text": None,
         })
@@ -231,6 +233,26 @@ class LocalSoundTests(unittest.TestCase):
         asset_path = self.runtime.paths.media / "w06" / f"{image['id']}.png"
         self.assertTrue(asset_path.is_file())
         self.assertEqual(asset_path.read_bytes(), image_data)
+        reactivated = self.client.patch(f"/api/local/background-tracks/{track['id']}", headers=self.headers, json={"active": True})
+        self.assertEqual(reactivated.status_code, 200, reactivated.text)
+        self.client.put("/api/local/ending-resources", headers=self.headers, json={
+            "cg_asset_id": None, "music_track_id": track["id"], "dialogue_text": None,
+        })
+        with self.runtime.session_factory.begin() as session:
+            for cpu_id in (1, 2, 3):
+                session.get(UserCpuProgress, (self.runtime.member_id, cpu_id)).defeat_stage = 3
+        fresh_play = self.client.get("/api/local/play", headers=self.headers).json()
+        deactivated = self.client.patch(f"/api/local/background-tracks/{track['id']}", headers=self.headers, json={"active": False})
+        self.assertEqual(deactivated.status_code, 200, deactivated.text)
+        new_ending = self.client.post("/api/local/play/roster", headers=self.headers, json={
+            "generation": fresh_play["generation"], "cpu_character_ids": [1, 2, 3],
+        }).json()
+        self.assertEqual(new_ending["phase"], "ending_pending")
+        self.assertIsNone(new_ending["ending_payload"]["music_asset_id"])
+        unresolved = self.client.get("/api/local/play/ending", headers=self.headers, params={
+            "generation": new_ending["generation"], "event_id": new_ending["ending_event_id"],
+        }).json()
+        self.assertFalse(unresolved["music"]["available"])
         self.client.close()
         self.runtime.close()
         data_root = self.runtime.paths.root
@@ -238,7 +260,7 @@ class LocalSoundTests(unittest.TestCase):
         self.client = TestClient(self.runtime.app)
         self.headers = {"X-Local-Capability": self.runtime.capability}
         self.assertEqual(self.client.get("/api/local/sound-selection", headers=self.headers).json()["effect_set_id"], None)
-        self.assertEqual(self.client.get("/api/local/ending-resources", headers=self.headers).json(), {"cg_asset_id": None, "music_track_id": None, "dialogue_text": None})
+        self.assertEqual(self.client.get("/api/local/ending-resources", headers=self.headers).json(), {"cg_asset_id": None, "music_track_id": track["id"], "dialogue_text": None})
         with self.runtime.session_factory() as session:
             self.assertIsNotNone(session.get(LocalMediaAsset, image["id"]))
             self.assertIsNotNone(session.get(BackgroundTrack, track["id"]))

@@ -353,7 +353,6 @@ function App() {
       }
       if (message.type === 'match_complete') {
         completed = true
-        stopGameAudio()
         clearResultAssetUrl()
         setGameState({
           status: 'complete',
@@ -490,6 +489,7 @@ function App() {
     if (!accessToken) return
     const requestToken = isDesktop ? beginLocalRequest() : 0
     setBusy(true)
+    stopGameAudio()
     setError(null)
     try {
       clearResultAssetUrl()
@@ -640,13 +640,18 @@ function App() {
 function BackgroundMusic({ accessToken, selection, paused }: { accessToken: string; selection: SoundSelection | null; paused: boolean }) {
   const [trackId, setTrackId] = useState<string | null>(null)
   const [blocked, setBlocked] = useState(false)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [retryRequired, setRetryRequired] = useState(false)
+  const [retryToken, setRetryToken] = useState(0)
+  const audioRef = useRef<{ audio: HTMLAudioElement; url: string } | null>(null)
+  const tracksRef = useRef<NonNullable<SoundSelection['tracks']>>([])
   const orderedTracks = useMemo(() => {
     if (!selection) return []
     return selection.bgm_ids.map((id) => selection.tracks.find((track) => track.id === id))
       .filter((track): track is NonNullable<typeof track> => !!track && track.active && track.available && !!track.url)
   }, [selection])
   const trackOrder = orderedTracks.map((track) => track.id).join(',')
+  tracksRef.current = orderedTracks
+  const selectedTrack = orderedTracks.find((item) => item.id === trackId)
 
   useEffect(() => {
     setTrackId((current) => orderedTracks.some((track) => track.id === current) ? current : orderedTracks[0]?.id ?? null)
@@ -655,33 +660,51 @@ function BackgroundMusic({ accessToken, selection, paused }: { accessToken: stri
   useEffect(() => {
     let current = true
     let objectUrl: string | null = null
-    const track = orderedTracks.find((item) => item.id === trackId)
+    let audio: HTMLAudioElement | null = null
+    const track = selectedTrack
     if (!track || paused) {
-      audioRef.current?.pause()
+      audioRef.current?.audio.pause()
+      audioRef.current = null
       return () => { current = false }
     }
     setBlocked(false)
+    setRetryRequired(false)
     void getLocalMediaObjectUrl(accessToken, track.url!).then(async (url) => {
       if (!current) { URL.revokeObjectURL(url); return }
       objectUrl = url
-      const audio = new Audio(url)
-      audioRef.current = audio
+      audio = new Audio(url)
+      const activeAudio = audio
+      audioRef.current = { audio, url }
+      const isCurrentAudio = () => current && audioRef.current?.audio === activeAudio
       audio.addEventListener('ended', () => {
-        const index = orderedTracks.findIndex((item) => item.id === track.id)
-        setTrackId(orderedTracks[(index + 1) % orderedTracks.length]?.id ?? null)
-      }, { once: true })
-      try { await audio.play() } catch { if (current) setBlocked(true) }
-    }).catch(() => { if (current) setBlocked(true) })
+        if (!isCurrentAudio()) return
+        const currentTracks = tracksRef.current
+        const index = currentTracks.findIndex((item) => item.id === track.id)
+        if (currentTracks.length <= 1) {
+          activeAudio.currentTime = 0
+          void activeAudio.play().catch(() => { if (isCurrentAudio()) { setRetryRequired(false); setBlocked(true) } })
+          return
+        }
+        setTrackId(currentTracks[(index + 1) % currentTracks.length]?.id ?? null)
+      })
+      audio.addEventListener('error', () => { if (isCurrentAudio()) { setRetryRequired(true); setBlocked(true) } }, { once: true })
+      try { await audio.play() } catch { if (isCurrentAudio()) { setRetryRequired(false); setBlocked(true) } }
+    }).catch(() => { if (current) { setRetryRequired(true); setBlocked(true) } })
     return () => {
       current = false
-      audioRef.current?.pause()
-      audioRef.current = null
+      if (audioRef.current?.audio === audio) audioRef.current = null
+      audio?.pause()
+      if (audio) audio.src = ''
       if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-  }, [accessToken, trackId, trackOrder, paused])
+  }, [accessToken, trackId, selectedTrack?.url, paused, retryToken])
 
   if (!blocked || paused || orderedTracks.length === 0) return null
-  return <button className="text-button audio-resume" type="button" onClick={() => { void audioRef.current?.play().then(() => setBlocked(false)).catch(() => setBlocked(true)) }}>배경음 재생</button>
+  return <button className="text-button audio-resume" type="button" onClick={() => {
+    const activeAudio = audioRef.current?.audio
+    if (retryRequired || !activeAudio) { setBlocked(false); setRetryToken((current) => current + 1); return }
+    void activeAudio.play().then(() => setBlocked(false)).catch(() => setBlocked(true))
+  }}>배경음 재생</button>
 }
 
 function EndingScreen({ accessToken, generation, eventId, fallback, busy, onContinue }: {

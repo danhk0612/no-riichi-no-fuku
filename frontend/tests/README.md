@@ -48,9 +48,12 @@ REST/WebSocket fixtures rather than a real server restart.
 that CG failure replaces the loading message while scores/next-match controls remain available,
 and that a failed asset response arriving after next-match selection cannot display an old error.
 
-`local-sound.browser.mjs` uses a desktop-mode renderer fixture to inspect the local sound settings
-surface and send a repeated committed SFX identity through the game socket. It verifies the same
-event plays only once; no audio content is generated.
+`local-sound.browser.mjs` uses the real desktop-mode React renderer with routed REST/WebSocket
+fixtures and mock `Audio`. It checks one-track BGM repeat, preserving the active track through
+order changes, stale `ended` and media-load callbacks, media replacement for the same track ID,
+recovery after file/autoplay failures, clearing inactive sound references, and a committed final SFX
+that resolves after `match_complete`. Duplicate/replayed event identities stay silent; no audio
+content is generated.
 
 ## Real-server browser integration
 

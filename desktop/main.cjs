@@ -438,6 +438,52 @@ async function smokeRun() {
   }
   addCheck('renderer opened local sound and ending settings')
   addCheck('new local profile starts silent with ending resources unregistered')
+  await window.webContents.executeJavaScript(`(() => {
+    window.__w06MockAudios = []
+    const NativeAudio = window.Audio
+    window.Audio = function (source) {
+      const audio = new NativeAudio(source)
+      audio.__w06PlayCount = 0
+      audio.play = () => { audio.__w06PlayCount += 1; return Promise.resolve() }
+      window.__w06MockAudios.push(audio)
+      return audio
+    }
+    const file = new File([new Uint8Array([73, 68, 51, 4, 0, 0])], 'w06-smoke.mp3', { type: 'audio/mpeg' })
+    const transfer = new DataTransfer()
+    transfer.items.add(file)
+    const input = document.querySelector('.sound-panel input[type="file"]')
+    Object.defineProperty(input, 'files', { configurable: true, value: transfer.files })
+    input.dispatchEvent(new Event('change', { bubbles: true }))
+  })()`)
+  await waitForRenderer(`(() => {
+    const audioSelect = Array.from(document.querySelectorAll('.sound-panel label')).find(label => label.innerText.includes('오디오 파일'))?.querySelector('select')
+    return Boolean(audioSelect && audioSelect.options.length > 1)
+  })()`, 30000)
+  await window.webContents.executeJavaScript(`(() => {
+    const setValue = (element, value) => {
+      const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(element), 'value').set
+      setter.call(element, value)
+      element.dispatchEvent(new Event('input', { bubbles: true }))
+      element.dispatchEvent(new Event('change', { bubbles: true }))
+    }
+    const audioLabel = Array.from(document.querySelectorAll('.sound-panel label')).find(label => label.innerText.includes('오디오 파일'))
+    const assetId = audioLabel.querySelector('select').options[1].value
+    const nameInput = Array.from(document.querySelectorAll('.sound-panel label')).find(label => label.innerText.includes('표시 이름')).querySelector('input')
+    setValue(nameInput, 'W06 mock repeat')
+    setValue(audioLabel.querySelector('select'), assetId)
+    Array.from(document.querySelectorAll('.sound-panel button')).find(button => button.innerText === '배경음 등록').click()
+  })()`)
+  await waitForRenderer(`document.querySelector('.track-order input')`, 30000)
+  await window.webContents.executeJavaScript(`(() => {
+    document.querySelector('.track-order input').click()
+    Array.from(document.querySelectorAll('.sound-panel button')).find(button => button.innerText === '사운드 선택 저장').click()
+  })()`)
+  await waitForRenderer(`window.__w06MockAudios?.length === 1 && window.__w06MockAudios[0].__w06PlayCount === 1`, 30000)
+  await window.webContents.executeJavaScript(`window.__w06MockAudios[0].dispatchEvent(new Event('ended'))`)
+  await waitForRenderer(`window.__w06MockAudios[0].__w06PlayCount === 2`, 10000)
+  const mockPlayback = await window.webContents.executeJavaScript(`({ instances: window.__w06MockAudios.length, plays: window.__w06MockAudios[0].__w06PlayCount })`)
+  if (mockPlayback.instances !== 1 || mockPlayback.plays !== 2) throw new Error('packaged BGM mock did not repeat on its existing audio instance')
+  addCheck('packaged renderer mock BGM repeated a one-track selection without decoding media')
   await window.webContents.executeJavaScript("document.querySelector('.sound-panel-heading button')?.click()")
   const externalBlocked = await window.webContents.executeJavaScript(
     "fetch('https://example.com').then(() => false, () => true)",

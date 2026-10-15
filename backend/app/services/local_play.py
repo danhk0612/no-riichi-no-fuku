@@ -202,6 +202,11 @@ def _create_ending_if_complete(session: Session, state: LocalPlayState) -> None:
         resource_values = configured.value if configured is not None and isinstance(configured.value, dict) else DEFAULT_ENDING_RESOURCES
         music_track_id = resource_values.get("music_track_id")
         track = session.get(BackgroundTrack, music_track_id) if isinstance(music_track_id, str) else None
+        # A pending payload snapshots only resources eligible for a new ending.
+        # Once already pending, resolve_ending intentionally reads the immutable asset
+        # reference without consulting the track's later active flag.
+        if track is not None and not track.active:
+            track = None
         state.phase = "ending_pending"
         state.ending_event_id = str(uuid4())
         state.ending_payload = {
