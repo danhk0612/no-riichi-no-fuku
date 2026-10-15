@@ -254,22 +254,32 @@ class LocalRuntimeTests(unittest.TestCase):
             finally:
                 runtime.close()
 
-    def test_default_sqlite_engine_keeps_existing_immediate_begin_behavior(self) -> None:
-        engine = create_database_engine("sqlite+pysqlite:///:memory:")
-        statements: list[str] = []
-        event.listen(
-            engine,
-            "before_cursor_execute",
-            lambda _conn, _cursor, statement, _params, _context, _many: statements.append(
-                statement.upper()
-            ),
-        )
-        try:
-            with engine.connect() as connection:
-                connection.execute(text("SELECT 1")).scalar_one()
-            self.assertIn("BEGIN IMMEDIATE", statements)
-        finally:
-            engine.dispose()
+    def test_default_sqlite_engine_preserves_main_read_transactions(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="nrnf-default-read-") as directory:
+            url = "sqlite:///" + str(Path(directory) / "default.db")
+            engine = create_database_engine(url)
+            baseline = create_engine(url, pool_pre_ping=True)
+            statements: list[str] = []
+            event.listen(
+                engine,
+                "before_cursor_execute",
+                lambda _conn, _cursor, statement, _params, _context, _many: statements.append(
+                    statement.upper()
+                ),
+            )
+            try:
+                with baseline.connect() as reference:
+                    baseline_fk = reference.exec_driver_sql("PRAGMA foreign_keys").scalar_one()
+                with engine.connect() as first, engine.connect() as second:
+                    self.assertEqual(first.execute(text("SELECT 1")).scalar_one(), 1)
+                    self.assertEqual(second.execute(text("SELECT 1")).scalar_one(), 1)
+                    self.assertEqual(
+                        first.exec_driver_sql("PRAGMA foreign_keys").scalar_one(), baseline_fk
+                    )
+                self.assertNotIn("BEGIN IMMEDIATE", statements)
+            finally:
+                engine.dispose()
+                baseline.dispose()
 
     def test_file_database_restores_exact_turn_after_process_runtime_restart(self) -> None:
         with tempfile.TemporaryDirectory(prefix="nrnf-recovery-") as directory:
@@ -452,18 +462,20 @@ class LocalRuntimeTests(unittest.TestCase):
                     with self.assertRaises(WebSocketDisconnect) as rejected:
                         websocket.receive_json()
                     self.assertEqual(getattr(rejected.exception, "code", None), 4401)
-                with client.websocket_connect(
-                    f"/api/game/sessions/{session_id}/ws"
-                ) as websocket:
-                    websocket.send_json(
-                        {"type": "authenticate", "capability": "문자열-비ASCII"}
-                    )
-                    self.assertEqual(
-                        websocket.receive_json()["code"], "invalid_authentication"
-                    )
-                    with self.assertRaises(WebSocketDisconnect) as rejected:
-                        websocket.receive_json()
-                    self.assertEqual(getattr(rejected.exception, "code", None), 4401)
+                for malformed in ("문자열-비ASCII", "\ud800", "\udfff"):
+                    self.assertFalse(runtime.accepts_capability(malformed))
+                    with client.websocket_connect(
+                        f"/api/game/sessions/{session_id}/ws"
+                    ) as websocket:
+                        websocket.send_json(
+                            {"type": "authenticate", "capability": malformed}
+                        )
+                        self.assertEqual(
+                            websocket.receive_json()["code"], "invalid_authentication"
+                        )
+                        with self.assertRaises(WebSocketDisconnect) as rejected:
+                            websocket.receive_json()
+                        self.assertEqual(getattr(rejected.exception, "code", None), 4401)
                 with client.websocket_connect(
                     f"/api/game/sessions/{session_id}/ws"
                 ) as websocket:

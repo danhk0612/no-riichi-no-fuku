@@ -189,8 +189,8 @@ class LocalRuntime:
     registry: GameRegistry
 
     def accepts_capability(self, candidate: object) -> bool:
-        return isinstance(candidate, str) and hmac.compare_digest(
-            candidate.encode("utf-8"), self.capability.encode("utf-8")
+        return isinstance(candidate, str) and candidate.isascii() and hmac.compare_digest(
+            candidate, self.capability
         )
 
     def websocket_member(self, candidate: object) -> User | None:
@@ -253,8 +253,8 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
         app.state.local_runtime = None  # assigned below after runtime construction
 
         def authenticate(value: str | None, session: Session) -> User:
-            if not isinstance(value, str) or not hmac.compare_digest(
-                value.encode("utf-8"), capability.encode("utf-8")
+            if not isinstance(value, str) or not value.isascii() or not hmac.compare_digest(
+                value, capability
             ):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -280,8 +280,8 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
             x_local_capability: str | None = Header(default=None),
             session: Session = Depends(get_session),
         ) -> User:
-            if not isinstance(x_local_capability, str) or not hmac.compare_digest(
-                x_local_capability.encode("utf-8"), capability.encode("utf-8")
+            if not isinstance(x_local_capability, str) or not x_local_capability.isascii() or not hmac.compare_digest(
+                x_local_capability, capability
             ):
                 raise HTTPException(status_code=401, detail="invalid local capability")
             user = session.get(User, admin_id)

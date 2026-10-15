@@ -20,7 +20,7 @@ def create_database_engine(
     sqlite_begin_immediate_by_intent: bool = False,
 ) -> Engine:
     engine = create_engine(database_url, pool_pre_ping=True)
-    if engine.dialect.name == "sqlite":
+    if engine.dialect.name == "sqlite" and sqlite_begin_immediate_by_intent:
         @event.listens_for(engine, "connect")
         def configure_sqlite(dbapi_connection, _connection_record) -> None:
             cursor = dbapi_connection.cursor()
@@ -30,9 +30,7 @@ def create_database_engine(
 
         @event.listens_for(engine, "begin")
         def begin_sqlite_write_transaction(connection) -> None:
-            if not sqlite_begin_immediate_by_intent or connection.get_execution_options().get(
-                "sqlite_begin_immediate"
-            ):
+            if connection.get_execution_options().get("sqlite_begin_immediate"):
                 connection.exec_driver_sql("BEGIN IMMEDIATE")
 
     return engine
