@@ -303,8 +303,8 @@ async function startMatchFromRenderer() {
   })()`)
   await waitForRenderer("Boolean(document.querySelector('.selection-panel'))", 90000)
   await window.webContents.executeJavaScript(`(() => {
-    [...document.querySelectorAll('button.cpu-card:not([disabled])')].slice(0, 3).forEach(button => button.click())
-    [...document.querySelectorAll('button')].find(button => button.innerText.includes('동풍전 시작'))?.click()
+    Array.from(document.querySelectorAll('button.cpu-card:not([disabled])')).slice(0, 3).forEach(button => button.click())
+    Array.from(document.querySelectorAll('button')).find(button => button.innerText.includes('동풍전 시작'))?.click()
   })()`)
   await waitForRenderer("Boolean(document.querySelector('.human-controls') || document.querySelector('.match-result'))", 90000)
 }
