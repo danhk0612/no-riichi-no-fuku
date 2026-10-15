@@ -62,7 +62,19 @@ immutable 업로드 저장, BGM/SFX 선택 UI, 완료 시점 ending resource sna
 Python compileall, desktop/browser script Node syntax, Electron 종료 회귀 3개가 통과했다.
 W06-C 전용 backend suite 6개도 통과했다. Browser/renderer smoke는 환경에 Chromium이 없어
 실행하지 못했다. Playwright Chromium 설치 다운로드도 손상된 ZIP으로 실패했다.
-정확한 PR head의 Windows packaged CI/artifact source SHA 및 ZIP hash는 PR 제출 뒤 기록한다.
+
+Windows exact-source 검증은 PR 코드 SHA `567a1a3dcb1d00ccac6f34769f63b7a0ba5db949`에서 통과했다.
+W04 [run 38811570189](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38811570189),
+W05 [PR run 38811570256](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38811570256),
+[push run 38811558951](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38811558951)이 모두 success다.
+PR run artifact `12007944945` (203,331,747 bytes, 만료 2026-10-29)의 `source-sha.txt`가 이 SHA와
+일치한다. Artifact archive SHA256은 `edb10aa1c7a1a451f2ff60185787db80b80e3aeb149cb1efe82eb56932c2ffc8`;
+내부 Windows ZIP `No-Riichi-No-Fuku-W05-Windows.zip` SHA256은
+`8fd5811006d777761eb4e52c9ce448bdafe7a98f54ddf70b6252fb81d7ad1265`다.
+Windows artifact의 unittest 100개/73.104초, dialogue pytest 10개/0.11초, packaged renderer `passed: true`
+및 전체 21 checks를 확인했다. 여기에는 사운드 설정 진입·무음 기본값/미등록 ending, ending ack/응답 유실,
+초기화 후 복구, 정상 대국, 재기동·정산 중복 방지와 창 종료 검사가 포함된다.
+W04 Windows storage run과 PR/push W05 run 모두 같은 head SHA를 checkout했다.
 
 이 환경에서 실제 사용자 이미지/오디오가 없어 CG 디코딩 및 실기 오디오 출력을 확인하지 않았다.
 미등록/mock 경로와 metadata/file/ack 경계 검사는 실제 콘텐츠 출력 증거와 구분한다(D11).
@@ -513,5 +525,6 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 
 ## 다음
 
-W06-C PR의 exact-head Windows 검증 결과를 확인한다. 병합·Release/tag 및 W07 착수는 별도 승인/Work로
-남긴다. D11 실제 CG·음악 출력은 실제 자료와 사용 권리가 준비된 뒤 별도로 실측한다.
+W06-C PR #70은 exact-source W04/W05 Windows CI를 통과했고 review 대기 상태다.
+병합·Release/tag 및 W07 착수는 별도 Work로 남긴다. D11 실제 CG·음악 출력은 실제 자료와 사용 권리가
+준비된 뒤 별도로 실측한다.

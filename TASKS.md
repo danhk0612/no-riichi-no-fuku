@@ -13,7 +13,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 정책·W04/W05 계약 확정 | W02 | 고성능 Chat |
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 완료(PR #61 병합) | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows hosted 검증·최종 검토 통과(개인 실기 미검증) | W04 | 저성능 Work |
-| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B 최종 검토 통과·C PR 검증 대기 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
+| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B 최종 검토 통과·C PR #70 제출 및 Windows CI 통과·검토 대기 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
 | W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 목록·후보 관리 | P1 / 대기 | W05, W07 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
@@ -286,9 +286,10 @@ frontend build·Node 종료 회귀도 통과했다. 상세 SHA/hash·검사 범�
 
 ## W06-C 구현 기록
 
-W06-C는 `task/w06-c-sound-ending`에서 구현했다. 상세 코드 SHA, 테스트, Windows CI/artifact 증거와
-D11 한계는 `CURRENT_STATE.md`의 W06-C 절에 기록한다. 실제 사용자 CG·음악·대사를 생성하거나
-seed하지 않았고 실제 출력 검증을 주장하지 않는다. 병합·Release/tag 및 W07 착수는 하지 않았다.
+W06-C는 `task/w06-c-sound-ending`에서 구현해 PR #70으로 제출했다. 코드 SHA `567a1a3`의 W04/W05
+Windows CI와 packaged smoke가 통과했다. 상세 artifact SHA·검사·D11 한계는 `CURRENT_STATE.md`의 W06-C
+절에 기록한다. 실제 사용자 CG·음악·대사를 생성하거나 seed하지 않았고 실제 출력 검증을 주장하지 않는다.
+PR 검토 대기 중이며 병합·Release/tag 및 W07 착수는 하지 않았다.
 
 ## 완료된 Work 지시문 — W06-C
 
