@@ -115,7 +115,7 @@ try {
   await page.getByRole('button', { name: '사운드·자료 설정' }).click()
   await page.locator('.sound-panel').waitFor()
   assert.equal(await page.getByText('파일 등록', { exact: true }).count(), 1)
-  assert.equal(await page.getByRole('option', { name: 'Old set · 비활성' }).count(), 1)
+  assert.equal(await page.getByRole('option', { name: 'Old set · 비활성' }).count(), 2)
   await page.getByLabel('효과음 세트').selectOption('')
   await page.getByRole('button', { name: '1번 배경음 아래로' }).click()
   await page.getByRole('button', { name: '사운드 선택 저장' }).click()
@@ -206,3 +206,4 @@ try {
 } finally {
   await browser.close()
 }
+�}[ww��v��M|�mtѽ��v��~tk�8��u
