@@ -44,7 +44,7 @@
 
 | ID | 미확정 사항 | 필요한 시점 |
 |---|---|---|
-| D01 | Electron·번들 Python·same-origin REST/WS 확정. 지원 OS·배포용 Python patch 공급은 남은 검증 | W05 준비에서 확인, W12 배포 전 |
+| D01 | Electron·번들 Python·same-origin REST/WS 확정. W05 Windows x64 CI는 Server 2022에서 검증했다. 지원 최소 client OS는 미정. Python 3.12.10은 검증된 Windows package input이며 security-only 최신 patch용 공식 Windows binary 공급은 없으므로 장기 배포 patch는 미정 | client OS 증거와 Python 보안 patch 공급 경로를 W12 배포 전 결정 |
 | D02 | SQLite·ZIP·LocalAppData·단일 로컬 프로필·로그인 없는 자동 저장/복구 확정 | 아래 W03 계약, W04/W05 구현 |
 | D03 | 첫 Windows판은 새 로컬 진행, 웹 DB/미디어 보존·자동 이전 없음으로 확정 | 수동 이전 필요 시 별도 결정 |
 | D04 | 미완료 CPU 2명 이하 처리, 모든 CPU 완료/엔딩, HP 0 이후 재시작/초기화 | W06 전. 현재 진행 완료 불가능 문제 |

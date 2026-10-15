@@ -9,6 +9,7 @@ type CpuSelectionProps = {
   onToggle: (cpuId: number) => void
   onStart: () => void
   onLogout: () => void
+  showLogout?: boolean
 }
 
 export function CpuSelection({
@@ -19,6 +20,7 @@ export function CpuSelection({
   onToggle,
   onStart,
   onLogout,
+  showLogout = true,
 }: CpuSelectionProps) {
   return (
     <section className="selection-panel">
@@ -28,7 +30,7 @@ export function CpuSelection({
           <h2>CPU 3명 선택</h2>
           <p>선택 순서대로 좌석 1, 2, 3에 배치됩니다.</p>
         </div>
-        <button className="text-button" onClick={onLogout} type="button">로그아웃</button>
+        {showLogout && <button className="text-button" onClick={onLogout} type="button">로그아웃</button>}
       </div>
       <div className="cpu-grid">
         {cpus.map((cpu) => {

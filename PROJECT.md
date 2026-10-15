@@ -4,9 +4,12 @@
 
 기존 웹 서비스형 일본 리치마작 게임을 Windows 독립 실행 오프라인 게임으로 전환한다.
 기존 저장소 `danhk0612/no-riichi-no-fuku`를 계속 사용한다. 새 저장소가 필요한 근거는 없다.
-현재 제품은 React/FastAPI/PostgreSQL/Compose 웹 게임이며 Windows판은 아직 구현되지 않았다.
-초기 분석·W01 회귀 기준·W02 격리 실행 검증을 마쳤다. W03에서 실행/저장/프로필 정책을
-사용자 승인으로 확정했고 다음 구현은 W04다. 완료/미검증 사실은 CURRENT_STATE를 따른다.
+기존 서비스는 React/FastAPI/PostgreSQL/Compose 웹 게임이다. W05에서 Electron + frozen local
+engine의 Windows x64 실행 경로를 구현하고 Windows CI renderer smoke를 준비했다. 이 빌드는
+정식 Release가 아니며 최소 client Windows 버전·사용자 PC 실기 범위는 아직 확인되지 않았다.
+초기 분석·W01 회귀 기준·W02 격리 실행 검증과 W04 로컬 저장 전환을 마쳤고, W03에서 실행/저장/
+프로필 정책을 확정했다. 다음 진행 정책 구현 W06은 D04 사용자 결정 전까지 시작하지 않는다.
+완료/미검증 사실은 CURRENT_STATE를 따른다.
 
 ## 확정 방향
 

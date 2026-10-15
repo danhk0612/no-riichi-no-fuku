@@ -6,10 +6,13 @@ import {
   createGameSession,
   gameWebSocketUrl,
   getActiveGameSession,
+  getProfile,
+  getRecentGameSession,
   getResultAssetObjectUrl,
   getSelectableCpus,
   loginMember,
   registerMember,
+  updatePlayerName,
 } from './api'
 import { MahjongTable } from './game/MahjongTable'
 import type {
@@ -21,6 +24,12 @@ import type {
   PlayerSeat,
 } from './game/types'
 import './style.css'
+
+declare global {
+  interface Window { nrnfDesktop?: { isDesktop: true } }
+}
+
+const DESKTOP_SESSION = 'local-desktop-session'
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
@@ -35,9 +44,14 @@ function App() {
   const [busy, setBusy] = useState(false)
   const [actionPending, setActionPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [desktopProfile, setDesktopProfile] = useState<string | null>(null)
+  const [profileName, setProfileName] = useState('')
+  const [profileBusy, setProfileBusy] = useState(false)
   const socketRef = useRef<WebSocket | null>(null)
   const resultAssetUrlRef = useRef<string | null>(null)
   const resultAssetLoadVersionRef = useRef(0)
+  const desktopStartedRef = useRef(false)
+  const isDesktop = window.nrnfDesktop?.isDesktop === true
 
   useEffect(() => () => {
     socketRef.current?.close(1000)
@@ -59,7 +73,13 @@ function App() {
   }
 
   async function enterAuthenticated(token: string) {
-    const activeGame = await getActiveGameSession(token)
+    if (isDesktop) {
+      const profile = await getProfile(token)
+      setDesktopProfile(profile.player_name ?? '플레이어')
+      setProfileName(profile.player_name ?? '플레이어')
+    }
+    let activeGame = await getActiveGameSession(token)
+    if (!activeGame && isDesktop) activeGame = await getRecentGameSession(token)
     if (activeGame) {
       setAccessToken(token)
       setPlayers(activeGame.players)
@@ -70,6 +90,29 @@ function App() {
     }
     await loadCpus(token)
     setAccessToken(token)
+  }
+
+  useEffect(() => {
+    if (!isDesktop || desktopStartedRef.current) return
+    desktopStartedRef.current = true
+    void enterAuthenticated(DESKTOP_SESSION).catch((caught: unknown) => {
+      setError(errorMessage(caught))
+    })
+  }, [isDesktop])
+
+  async function savePlayerName() {
+    if (!accessToken || !isDesktop) return
+    setProfileBusy(true)
+    setError(null)
+    try {
+      const profile = await updatePlayerName(accessToken, profileName.trim())
+      setDesktopProfile(profile.player_name ?? '플레이어')
+      setProfileName(profile.player_name ?? '플레이어')
+    } catch (caught) {
+      setError(errorMessage(caught))
+    } finally {
+      setProfileBusy(false)
+    }
   }
 
   async function authenticate(loginId: string, password: string) {
@@ -212,7 +255,10 @@ function App() {
       if (socketRef.current !== socket) return
       if (!completed) {
         setActionPending(true)
-        setError(`게임 연결이 종료되었습니다. (${event.code}) 새로고침 후 다시 로그인하면 저장된 대국에 복귀할 수 있습니다.`)
+        const recovery = isDesktop
+          ? '새로고침 후 저장된 대국에 복귀할 수 있습니다.'
+          : '새로고침 후 다시 로그인하면 저장된 대국에 복귀할 수 있습니다.'
+        setError(`게임 연결이 종료되었습니다. (${event.code}) ${recovery}`)
       }
       socketRef.current = null
     })
@@ -286,7 +332,7 @@ function App() {
         <h1>No Riichi No Fuku</h1>
         <p>플레이어 1명과 CPU 3명이 진행하는 동풍전</p>
       </header>
-      {!accessToken && (
+      {!isDesktop && !accessToken && (
         <AuthPanel
           busy={busy}
           error={error}
@@ -294,21 +340,31 @@ function App() {
           onRegister={register}
         />
       )}
+      {isDesktop && !accessToken && (
+        <p className={error ? 'form-error' : 'waiting-panel'} role={error ? 'alert' : 'status'}>
+          {error ?? '로컬 프로필을 불러오는 중…'}
+        </p>
+      )}
       {accessToken && cpus && (
-        <CpuSelection
-          busy={busy}
-          cpus={cpus}
-          error={error}
-          onLogout={logout}
-          onStart={startGame}
-          onToggle={toggleCpu}
-          selectedIds={selectedCpuIds}
-        />
+        <>
+          {isDesktop && <ProfileEditor busy={profileBusy} name={profileName} onNameChange={setProfileName} onSave={savePlayerName} />}
+          <CpuSelection
+            busy={busy}
+            cpus={cpus}
+            error={error}
+            onLogout={logout}
+            showLogout={!isDesktop}
+            onStart={startGame}
+            onToggle={toggleCpu}
+            selectedIds={selectedCpuIds}
+          />
+        </>
       )}
       {accessToken && !cpus && (
         <>
           <div className="game-toolbar">
-            <span>{players.map((player) => player.name).join(' · ')}</span>
+            {isDesktop && <ProfileEditor busy={profileBusy} name={profileName} onNameChange={setProfileName} onSave={savePlayerName} />}
+            <span>{players.map((player) => player.name).join(' · ') || desktopProfile}</span>
           </div>
           {error && <p className="form-error" role="alert">{error}</p>}
           <MahjongTable
@@ -320,6 +376,20 @@ function App() {
         </>
       )}
     </main>
+  )
+}
+
+function ProfileEditor({ busy, name, onNameChange, onSave }: {
+  busy: boolean
+  name: string
+  onNameChange: (value: string) => void
+  onSave: () => void
+}) {
+  return (
+    <div className="profile-editor">
+      <label>플레이어 이름 <input aria-label="플레이어 이름" maxLength={80} value={name} onChange={(event) => onNameChange(event.target.value)} /></label>
+      <button disabled={busy || !name.trim()} onClick={onSave} type="button">이름 저장</button>
+    </div>
   )
 }
 

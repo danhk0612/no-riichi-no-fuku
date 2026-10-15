@@ -304,7 +304,12 @@ async def game_session_websocket(
             return
         local_runtime = getattr(websocket.app.state, "local_runtime", None)
         if local_runtime is not None:
-            user = local_runtime.websocket_member(message.get("capability"))
+            # Desktop host attaches this over its private loopback request hook;
+            # retain the W04 message path for in-process/local-runtime tests.
+            capability = websocket.headers.get("x-local-capability")
+            if capability is None:
+                capability = message.get("capability")
+            user = local_runtime.websocket_member(capability)
         else:
             user = authenticate_websocket_member(
                 message.get("access_token"), settings, session_factory

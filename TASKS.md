@@ -12,7 +12,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W02 | Windows 실행·엔진 번들 기술 검증 | P0 / 기술 검증 완료(Windows CI, 사용자 실기 미검증) | W01 | 고성능 Work |
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 정책·W04/W05 계약 확정 | W02 | 고성능 Chat |
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 완료(PR #61 병합) | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
-| W05 | Windows shell·오프라인 게임 통합 | P0 / PR #63 종료 경로 보완 필요 | W04 | 저성능 Work |
+| W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows hosted 검증·최종 검토 통과(개인 실기 미검증) | W04 | 저성능 Work |
 | W06 | 진행 규칙 결정·게임 회귀 | P0 / 결정 대기 | W05, D04 | 고성능 Chat → 저성능 Work |
 | W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 목록·후보 관리 | P1 / 대기 | W05, W07 | 저성능 Work |
@@ -199,31 +199,12 @@ local 전용 write intent·동시 읽기·기본 engine의 원본 transaction �
 실패/rollback/cache eviction·재시작 후 exactly-once를 보완했다. 최종 code `455d400`의 실행
 결과는 CURRENT_STATE를 따른다. 기존 보완 지시/성공 이력은 PR #61/#62와 Git에 보존한다.
 
-## 다음 Work에 입력할 지시문
+## 다음 작업 제한
 
-```text
-https://github.com/danhk0612/no-riichi-no-fuku 의 W05 PR #63 보완만 수행해.
-최신 main·열린 PR·AGENTS.md와 루트 기준 문서부터 확인하고 task/w05-windows-shell을 이어 써.
-검토 head는 5d249962dd1aff9d943cc2f4fc0e62a0a6a4735f이며 기존 성공 Windows code는 c9cb8515다.
-CURRENT_STATE의 W05 검토 결과를 읽어. W05를 처음부터 재구현하지 마.
+W05 PR #63은 종료 보완과 실제 포트 bind 충돌 검사 보완 code `a45abce`의 Windows CI/artifact를
+대조해 최종 검토를 통과했다. 최신 병합 상태/SHA는 PR #63 및 Git을 따른다. Release/tag는 만들지 않았다.
 
-일반 모드 finishQuit가 quitting=true/window.destroy 후 window-all-closed→app.quit로
-stopEngine보다 먼저 종료되는 문제를 수정해. --smoke에서만 통과하는 우회를 없애고
-X/Alt+F4/app.quit·연속 종료 요청을 같은 orchestration으로 처리해.
-입력을 중단하고 이미 시작한 저장 transaction 및 소유 engine의 close를 기다린 뒤에만
-최종 Electron 종료를 허용해. timeout 때 소유 child만 회수하고 다른 프로세스는 건드리지 마.
-수정 전 실패/수정 후 통과하는 종료 순서 검사를 추가해. Windows packaged 일반 모드
-(--smoke 없음)의 programmatic window close/app.quit·지연 종료 child·timeout·재진입을 검사해.
-종료 전후 PID/child close/host exit 순서 및 DB 재실행 복구 증거를 수집해.
-기존 packaged renderer 대국/active 복구/완료 재접속과 source 회귀도 유지해.
-
-모든 실행 검사는 명시적 임시 data root를 사용해. capability를 URL/명령줄/로그/DB/artifact에
-넣지 마. 사용자 LocalAppData·웹 DB/미디어를 검사에 사용하지 마.
-현재 수정 source SHA로 Windows CI/artifact를 다시 확인하고 기존 성공 이력을 보존하되
-일반 모드 종료 완료로 오인시키는 문서/PR 본문을 갱신해. main의 검토 문서와 충돌을 조정해.
-게임 규칙·CPU/policy/seed/replay·진행 정책·ComfyUI·지원 OS/Python 교체를 범위에 섞지 마.
-W06은 D04 결정 전 시작하지 마. commit/push 및 기존 PR 갱신까지 진행해.
-직접 병합·Release/tag는 하지 마. 최종 보고에 정확한 SHA/CI/artifact·검증/미검증을 포함해.
-```
-
-권장 환경: **저성능 Work**. 확정된 W05 종료 계약의 결함 보완이며 새 구조/진행 정책 결정은 없다.
+다음 구현 Work는 시작하지 않는다. D04의 CPU 3명 미만, 전체 CPU 완료/엔딩, HP 0 이후 정책이
+미결정이므로 먼저 고성능 Chat에서 사용자 결정을 확정한다. W06 구현은 그 결정과 별도 지시 이후에만
+착수한다. 개인 Windows/물리 종료·OS internet-off·Python 보안 patch 공급은 별도 후속 검증으로
+유지하며 W06에 임의로 포함하지 않는다.

@@ -2,52 +2,83 @@
 
 ## 기준
 
-- 확인일: 2026-10-15. W05 검토 기준 main `99dd432e09d9029c495a6817bae4e42aaebb28ab`.
-- W04 제품 코드 검증 SHA는 `455d400c4a8ddf11eaa0e3d676317c80b9a553b2`이다.
-  PR #61은 main에 병합됐다. W05 PR #63은 종료 경로 보완 전 병합하지 않는다.
+- 확인일: 2026-10-15. W05 보완 기준 main `4f09869`; PR #63 수정 source SHA는 `7d9a20b97f7ef60b5dda4a43a24d3cbf08723ffb`.
+- W04 제품 코드 검증 SHA는 `455d400c4a8ddf11eaa0e3d676317c80b9a553b2`이다. PR #61은 main에 병합됐다. W05 PR #63은 최종 검토와 Windows 검증을 마쳤다. 최신 병합 상태/SHA는 PR #63 및 Git을 따른다.
 - PR #56(W00)·#57(W01)·#58(인계)는 main에 병합됐다. 열린 #35는 기존 Docker 문서이며 건드리지 않는다.
 - W01 baseline 이후 W04는 local runtime·DB 연결/권한 경계·관련 회귀만 추가/수정했다.
   CPU/규칙/정산 핵심·legacy fixture·기존 frontend는 보존했다.
 - W02 PR #59를 병합했다. 검증 code SHA 이후 변경은 기준 문서 4개뿐이며,
   CI job/다운로드 artifact의 source SHA·내외 ZIP hash·browser/frozen/renderer 증거를 다시 대조했다.
   이번 검토는 기존 Windows 실행 증거 검토이며 Windows를 새로 실행한 결과가 아니다.
-- 로컬 저장/runtime은 W04에 구현됐고 Windows 실행창·번들·로그인 없는 화면 진입은 아직 없다. W02 Windows Actions/PR #59 artifact·사용자 증거 첨부 경로와
-  격리 후보 검증은 아래에 기록한다. 후보 통과를 제품 완료 또는 최종 기술 채택으로 해석하지 않는다.
+- 로컬 저장/runtime은 W04, Windows 실행창·번들·로그인 없는 진입은 W05 PR #63에 구현됐다. 정확한 W05 Windows 결과와 남은 사용자 PC 제한은 아래에서 구분한다.
 - Wayward 참고는 W00의 `5d80f118c590319881be34faba8214a0c3765fc2` 조사뿐이다.
   W02는 참고 코드 복사·ZIP 분석·이미지 생성·사용자 데이터 연결을 하지 않는다.
 
-## W05 PR #63 — 검토 결과, 종료 경로 보완 필요
+## W05 최종 검토 — 종료 및 실제 포트 충돌 검증
 
-검토 head `5d249962dd1aff9d943cc2f4fc0e62a0a6a4735f`; 제품·검사·workflow는 Windows 검증
-code `c9cb8515a50c4a2387ca70a5be42b11cf9a7029e`와 같고 이후 변경은 CURRENT_STATE뿐이다.
-Electron host/private pipe capability·frozen engine·same-origin React·로컬 이름 편집·active/최근
-완료 결과 복귀가 PR에 구현됐다. 아직 main의 구현으로 간주하지 않는다.
+일반 종료 보완을 재검토하고 Node 종료 순서 회귀 3개를 다시 통과했다. 이전 final head
+`5b3c58a45ff8289d6ea91d0d26a4bc17860900c5`의 Windows run 38688037360/artifact 11950014750을
+내려받아 source SHA, archive SHA256 `1a66154bdb9275157f01ff44b136cd2d59e309fbf24ba1281c9f16df234168a8`,
+내부 ZIP `cbcaf0da8e3752e92d83cd2860e2e100c229af44c3cce4af82a95a44beddbe76` 및
+두 일반 모드 실행의 engine close→window destroy→host exit(0)를 확인했다.
 
-Windows Server 2022 x64 run [38666626946](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38666626946)
-job 116199947741은 source unittest 81/대사 pytest 10, React build, freeze/package, renderer smoke,
-ZIP 생성이 success다. artifact 11942211016을 내려받아 source SHA, renderer checks 및 archive
-SHA256 `edb5521f7d81428a66c790df1f78547bc4e9c01bfe7b9ed7adc14c31906efe74` 일치를 확인했다.
-smoke에서 이름 저장, active 복구, 실제 대국 완료, 완료 재접속, 충돌/소유 child 회수는 통과했다.
-이번 Linux 재검사도 unittest 81(36.818초)/pytest 10(0.08초), npm ci/build 통과다.
+추가 검토에서 포트 충돌 smoke의 collision-data 폴더가 없어 engine bind 전에 spawn/cwd 오류로
+통과할 수 있음을 발견했다. 같은 spawn 조건의 Node 검사에서 ENOENT/engine 미실행을 재현했다.
+`a45abce5856bba4870d9a1ebe99690204808468c`는 시험 폴더를 먼저 만들고 실제 Windows bind
+오류(10048/address already in use)와 무관 listener 생존을 모두 확인한다. 제품 게임 동작 변경은 없다.
+Linux 실제 engine 점유 포트 시험도 bind 오류로 실패하고 무관 listener는 유지됐다.
+Linux source unittest 81개(35.923초), 대사 pytest 10개(0.09초), Node 회귀 3개 통과.
 
-**병합 차단:** `desktop/main.cjs`의 일반 실행 창 종료는 engine 회수 완료 전에 app 종료를 허용한다.
-`finishQuit()`가 quitting=true 후 window.destroy()를 호출하면 마지막 창의 window-all-closed
-handler가 !smoke에서 app.quit()를 호출한다. before-quit는 quitting=true여서 차단하지 않는다.
-그 뒤에야 100ms delay와 stopEngine()이 이어진다. 현재 함수·handler를 Node VM/EventEmitter로
-실행해 `window.destroy → app.quit allowed=true → delay → stopEngine → app.quit allowed=true`
-순서를 재현했다. 이는 Windows 실기 재현이 아니라 실제 소스의 제어 흐름 검사다.
-엔진의 stdin EOF 종료 시도가 있더라도 host가 완료/timeout/회수를 기다린다는 계약은 보장되지 않는다.
+최종 code의 Windows Server 2022 x64 [push CI 38691436063](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38691436063)은
+unittest 81/pytest 10·React build·engine freeze/Electron package·renderer smoke·일반 모드
+종료/동일 data-root 재실행·ZIP 생성 모두 success다. exact-source artifact `11951374188`
+`w05-windows-a45abce5856bba4870d9a1ebe99690204808468c`의 archive SHA256은
+`3e710f282b37c67c13cb044dcc43f9882f34a82c2c80f0e77ad0ab17852eb38f`이며 2026-10-29 만료다.
+다운로드 archive/source-sha 및 로그의 unittest 81(62.085초)/pytest 10(0.14초)을 대조했다.
+내부 Windows ZIP SHA256 `821052f34c1b0c207807dd5a5e1eecf19f15e423bc739e344317fea3ff916e55`도
+기록과 일치했다. Renderer evidence에서 실제 Errno/WinError 10048과 무관 listener 보존,
+일반 모드 두 실행의 child close→창 파괴→host exit(0) 순서를 다시 확인했다.
+기존 검증은 아래에 보존한다. 후속 문서 commit은 이 code와 동일한 제품/검사에 한해서만
+위 결과를 이어받는다. 개인 PC/물리 X·Alt+F4/OS network-off/clean-machine VC runtime/전원 차단과
+장기 Python patch는 미검증이다. W05 검토를 통과했으며 다음은 D04 정책 결정이다.
+W06 구현·Release/tag는 하지 않는다.
 
-기존 --smoke는 window-all-closed의 종료 분기를 건너뛰어 이 결함을 검사하지 못한다.
-일반 실행의 X/Alt+F4/app.quit 경로를 공통 종료 orchestration으로 연결하고, 소유 engine의 close를
-기다린 뒤에만 최종 app 종료를 허용해야 한다. 대기 중 재진입/중복 quit에도 동일하게 적용한다.
-수정 전 실패하는 회귀 및 Windows packaged 일반 모드 종료 검사를 추가하고 정확한 수정 SHA의
-CI/artifact를 재확인한다. renderer와 engine을 함께 종료·재실행한 저장 복구도 확인한다.
+## W05 PR #63 — 일반 모드 종료 보완 및 Windows 검증
 
-개인 Windows/물리 X 클릭·OS network-off·최소 client OS·clean-machine VC runtime·전원 차단과
-장기 Python 보안 patch는 별도 미검증이다. 기존 smoke 성공 이력은 보존한다. PR #63은 열린 채로
-보완하며 W06은 D04 결정 전 착수하지 않는다. 다음 Work 지시문은 TASKS를 따른다.
+검토 기준은 당시 PR head `5d249962dd1aff9d943cc2f4fc0e62a0a6a4735f`였다. source 제어 흐름에서
+`finishQuit()`가 마지막 창을 파괴한 뒤 `window-all-closed → app.quit()`가 엔진 정지보다 먼저
+허용되는 것을 확인했다. 당시 Windows `--smoke` 증거는 해당 분기를 실행하지 않아 이 결함을
+보장하지 않았다. 기존 검토와 code `c9cb8515`의 성공 근거는 아래에 보존한다.
 
+보완 source `7d9a20b97f7ef60b5dda4a43a24d3cbf08723ffb`는 종료 요청을 단일 공유 Promise로 조정한다.
+창 닫기와 `app.quit()`/`window-all-closed`가 같은 경로를 사용하고, 즉시 창 입력을 막은 뒤
+소유 engine의 graceful close/종료를 기다린다. 정상 close 또는 timeout 후 해당 소유 child를 회수한
+뒤 창을 파괴하고 최종 Electron 종료를 허용한다. child 회수에 실패하면 종료를 허용하지 않고
+다시 시도할 수 있다. 다른 프로세스에는 종료 신호를 보내지 않는다.
+
+로컬 Linux/Python 3.12.14에서 backend unittest 81개, 대사 pytest 10개, `npm ci && npm run build`,
+Node 종료 조정 회귀 3개와 JS syntax 검사가 통과했다. 변경 전 재현은 기존 검토 당시 Node
+VM/EventEmitter source-control-flow 실행 결과이며 Windows 실기 결과와 구분한다.
+
+수정 SHA의 Windows Server 2022 x64 push run [38687286437](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38687286437)은 전체 성공했다. Python 3.12.10 x64 / Node 24.19.0에서 backend unittest 81,
+대사 pytest 10, React production build, frozen engine, Electron package와 두 packaged 실행 경로가
+통과했다. artifact `11950398716` (`w05-windows-7d9a20b97f7ef60b5dda4a43a24d3cbf08723ffb`)의
+`source-sha.txt`는 정확히 수정 SHA와 일치했다. 내부 Windows ZIP SHA256은
+`8b5ba202b3d5d12f46b09dd95948cf309f003004f8663b85e0fe43a1b4e23baa`이며 artifact 기록값과
+내부 archive를 내려받아 직접 계산한 값이 일치했다.
+
+기존 packaged renderer smoke도 유지했다: 로그인 없는 진입·프로필 이름 저장·active 대국 엔진
+재시작 복구·실제 대국 완료·완료 결과 재접속/중복 정산 방지 등 11개 check가 모두 통과했다.
+별도 명시 임시 data root에서 실행한 packaged 일반 모드(`--smoke` 없음)는 programmatic
+`window.close()` 후 반복 `app.quit()`을 받았다. 두 실행 모두 Windows evidence에서
+`engine PID close → window destroyed → host PID exit(0)` 순서가 확인됐고, nonresponsive 테스트
+child는 별도 PID로 timeout 강제 회수됐다. 같은 data root로 두 번째 packaged 실행도 성공했다.
+
+기존 성공 code `c9cb8515a50c4a2387ca70a5be42b11cf9a7029e`의 run `38666626946`/artifact
+`11942211016` 이력은 보존한다. 그 artifact는 종료 결함을 검사하지 않았다. 새 결과와 혼동하지 않는다.
+Windows 10/11 개인 PC, 물리 title-bar X/Alt+F4, OS 수준 internet-off, clean-machine VC runtime,
+전원 차단 durability, 장기 Python 보안 patch 공급은 미검증이다. PR #63은 열려 있고 병합·Release/tag는
+하지 않았다. D04 미결 상태이므로 W06 구현도 시작하지 않는다.
 ## W04 PR #61 — 최종 검토·보완 결과
 
 2026-10-15 W04 보완과 재검토를 수행했다. 사용자 프로필 수정은 요청 Session과 공유하고,

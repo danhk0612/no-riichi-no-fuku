@@ -322,6 +322,9 @@ class LocalRuntimeTests(unittest.TestCase):
                 active = client.get("/api/game/sessions/active", headers=headers)
                 self.assertEqual(active.status_code, 200)
                 self.assertEqual(active.json()["session_id"], session_id)
+                recent = client.get("/api/game/sessions/recent", headers=headers)
+                self.assertEqual(recent.status_code, 200)
+                self.assertEqual(recent.json()["session_id"], session_id)
                 with client.websocket_connect(
                     f"/api/game/sessions/{session_id}/ws"
                 ) as websocket:
@@ -440,6 +443,14 @@ class LocalRuntimeTests(unittest.TestCase):
                 )
                 self.assertEqual(created.status_code, 201)
                 session_id = created.json()["session_id"]
+                with client.websocket_connect(
+                    f"/api/game/sessions/{session_id}/ws",
+                    headers={"X-Local-Capability": runtime.capability},
+                ) as websocket:
+                    websocket.send_json(
+                        {"type": "authenticate", "capability": "ignored-renderer-value"}
+                    )
+                    self.assertEqual(websocket.receive_json()["type"], "human_turn")
                 with client.websocket_connect(
                     f"/api/game/sessions/{session_id}/ws"
                 ) as websocket:
@@ -621,6 +632,9 @@ class LocalRuntimeTests(unittest.TestCase):
                 self.assertEqual(results[0], results[1])
                 self.assertEqual(results[0]["result"]["scores"], list(final_result.scores))
                 self.assertEqual(results[0]["result"]["ranks"], list(final_result.ranks))
+                recent = client.get("/api/game/sessions/recent", headers=headers)
+                self.assertEqual(recent.status_code, 200)
+                self.assertEqual(recent.json()["session_id"], session_id)
                 with restarted.session_factory() as session:
                     record = session.get(GameSessionRecord, session_id)
                     self.assertEqual(record.status, "completed")

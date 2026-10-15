@@ -150,9 +150,14 @@ Electron은 한 data root의 단일 소유 host로 동작하고 번들 engine을
 session으로 진입한다. renderer Node 비활성/contextIsolation/sandbox를 유지한다.
 engine/DB 구현은 W04 결과를 사용하며 spike의 임시 DB·시험 seed/stage·시험 helper를
 제품 진입점으로 복사하지 않는다. 이름 편집·일반 대국 화면은 기존 자산을 활용한다.
-정상 종료 시 새 입력을 멈추고 이미 승인된 transaction을 마친 뒤 owned engine의 종료를
-요청/대기한다. 다른 프로그램·ComfyUI를 종료하지 않는다. 강제 종료 후 복구 범위는 마지막
-commit까지이며 host crash/전원 차단의 실기 검증은 별도로 한다.
+정상 종료는 `desktop/quit.cjs`의 단일 quit coordinator를 거친다. 창 닫기(X/Alt+F4),
+`app.quit()`, 마지막 창 종료 이벤트는 같은 공유 Promise를 사용한다. host는 우선 창 입력을
+막고 engine의 graceful shutdown을 요청한다. engine은 진행 중인 요청/저장 처리를 마치고 닫히며,
+timeout 시 host는 자신이 소유한 child만 강제 회수한다. child close가 확인된 뒤 창을 파괴하고
+최종 Electron 종료를 허용한다. 회수 실패 때는 종료를 허용하지 않고 다시 시도할 수 있다.
+Windows packaged 일반 모드의 programmatic close/반복 quit·timeout·PID 종료 순서와 같은 data root
+재실행을 검증했다. 기존 active 대국 저장 복구도 renderer smoke에서 engine 재시작 후 확인했다.
+다른 프로그램·ComfyUI를 종료하지 않는다. host crash/전원 차단은 별도 미검증이다.
 배포용 Python binary/지원 OS의 남은 조건은 번들 검증 전에 확인하고 필요한 선택 변경은 사용자에게 제시한다.
 캐릭터/공유 목록/생성 설정 관리 화면의 실제 기능은 W08~W11이며 W05에 앞당겨 구현하지 않는다.
 
