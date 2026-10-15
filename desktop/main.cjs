@@ -299,9 +299,9 @@ async function startMatchFromRenderer() {
   await waitForRenderer("Boolean(document.querySelector('.human-controls') || document.querySelector('.match-result'))", 90000)
 }
 
-async function smokeRun() {
+async function smokePreflight() {
   evidence.smokeStarted = true
-  evidence.phase = 'smoke started'
+  evidence.phase = 'preflight before engine startup'
   writeEvidence()
   const scratch = join(dataRoot, 'w05-ci-scratch')
   mkdirSync(scratch, { recursive: true })
@@ -334,9 +334,11 @@ async function smokeRun() {
   if (!collisionRejected || !occupied.listening) throw new Error('port collision affected an unrelated listener')
   addCheck('occupied port rejected; unrelated listener remained open')
   await new Promise(resolveClose => occupied.close(resolveClose))
+}
 
-  await spawnEngine(dataRoot)
-  configureRequestBoundary()
+async function smokeRun() {
+  evidence.phase = 'renderer smoke'
+  writeEvidence()
   await verifyDuplicateEngineIsRejected(dataRoot)
   addCheck('duplicate engine could not acquire the active local data root')
   makeWindow(false)
@@ -472,6 +474,7 @@ else {
       writeEvidence()
       if (bootstrapError) throw bootstrapError
       mkdirSync(dataRoot, { recursive: true })
+      if (smoke) await smokePreflight()
       await spawnEngine(dataRoot)
       evidence.startup = 'engine ready'
       writeEvidence()
