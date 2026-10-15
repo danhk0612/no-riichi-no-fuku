@@ -660,25 +660,21 @@ async function smokeRun() {
         const path = new URL(typeof input === 'string' ? input : input.url, window.location.href).pathname
         if (path === '/api/local/play/reset') {
           window.fetch = originalFetch
+          window.__w06ResetFailureInjected = true
           throw new TypeError('injected reset failure before request')
         }
         return originalFetch(input, init)
       }
       document.querySelector('.game-toolbar > button.text-button')?.click()
     })()`)
-    await waitForRenderer("Boolean(document.querySelector('.human-controls'))", 30000)
+    await waitForRenderer("window.__w06ResetFailureInjected === true && Boolean(document.querySelector('.human-controls')) && document.querySelector('.game-toolbar > button.text-button:not([disabled])') && (document.querySelector('.human-controls .hand button:not([disabled])') || document.querySelector('.human-controls .action-bar button:not([disabled])'))", 30000)
     const activeAfterFailedReset = await fetch(`${origin}/api/game/sessions/active`, {
       headers: { 'X-Local-Capability': capability },
     }).then(response => response.json())
     if (!activeAfterFailedReset) throw new Error('uncommitted reset recovery lost the active match')
     addCheck('renderer restored active turn after uncommitted reset failure')
-    await window.webContents.reload()
-    await waitForRenderer("Boolean(document.querySelector('.human-controls'))", 90000)
-    const reconnectedTurn = await fetch(`${origin}/api/game/sessions/active`, {
-      headers: { 'X-Local-Capability': capability },
-    }).then(response => response.json())
-    if (!reconnectedTurn) throw new Error('active turn was lost while reconnecting after reset failure')
-    addCheck('active turn reconnected after reset failure recovery')
+    await clickHumanAction()
+    addCheck('next action completed after reset failure recovery without renderer reload')
   }
   if (await window.webContents.executeJavaScript("Boolean(document.querySelector('.human-controls'))")) {
     let recoveryCheckpoint = false
