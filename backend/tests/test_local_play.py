@@ -364,6 +364,7 @@ class LocalPlayTests(unittest.TestCase):
             with runtime.session_factory.begin() as session:
                 record = session.get(GameSessionRecord, session_id)
                 record.rules_snapshot = None  # legacy active snapshot linked to this local generation
+                record.human_action_indices = [4]  # preserve a committed legacy action before the delayed settlement
             with runtime.session_factory() as session:
                 registered = runtime.registry.get_owned(session, session_id, runtime.member_id)
                 registered.game = _FinishedGame((1, 2, 3, 4))
