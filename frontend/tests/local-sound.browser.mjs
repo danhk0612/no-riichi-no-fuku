@@ -20,6 +20,7 @@ try {
       audio.__playCount = 0
       audio.play = () => {
         audio.__playCount += 1; window.__soundPlayCount += 1
+        if (window.__deferNextPlay) { window.__deferNextPlay = false; return new Promise((resolve, reject) => { window.__rejectDeferredPlay = () => reject(new Error('late mock play rejection')) }) }
         if (window.__rejectNextPlay) { window.__rejectNextPlay = false; return Promise.reject(new Error('mock autoplay rejected')) }
         return Promise.resolve()
       }
@@ -166,6 +167,19 @@ try {
   await page.getByRole('button', { name: '배경음 재생' }).click()
   await page.waitForFunction(() => window.__audioInstances[4].__playCount === 2)
   assert.equal(await page.evaluate(() => window.__audioInstances.length), 5, 'same track ID with replaced media must use the new media')
+  // A user retry belongs to this Audio, even if its promise settles after a media replacement.
+  await page.evaluate(() => { window.__rejectNextPlay = true; window.__audioInstances[4].dispatchEvent(new Event('ended')) })
+  await page.getByRole('button', { name: '배경음 재생' }).waitFor()
+  await page.evaluate(() => { window.__deferNextPlay = true })
+  await page.getByRole('button', { name: '배경음 재생' }).click()
+  await page.waitForFunction(() => typeof window.__rejectDeferredPlay === 'function')
+  await trackARow.getByRole('button', { name: '편집' }).click()
+  await page.getByLabel('오디오 파일').selectOption('asset-a')
+  await page.getByRole('button', { name: '배경음 수정 저장' }).click()
+  await page.waitForFunction(() => window.__audioInstances.length === 6)
+  await page.evaluate(() => window.__rejectDeferredPlay())
+  await page.waitForTimeout(50)
+  assert.equal(await page.getByRole('button', { name: '배경음 재생' }).count(), 0, 'discarded retry rejection must not block the replacement Audio')
   assert.equal(await page.getByRole('button', { name: '1번 배경음 선택 해제' }).count(), 1)
   await page.getByRole('button', { name: '닫기' }).click()
   for (const card of await page.locator('button.cpu-card:not([disabled])').all()) await card.click()
@@ -173,11 +187,13 @@ try {
   await page.locator('.human-controls').waitFor()
   assert.ok(socket)
   const beforeSfx = await page.evaluate(() => window.__audioInstances.length)
+  await page.evaluate(() => { window.__deferNextPlay = true })
   const effect = { type: 'sound_effect', generation: play.generation, session_id: 'sound-match', action_version: 1, event_index: 0, event_key: 'ron', asset_id: 'audio-sfx', url: '/api/local/media/asset-sfx/file' }
   socket.send(JSON.stringify(effect))
   socket.send(JSON.stringify(effect))
   const lateEffect = { ...effect, action_version: 2, event_index: 1, event_key: 'tsumo', url: '/api/local/media/asset-sfx-late/file' }
   const delayedSfxLoad = page.waitForRequest((request) => request.url().includes('/asset-sfx-late/'))
+  const delayedSfxResponse = page.waitForResponse((response) => response.url().includes('/asset-sfx-late/'))
   socket.send(JSON.stringify(lateEffect))
   await delayedSfxLoad
   completed = true
@@ -197,7 +213,10 @@ try {
   await page.evaluate(() => { window.confirm = () => true })
   await page.getByRole('button', { name: '초기화' }).click()
   await page.locator('.selection-panel').waitFor()
-  await page.waitForTimeout(350)
+  await page.evaluate(() => window.__rejectDeferredPlay())
+  await (await delayedSfxResponse).finished()
+  await page.waitForTimeout(50)
+  assert.equal(await page.getByText('효과음을 재생할 수 없습니다.', { exact: true }).count(), 0, 'discarded SFX play rejection must not show an error after reset')
   assert.equal(await page.evaluate(() => window.__audioInstances.length), beforeSfx + 1, 'late SFX fetch after reset/new generation must not create audio')
   assert.deepEqual(errors, [])
   assert.equal(disabledSetClearSaved, true)

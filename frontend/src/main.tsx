@@ -335,7 +335,13 @@ function App() {
           }
           audio.addEventListener('ended', release, { once: true })
           audio.addEventListener('error', release, { once: true })
-          void audio.play().catch(() => { release(); setSoundError('효과음을 재생할 수 없습니다.') })
+          void audio.play().catch(() => {
+            const current = audioToken === gameAudioTokenRef.current
+              && message.generation === localGenerationRef.current
+              && activeSoundEffectsRef.current.get(identity)?.audio === audio
+            release()
+            if (current) setSoundError('효과음을 재생할 수 없습니다.')
+          })
         }).catch(() => {})
         return
       }
@@ -703,7 +709,9 @@ function BackgroundMusic({ accessToken, selection, paused }: { accessToken: stri
   return <button className="text-button audio-resume" type="button" onClick={() => {
     const activeAudio = audioRef.current?.audio
     if (retryRequired || !activeAudio) { setBlocked(false); setRetryToken((current) => current + 1); return }
-    void activeAudio.play().then(() => setBlocked(false)).catch(() => setBlocked(true))
+    void activeAudio.play()
+      .then(() => { if (audioRef.current?.audio === activeAudio) setBlocked(false) })
+      .catch(() => { if (audioRef.current?.audio === activeAudio) setBlocked(true) })
   }}>배경음 재생</button>
 }
 
