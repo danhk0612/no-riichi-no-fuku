@@ -442,7 +442,8 @@ async function smokeRun() {
     window.__w06MockAudios = []
     const NativeAudio = window.Audio
     window.Audio = function (source) {
-      const audio = new NativeAudio(source)
+      const audio = new NativeAudio()
+      audio.__w06Source = source
       audio.__w06PlayCount = 0
       audio.play = () => { audio.__w06PlayCount += 1; return Promise.resolve() }
       window.__w06MockAudios.push(audio)

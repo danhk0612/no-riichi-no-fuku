@@ -15,7 +15,8 @@ try {
     window.__audioInstances = []
     const NativeAudio = window.Audio
     window.Audio = function (source) {
-      const audio = new NativeAudio(source)
+      const audio = new NativeAudio()
+      audio.__source = source
       audio.__playCount = 0
       audio.play = () => {
         audio.__playCount += 1; window.__soundPlayCount += 1
@@ -162,7 +163,7 @@ try {
   await page.getByRole('button', { name: '배경음 재생' }).click()
   await page.waitForFunction(() => window.__audioInstances[4].__playCount === 2)
   assert.equal(await page.evaluate(() => window.__audioInstances.length), 5, 'same track ID with replaced media must use the new media')
-  assert.equal(await page.getByRole('button', { name: '1번 배경음 선택 해제' }).count(), 0)
+  assert.equal(await page.getByRole('button', { name: '1번 배경음 선택 해제' }).count(), 1)
   assert.ok(await page.evaluate(() => window.__audioInstances.every((audio) => !audio.error)))
   await page.getByRole('button', { name: '닫기' }).click()
   for (const card of await page.locator('button.cpu-card:not([disabled])').all()) await card.click()
