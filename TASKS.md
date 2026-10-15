@@ -13,7 +13,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 정책·W04/W05 계약 확정 | W02 | 고성능 Chat |
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 완료(PR #61 병합) | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows hosted 검증·최종 검토 통과(개인 실기 미검증) | W04 | 저성능 Work |
-| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B 최종 검토 통과·C 인계 준비 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
+| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B 완료·C PR #70 보완 우선 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
 | W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 목록·후보 관리 | P1 / 대기 | W05, W07 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
@@ -282,9 +282,47 @@ W04 run `38808528770` 모두 성공했다. 다운로드 artifact `12007637653`�
 내부 Windows ZIP hash 및 renderer/lifecycle JSON을 대조했다. unittest 94개·dialogue pytest 10개,
 frontend build·Node 종료 회귀도 통과했다. 상세 SHA/hash·검사 범위·이전 증거는 CURRENT_STATE를 따른다.
 최종 검토는 통과했으며 병합 상태/SHA는 PR #68과 Git을 확인한다. 개인 Windows PC·전원 차단 및
-실제 ending CG/음악은 미검증이다. W06-C는 아직 착수하지 않았고 Release/tag도 수행하지 않았다.
+실제 ending CG/음악은 미검증이다. 이 B 검토 당시에는 W06-C 미착수였다. 현재 C는 PR #70 보완 단계이며 이 문서의 현재 우선 지시를 따른다.
 
-## 다음 Work에 입력할 지시문 — W06-C
+## W06-C PR #70 보완 — 현재 우선
+
+권장 환경: **저성능 Work**. PR #70 head `b806535`의 성공 CI와 별개로 실제 오디오 제어 흐름 결함을
+확인했다. CURRENT_STATE의 W06-C 검토 표와 기존 W06-A 계약을 따른다. W07은 착수하지 않는다.
+
+```text
+danhk0612/no-riichi-no-fuku의 최신 main·열린 PR·AGENTS.md와 루트 기준 문서를 확인해.
+기존 task/w06-c-sound-ending과 PR #70을 유지하고 W06-C 보완만 수행해.
+CURRENT_STATE의 “W06-C PR #70 검토”에서 확인한 수정 전 실패를 먼저 재현해.
+
+1. BackgroundMusic의 한 곡 반복, 목록 변경 때 현재 곡 유지, 동일 ID media 교체,
+   이전 audio의 늦은 load/ended/rejected play callback 무효화를 보완해.
+   목록/화면 토큰과 현재 media identity를 분리하되 새 오디오 시스템/기능으로 확대하지 마.
+   decode/file 오류 안내·무음·사용자 재생 경로도 기존 C 계약대로 검사해.
+2. 마지막 sound_effect(ron/tsumo) 뒤 match_complete가 와도 committed 효과음이 취소되지 않게 해.
+   중복은 한 번만, replay는 무음, 오마케 기본 SFX 유지, 초기화/새 세대·화면 이탈 뒤 늦은
+   fetch/play callback은 차단해. 대사/CPU 판단/정산 RNG는 바꾸지 마.
+3. 비활성/누락 BGM ID를 보존하는 GET 계약은 유지하고, UI에서 그 선택을 해제·저장할 수 있게 해.
+   비활성 효과음 세트/엔딩 음악 참조도 기존 C 계약대로 수정 가능 여부를 확인해.
+4. 엔딩 음악 등록 후 비활성화하고 새로 전체 완료한 경우는 unavailable/무음으로 처리해.
+   비활성화 전에 생성된 pending payload는 그대로 고정하고 읽을 수 있어야 해.
+   저장된 공통 설정/기존 파일을 삭제하거나 pending에 새 설정을 소급 적용하지 마.
+
+실제 source를 검증하는 browser/mock 회귀에 한 곡 반복, A 유지한 순서 변경, media 교체,
+늦은 ended/load/play rejection, 최종 SFX+결과 메시지 순서, 중복/재접속/초기화,
+비활성 선택 해제와 새 ending vs 기존 pending을 추가해. mock Audio로 충분한 제어 흐름 검사는
+실제 콘텐츠 미제공을 이유로 생략하지 마. 기존 local-sound.browser 검사를 실제로 실행해.
+Windows packaged smoke도 무음 기본값 확인에만 그치지 말고 관련 모의 재생을 실행·판정하게 해.
+현재 실패를 단순 reload·검사 생략·기다림 증가로 숨기지 마.
+
+backend unittest/대사 pytest/frontend build·B/legacy/writer/정산 회귀를 보존하고,
+정확한 수정 SHA의 W04/W05 Windows CI·artifact source/내외 ZIP hash를 대조해.
+기존 567a1a3/b806535의 성공 CI·artifact와 수정 전 실패를 기록에 남겨.
+실제 CG/음악 출력은 D11 미검증으로 구분하고 권리/자료 제공 전 임의 콘텐츠를 만들지 마.
+CURRENT_STATE/TASKS/ARCHITECTURE를 실제 결과에 맞춰 갱신하고 commit/push·PR 갱신까지 진행해.
+직접 병합·Release/tag·W07·외부 사운드 생성 서비스·사용자 자료 수정/삭제는 하지 마.
+```
+
+## 최초 구현 지시문 — W06-C (보완 지시가 현재 우선)
 
 A 및 B 검토/병합 후 사용한다. 권장 환경: **저성능 Work**. B와 병렬 작업하지 않는다.
 
