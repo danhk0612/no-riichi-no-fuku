@@ -134,8 +134,10 @@ try {
   await page.waitForFunction(() => window.__audioInstances[1].__playCount === 3)
   assert.equal(await page.evaluate(() => window.__audioInstances.length), 2, 'single BGM should repeatedly use the same Audio')
   await page.getByRole('checkbox', { name: 'Track B' }).check()
+  const reenabledSelection = page.waitForResponse((response) => response.url().includes('/api/local/sound-selection') && response.request().method() === 'PUT')
   await page.getByRole('button', { name: '사운드 선택 저장' }).click()
-  await page.waitForFunction(() => window.__audioInstances.length === 2)
+  await reenabledSelection
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => resolve(undefined))))
   await page.evaluate(() => window.__audioInstances[1].dispatchEvent(new Event('ended')))
   await page.waitForFunction(() => window.__audioInstances.length === 3)
   await page.evaluate(() => window.__audioInstances[0].dispatchEvent(new Event('ended')))
