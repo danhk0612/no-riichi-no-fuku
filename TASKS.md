@@ -11,8 +11,8 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W01 | 기존 기능·회귀 기준 확정 | P0 / 기준 확정 완료(브라우저 환경 차단) | W00 | 저성능 Work |
 | W02 | Windows 실행·엔진 번들 기술 검증 | P0 / 기술 검증 완료(Windows CI, 사용자 실기 미검증) | W01 | 고성능 Work |
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 정책·W04/W05 계약 확정 | W02 | 고성능 Chat |
-| W04 | 로컬 저장·복구 기반 전환 | P0 / PR #61 병합 완료, main 반영 | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
-| W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows packaged renderer CI 통과; minimum client OS와 개인 PC 증거는 미확정 | W04 | 저성능 Work |
+| W04 | 로컬 저장·복구 기반 전환 | P0 / 완료(PR #61 병합) | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
+| W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·수정 SHA Windows 종료/복구 검증 완료, PR #63 검토 대기 | W04 | 저성능 Work |
 | W06 | 진행 규칙 결정·게임 회귀 | P0 / 결정 대기 | W05, D04 | 고성능 Chat → 저성능 Work |
 | W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 목록·후보 관리 | P1 / 대기 | W05, W07 | 저성능 Work |
@@ -114,15 +114,9 @@ W05가 먼저 확정한다. W08/W09는 공유 schema·UI를 만지므로 순차 
 - 범위: W03 확정 host에 React build/로컬 엔진 묶기, 기동 준비·포트·owned child 종료·오류 표시,
   확정 프로필 진입·복구 연결. 기존 테이블과 transport를 우선 재사용.
 - 선행: W04, W02 증거와 W03 계약.
-- 완료: W05 Windows workflow의 packaged Electron renderer + frozen engine에서 로그인 없는 진입,
-  이름 저장, 실제 대국/정산, active 중간 복구, 완료 결과 재접속, owned child 정상/강제 회수,
-  duplicate root/port/startup 오류 검증. CI 실행 사실과 개인 Windows UI/X-click·OS 인터넷 차단은 구분.
+- 완료: Python/Node/Docker/PostgreSQL/ComfyUI 사전 설치와 인터넷 없이 기본 대국·결과·
+  재실행 복구, UI 종료 시 owned 프로세스 처리, 사용자 데이터 보존을 실제 Windows에서 검증.
 - 금지: UI 전체 재설계, ComfyUI 자동 기동, 다른 프로세스 종료, 진행 정책 변경, Release.
-- 결과: host/shell/SQLite app bundle을 구현하고 `w05-windows-shell.yml`에 exact-source Windows
-  artifact + source/frozen/renderer 검사를 추가한다. Python 3.12.10 x64는 W02에서 검증된 마지막
-  공식 Windows full-maintenance binary이므로 이번 build input으로 재사용한다; 최신 security-only
-  Python 3.12 patch용 Windows binary는 공식 공급되지 않는다. 장기 배포 patch 승인은 아니다.
-  최종 source SHA·artifact/사용 제한은 CURRENT_STATE를 따른다.
 - 환경: 저성능 Work. 승인된 실행 계약 구현; 범위 밖 구조 판단은 인계.
 
 ### W06 — 진행 규칙 결정·게임 회귀
@@ -207,7 +201,10 @@ local 전용 write intent·동시 읽기·기본 engine의 원본 transaction �
 
 ## 다음 작업 제한
 
-W05가 끝났지만 W06 구현은 시작하지 않는다. D04의 CPU 부족·모든 CPU 완료·HP 0 이후 정책이
-사용자 결정 대기이므로 다음 지시문은 해당 결정을 먼저 확정한 뒤 작성한다. Windows 최소 client OS,
-개인 PC title-bar X/OS network-off 및 장기 배포용 Python 보안 patch는 별도 후속 조건이며
-CPU·게임 진행 규칙이나 다음 Task에 임의 포함하지 않는다.
+W05 PR #63은 수정 source `7d9a20b`의 Windows 일반 모드 종료·재기동 및 기존 renderer 복구
+검증을 마쳤으며 아직 열려 있다. 이 작업에서 직접 병합·Release/tag는 하지 않았다.
+
+다음 구현 Work는 시작하지 않는다. D04의 CPU 3명 미만, 전체 CPU 완료/엔딩, HP 0 이후 정책이
+미결정이므로 먼저 고성능 Chat에서 사용자 결정을 확정한다. W06 구현은 그 결정과 별도 지시 이후에만
+착수한다. 개인 Windows/물리 종료·OS internet-off·Python 보안 patch 공급은 별도 후속 검증으로
+유지하며 W06에 임의로 포함하지 않는다.

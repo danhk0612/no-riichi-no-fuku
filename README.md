@@ -20,16 +20,17 @@ W05 packaged renderer의 Windows CI 검증 결과는 저장소 `CURRENT_STATE.md
 ## Windows validation package
 
 `task/w05-windows-shell` 브랜치의 [W05 Windows workflow](https://github.com/danhk0612/no-riichi-no-fuku/actions/workflows/w05-windows-shell.yml)는
-Windows x64 Electron·Python engine package와 packaged renderer smoke를 실행하고 시험 ZIP을
-Actions artifact로 보관합니다. 성공한 실행의 `w05-windows-<source SHA>` artifact에서 ZIP을
+Windows x64 Electron·Python engine package, packaged renderer smoke, 별도의 일반 모드
+종료·재기동 검사를 실행하고 시험 ZIP을 Actions artifact로 보관합니다. 성공한 실행의 `w05-windows-<source SHA>` artifact에서 ZIP을
 받아 압축을 풀고 `No-Riichi-No-Fuku.exe`를 실행할 수 있습니다. 이 artifact는 검증용이며
 정식 Release/tag가 아닙니다.
 
 Windows 실행 경로는 Python, Node.js, Docker, PostgreSQL 서버, 인터넷 게임 서비스,
 ComfyUI가 없는 기본 대국을 목표로 합니다. 사용자 데이터는 실행 폴더와 분리해
 `%LOCALAPPDATA%/NoRiichiNoFuku/` 아래에 저장하며 기존 웹 DB/미디어를 가져오지 않습니다.
-현재 CI 증거는 Windows Server 2022 x64 hosted runner 기준입니다. 개인 Windows 버전별 실행,
-물리 창 닫기, OS 수준 인터넷 차단은 별도 실측으로 구분합니다.
+현재 CI 증거는 Windows Server 2022 x64 hosted runner 기준입니다. 일반 모드 programmatic
+창 닫기와 반복 종료 요청은 engine PID 종료 후 창 파괴 및 host 종료 순서까지 검사합니다.
+물리 창 X/Alt+F4, 개인 Windows 버전별 실행, OS 수준 인터넷 차단은 별도 실측으로 구분합니다.
 
 ## 현재 웹판 실행하기
 

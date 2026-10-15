@@ -84,11 +84,8 @@ D01~D03/관리 UI는 이후 W03에서 사용자 승인됐다. D04 진행 정책�
 
 공식 근거(2026-10-14 접속·내용 확인; 후보 설명이며 이 게임 실측과 별개):
 - [Python 3.12.10 release](https://www.python.org/downloads/release/python-31210/):
-  Windows x64 installer/embeddable 제공. Python.org now marks it superseded by 3.12.15;
-  3.12.10 was the last full maintenance release. The [Python version status](https://devguide.python.org/versions/)
-  says security-phase releases are source-only and publish no new binaries. W05 reuses 3.12.10
-  only as the previously Windows-tested packaging input; this is not a long-term product patch approval.
-  Reassess a source-built patched runtime before distribution. W01 Linux 3.12.14 is not equivalent.
+  Windows x64 installer/embeddable 제공. 이후 3.12는 security-only다. W01 Linux 3.12.14와
+  동일 patch 공급을 Windows Actions에서 가정하지 않는다.
 - [Python embeddable 설명](https://docs.python.org/3.12/using/windows.html#the-embeddable-package):
   pip 미포함, vendoring 및 Microsoft C Runtime 제공 책임.
 - [PyInstaller usage](https://pyinstaller.org/en/stable/usage.html): onedir/data/hidden imports 수집.
@@ -147,32 +144,22 @@ local session의 쓰기 의도만 명시적으로 `BEGIN IMMEDIATE`로 시작한
 
 ### W05 실행창·번들·자동 진입
 
-W05 host is `desktop/main.cjs`; `desktop/preload.cjs` exposes only a desktop marker.
-The frozen `backend/app/windows_engine.py` entry point reuses `create_local_runtime`, serves the
-production React build and existing REST/WS on one loopback origin, and reports a random identity
-and bound port over its owned stdout pipe. Electron confirms child PID, identity, `/api/health`,
-and the static React shell before requesting the capability over the private child pipe. Electron
-adds it only to same-window `/api/*` requests; the renderer never receives the capability. The
-WebSocket endpoint reads the host-injected header in local mode and retains the W04 message path
-for existing in-process tests. Web JWT behavior stays unchanged.
-
-Renderer startup enters the single local profile without web login, prefers the active session,
-then reconnects the latest completed session to preserve its result screen. The existing game UI
-and APIs remain in use; the desktop adds only local player-name editing. Electron enforces a
-single-instance lock, the engine enforces the W04 data-root lock, and normal window close requests
-graceful shutdown before the host reaps its owned child. The host cancels renderer requests outside
-its verified origin. The packaged runtime defaults to `%LOCALAPPDATA%/NoRiichiNoFuku`; test runs
-must pass an explicit scratch data root.
-
-The Windows x64 package is built on Windows Server 2022 with Python 3.12.10 x64 / PyInstaller
-6.22.3 and Electron 44.7.2 / Node 24.19.0. This validates that runner and architecture, not a
-minimum Windows client OS. Windows 10/11 client support, OS-level network disconnection, a physical
-title-bar X click, clean-machine Microsoft C runtime availability, and power-loss behavior remain
-unverified. The CI smoke exercises the packaged Electron renderer against the frozen SQLite engine,
-including an actual match, engine restarts, and completed-result reconnect. W02 test seed/stage
-injection is excluded from the product engine. See `CURRENT_STATE.md` for exact SHA and artifact.
-
-Character/shared-data and ComfyUI management remain W08-W11 work.
+Electron은 한 data root의 단일 소유 host로 동작하고 번들 engine을 자동 기동한다.
+같은 loopback origin에서 정적 React와 기존 API/WS를 제공한다. 준비 identity/health를
+확인한 뒤 local capability를 제한된 host 채널로 전달해 로그인 화면 없이 profile/active
+session으로 진입한다. renderer Node 비활성/contextIsolation/sandbox를 유지한다.
+engine/DB 구현은 W04 결과를 사용하며 spike의 임시 DB·시험 seed/stage·시험 helper를
+제품 진입점으로 복사하지 않는다. 이름 편집·일반 대국 화면은 기존 자산을 활용한다.
+정상 종료는 `desktop/quit.cjs`의 단일 quit coordinator를 거친다. 창 닫기(X/Alt+F4),
+`app.quit()`, 마지막 창 종료 이벤트는 같은 공유 Promise를 사용한다. host는 우선 창 입력을
+막고 engine의 graceful shutdown을 요청한다. engine은 진행 중인 요청/저장 처리를 마치고 닫히며,
+timeout 시 host는 자신이 소유한 child만 강제 회수한다. child close가 확인된 뒤 창을 파괴하고
+최종 Electron 종료를 허용한다. 회수 실패 때는 종료를 허용하지 않고 다시 시도할 수 있다.
+Windows packaged 일반 모드의 programmatic close/반복 quit·timeout·PID 종료 순서와 같은 data root
+재실행을 검증했다. 기존 active 대국 저장 복구도 renderer smoke에서 engine 재시작 후 확인했다.
+다른 프로그램·ComfyUI를 종료하지 않는다. host crash/전원 차단은 별도 미검증이다.
+배포용 Python binary/지원 OS의 남은 조건은 번들 검증 전에 확인하고 필요한 선택 변경은 사용자에게 제시한다.
+캐릭터/공유 목록/생성 설정 관리 화면의 실제 기능은 W08~W11이며 W05에 앞당겨 구현하지 않는다.
 
 ## 저장 전환에서 해결할 점
 
