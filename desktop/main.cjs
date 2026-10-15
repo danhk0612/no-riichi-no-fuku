@@ -304,8 +304,13 @@ async function startMatchFromRenderer() {
   await waitForRenderer("Boolean(document.querySelector('.selection-panel'))", 90000)
   await window.webContents.executeJavaScript(`(() => {
     Array.from(document.querySelectorAll('button.cpu-card:not([disabled])')).slice(0, 3).forEach(button => button.click())
-    Array.from(document.querySelectorAll('button')).find(button => button.innerText.includes('동풍전 시작'))?.click()
   })()`)
+  evidence.phase = 'wait for three CPU selections to render'
+  writeEvidence()
+  await waitForRenderer("document.querySelectorAll('button.cpu-card.selected').length === 3 && document.querySelector('button.start-button:not([disabled])')", 30000)
+  evidence.phase = 'click enabled match start'
+  writeEvidence()
+  await window.webContents.executeJavaScript("document.querySelector('button.start-button:not([disabled])')?.click()")
   await waitForRenderer("Boolean(document.querySelector('.human-controls') || document.querySelector('.match-result'))", 90000)
 }
 
