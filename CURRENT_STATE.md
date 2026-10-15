@@ -15,7 +15,7 @@
 - Wayward 참고는 W00의 `5d80f118c590319881be34faba8214a0c3765fc2` 조사뿐이다.
   W02는 참고 코드 복사·ZIP 분석·이미지 생성·사용자 데이터 연결을 하지 않는다.
 
-## W04 PR #61 — 로컬 보완 검사 통과, Windows CI 대기
+## W04 PR #61 — 보완 검사 통과, PR 병합 대기
 
 2026-10-15 최신 main `2361dd2`의 보완 지시에 따라 기존 `task/w04-local-storage`와 PR #61을
 유지해 수정 중이다. PR은 main 미병합이다. 검토 대상 head `70c6d8bdc031803a713a324889e2f241c95750ac`
@@ -53,9 +53,17 @@ push 후 별도로 확인한다.
 실행했다고 기록하지 않는다.
 
 이번 Linux/Python 3.12.14 임시 venv: backend unittest 81개(35.058초), 대사 pytest 10개(0.11초),
-frontend `npm ci && npm run build` 통과. 세부 수정 SHA·Windows run/artifact source SHA·로그 결과는
-최종 보완 commit push와 hosted CI 완료 후 기록한다. 전원 차단 durability 및 사용자 Windows UI/LocalAppData는
-여전히 미검증이다.
+frontend `npm ci && npm run build` 통과. 정확한 보완 code SHA `d46782bef4947ff448b2d40555ac4b387b2bc25a`의
+Windows Server 2022 Datacenter x64(build 20348), Python 3.12.10, Node 24.19.0 push CI
+[run 38659727577](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38659727577)도
+unittest 81(68.606초), pytest 10(0.14초), frontend production build와 artifact 수집이 통과했다.
+artifact `w04-windows-d46782bef4947ff448b2d40555ac4b387b2bc25a` (ID `11938706685`, SHA256
+`c4f778a5cb4fcf51bc73ac59404dd2043c14968c6b77ca2956cb508d0e335bff`, 2026-10-29 만료)의
+`source-sha.txt`는 정확히 `d46782bef4947ff448b2d40555ac4b387b2bc25a`이며, 다운로드 ZIP hash와
+Actions artifact digest가 일치하고 unittest/pytest 로그를 확인했다. PR-triggered run
+38659729790도 전체 성공이나 artifact의 source SHA는 pull_request merge ref이므로 exact branch
+검증 근거로는 위 push run을 기록한다. PR #61은 열린 상태이며 직접 병합하지 않았다. 전원 차단
+durability 및 사용자 Windows UI/LocalAppData는 여전히 미검증이다.
 
 ## 코드로 확인한 구현
 
