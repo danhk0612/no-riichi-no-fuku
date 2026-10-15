@@ -47,7 +47,8 @@ try {
   let failAssetA2Once = true
   let socket
   await page.route('**/api/local/media/*/file', async (route) => {
-    if (route.request().url().includes('/asset-sfx/')) await new Promise((resolve) => setTimeout(resolve, 250))
+    if (route.request().url().includes('/asset-sfx-late/')) await new Promise((resolve) => setTimeout(resolve, 3000))
+    else if (route.request().url().includes('/asset-sfx/')) await new Promise((resolve) => setTimeout(resolve, 250))
     if (route.request().url().includes('/asset-b/')) await new Promise((resolve) => setTimeout(resolve, 250))
     if (route.request().url().includes('/asset-a2/') && failAssetA2Once) {
       failAssetA2Once = false
@@ -175,6 +176,10 @@ try {
   const effect = { type: 'sound_effect', generation: play.generation, session_id: 'sound-match', action_version: 1, event_index: 0, event_key: 'ron', asset_id: 'audio-sfx', url: '/api/local/media/asset-sfx/file' }
   socket.send(JSON.stringify(effect))
   socket.send(JSON.stringify(effect))
+  const lateEffect = { ...effect, action_version: 2, event_index: 1, event_key: 'tsumo', url: '/api/local/media/asset-sfx-late/file' }
+  const delayedSfxLoad = page.waitForRequest((request) => request.url().includes('/asset-sfx-late/'))
+  socket.send(JSON.stringify(lateEffect))
+  await delayedSfxLoad
   completed = true
   socket.send(JSON.stringify({
     type: 'match_complete', generation: play.generation, session_id: 'sound-match',
@@ -189,16 +194,11 @@ try {
   await page.waitForTimeout(100)
   assert.equal(await page.evaluate(() => window.__audioInstances.length), beforeSfx + 1, 'replayed SFX identity should stay silent')
   assert.ok(await page.locator('.match-result').count())
-  const beforeLateSfx = await page.evaluate(() => window.__audioInstances.length)
-  const lateEffect = { ...effect, action_version: 2, event_index: 1, event_key: 'tsumo' }
-  const delayedSfxLoad = page.waitForRequest((request) => request.url().includes('/asset-sfx/'))
-  socket.send(JSON.stringify(lateEffect))
-  await delayedSfxLoad
   await page.evaluate(() => { window.confirm = () => true })
   await page.getByRole('button', { name: '초기화' }).click()
   await page.locator('.selection-panel').waitFor()
   await page.waitForTimeout(350)
-  assert.equal(await page.evaluate(() => window.__audioInstances.length), beforeLateSfx, 'late SFX fetch after reset/new generation must not create audio')
+  assert.equal(await page.evaluate(() => window.__audioInstances.length), beforeSfx + 1, 'late SFX fetch after reset/new generation must not create audio')
   assert.deepEqual(errors, [])
   assert.equal(disabledSetClearSaved, true)
   assert.equal(endingClearSaved, true)
