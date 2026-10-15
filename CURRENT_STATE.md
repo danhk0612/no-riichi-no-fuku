@@ -1,5 +1,37 @@
 # 현재 상태
 
+## W06-B PR #68 검토 — 보완 전 병합 금지
+
+검토 head `3cc15dd3f82b2be8c3d353a6326a7091e428d111`, 기준 main `24ed5766b8dac1850bbd05267ac228733d549616`.
+PR의 고정 명단/새 local 정산/초기화/UI 구현을 검토했다. 아래 결함이 재현돼 W06-C는 착수하지 않는다.
+main의 W06-A 계약은 유지하며 이번 검토는 제품 코드를 수정하지 않았다.
+
+| 발견 | 재현/영향 | 필요한 보완 |
+|---|---|---|
+| 취소한 legacy 대국의 늦은 정산 | 실제 임시 local 파일 DB에 rules_snapshot=NULL인 마지막 행동 저장 대국을 두고 reset. record=cancelled/stage=0을 확인한 뒤 기존 RegisteredGame으로 registry.settle+commit하면 completed/stage=1로 바뀜 | 정산 entry에서 취소/현재 세대/record 세대를 legacy 포함 검증. 완료 cache/기존 결과 재사용도 우회하지 못하게 하고 초기화 후 이전 진행 적용 금지 |
+| 웹 HP 제한 회귀 | 기존 GameWebSocketApiTest fixture에서 member HP=0으로 POST /api/game/sessions. main 24ed576은 409, PR head는 201 및 새 session 생성 | local만 새 HP 없는 규칙. 웹 create는 원래 create_game_session의 member/HP 시작 조건 유지 |
+| 이미 완료된 CPU로 명단 확정 시 엔딩 누락 | 실제 main.tsx의 startGame/loadLocalCpus를 Vite Oxc로 TSX 변환해 Node VM/React hook stub에서 실행. confirm 응답 ending_pending인데 screen=waiting, CPU 선택 화면 유지/rosterMode=false | confirm 이후 phase에 따라 엔딩 화면으로 진입. 새 대국 POST는 서버에서 거절되므로 상대 선택 화면에 머물지 않게 함 |
+| reset 실패·성공 응답 유실 복구 누락 | reset 응답만 실패시키고 GET play는 commit된 새 generation/roster_required 반환. storeLocalPlay만 실행돼 명단 선택 화면/기존 socket·대국 UI는 복구되지 않음 | GET으로 확인한 authoritative phase/active/recent에 맞춰 실제 화면/연결을 재구성. 미commit 실패라면 기존 active 복구, commit 뒤 유실이면 새 명단 선택 복구 |
+| 초기화 후 지연 응답 차단 불완전 | start Promise를 지연→reset generation B→옛 A start 응답 순서로 hook harness 실행 시 old-A-session socket을 새로 열고 새 명단 화면을 지움 | start/confirm/ack 등 mutable 응답과 화면 load를 generation+요청 토큰으로 검증. busy 버튼 비활성화만으로 데이터 경계 보장을 대신하지 않음 |
+
+프런트 재현은 실제 함수 소스를 사용하는 제어 흐름 harness다. DOM/browser/Windows 실기 재현이라고
+표시하지 않는다. 지연 start 시나리오는 요청 순서를 주입한 계약 검사이며 일반 UI에서 busy 버튼을
+연속 클릭해 재현했다고 주장하지 않는다. 종료·세대 경계의 회귀에는 실제 browser/packaged 검사를 추가한다.
+
+legacy reset 재현은 대국 완료 상태의 stub 결과를 사용해 실제 reset API와 실제 registry.settle/DB commit을
+순서대로 실행했다. 동시에 실행하는 확률적 실험이 아니라 reset이 먼저 commit된 순서를 고정한 검사다.
+취소 record를 정산하지 않는다는 계약이 legacy 경로에서 지켜지지 않음을 보여준다.
+
+기존 Windows 성공 근거는 보존한다. 최종 head의 [push run 38702603775](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38702603775)는
+backend unittest 90/pytest 10·frontend build·packaged renderer·일반 종료 모두 success다.
+artifact `11956942201`을 내려받아 source SHA와 archive SHA256
+`58a82f2f1d2f2811c195971522f0efdbe5bee93028c7df255b58d1d73caf3b24`를 대조했다.
+로그의 unittest 90(80.371초), renderer의 명단/정상 reset/active·completed 복구 성공을 확인했다.
+이 성공은 위 오류/응답 유실/legacy 취소 정산까지 검증했다는 뜻이 아니다.
+이번 Linux의 기존 unittest 90개(실행 결과 failures=0/errors=0), frontend npm ci/build,
+대사 pytest 10개(0.19초)는 통과했다. 이 90개에는 위 추가 재현 harness/직접 API 호출이 포함되지 않는다.
+정확한 수정 SHA로 회귀와 Windows CI/artifact를 다시 검증해야 한다. 사용자 자료/정책 변경은 없다.
+
 ## 기준
 
 - 확인일: 2026-10-15. W05 보완 기준 main `4f09869`; PR #63 수정 source SHA는 `7d9a20b97f7ef60b5dda4a43a24d3cbf08723ffb`.
