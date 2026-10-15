@@ -7,12 +7,17 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import subprocess
 import sys
+import sqlite3
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-from sqlalchemy import func, select, text
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import create_engine, event, func, select, text
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import Session
+from starlette.websockets import WebSocketDisconnect
 
 from app.db.models import CpuCharacter, GameSessionRecord, User, UserCpuProgress
+from app.db.session import create_database_engine, mark_write_intent
 from app.local_runtime import create_local_runtime, resolve_data_paths
 
 
@@ -149,7 +154,9 @@ class LocalRuntimeTests(unittest.TestCase):
 
             def write_active(session_id: str) -> str:
                 try:
-                    with runtime.session_factory.begin() as session:
+                    with runtime.session_factory() as session:
+                        barrier.wait(timeout=5)
+                        mark_write_intent(session)
                         session.add(
                             GameSessionRecord(
                                 id=session_id,
@@ -161,8 +168,8 @@ class LocalRuntimeTests(unittest.TestCase):
                                 status="active",
                             )
                         )
-                        barrier.wait(timeout=5)
                         session.flush()
+                        session.commit()
                     return "committed"
                 except IntegrityError:
                     return "rejected"
@@ -180,6 +187,89 @@ class LocalRuntimeTests(unittest.TestCase):
                     self.assertEqual(count, 1)
             finally:
                 runtime.close()
+
+    def test_local_read_transactions_do_not_reserve_writer_slot(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="nrnf-read-write-") as directory:
+            runtime = create_local_runtime(Path(directory) / "db")
+            statements: list[str] = []
+            event.listen(
+                runtime.engine,
+                "before_cursor_execute",
+                lambda _conn, _cursor, statement, _params, _context, _many: statements.append(
+                    statement.upper()
+                ),
+            )
+            try:
+                with runtime.session_factory() as session:
+                    self.assertIsNotNone(
+                        session.scalar(select(User.id).where(User.id == runtime.member_id))
+                    )
+                self.assertNotIn("BEGIN IMMEDIATE", statements)
+
+                statements.clear()
+                with runtime.session_factory() as session:
+                    mark_write_intent(session)
+                    self.assertIsNotNone(
+                        session.scalar(select(User.id).where(User.id == runtime.member_id))
+                    )
+                self.assertLess(
+                    statements.index("BEGIN IMMEDIATE"),
+                    next(i for i, statement in enumerate(statements) if statement.startswith("SELECT")),
+                )
+
+                read_barrier = threading.Barrier(2)
+
+                def hold_read_transaction(_index: int) -> int:
+                    with runtime.session_factory() as session:
+                        user_id = session.scalar(
+                            select(User.id).where(User.id == runtime.member_id)
+                        )
+                        read_barrier.wait(timeout=5)
+                        self.assertEqual(
+                            session.scalar(
+                                select(User.id).where(User.id == runtime.member_id)
+                            ),
+                            runtime.member_id,
+                        )
+                        return user_id
+
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    self.assertEqual(
+                        list(pool.map(hold_read_transaction, (1, 2))),
+                        [runtime.member_id, runtime.member_id],
+                    )
+
+                # A separate process holding SQLite's reserved writer slot must not block a local read.
+                writer = sqlite3.connect(runtime.paths.database, timeout=1)
+                try:
+                    writer.execute("BEGIN IMMEDIATE")
+                    with runtime.session_factory() as session:
+                        self.assertEqual(
+                            session.scalar(select(User.id).where(User.id == runtime.member_id)),
+                            runtime.member_id,
+                        )
+                finally:
+                    writer.rollback()
+                    writer.close()
+            finally:
+                runtime.close()
+
+    def test_default_sqlite_engine_keeps_existing_immediate_begin_behavior(self) -> None:
+        engine = create_database_engine("sqlite+pysqlite:///:memory:")
+        statements: list[str] = []
+        event.listen(
+            engine,
+            "before_cursor_execute",
+            lambda _conn, _cursor, statement, _params, _context, _many: statements.append(
+                statement.upper()
+            ),
+        )
+        try:
+            with engine.connect() as connection:
+                connection.execute(text("SELECT 1")).scalar_one()
+            self.assertIn("BEGIN IMMEDIATE", statements)
+        finally:
+            engine.dispose()
 
     def test_file_database_restores_exact_turn_after_process_runtime_restart(self) -> None:
         with tempfile.TemporaryDirectory(prefix="nrnf-recovery-") as directory:
@@ -229,6 +319,19 @@ class LocalRuntimeTests(unittest.TestCase):
                         {"type": "authenticate", "capability": restarted.capability}
                     )
                     restored_turn = self._receive_human_turn(websocket)
+                    websocket.send_json(
+                        {
+                            "type": "action",
+                            "legal_action_index": 0,
+                            "action_version": 0,
+                        }
+                    )
+                    self.assertEqual(
+                        websocket.receive_json()["code"], "stale_action"
+                    )
+                    self.assertEqual(
+                        self._receive_human_turn(websocket), committed_turn
+                    )
                 self.assertEqual(restored_turn, committed_turn)
             finally:
                 restarted.close()
@@ -239,13 +342,27 @@ class LocalRuntimeTests(unittest.TestCase):
             try:
                 client = TestClient(runtime.app)
                 self.assertEqual(client.get("/api/profile/me").status_code, 401)
-                self.assertEqual(
-                    client.get(
+                for malformed in ("incorrect", ""):
+                    rejected = client.get(
                         "/api/profile/me",
-                        headers={"X-Local-Capability": "incorrect"},
-                    ).status_code,
-                    401,
+                        headers={"X-Local-Capability": malformed},
+                    )
+                    self.assertEqual(rejected.status_code, 401)
+                    if malformed:
+                        self.assertNotIn(malformed, rejected.text)
+                non_ascii = client.get(
+                    "/api/profile/me",
+                    headers={
+                        "X-Local-Capability": "잘못된 토큰".encode("utf-8")
+                    },
                 )
+                self.assertEqual(non_ascii.status_code, 401)
+                admin_rejected = client.get(
+                    "/api/admin/cpus",
+                    headers={"X-Local-Capability": "잘못된 토큰".encode("utf-8")},
+                )
+                self.assertEqual(admin_rejected.status_code, 401)
+                self.assertNotIn("잘못된 토큰", admin_rejected.text)
                 profile = client.get(
                     "/api/profile/me",
                     headers={"X-Local-Capability": runtime.capability},
@@ -259,17 +376,39 @@ class LocalRuntimeTests(unittest.TestCase):
                 )
                 self.assertEqual(edited.status_code, 200)
                 self.assertEqual(edited.json()["player_name"], "로컬 이름")
+                self.assertEqual(
+                    client.get(
+                        "/api/profile/me",
+                        headers={"X-Local-Capability": runtime.capability},
+                    ).json()["player_name"],
+                    "로컬 이름",
+                )
+                with runtime.session_factory() as session:
+                    self.assertEqual(
+                        session.get(User, runtime.member_id).player_name,
+                        "로컬 이름",
+                    )
                 self.assertEqual(client.post("/api/auth/login", json={}).status_code, 404)
                 self.assertEqual(
                     client.get("/api/admin/cpus").status_code, 401
                 )
-                self.assertEqual(
-                    client.get(
-                        "/api/admin/cpus",
-                        headers={"X-Local-Capability": runtime.capability},
-                    ).status_code,
-                    200,
+                admin_cpus = client.get(
+                    "/api/admin/cpus",
+                    headers={"X-Local-Capability": runtime.capability},
                 )
+                self.assertEqual(admin_cpus.status_code, 200)
+                first_cpu = admin_cpus.json()[0]
+                admin_edit = client.patch(
+                    f"/api/admin/cpus/{first_cpu['id']}",
+                    json={"short_description": "local write fixture"},
+                    headers={"X-Local-Capability": runtime.capability},
+                )
+                self.assertEqual(admin_edit.status_code, 200, admin_edit.text)
+                with runtime.session_factory() as session:
+                    self.assertEqual(
+                        session.get(CpuCharacter, first_cpu["id"]).short_description,
+                        "local write fixture",
+                    )
                 self.assertEqual(
                     client.get(
                         "/api/admin/users",
@@ -294,12 +433,37 @@ class LocalRuntimeTests(unittest.TestCase):
                 with client.websocket_connect(
                     f"/api/game/sessions/{session_id}/ws"
                 ) as websocket:
+                    websocket.send_json({"type": "authenticate"})
+                    self.assertEqual(
+                        websocket.receive_json()["code"], "invalid_authentication"
+                    )
+                    with self.assertRaises(WebSocketDisconnect) as rejected:
+                        websocket.receive_json()
+                    self.assertEqual(rejected.exception.code, 4401)
+                with client.websocket_connect(
+                    f"/api/game/sessions/{session_id}/ws"
+                ) as websocket:
                     websocket.send_json(
                         {"type": "authenticate", "capability": "old-run-capability"}
                     )
                     self.assertEqual(
                         websocket.receive_json()["code"], "invalid_authentication"
                     )
+                    with self.assertRaises(WebSocketDisconnect) as rejected:
+                        websocket.receive_json()
+                    self.assertEqual(getattr(rejected.exception, "code", None), 4401)
+                with client.websocket_connect(
+                    f"/api/game/sessions/{session_id}/ws"
+                ) as websocket:
+                    websocket.send_json(
+                        {"type": "authenticate", "capability": "문자열-비ASCII"}
+                    )
+                    self.assertEqual(
+                        websocket.receive_json()["code"], "invalid_authentication"
+                    )
+                    with self.assertRaises(WebSocketDisconnect) as rejected:
+                        websocket.receive_json()
+                    self.assertEqual(getattr(rejected.exception, "code", None), 4401)
                 with client.websocket_connect(
                     f"/api/game/sessions/{session_id}/ws"
                 ) as websocket:
@@ -317,6 +481,168 @@ class LocalRuntimeTests(unittest.TestCase):
                 self.assertNotEqual(runtime.capability, restarted.capability)
                 self.assertIsNone(restarted.websocket_member(runtime.capability))
             finally:
+                restarted.close()
+
+            persisted = create_local_runtime(Path(directory) / "db")
+            try:
+                profile = TestClient(persisted.app).get(
+                    "/api/profile/me",
+                    headers={"X-Local-Capability": persisted.capability},
+                )
+                self.assertEqual(profile.status_code, 200)
+                self.assertEqual(profile.json()["player_name"], "로컬 이름")
+            finally:
+                persisted.close()
+
+    def test_file_db_settlement_commit_failure_rolls_back_and_retries_once(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="nrnf-settlement-commit-") as directory:
+            root = Path(directory) / "db"
+            runtime = create_local_runtime(root)
+            client = TestClient(runtime.app)
+            headers = {"X-Local-Capability": runtime.capability}
+            cpu_ids = [
+                cpu["id"]
+                for cpu in client.get("/api/game/cpus", headers=headers).json()
+            ][:3]
+            created = client.post(
+                "/api/game/sessions",
+                json={"cpu_character_ids": cpu_ids},
+                headers=headers,
+            )
+            self.assertEqual(created.status_code, 201, created.text)
+            session_id = created.json()["session_id"]
+
+            try:
+                with runtime.session_factory() as session:
+                    registered = runtime.registry.get_owned(
+                        session, session_id, runtime.member_id
+                    )
+                for _ in range(1000):
+                    if registered.done:
+                        break
+                    turn = registered.game.human_turn()
+                    assert turn is not None
+                    with runtime.session_factory() as session:
+                        mark_write_intent(session)
+                        runtime.registry.submit_action(
+                            session,
+                            registered,
+                            0,
+                            registered.action_version,
+                        )
+                        session.commit()
+                self.assertTrue(registered.done, "fixed-seed match did not complete")
+                final_action_count = registered.action_version
+                final_result = registered.game.result()
+                with runtime.session_factory() as session:
+                    member = session.get(User, runtime.member_id)
+                    hp_before = member.current_hp
+                    stages_before = dict(
+                        session.execute(
+                            select(
+                                UserCpuProgress.cpu_character_id,
+                                UserCpuProgress.defeat_stage,
+                            ).where(UserCpuProgress.user_id == runtime.member_id)
+                        ).all()
+                    )
+
+                original_commit = Session.commit
+
+                def fail_only_settlement_commit(session: Session) -> None:
+                    if session.info.get("sqlite_write_intent"):
+                        raise SQLAlchemyError("injected local settlement commit failure")
+                    original_commit(session)
+
+                with patch.object(Session, "commit", new=fail_only_settlement_commit):
+                    with self.assertRaisesRegex(
+                        SQLAlchemyError, "injected local settlement commit failure"
+                    ):
+                        with client.websocket_connect(
+                            f"/api/game/sessions/{session_id}/ws"
+                        ) as websocket:
+                            websocket.send_json(
+                                {"type": "authenticate", "capability": runtime.capability}
+                            )
+                            websocket.receive_json()
+
+                self.assertNotIn(session_id, runtime.registry._games)
+                with runtime.session_factory() as session:
+                    persisted = session.get(GameSessionRecord, session_id)
+                    self.assertEqual(persisted.status, "active")
+                    self.assertEqual(len(persisted.human_action_indices), final_action_count)
+                    self.assertIsNone(persisted.settlement)
+                    member = session.get(User, runtime.member_id)
+                    self.assertEqual(member.current_hp, hp_before)
+                    stages_after = dict(
+                        session.execute(
+                            select(
+                                UserCpuProgress.cpu_character_id,
+                                UserCpuProgress.defeat_stage,
+                            ).where(UserCpuProgress.user_id == runtime.member_id)
+                        ).all()
+                    )
+                    self.assertEqual(stages_after, stages_before)
+            finally:
+                client.close()
+                runtime.close()
+
+            restarted = create_local_runtime(root)
+            try:
+                client = TestClient(restarted.app)
+                headers = {"X-Local-Capability": restarted.capability}
+                results = []
+                for _ in range(2):
+                    with client.websocket_connect(
+                        f"/api/game/sessions/{session_id}/ws"
+                    ) as websocket:
+                        websocket.send_json(
+                            {"type": "authenticate", "capability": restarted.capability}
+                        )
+                        messages = []
+                        while True:
+                            message = websocket.receive_json()
+                            if message["type"] == "match_complete":
+                                results.append(message)
+                                break
+                            messages.append(message)
+                            self.assertNotEqual(message["type"], "error", message)
+                self.assertEqual(results[0], results[1])
+                self.assertEqual(results[0]["result"]["scores"], list(final_result.scores))
+                self.assertEqual(results[0]["result"]["ranks"], list(final_result.ranks))
+                with restarted.session_factory() as session:
+                    record = session.get(GameSessionRecord, session_id)
+                    self.assertEqual(record.status, "completed")
+                    self.assertIsNotNone(record.settlement)
+                    self.assertEqual(
+                        len(record.human_action_indices), final_action_count
+                    )
+                    member = session.get(User, restarted.member_id)
+                    self.assertEqual(
+                        member.current_hp, results[0]["settlement"]["current_hp"]
+                    )
+                    self.assertEqual(
+                        dict(
+                            session.execute(
+                                select(
+                                    UserCpuProgress.cpu_character_id,
+                                    UserCpuProgress.defeat_stage,
+                                ).where(UserCpuProgress.user_id == restarted.member_id)
+                            ).all()
+                        ),
+                        {
+                            **stages_before,
+                            **(
+                                {
+                                    results[0]["settlement"]["cpu_character_id"]:
+                                    results[0]["settlement"]["defeat_stage"]
+                                }
+                                if results[0]["settlement"]["cpu_character_id"] is not None
+                                else {}
+                            ),
+                        },
+                    )
+            finally:
+                client.close()
                 restarted.close()
 
     def test_default_path_is_only_localappdata_and_requires_explicit_test_override(self) -> None:

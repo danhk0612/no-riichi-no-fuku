@@ -11,8 +11,8 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W01 | 기존 기능·회귀 기준 확정 | P0 / 기준 확정 완료(브라우저 환경 차단) | W00 | 저성능 Work |
 | W02 | Windows 실행·엔진 번들 기술 검증 | P0 / 기술 검증 완료(Windows CI, 사용자 실기 미검증) | W01 | 고성능 Work |
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 정책·W04/W05 계약 확정 | W02 | 고성능 Chat |
-| W04 | 로컬 저장·복구 기반 전환 | P0 / 구현·Linux·Windows hosted CI 통과, PR #61 병합 대기 | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
-| W05 | Windows shell·오프라인 게임 통합 | P0 / 다음 작업, W04 PR #61 병합 대기 | W04 | 저성능 Work |
+| W04 | 로컬 저장·복구 기반 전환 | P0 / 보완 코드·Linux 회귀 통과, 정확한 수정 SHA의 Windows CI 대기 | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
+| W05 | Windows shell·오프라인 게임 통합 | P0 / 대기 | W04 | 저성능 Work |
 | W06 | 진행 규칙 결정·게임 회귀 | P0 / 결정 대기 | W05, D04 | 고성능 Chat → 저성능 Work |
 | W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 목록·후보 관리 | P1 / 대기 | W05, W07 | 저성능 Work |
@@ -91,10 +91,18 @@ W05가 먼저 확정한다. W08/W09는 공유 schema·UI를 만지므로 순차 
   사용자 자료 보존/전환 실패 재개 기준. 전원 차단 검증은 실측한 범위만 기록.
 - 금지: CPU/룰/HP·완료 규칙, 공유 콘텐츠, ComfyUI, 미승인 기존 DB 덮어쓰기.
 - 환경: 저성능 Work. ARCHITECTURE의 확정 경계로 구현하고 계약을 바꿔야 하면 별도 검토.
-- 결과: PR #61 `task/w04-local-storage`. 최종 code SHA `3081dc56a2be95dd30ce0fa78a413da9b4bfeb29`에서
-  Linux backend unittest 78/대사 pytest 10/frontend build, Windows Server 2022 x64 hosted CI의
-  동일 backend 78/pytest 10/frontend build가 통과했다. Windows artifact 및 범위는 CURRENT_STATE에 기록.
-  사용자 Windows PC·실제 Electron host·UI·OS 인터넷 차단·전원 차단은 미검증. PR 병합 전이다.
+- 기존 검증 이력: PR #61 code SHA `3081dc56a2be95dd30ce0fa78a413da9b4bfeb29`에서
+  Linux backend unittest 78/대사 pytest 10/frontend build와 Windows Server 2022 x64 hosted
+  CI run [38572718064](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38572718064)이
+  통과했다. artifact `11897978928`의 source SHA/test 로그 확인은 CURRENT_STATE에 기록돼 있다.
+  이후 PR head `70c6d8bdc031803a713a324889e2f241c95750ac`도 Windows run 38573281946 및 기존
+  78/10 성공이었으나 2026-10-15 검토에서 이름 저장·capability·read/write lock 결함이 재현됐다.
+  이 기존 성공 이력은 보존하되 결함 보완/현재 수정 SHA의 검증으로 간주하지 않는다.
+- 보완 검증: local profile의 PATCH→GET→별도 DB→runtime 재시작, REST/member/admin 및 WS의
+  malformed capability 거절/4401, 기본 engine 동작 보존·local read/write 경계, 동시 writer/stale
+  action/admin write, 파일 DB 정산 commit 실패 rollback/cache eviction/재기동 exactly-once를 추가한다.
+  Linux Python 3.12.14 현재 검사 backend unittest 81, 대사 pytest 10, TypeScript/Vite build가
+  통과했다. 수정 SHA의 정확한 Windows CI/artifact source SHA·실행 결과는 CI 확인 후 기록한다.
 
 ### W05 — Windows shell·오프라인 게임 통합
 
@@ -180,40 +188,51 @@ W05가 먼저 확정한다. W08/W09는 공유 schema·UI를 만지므로 순차 
 - 금지: 미승인 Release/tag/직접 병합, 모델/CG 권리 추측, 새로운 기능/대규모 정리.
 - 환경: 저성능 Work. 공개 배포는 별도 명시 승인 후 별도 실행.
 
+## W04 PR #61 보완 지시문 — 현재 우선 작업
+
+검토 head: `70c6d8bdc031803a713a324889e2f241c95750ac`. 기존 Windows CI와 78 unittest/10 pytest
+성공 이력은 유효한 수행 결과지만, 아래 재현 결함을 보장하지 않는다. 이 절이 W05 인계보다 우선한다.
+
+1. **이름 저장:** local authenticate/local_user가 expunge한 detached User를 반환해 PATCH는
+   성공처럼 보이나 DB에 저장되지 않는다. 요청에서 사용하는 같은 session의 User를 반환하도록
+   local dependency 경계를 최소 수정한다. 웹 profile endpoint/웹 인증 동작은 유지한다.
+   PATCH→다음 HTTP GET→별도 DB 조회→runtime 재시작 후 이름 동일성을 검증한다.
+2. **인증 거절:** hmac.compare_digest에 non-ASCII str을 전달하면 TypeError다. 로컬 capability
+   검증을 REST/member/admin 및 WS에서 일관되게 처리해 malformed/비ASCII/누락/이전 실행
+   토큰은 정상 거절되게 한다. REST 오류 상태와 WS 오류/close code까지 검사하며 secret을 노출하지 않는다.
+3. **읽기/쓰기 transaction 경계:** 공통 engine begin event가 조회에도 BEGIN IMMEDIATE를
+   발행한다. local runtime에서만 쓰기 의도를 명시해 쓰기 transaction을 읽기 전에 직렬화하고,
+   단순 조회는 writer 예약 잠금을 점유하지 않게 한다. 웹용 기본 engine의 기존 transaction
+   의미를 바꾸지 않는다. SQLite FK·active index·소유 잠금과 rollback/cache eviction은 보존한다.
+   로컬 REST의 인증 조회/이름 수정이 별도 session으로 서로 잠금을 걸지 않게 한다.
+   WS의 실제 행동/정산과 admin 쓰기도 같은 local 쓰기 규칙에 포함한다.
+   기본 engine 및 local의 동시 읽기, local 동시 active-session 쓰기/stale action을 검증한다.
+4. **정산 실패 검증:** 파일 SQLite local runtime에서 정산 commit에만 실패를 주입한다.
+   최종 행동 commit은 남고 HP/stage/완료 결과가 rollback되며 cache가 제거되는지 확인한다.
+   새 runtime/재접속 후 정확히 한 번 정산하고, 반복 재접속에서도 같은 결과가 보존돼야 한다.
+   실패 주입을 마지막 행동 전 실패나 기존 in-memory 검사로 대체하지 않는다.
+
+변경 범위는 W04의 local runtime/dependency·transaction 경계와 필요한 회귀 검사다.
+새 프레임워크/저장 기능·W05 UI/host·CPU/룰/진행 정책·이미지·기존 자료 변경은 포함하지 않는다.
+현재 main의 검토 문서를 반영할 때 기존 PR/기능·검증 이력을 덮어쓰지 않는다.
+수정 후 기존 전체 unittest/대사 pytest·영향 build 및 정확한 수정 SHA의 Windows CI를 검증하고
+artifact의 source SHA/실행 결과를 대조한다. CURRENT_STATE/ARCHITECTURE/TASKS는 실제 결과로
+최소 갱신하되 미검증을 완료로 바꾸지 않는다. 기존 PR #61에 보완 commit을 올린다.
+
 ## 다음 Work에 입력할 지시문
 
 ```text
-https://github.com/danhk0612/no-riichi-no-fuku 의 W05만 수행해.
+https://github.com/danhk0612/no-riichi-no-fuku 의 최신 main과 기준 문서를 확인하고,
+TASKS.md의 “W04 PR #61 보완 지시문 — 현재 우선 작업”을 수행해.
 
-작업 전 최신 main·열린 PR·브랜치와 AGENTS.md, README.md, PROJECT.md,
-REQUIREMENTS.md, ARCHITECTURE.md, CURRENT_STATE.md, TASKS.md, AI_WORKFLOW.md를 읽어.
-W04 PR #61은 `3081dc56a2be95dd30ce0fa78a413da9b4bfeb29` 기준으로 제출됐고,
-Windows CI/artifact가 통과했다. 시작 전에 PR #61 병합 여부 및 최신 main에 반영된 SHA를 확인해.
-PR이 미병합이면 제품 파일을 수정하지 말고 병합 대기 상태와 다음 조건만 확인해.
-
-W04가 main에 반영된 경우에만 branch `task/w05-windows-shell`에서 W03 실행 계약과
-W04 local runtime을 이용해 Electron host·번들 엔진 자동 기동·same-origin React/API/WS·
-health 준비 확인·profile/active 대국 진입·정상 종료 및 owned child 회수를 연결해.
-기존 화면 자산과 SQLite/registry/capability 경계를 재사용하고 Windows UI/프로세스 수명
-검증은 LocalAppData가 아닌 workflow의 명시적 임시 data root만 사용해.
-
-먼저 확정된 Electron/번들 Python/FastAPI/RiichiEnv 경계를 확인하고 W02 검증의 한계와
-지원 Windows·배포용 Python patch binary 공급 경로를 확인해. 공급 경로나 선택 변경이 필요한
-미해결 문제가 확인되면 임의 확정하지 말고 근거와 차단 범위를 문서화해. 제품 번들 구현은
-확인된 범위에서 진행해. PR #61의 검증 증거를 재사용하되 현재 수정 SHA의 영향을 받는 CI를
-실행하고 artifact의 source SHA와 결과를 대조해.
-
-W05 이외의 Task를 착수하지 마. 게임 규칙/CPU/HP 0·완료 정책, React 전체 재설계,
-ComfyUI 자동 기동, 다중 프로필·백업/가져오기, 기존 웹 DB/미디어 이전, Release/tag를
-추가하지 마. Electron 창/렌더러 UI 종료, 엔진 중복 기동, 포트 점유, 준비 실패/종료 실패,
-마지막 commit 복구 경계를 의미 있는 검사로 확인해. 실제 사용자 Windows 화면 테스트와
-CI 검증을 구분해. 미검증 환경을 통과로 표현하지 마.
-
-기준 문서를 실제 코드와 검증에 맞추고 branch commit/push 및 PR 제출까지 해.
-직접 병합·Release/tag·후속 W06 착수는 하지 마. 최종 보고에 SHA/PR, 정확한 검증 환경·artifact,
-미검증, 남은 지원 OS/Python 공급 조건, W06 인계를 포함해.
+기존 task/w04-local-storage 브랜치와 PR #61을 유지해.
+이름 편집의 DB/재시작 보존, malformed capability 정상 거절,
+local 전용 쓰기 transaction과 동시 읽기 경계, 파일 DB 정산 commit 실패 복구를 보완해.
+기존 78 unittest/10 pytest·Windows CI 성공 이력과 W03 계약을 보존해.
+정확한 수정 SHA의 Windows CI·artifact를 확인하고 기존 PR과 기준 문서를 갱신해.
+branch push·PR 갱신·필요한 CI는 허용한다.
+직접 병합·Release/tag·W05 착수·범위 밖 제품/게임 규칙 변경은 하지 마.
 ```
 
-권장 환경: **저성능 Work**. W04 계약 확정 후 Windows shell·runtime 수명 통합을 구현하는 작업이다.
-다만 W04 PR #61 병합 전에는 착수하지 않는다. 배포용 Python 공급 조건이 기술 선택 변경을 요구하면
-그 부분을 별도 고성능 Work/Chat으로 검토한다.
+권장 환경: **저성능 Work**. 검토에서 확정한 W04 결함·transaction 경계 보완과 회귀 검증이다.
+계약 자체의 변경이 필요하면 해당 부분만 고성능 Work/Chat으로 분리한다.

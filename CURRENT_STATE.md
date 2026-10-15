@@ -2,8 +2,8 @@
 
 ## 기준
 
-- 확인일: 2026-10-14. W03 PR #60이 병합된 main은
-  `373b82cb0b74b0adb88130678d04d94a7bb85eb5`이다.
+- 확인일: 2026-10-14, W02 검토 후 main `eb5faae08bc6d6ea92078ba768b684343cb2fa1f`.
+  W02 시작/제품 baseline main은 `7523d4177140d303c5f4681c5ff94d92610db227`이다.
 - PR #56(W00)·#57(W01)·#58(인계)는 main에 병합됐다. 열린 #35는 기존 Docker 문서이며 건드리지 않는다.
 - W01 제품/검사 baseline `5762267e2366fa5bdbdd69bc6f38672d141dcbc8`과 현재 backend/frontend
   tree가 동일하다. legacy fixture SHA256도 보존한다. W02는 시험 코드·workflow·기준 문서만 변경한다.
@@ -14,6 +14,48 @@
   격리 후보 검증은 아래에 기록한다. 후보 통과를 제품 완료 또는 최종 기술 채택으로 해석하지 않는다.
 - Wayward 참고는 W00의 `5d80f118c590319881be34faba8214a0c3765fc2` 조사뿐이다.
   W02는 참고 코드 복사·ZIP 분석·이미지 생성·사용자 데이터 연결을 하지 않는다.
+
+## W04 PR #61 — 로컬 보완 검사 통과, Windows CI 대기
+
+2026-10-15 최신 main `2361dd2`의 보완 지시에 따라 기존 `task/w04-local-storage`와 PR #61을
+유지해 수정 중이다. PR은 main 미병합이다. 검토 대상 head `70c6d8bdc031803a713a324889e2f241c95750ac`
+에서는 Windows CI run 38573281946과 기존 78 unittest/10 pytest가 성공했지만 아래 경계가
+누락되어 있었다. 기존 W04 baseline SHA `3081dc56a2be95dd30ce0fa78a413da9b4bfeb29`의 hosted
+Windows run 38572718064 및 artifact `11897978928`은 유효한 과거 결과로 보존한다. 이 검토/수정
+작업이 해당 결과를 새 수정 SHA의 검증으로 대체하지 않는다.
+
+이전 W04 검증 이력: code SHA `3081dc56a2be95dd30ce0fa78a413da9b4bfeb29`에서 Linux backend
+unittest 78/대사 pytest 10/frontend build를 통과했다. Windows Server 2022 Datacenter x64
+(build 20348), Python 3.12.10, Node 24.19.0의 run 38572718064에서 unittest 78(54.438초),
+pytest 10(0.13초), frontend build가 통과했다. artifact `w04-windows-3081dc56a2be95dd30ce0fa78a413da9b4bfeb29`
+(ID `11897978928`, SHA256 `a4bb5b49a4a4886c415c0883e4b20b7601371d139abda261f3edba8c4e5bdca8`,
+2026-10-28 만료)의 source SHA와 test 로그를 확인한 기록을 보존한다. 기존 결과는 새 수정 SHA 검증이 아니다.
+
+이번 보완 코드는 local auth dependency가 요청 transaction의 User를 그대로 반환하도록 바꾸고,
+capability를 UTF-8 bytes로 비교한다. local session에 쓰기 의도를 명시해 해당 연결을 조회 전에
+`BEGIN IMMEDIATE`로 시작하며 일반 읽기는 writer reservation을 얻지 않는다. 기본 engine의 기존
+SQLite transaction 기본값은 유지한다. profile PATCH→GET→재시작, member/admin/REST 및 WS의
+malformed·비ASCII·누락·이전 실행 capability 거절, 동시 읽기·writer·stale action, admin write,
+파일 DB 최종 행동 commit 후 정산 commit 실패/rollback·cache eviction·재기동 후 반복 재접속
+검사를 추가했다. 아래 결과는 이번 로컬 실행 결과이며 정확한 GitHub Windows CI/artifact 검증은
+push 후 별도로 확인한다.
+
+| 발견 | 실제 재현·원인 | 보완 결과 |
+|---|---|---|
+| 이름 편집 비영속 | 보완 완료: local auth와 endpoint가 같은 요청 Session의 User를 공유하고 PATCH→GET→별도 DB/runtime 재시작 후 이름을 확인 |
+| 잘못된 토큰의 비정상 예외 | 보완 완료: UTF-8 bytes 비교로 REST/member/admin 및 WS에서 비ASCII·잘못됨·누락·이전 실행 토큰을 거절하고 WS 4401 close 확인. 응답에 secret을 내보내지 않음 |
+| 조회 transaction의 배타 잠금 | 보완 완료: 로컬 read는 deferred transaction, local HTTP write/WS action·settlement는 첫 DB 조회 전 BEGIN IMMEDIATE. 별도 writer 예약 중 read 성공, 동시 active writer 및 stale action 검사 |
+
+정산 검사는 local runtime의 파일 DB에서 마지막 행동 commit 이후 정산 commit 실패만 주입했다.
+실패 시 행동 log/status/HP/stage 원자성과 cache eviction을 확인하고, 새 runtime의 재접속/반복
+재접속에서 같은 결과 및 한 번의 진행도 변경만 남는지 검사한다. 기존 마지막 행동 후 미정산 복구
+검사와 별도다. 기존 78+10/Windows 성공 이력은 보존하며 이번 Linux 검사에서 Windows/browser를
+실행했다고 기록하지 않는다.
+
+이번 Linux/Python 3.12.14 임시 venv: backend unittest 81개(35.058초), 대사 pytest 10개(0.11초),
+frontend `npm ci && npm run build` 통과. 세부 수정 SHA·Windows run/artifact source SHA·로그 결과는
+최종 보완 commit push와 hosted CI 완료 후 기록한다. 전원 차단 durability 및 사용자 Windows UI/LocalAppData는
+여전히 미검증이다.
 
 ## 코드로 확인한 구현
 
@@ -32,35 +74,6 @@
 `game_start`, `match_first/last` seed 문장은 있으나 그 시작/순위 이벤트 표시 연결은 없다.
 프로필 key가 없으면 문자 avatar를 표시한다. 프로필 이미지 업로드 및 관리자 웹 UI는 없다.
 기본 대국 기능을 재사용할 수 있는 상태이지만 최종 진행 루프/완성 콘텐츠/Windows판 완료가 아니다.
-
-## W04 로컬 저장·복구 전환 — 구현·검증 완료, PR #61 open
-
-기준 main `373b82cb0b74b0adb88130678d04d94a7bb85eb5`에서 `task/w04-local-storage`를 진행한다.
-기존 PostgreSQL 웹 runtime은 그대로 두고, 별도 `create_local_runtime` 경계가 SQLite 파일,
-LocalAppData 하위 `game.db`/`media`/`config`, Alembic head, 기존 seed와 단일 로컬 member 및
-별도 내부 admin principal을 준비한다. 개발/검사는 명시적 임시 data root만 사용한다.
-이름/HP/stage/active 세션을 반복 초기화에서 보존하며 local REST와 WS는 프로세스 메모리의
-실행별 capability로 제한한다. 웹 JWT 경로와 웹 회원·관리자 인증은 변경하지 않는다.
-각 SQLite 연결은 FK와 5초 busy timeout을 설정하고 쓰기 transaction은 `BEGIN IMMEDIATE`로
-시작한다. 한 data root의 엔진 소유 잠금과 active-user partial unique index를 사용한다.
-기존 행동 commit, replay, policy 1/2, rollback 후 registry eviction과 정산 transaction은 재사용한다.
-
-Linux/Python 3.12.14 임시 venv 검사: backend unittest 78개, 대사 pytest 10개, TypeScript/Vite
-production build 통과. 추가 local-runtime 검사에는 migration 반복, 파일 DB 동등 turn 복구,
-profile name edit, REST/WS의 잘못된·이전 capability 거절, hidden admin/member 경계, FK/index,
-프로세스 간 엔진 잠금, 동시 active-session 쓰기 경쟁이 포함된다. 기존 회귀가 policy 1/2·legacy
-snapshot, stale action, action commit 실패 후 cache eviction, 마지막 행동 뒤 재기동 정산 exactly-once를
-통과한다. 전원 차단 durability는 검사하지 않았다.
-
-최종 코드 SHA `3081dc56a2be95dd30ce0fa78a413da9b4bfeb29`의 Windows hosted CI
-[run 38572718064](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38572718064)이
-Windows Server 2022 Datacenter x64(build 20348), Python 3.12.10, Node 24.19.0에서 통과했다.
-backend unittest 78개(54.438초), 대사 pytest 10개(0.13초), TypeScript/Vite build와 프로세스 간
-data-root 잠금 검사가 포함됐다. artifact `w04-windows-3081dc56a2be95dd30ce0fa78a413da9b4bfeb29`
-(ID `11897978928`, SHA256 `a4bb5b49a4a4886c415c0883e4b20b7601371d139abda261f3edba8c4e5bdca8`,
-2026-10-28 만료) 안의 source-sha와 test 로그를 확인했다. 이는 hosted Windows의 백엔드/빌드 CI이며,
-Windows 사용자 PC의 실행창·번들·인터넷 차단 검증이 아니다. 실제 Windows·UI browser·사용자
-LocalAppData·전원 차단 durability는 검사하지 않았다. PR #61은 main 병합 전이다.
 
 ## W02 Windows runtime spike — 기술 검증 완료, 사용자 실기 미검증
 
@@ -323,10 +336,8 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 
 ## 다음
 
-W02 격리 기술 검증 완료(위 Windows CI/실측 범위), PR #59 main 반영 완료. W03 정책은 PR #60,
-main `373b82c`에 확정 반영됐다. W04 구현/검증은 PR #61로 제출했고 아직 병합되지 않았다.
-다음은 PR #61 병합 후 W05 Windows shell·오프라인 게임 통합이다. 이 작업에서 W05를 시작하지 않았다.
-D01~D03/관리 UI의 승인 범위는 REQUIREMENTS를 따른다. 지원 Windows와 배포용 Python patch
-공급 조건은 W05 번들 준비/W12 배포 전에 확인할 잔여 조건이다. clean Windows 10/11·OS 오프라인·X 클릭 실기는
-spike README의 artifact/결과 경로로 보완한다. 미검증을 요구 충족으로 올리지 않는다.
-D04는 W06, 콘텐츠 세부 정책은 W07; 진행·이미지 생성·제품 통합을 본 작업에 섞지 않았다.
+현재 우선 작업은 **W04 PR #61 보완**이다. 기존 `task/w04-local-storage`에서 TASKS의
+보완 지시문을 수행하고 수정 SHA의 Windows CI·artifact를 확인해 같은 PR을 갱신한다.
+PR #61은 위 재현 결함과 검증 누락 해소 전 병합하지 않는다. W05도 착수하지 않는다.
+W03의 여섯 정책·현재 main 제품·W02/기존 검증 증거는 보존한다.
+지원 OS/Python 공급과 실제 Windows 오프라인 UI 검증은 W05/W12의 별도 잔여 조건이다.

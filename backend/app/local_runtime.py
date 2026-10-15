@@ -8,7 +8,7 @@ from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
-from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, status
+from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.engine import Engine, URL
 from sqlalchemy.orm import Session, sessionmaker
@@ -27,7 +27,11 @@ from app.api.profile import router as profile_router
 from app.core.config import Settings
 from app.core.security import hash_password
 from app.db.models import CpuCharacter, GameSetting, User, UserCpuProgress
-from app.db.session import create_database_engine, create_session_factory
+from app.db.session import (
+    LocalRuntimeSession,
+    create_database_engine,
+    mark_write_intent,
+)
 from app.services.bootstrap import (
     seed_cpu_characters,
     seed_cpu_dialogues,
@@ -186,7 +190,7 @@ class LocalRuntime:
 
     def accepts_capability(self, candidate: object) -> bool:
         return isinstance(candidate, str) and hmac.compare_digest(
-            candidate, self.capability
+            candidate.encode("utf-8"), self.capability.encode("utf-8")
         )
 
     def websocket_member(self, candidate: object) -> User | None:
@@ -214,15 +218,20 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
     engine: Engine | None = None
     try:
         database_url = URL.create("sqlite", database=str(paths.database))
-        engine = create_database_engine(database_url)
+        engine = create_database_engine(
+            database_url, sqlite_begin_immediate_by_intent=True
+        )
         _migrate(engine)
-        session_factory = create_session_factory(engine)
+        session_factory = sessionmaker(
+            bind=engine, class_=LocalRuntimeSession, expire_on_commit=False
+        )
         settings = Settings(
             _env_file=None,
             database_url=database_url.render_as_string(hide_password=False),
             media_root=paths.media,
         )
         with session_factory.begin() as session:
+            mark_write_intent(session)
             seed_cpu_characters(session)
             seed_cpu_dialogues(session)
             seed_result_asset_slots(session)
@@ -243,38 +252,42 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
         registry = GameRegistry()
         app.state.local_runtime = None  # assigned below after runtime construction
 
-        def authenticate(value: str | None) -> User:
-            if value is None or not hmac.compare_digest(value, capability):
+        def authenticate(value: str | None, session: Session) -> User:
+            if not isinstance(value, str) or not hmac.compare_digest(
+                value.encode("utf-8"), capability.encode("utf-8")
+            ):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="invalid local capability",
                 )
-            with session_factory() as session:
-                user = session.get(User, member_id)
-                if user is None or not user.is_active:
-                    raise HTTPException(status_code=401, detail="local profile unavailable")
-                session.expunge(user)
-                return user
+            user = session.get(User, member_id)
+            if user is None or not user.is_active:
+                raise HTTPException(status_code=401, detail="local profile unavailable")
+            return user
 
-        def local_user(x_local_capability: str | None = Header(default=None)) -> User:
-            return authenticate(x_local_capability)
+        def local_user(
+            x_local_capability: str | None = Header(default=None),
+            session: Session = Depends(get_session),
+        ) -> User:
+            return authenticate(x_local_capability, session)
 
         def local_member(user: User = Depends(local_user)) -> User:
             if user.role != "member":
                 raise HTTPException(status_code=403, detail="member access required")
             return user
 
-        def local_admin(x_local_capability: str | None = Header(default=None)) -> User:
-            if x_local_capability is None or not hmac.compare_digest(
-                x_local_capability, capability
+        def local_admin(
+            x_local_capability: str | None = Header(default=None),
+            session: Session = Depends(get_session),
+        ) -> User:
+            if not isinstance(x_local_capability, str) or not hmac.compare_digest(
+                x_local_capability.encode("utf-8"), capability.encode("utf-8")
             ):
                 raise HTTPException(status_code=401, detail="invalid local capability")
-            with session_factory() as session:
-                user = session.get(User, admin_id)
-                if user is None or not user.is_active or user.role != "superadmin":
-                    raise HTTPException(status_code=403, detail="local admin unavailable")
-                session.expunge(user)
-                return user
+            user = session.get(User, admin_id)
+            if user is None or not user.is_active or user.role != "superadmin":
+                raise HTTPException(status_code=403, detail="local admin unavailable")
+            return user
 
         app.dependency_overrides[get_current_user] = local_user
         app.dependency_overrides[get_current_member] = local_member
@@ -296,9 +309,11 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
 
 
 def _session_dependency(session_factory: sessionmaker[Session]):
-    def get_local_session():
+    def get_local_session(request: Request):
         with session_factory() as session:
             try:
+                if request.method.upper() not in {"GET", "HEAD", "OPTIONS"}:
+                    mark_write_intent(session)
                 yield session
                 session.commit()
             except Exception:

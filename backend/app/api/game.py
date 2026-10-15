@@ -24,6 +24,7 @@ from app.api.dependencies import (
 from app.core.config import Settings
 from app.core.security import decode_access_token
 from app.db.models import User
+from app.db.session import mark_write_intent
 from app.mahjong.session import GameSessionStateError
 from app.schemas.game import (
     CpuChoiceResponse,
@@ -218,6 +219,7 @@ async def send_registered_game_state(
             if registered.settlement is None:
                 with session_factory() as session:
                     try:
+                        mark_write_intent(session)
                         registered.settlement = registry.settle(session, registered)
                         session.commit()
                     except Exception:
@@ -345,6 +347,7 @@ async def game_session_websocket(
             try:
                 with session_factory() as session:
                     try:
+                        mark_write_intent(session)
                         registry.submit_action(
                             session,
                             registered,
