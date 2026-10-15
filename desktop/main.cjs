@@ -613,8 +613,10 @@ async function smokeRun() {
     }).then(response => response.json())
     await window.webContents.executeJavaScript(`(() => {
       window.confirm = () => true
-      const reset = document.querySelector('.game-toolbar > button.text-button')
+      const reset = document.querySelector('.selection-actions button') || document.querySelector('.game-toolbar > button.text-button')
+      if (!reset) throw new Error('could not locate reset control while start response was pending')
       const reactProps = Object.keys(reset).find(key => key.startsWith('__reactProps$'))
+      if (!reactProps) throw new Error('could not locate reset handler while start response was pending')
       reset[reactProps].onClick()
     })()`)
     const rosterAfterStartReset = await waitFor(async () => {
