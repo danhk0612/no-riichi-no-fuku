@@ -2,9 +2,9 @@
 
 ## 기준
 
-- 확인일: 2026-10-15. 검토 시작 main `2361dd29a31b39cf5ccc89e0acb82299832c47da`.
+- 확인일: 2026-10-15. W05 검토 기준 main `99dd432e09d9029c495a6817bae4e42aaebb28ab`.
 - W04 제품 코드 검증 SHA는 `455d400c4a8ddf11eaa0e3d676317c80b9a553b2`이다.
-  실제 PR/병합 상태는 PR #61 및 Git을 따른다. 다음 구현은 W05다.
+  PR #61은 main에 병합됐다. W05 PR #63은 종료 경로 보완 전 병합하지 않는다.
 - PR #56(W00)·#57(W01)·#58(인계)는 main에 병합됐다. 열린 #35는 기존 Docker 문서이며 건드리지 않는다.
 - W01 baseline 이후 W04는 local runtime·DB 연결/권한 경계·관련 회귀만 추가/수정했다.
   CPU/규칙/정산 핵심·legacy fixture·기존 frontend는 보존했다.
@@ -15,6 +15,38 @@
   격리 후보 검증은 아래에 기록한다. 후보 통과를 제품 완료 또는 최종 기술 채택으로 해석하지 않는다.
 - Wayward 참고는 W00의 `5d80f118c590319881be34faba8214a0c3765fc2` 조사뿐이다.
   W02는 참고 코드 복사·ZIP 분석·이미지 생성·사용자 데이터 연결을 하지 않는다.
+
+## W05 PR #63 — 검토 결과, 종료 경로 보완 필요
+
+검토 head `5d249962dd1aff9d943cc2f4fc0e62a0a6a4735f`; 제품·검사·workflow는 Windows 검증
+code `c9cb8515a50c4a2387ca70a5be42b11cf9a7029e`와 같고 이후 변경은 CURRENT_STATE뿐이다.
+Electron host/private pipe capability·frozen engine·same-origin React·로컬 이름 편집·active/최근
+완료 결과 복귀가 PR에 구현됐다. 아직 main의 구현으로 간주하지 않는다.
+
+Windows Server 2022 x64 run [38666626946](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38666626946)
+job 116199947741은 source unittest 81/대사 pytest 10, React build, freeze/package, renderer smoke,
+ZIP 생성이 success다. artifact 11942211016을 내려받아 source SHA, renderer checks 및 archive
+SHA256 `edb5521f7d81428a66c790df1f78547bc4e9c01bfe7b9ed7adc14c31906efe74` 일치를 확인했다.
+smoke에서 이름 저장, active 복구, 실제 대국 완료, 완료 재접속, 충돌/소유 child 회수는 통과했다.
+이번 Linux 재검사도 unittest 81(36.818초)/pytest 10(0.08초), npm ci/build 통과다.
+
+**병합 차단:** `desktop/main.cjs`의 일반 실행 창 종료는 engine 회수 완료 전에 app 종료를 허용한다.
+`finishQuit()`가 quitting=true 후 window.destroy()를 호출하면 마지막 창의 window-all-closed
+handler가 !smoke에서 app.quit()를 호출한다. before-quit는 quitting=true여서 차단하지 않는다.
+그 뒤에야 100ms delay와 stopEngine()이 이어진다. 현재 함수·handler를 Node VM/EventEmitter로
+실행해 `window.destroy → app.quit allowed=true → delay → stopEngine → app.quit allowed=true`
+순서를 재현했다. 이는 Windows 실기 재현이 아니라 실제 소스의 제어 흐름 검사다.
+엔진의 stdin EOF 종료 시도가 있더라도 host가 완료/timeout/회수를 기다린다는 계약은 보장되지 않는다.
+
+기존 --smoke는 window-all-closed의 종료 분기를 건너뛰어 이 결함을 검사하지 못한다.
+일반 실행의 X/Alt+F4/app.quit 경로를 공통 종료 orchestration으로 연결하고, 소유 engine의 close를
+기다린 뒤에만 최종 app 종료를 허용해야 한다. 대기 중 재진입/중복 quit에도 동일하게 적용한다.
+수정 전 실패하는 회귀 및 Windows packaged 일반 모드 종료 검사를 추가하고 정확한 수정 SHA의
+CI/artifact를 재확인한다. renderer와 engine을 함께 종료·재실행한 저장 복구도 확인한다.
+
+개인 Windows/물리 X 클릭·OS network-off·최소 client OS·clean-machine VC runtime·전원 차단과
+장기 Python 보안 patch는 별도 미검증이다. 기존 smoke 성공 이력은 보존한다. PR #63은 열린 채로
+보완하며 W06은 D04 결정 전 착수하지 않는다. 다음 Work 지시문은 TASKS를 따른다.
 
 ## W04 PR #61 — 최종 검토·보완 결과
 
