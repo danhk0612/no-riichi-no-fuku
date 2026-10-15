@@ -401,6 +401,11 @@ class GameRegistry:
                 snapshot = choice_by_id.get(char_id, {}) if char_id is not None else {}
                 if char_id is None or int(snapshot.get("defeat_stage", 0)) != 3:
                     continue
+                if any(
+                    dialogue["cpu_character_id"] == char_id and dialogue["event_key"] == event_key
+                    for dialogue in dialogues
+                ):
+                    continue
                 text = DialogueSelector(rng=__import__("random").Random(f"{registered.session_id}:{event_key}:{char_id}")).select_dialogue(db_session, char_id, event_key)
                 if text:
                     dialogues.append({"cpu_character_id": char_id, "event_key": event_key, "text": text})

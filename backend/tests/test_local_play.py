@@ -19,6 +19,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.db.models import (
     CpuCharacter,
+    CpuDialogue,
     GameSessionRecord,
     GameSetting,
     LocalPlayRoster,
@@ -171,6 +172,45 @@ class LocalPlayTests(unittest.TestCase):
             })
             self.assertEqual(repeated.status_code, 200, repeated.text)
             self.assertEqual(repeated.json()["ending_payload"], payload)
+        finally:
+            client.close()
+            runtime.close()
+            temporary.cleanup()
+
+    def test_completed_cpu_last_dialogue_is_persisted_once(self):
+        temporary, runtime, client, headers = self._runtime("nrnf-complete-cpu-dialogue-")
+        try:
+            play = client.get("/api/local/play", headers=headers).json()
+            with runtime.session_factory.begin() as session:
+                session.get(UserCpuProgress, (runtime.member_id, 1)).defeat_stage = 3
+                session.add(CpuDialogue(cpu_character_id=1, event_key="match_last", text="완료 CPU 패배 대사"))
+            confirmed = client.post("/api/local/play/roster", headers=headers, json={
+                "generation": play["generation"], "cpu_character_ids": [1, 2, 3],
+            })
+            self.assertEqual(confirmed.status_code, 200, confirmed.text)
+            record = GameSessionRecord(
+                id="completed-cpu-dialogue-session", user_id=runtime.member_id, match_seed=1,
+                cpu_choices=[
+                    {"id": 1, "defeat_stage": 3, "effective_tier": 0},
+                    {"id": 2, "defeat_stage": 0, "effective_tier": 2},
+                    {"id": 3, "defeat_stage": 0, "effective_tier": 2},
+                ], players=[], human_action_indices=[], status="active",
+                play_generation=confirmed.json()["generation"],
+                rules_snapshot={"version": 2, "mode": "progress"},
+            )
+            registered = RegisteredGame(
+                session_id=record.id, user_id=runtime.member_id, players=(), action_version=0,
+                game=_FinishedGame((2, 4, 3, 1)), play_generation=confirmed.json()["generation"],
+                rules_mode="progress",
+            )
+            with runtime.session_factory.begin() as session:
+                session.add(record)
+                session.flush()
+                GameRegistry()._settle_local(session, registered, record)
+                dialogues = registered.presentation["result_dialogues"]
+                self.assertEqual(len(dialogues), 1)
+                self.assertEqual(dialogues[0]["cpu_character_id"], 1)
+                self.assertEqual(dialogues[0]["event_key"], "match_last")
         finally:
             client.close()
             runtime.close()

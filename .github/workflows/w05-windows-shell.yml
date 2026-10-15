@@ -97,6 +97,7 @@ jobs:
           $required = @(
             'same-origin React loaded without login',
             'renderer name editor persisted the local profile',
+            'renderer reset retained roster candidates',
             'renderer fixed participant roster before opponent selection',
             'active match restored after engine shutdown/restart at committed turn',
             'real renderer completed a normal local match',

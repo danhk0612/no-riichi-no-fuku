@@ -402,7 +402,7 @@ function App() {
     clearResultAssetUrl()
     try {
       const updated = await resetLocalPlay(accessToken, localPlay.generation)
-      setLocalPlay(updated)
+      storeLocalPlay(updated)
       await loadLocalCpus(accessToken, updated)
       setGameState({ status: 'waiting' })
       setPlayers([])

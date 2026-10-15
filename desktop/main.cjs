@@ -437,6 +437,27 @@ async function smokeRun() {
   if (saved.player_name !== profileName || saved.role !== 'member') throw new Error('local profile name update failed')
   addCheck('renderer name editor persisted the local profile')
 
+  const initialRosterSelection = await window.webContents.executeJavaScript(
+    "Boolean(document.querySelector('.selection-panel h2')?.innerText.includes('참가 CPU'))",
+  )
+  if (initialRosterSelection) {
+    const beforeReset = await fetch(`${origin}/api/local/play`, {
+      headers: { 'X-Local-Capability': capability },
+    }).then(response => response.json())
+    await window.webContents.executeJavaScript(`(() => {
+      window.confirm = () => true
+      document.querySelector('.selection-actions button')?.click()
+    })()`)
+    await waitFor(async () => {
+      const current = await fetch(`${origin}/api/local/play`, {
+        headers: { 'X-Local-Capability': capability },
+      }).then(response => response.json())
+      return current.generation !== beforeReset.generation ? current : false
+    }, 30000)
+    await waitForRenderer("document.querySelector('.selection-panel h2')?.innerText.includes('참가 CPU') && document.querySelectorAll('button.cpu-card:not([disabled])').length >= 3", 30000)
+    addCheck('renderer reset retained roster candidates')
+  }
+
   evidence.phase = 'inspect saved renderer match state'
   writeEvidence()
   const hasActiveOrResult = await window.webContents.executeJavaScript("Boolean(document.querySelector('.human-controls') || document.querySelector('.match-result'))")

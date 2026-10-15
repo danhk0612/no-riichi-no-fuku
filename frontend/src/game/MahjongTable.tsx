@@ -246,8 +246,9 @@ function CompletedTable({
   const localResult = 'progression_version' in state.settlement ? state.settlement : null
   const localSettlement = localResult !== null
   const legacySettlement = localSettlement ? null : state.settlement as MatchSettlement
-  const defeatedCpuName = legacySettlement && legacySettlement.last_place_seat !== 0
-    ? playersBySeat.get(legacySettlement.last_place_seat)?.name ?? 'CPU'
+  const defeatedSeat = localResult ? state.result.ranks.indexOf(4) : legacySettlement?.last_place_seat
+  const defeatedCpuName = defeatedSeat !== undefined && defeatedSeat !== 0
+    ? playersBySeat.get(defeatedSeat)?.name ?? 'CPU'
     : null
 
   return (
