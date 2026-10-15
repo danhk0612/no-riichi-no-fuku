@@ -13,7 +13,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 정책·W04/W05 계약 확정 | W02 | 고성능 Chat |
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 완료(PR #61 병합) | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows hosted 검증·최종 검토 통과(개인 실기 미검증) | W04 | 저성능 Work |
-| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A 설계 검토, B 구현·검증 PR #68 제출, C 대기 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
+| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / W06-A 완료, B PR #68 보완 우선·C 대기 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
 | W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 목록·후보 관리 | P1 / 대기 | W05, W07 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
@@ -267,53 +267,44 @@ local 전용 write intent·동시 읽기·기본 engine의 원본 transaction �
 실패/rollback/cache eviction·재시작 후 exactly-once를 보완했다. 최종 code `455d400`의 실행
 결과는 CURRENT_STATE를 따른다. 기존 보완 지시/성공 이력은 PR #61/#62와 Git에 보존한다.
 
-## 다음 Work에 입력할 지시문 — W06-B
+## 다음 Work에 입력할 지시문 — W06-B PR #68 보완 (현재 우선)
 
-W06-A 문서 설계 검토/병합 후 사용한다. 권장 환경: **저성능 Work**.
+권장 환경: **저성능 Work**. 기존 설계에 대한 회귀·누락 보완이며 새 정책 선택은 없다.
 
 ```text
-danhk0612/no-riichi-no-fuku의 W06-B만 수행해.
-최신 main·현재 브랜치·열린 PR과 AGENTS.md 및 루트 기준 문서를 먼저 확인하고,
-TASKS의 W06-B와 ARCHITECTURE의 “W06-A 구현 계약 — W06-B/C 인계” 전체를 따라.
-A 설계가 검토/병합되지 않았거나 계약이 최신 코드와 충돌하면 그 지점만 보고해.
-task/w06-b-progression에서 제품 구현·회귀·Windows 검증을 진행해.
+danhk0612/no-riichi-no-fuku의 W06-B PR #68 보완만 수행해.
+최신 main·브랜치·열린 PR, AGENTS.md 및 루트 기준 문서를 읽고
+CURRENT_STATE의 “W06-B PR #68 검토 — 보완 전 병합 금지”와 W06-A 계약을 따라.
+기존 task/w06-b-progression 및 PR #68을 유지하고 완료된 구현을 다시 만들지 마.
+검토 head는 3cc15dd3f82b2be8c3d353a6326a7091e428d111이야. 이후 변경도 먼저 확인해.
 
-범위는 Windows local runtime의 고정 참가 명단, HP 없는 새 진행 규칙,
-stage와 effective_tier 분리, 엔딩 pending/event/ack와 미등록 화면, 오마케,
-자료를 보존하는 초기화 및 기존 저장 호환이야. 웹 legacy/JWT/관리자 보안은 유지해.
-ARCHITECTURE의 필드·API·상태·writer 순서·초기화 세대·표시 payload를 구현해.
-새 프로필/슬롯/CPU HP를 추가하지 마. 기존 local stage는 전환 시 보존하고 명단은 명시 선택해.
-최초 명단 후보 API에는 stage3도 포함해. 대국용 선택 가능 목록으로 명단 후보를 대신하지 마.
-기존 active는 원본 agent/규칙 snapshot으로 끝내고 completed는 재정산하지 마.
-새 대국에만 새 규칙을 적용하고 policy1/2·legacy seed/actions/RNG/fixture를 유지해.
+1. 초기화 뒤 취소 legacy 대국의 늦은 정산을 차단해.
+   임시 local 파일 DB에 legacy rules_snapshot=NULL 대국/마지막 행동 기록과 완료 game 객체를 준비하고,
+   reset API 성공 후 record cancelled/stage0 확인→이전 객체로 settle/commit 시도를 재현해.
+   현재 코드는 completed/stage1로 바뀐다. legacy/version2·cached settlement 포함 취소/세대를
+   DB에서 정산 전에 검증해. action/reset/settlement 양쪽 순서·commit 실패/재시작 회귀를 추가해.
+2. 웹 신규 대국은 기존 member/HP 조건을 복구해. HP0 웹 member의 API POST는 409,
+   새 local 규칙은 HP에 의존하지 않아야 해. registry.create가 기존 create_game_session을
+   우회하면서 생긴 회귀이므로 Tier/CPU 정책·web JWT/보안은 바꾸지 마.
+3. 명단 확정 응답이 ending_pending이면 엔딩/ack 화면으로 연결해.
+   이미 stage3인 참가 명단을 확정한 직후와 일반 대국 최종 완료/재실행 경로를 browser에서 검사해.
+4. reset 오류/응답 유실 후 GET play 결과로 화면과 연결까지 복구해.
+   commit 전 실패는 이전 active 연결/turn 복구, commit 뒤 응답 유실은 새 명단 선택 복구가 필요해.
+   반복 reset 자동 재전송·사용자 자료 삭제로 우회하지 마. ack 응답 유실도 같은 상태 복구 계약으로 검사해.
+5. start/confirm/ack·화면 load의 응답을 generation+요청 토큰으로 검증하고,
+   초기화 후 도착한 옛 응답이 old socket/결과/명단을 덮지 못하게 해.
+   busy 버튼과 별도로 강제 순서 회귀를 만들고 실제 도달 가능한 UI 경로도 확인해.
 
-local_play_states/roster와 session 필드/status migration은 기존 0004 다음에 추가해.
-DB writer 예약→play/record 재조회→registry lock→commit→응답 순서를 지켜.
-초기화는 active를 cancelled로 보존하고 local 진행/명단/엔딩만 재시작해.
-이전 generation의 start/action/settlement/socket/cache/fetch/CG callback을 차단해.
-정산 결과·stage·엔딩 event/payload는 같은 commit이며 실패 시 rollback/evict해.
-mutable HTTP는 응답 전 명시 commit/function scope를 보장하고 override 후처리 순서를 가정하지 마.
-start/roster/reset/ack commit 실패 시 HTTP 성공/새 세대·event 비노출 회귀를 추가해.
-명단 CPU 비활성화는 409로 거절하고 새 등록 CPU가 명단·완료 대상에 자동 포함되지 않게 해.
-오마케는 Tier2·진행/CG/캐릭터 대사/추가 이벤트 없음, 기본 마작 규칙/표시는 유지해.
-완료 전 보충 CPU는 Tier0·stage 불변·기존 match_first/last 대사를 저장해 재접속에도 유지해.
-엔딩 리소스 등록/사운드 재생은 C로 남기고 null payload·미등록 화면·명시 ack까지 연결해.
+수정 전 실패/수정 후 통과하는 회귀를 만들고 backend unittest/대사 pytest/frontend build,
+관련 browser와 기존 policy1/2/108행동·writer·정산 commit 실패·Windows renderer/일반 종료를 유지해.
+테스트 수나 기존 CI 성공만으로 위 결함 해소를 주장하지 마. mocked/stub·browser·실제 Windows를 구분해.
+기존 Windows 성공 run 38702603775/artifact 11956942201과 검증 이력은 보존해.
+정확한 수정 source SHA의 Windows CI/artifact source SHA·ZIP hash·실제 결과를 다시 대조해.
+기준 문서/PR 본문을 실제 결과로 갱신하고 main 검토 문서와 충돌을 정리해.
 
-파일 범위는 TASKS의 B 파일 목록을 따라. 무관한 리팩터링/UI 변경·CPU 튜닝은 하지 마.
-backend unittest/대사 pytest/frontend build와 관련 browser/live-game을 실행해.
-미완료 3/2/1/0, 명단 밖 배제, 사람4위, 보충1/4위, 오마케 이벤트 억제를 검사해.
-파일 DB에서 action/reset/settlement 경쟁·동시 reset·마지막 행동 뒤 미정산 재시작·정산
-commit 실패·엔딩 ack 유실·이전 socket/지연 응답·캐시 우회·재기동을 검사해.
-등록 자료·설정·미디어 hash가 초기화/전환 전후 보존되는지 임시 자료에서 확인해.
-기존 legacy/policy1/2·local writer/인증·일반 종료 회귀를 유지해.
-정확한 수정 head SHA의 Windows CI·packaged renderer/일반 종료·재기동·artifact source SHA와
-ZIP hash를 확인해. 기존 smoke의 명단 없는 직접 start도 새 흐름으로 갱신해.
-Linux/Windows hosted/개인 PC/전원 차단·미등록 resource를 분리해 기록해.
-
-ARCHITECTURE/CURRENT_STATE/TASKS에 실제 결과·미검증·C 재개 조건을 반영해.
-브랜치 commit/push·PR 제출·검증 CI는 허용한다.
-직접 병합·Release/tag·W06-C 착수·ComfyUI·외부 오디오 API·콘텐츠 생성은 하지 마.
-실사용 DB/파일을 수정하거나 기존 자료를 삭제·자동 초기화하지 마.
+사용자 LocalAppData·웹 DB/미디어가 아닌 명시적 임시 root만 사용해.
+새 HP·진행 정책·Tier 튜닝·ComfyUI·사운드 기능·무관한 UI 재설계는 추가하지 마.
+commit/push·기존 PR 갱신·검증 CI는 허용해. 직접 병합·Release/tag·W06-C 착수는 하지 마.
 ```
 
 ## 후속 Work에 입력할 지시문 — W06-C
