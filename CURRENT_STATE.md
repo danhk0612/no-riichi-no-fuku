@@ -74,8 +74,8 @@ artifact `w04-windows-d46782bef4947ff448b2d40555ac4b387b2bc25a` (ID `11938706685
 `source-sha.txt`는 정확히 `d46782bef4947ff448b2d40555ac4b387b2bc25a`이며, 다운로드 ZIP hash와
 Actions artifact digest가 일치하고 unittest/pytest 로그를 확인했다. PR-triggered run
 38659729790도 전체 성공이나 artifact의 source SHA는 pull_request merge ref이므로 exact branch
-검증 근거로는 위 push run을 기록한다. 이는 이전 code SHA의 검증 이력이다. 전원 차단
-durability 및 사용자 Windows UI/LocalAppData는 여전히 미검증이다.
+검증 근거로는 위 push run을 기록한다. 이는 W04 시점의 이전 code SHA 검증 이력이다. 해당 시점의 W05 shell/UI 통합과 전원 차단은 미검증이었다.
+W05 hosted renderer 결과는 아래 별도 절에 기록한다.
 
 ## W05 Windows shell — 구현 및 Windows hosted 검증
 
