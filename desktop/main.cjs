@@ -345,8 +345,9 @@ async function startMatchFromRenderer() {
   if (rosterMode) {
     await window.webContents.executeJavaScript(`(() => {
       Array.from(document.querySelectorAll('button.cpu-card:not([disabled])')).slice(0, 3).forEach(button => button.click())
-      document.querySelector('button.start-button:not([disabled])')?.click()
     })()`)
+    await waitForRenderer("document.querySelectorAll('button.cpu-card.selected').length >= 3 && document.querySelector('button.start-button:not([disabled])')", 30000)
+    await window.webContents.executeJavaScript("document.querySelector('button.start-button:not([disabled])')?.click()")
     await waitForRenderer("Boolean(document.querySelector('.selection-panel h2')?.innerText.includes('대국 상대'))", 30000)
     addCheck('renderer fixed participant roster before opponent selection')
   }
