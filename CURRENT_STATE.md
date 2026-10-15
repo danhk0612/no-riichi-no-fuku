@@ -8,7 +8,7 @@ stage/effective tier 분리, HP 없는 새 정산, 완료 CPU Tier 0 보충, 전
 omake, generation 검증/취소형 reset을 추가했다. 기존 stage·CPU/설정·파일과 세션 이력을 보존하며,
 legacy active는 기존 snapshot으로 이어가고 completed는 재정산하지 않는다. 웹 legacy 경로는 그대로 둔다.
 
-Linux에서 `/tmp/nrnf-w06b/bin/python -m unittest discover -s tests -v` 88개,
+Linux에서 `/tmp/nrnf-w06b/bin/python -m unittest discover -s tests -v` 89개,
 `pytest tests/test_dialogue_service.py -v` 10개, `frontend/npm run build` 통과.
 추가 회귀에는 0004 파일 DB 전환/재기동, writer/reset 경쟁, commit 실패, 세대 stale 차단,
 명단/완료 판정, 미등록 ending ack가 포함된다. 임시 DB 초기화 보존 검사에서 등록 CPU, 설정,
