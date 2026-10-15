@@ -246,6 +246,14 @@ function makeWindow(show = true) {
     },
   })
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  window.webContents.on('console-message', (_event, level, message) => {
+    evidence.rendererConsole = [...(evidence.rendererConsole || []), { level, message }].slice(-30)
+    writeEvidence()
+  })
+  window.webContents.on('render-process-gone', (_event, details) => {
+    evidence.rendererGone = details
+    writeEvidence()
+  })
   window.webContents.on('will-navigate', (event, url) => {
     if (!origin || !url.startsWith(`${origin}/`)) event.preventDefault()
   })
@@ -288,6 +296,8 @@ async function clickHumanAction() {
 }
 
 async function startMatchFromRenderer() {
+  evidence.phase = 'click new match'
+  writeEvidence()
   await window.webContents.executeJavaScript(`(() => {
     document.querySelector('.match-result button')?.click()
   })()`)
@@ -369,6 +379,8 @@ async function smokeRun() {
   if (saved.player_name !== profileName || saved.role !== 'member') throw new Error('local profile name update failed')
   addCheck('renderer name editor persisted the local profile')
 
+  evidence.phase = 'inspect saved renderer match state'
+  writeEvidence()
   const hasActiveOrResult = await window.webContents.executeJavaScript("Boolean(document.querySelector('.human-controls') || document.querySelector('.match-result'))")
   if (!hasActiveOrResult) {
     await startMatchFromRenderer()
