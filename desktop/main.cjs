@@ -27,7 +27,10 @@ const evidence = { platform: process.platform, arch: process.arch, checks: [] }
 const delay = ms => new Promise(resolveDelay => setTimeout(resolveDelay, ms))
 let bootstrapError
 
-function addCheck(name, detail = 'passed') { evidence.checks.push({ name, detail }) }
+function addCheck(name, detail = 'passed') {
+  evidence.checks.push({ name, detail })
+  writeEvidence()
+}
 
 function writeEvidence() {
   if (!smoke || !evidencePath) return
@@ -297,6 +300,9 @@ async function startMatchFromRenderer() {
 }
 
 async function smokeRun() {
+  evidence.smokeStarted = true
+  evidence.phase = 'smoke started'
+  writeEvidence()
   const scratch = join(dataRoot, 'w05-ci-scratch')
   mkdirSync(scratch, { recursive: true })
   const stuckChild = spawn('ping.exe', ['-t', '127.0.0.1'], {
@@ -416,6 +422,8 @@ async function smokeRun() {
   if (resultBefore !== resultAfter) throw new Error('completed result changed after engine restart')
   addCheck('completed result reconnected after engine restart without duplicate settlement')
   evidence.passed = true
+  evidence.phase = 'smoke passed; closing host'
+  writeEvidence()
   window.close()
 }
 
