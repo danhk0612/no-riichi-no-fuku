@@ -436,7 +436,9 @@ W06-A 계약을 local-only service/API 경로로 구현했다. migration `202610
 실제 API/화면/저장 필드는 이 절 앞 계약의 의미를 따른다. 테스트는 `backend/tests/test_local_play.py`
 및 `test_local_runtime.py`에 있다. Linux 전체 backend unittest 89개, 대사 pytest 10개와
 frontend production build 통과. 정확한 branch SHA의 Windows run/artifact 증거는 CURRENT_STATE에서
-갱신한다. 사용자의 개인 Windows PC/전원 차단 내구성은 별도 미검증이다. C의 사운드 파일 등록,
+기록했다: code head `a5792359fd772391eb6ce04b0373570ee2a07470`의 Windows Server 2022 run과
+packaged smoke 통과. artifact source SHA 및 inner/outer ZIP hash는 CURRENT_STATE에서 확인한다.
+사용자의 개인 Windows PC/전원 차단 내구성은 별도 미검증이다. C의 사운드 파일 등록,
 setting 및 실제 CG/음악 재생은 아직 구현하지 않았다.
 
 ## 콘텐츠 데이터 구조 권고 — 스키마 미확정

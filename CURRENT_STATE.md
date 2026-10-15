@@ -14,7 +14,13 @@ Linux에서 `/tmp/nrnf-w06b/bin/python -m unittest discover -s tests -v` 89개,
 명단/완료 판정, 미등록 ending ack가 포함된다. 임시 DB 초기화 보존 검사에서 등록 CPU, 설정,
 미디어 파일의 bytes와 세션 이력이 유지됨을 확인한다.
 
-Windows hosted CI/artifact는 아직 이 branch head에 대해 실행 전이며 결과를 아래 기록에 추가한다.
+Windows hosted run `38699420976`은 Windows Server 2022에서 통과했다. tested code head와 artifact의
+`source-sha.txt`는 모두 `a5792359fd772391eb6ce04b0373570ee2a07470`이다. Windows unittest 89개,
+대사 pytest 10개, frontend build, packaged app build, renderer match/roster/active·completed 재기동 및
+종료 smoke가 통과했다. artifact `w05-windows-a5792359fd772391eb6ce04b0373570ee2a07470`
+(ID `11955981080`, 203,278,374 bytes, 2026-10-29 만료)의 artifact ZIP SHA256은
+`78ca101eb68af8ad042d4342de4fdd875d141aaaca082cc96f4507735191b0c0`이며 API digest와 일치한다.
+안쪽 Windows app ZIP SHA256은 `91c9975cf33e9667136a50581c15e6bff4d9404ba33addb2ba998feaf29994c1`이다.
 실제 사용자 PC 및 전원 차단 내구성은 미검증이다. 실제 ending CG/음악은 C 범위이며 미등록/null
 payload 안내·ack만 구현했다. W06-C는 이 PR 검토/병합 후에만 착수한다.
 
