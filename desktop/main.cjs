@@ -576,7 +576,7 @@ async function smokeRun() {
       return current.generation !== generationBeforeStaleConfirm.generation ? current : false
     }, 30000)
     await window.webContents.executeJavaScript('window.__w06ReleaseRosterResponse?.()')
-    await waitForRenderer("document.querySelector('.selection-panel h2')?.innerText.includes('참가 CPU')", 30000)
+    await waitForRenderer("document.querySelector('.selection-panel h2')?.innerText.includes('참가 CPU') && document.querySelectorAll('button.cpu-card:not([disabled])').length >= 3", 30000)
     addCheck('stale roster-confirm response could not replace reset generation screen')
 
     await window.webContents.executeJavaScript(`(() => {
