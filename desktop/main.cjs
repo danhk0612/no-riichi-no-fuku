@@ -460,6 +460,11 @@ try {
 const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) app.quit()
 else {
+  app.on('window-all-closed', () => {
+    evidence.windowAllClosed = true
+    writeEvidence()
+    if (!smoke && process.platform !== 'darwin') app.quit()
+  })
   app.on('second-instance', () => { if (window) { if (window.isMinimized()) window.restore(); window.focus() } })
   app.whenReady().then(async () => {
     try {

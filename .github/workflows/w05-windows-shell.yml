@@ -80,6 +80,7 @@ jobs:
           $testRoot = Join-Path (Get-Location) 'out/w05-scratch/explicit-test-data'
           $evidence = Join-Path (Get-Location) 'out/w05-evidence/renderer-smoke.json'
           New-Item -ItemType Directory -Force (Split-Path $testRoot) | Out-Null
+          @{ platform = 'win32'; arch = 'x64'; smokeStarted = $false; passed = $false; phase = 'workflow launch pending'; checks = @() } | ConvertTo-Json | Set-Content -Encoding utf8 $evidence
           $process = Start-Process -FilePath "$product/No-Riichi-No-Fuku.exe" -ArgumentList @('--smoke','--data',"`"$testRoot`"",'--evidence',"`"$evidence`"") -PassThru -Wait -WindowStyle Hidden
           if ($process.ExitCode -ne 0) {
             if (Test-Path $evidence) { Get-Content $evidence -Raw }
@@ -87,7 +88,7 @@ jobs:
           }
           $report = Get-Content $evidence -Raw | ConvertFrom-Json
           if ($report.platform -ne 'win32' -or $report.arch -ne 'x64' -or -not $report.smokeStarted -or $report.passed -ne $true) {
-            throw 'packaged renderer smoke did not report a completed Windows x64 run'
+            throw "packaged renderer smoke did not report a completed Windows x64 run (phase=$($report.phase), smokeStarted=$($report.smokeStarted), passed=$($report.passed))"
           }
           $required = @(
             'same-origin React loaded without login',
