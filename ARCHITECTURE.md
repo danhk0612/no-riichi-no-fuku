@@ -97,7 +97,8 @@ D01~D03/관리 UI는 이후 W03에서 사용자 승인됐다. D04 진행 정책�
 
 ## W03 구현 계약 — W04/W05 인계
 
-이 절은 승인된 여섯 정책을 구현할 기술 경계다. 제품 코드는 아직 없다.
+이 절은 승인된 여섯 정책을 구현할 기술 경계다. W04의 실제 구현·검증 상태는
+`CURRENT_STATE.md`를 기준으로 한다. 아래 W05는 미착수 계약이다.
 
 ### W04 로컬 DB·프로필·권한
 
@@ -129,6 +130,17 @@ D01~D03/관리 UI는 이후 W03에서 사용자 승인됐다. D04 진행 정책�
   policy 1/2·seed/좌석/성향·legal action index 순서와 fixture는 그대로 보존한다.
 - 기본 SQLite journal/durability를 약화시키지 않는다. WAL·새 백업/복원·export·수동 슬롯은
   이번 최소 구현에 추가하지 않는다. 전원 차단 보장은 실측 없이 주장하지 않는다.
+
+W04 코드는 `backend/app/local_runtime.py`에서 로컬 data root·소유 잠금·SQLite/Alembic/seed·
+로컬 profile/capability 경계를 구성한다. local REST 인증은 요청의 저장 Session에서 member/admin을
+조회해 이름 수정과 같은 transaction에 연결한다. capability는 ASCII 형식을 확인한 뒤 상수 시간 비교로 malformed/비ASCII/고립 surrogate
+입력을 정상 거절한다. `backend/app/db/session.py`의 SQLite FK/busy-timeout/쓰기 예약 처리는 local opt-in 경계에만
+설치한다. 기본 engine은 W04 이전 main의 동작을 유지하면서
+local session의 쓰기 의도만 명시적으로 `BEGIN IMMEDIATE`로 시작한다. local 읽기는 writer 예약을
+얻지 않으며 HTTP method와 WebSocket 행동/정산 transaction이 쓰기 의도를 지정한다.
+`backend/app/api/game.py`에는 local WS capability와 행동/정산 write boundary가 있다.
+웹 JWT 인증은 유지한다. W04는 UI, Electron host channel/preload, 실행창, 제품 번들 entry point를
+포함하지 않는다. 보완 구현·검증의 현재 SHA와 Windows hosted evidence는 `CURRENT_STATE.md`를 따른다.
 
 ### W05 실행창·번들·자동 진입
 

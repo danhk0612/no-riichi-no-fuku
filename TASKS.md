@@ -11,8 +11,8 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W01 | 기존 기능·회귀 기준 확정 | P0 / 기준 확정 완료(브라우저 환경 차단) | W00 | 저성능 Work |
 | W02 | Windows 실행·엔진 번들 기술 검증 | P0 / 기술 검증 완료(Windows CI, 사용자 실기 미검증) | W01 | 고성능 Work |
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 정책·W04/W05 계약 확정 | W02 | 고성능 Chat |
-| W04 | 로컬 저장·복구 기반 전환 | P0 / PR #61 보완 필요 | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
-| W05 | Windows shell·오프라인 게임 통합 | P0 / 대기 | W04 | 저성능 Work |
+| W04 | 로컬 저장·복구 기반 전환 | P0 / 보완 코드·Linux/Windows CI 통과, PR #61 병합 대기 | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
+| W05 | Windows shell·오프라인 게임 통합 | P0 / 다음 착수(main 반영 확인) | W04 | 저성능 Work |
 | W06 | 진행 규칙 결정·게임 회귀 | P0 / 결정 대기 | W05, D04 | 고성능 Chat → 저성능 Work |
 | W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 목록·후보 관리 | P1 / 대기 | W05, W07 | 저성능 Work |
@@ -91,6 +91,22 @@ W05가 먼저 확정한다. W08/W09는 공유 schema·UI를 만지므로 순차 
   사용자 자료 보존/전환 실패 재개 기준. 전원 차단 검증은 실측한 범위만 기록.
 - 금지: CPU/룰/HP·완료 규칙, 공유 콘텐츠, ComfyUI, 미승인 기존 DB 덮어쓰기.
 - 환경: 저성능 Work. ARCHITECTURE의 확정 경계로 구현하고 계약을 바꿔야 하면 별도 검토.
+- 기존 검증 이력: PR #61 code SHA `3081dc56a2be95dd30ce0fa78a413da9b4bfeb29`에서
+  Linux backend unittest 78/대사 pytest 10/frontend build와 Windows Server 2022 x64 hosted
+  CI run [38572718064](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38572718064)이
+  통과했다. artifact `11897978928`의 source SHA/test 로그 확인은 CURRENT_STATE에 기록돼 있다.
+  이후 PR head `70c6d8bdc031803a713a324889e2f241c95750ac`도 Windows run 38573281946 및 기존
+  78/10 성공이었으나 2026-10-15 검토에서 이름 저장·capability·read/write lock 결함이 재현됐다.
+  이 기존 성공 이력은 보존하되 결함 보완/현재 수정 SHA의 검증으로 간주하지 않는다.
+- 보완 검증: local profile의 PATCH→GET→별도 DB→runtime 재시작, REST/member/admin 및 WS의
+  malformed capability 거절/4401, 기본 engine 동작 보존·local read/write 경계, 동시 writer/stale
+  action/admin write, 파일 DB 정산 commit 실패 rollback/cache eviction/재기동 exactly-once를 추가한다.
+  Linux Python 3.12.14 현재 검사 backend unittest 81, 대사 pytest 10, TypeScript/Vite build가
+  통과했다. 정확한 code SHA `d46782bef4947ff448b2d40555ac4b387b2bc25a`의 Windows Server 2022
+  x64 hosted run [38659727577](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38659727577),
+  unittest 81/pytest 10/frontend build가 통과했다. artifact ID `11938706685` source SHA 및 ZIP
+  SHA256 `c4f778a5cb4fcf51bc73ac59404dd2043c14968c6b77ca2956cb508d0e335bff` 검증은 CURRENT_STATE에 있다.
+  기존 PR #61은 열린 상태다. Windows 사용자 UI·LocalAppData·OS 인터넷 차단·전원 차단 검증은 미실행이다.
 
 ### W05 — Windows shell·오프라인 게임 통합
 
@@ -176,51 +192,43 @@ W05가 먼저 확정한다. W08/W09는 공유 schema·UI를 만지므로 순차 
 - 금지: 미승인 Release/tag/직접 병합, 모델/CG 권리 추측, 새로운 기능/대규모 정리.
 - 환경: 저성능 Work. 공개 배포는 별도 명시 승인 후 별도 실행.
 
-## W04 PR #61 보완 지시문 — 현재 우선 작업
+## W04 PR #61 보완 결과
 
-검토 head: `70c6d8bdc031803a713a324889e2f241c95750ac`. 기존 Windows CI와 78 unittest/10 pytest
-성공 이력은 유효한 수행 결과지만, 아래 재현 결함을 보장하지 않는다. 이 절이 W05 인계보다 우선한다.
-
-1. **이름 저장:** local authenticate/local_user가 expunge한 detached User를 반환해 PATCH는
-   성공처럼 보이나 DB에 저장되지 않는다. 요청에서 사용하는 같은 session의 User를 반환하도록
-   local dependency 경계를 최소 수정한다. 웹 profile endpoint/웹 인증 동작은 유지한다.
-   PATCH→다음 HTTP GET→별도 DB 조회→runtime 재시작 후 이름 동일성을 검증한다.
-2. **인증 거절:** hmac.compare_digest에 non-ASCII str을 전달하면 TypeError다. 로컬 capability
-   검증을 REST/member/admin 및 WS에서 일관되게 처리해 malformed/비ASCII/누락/이전 실행
-   토큰은 정상 거절되게 한다. REST 오류 상태와 WS 오류/close code까지 검사하며 secret을 노출하지 않는다.
-3. **읽기/쓰기 transaction 경계:** 공통 engine begin event가 조회에도 BEGIN IMMEDIATE를
-   발행한다. local runtime에서만 쓰기 의도를 명시해 쓰기 transaction을 읽기 전에 직렬화하고,
-   단순 조회는 writer 예약 잠금을 점유하지 않게 한다. 웹용 기본 engine의 기존 transaction
-   의미를 바꾸지 않는다. SQLite FK·active index·소유 잠금과 rollback/cache eviction은 보존한다.
-   로컬 REST의 인증 조회/이름 수정이 별도 session으로 서로 잠금을 걸지 않게 한다.
-   WS의 실제 행동/정산과 admin 쓰기도 같은 local 쓰기 규칙에 포함한다.
-   기본 engine 및 local의 동시 읽기, local 동시 active-session 쓰기/stale action을 검증한다.
-4. **정산 실패 검증:** 파일 SQLite local runtime에서 정산 commit에만 실패를 주입한다.
-   최종 행동 commit은 남고 HP/stage/완료 결과가 rollback되며 cache가 제거되는지 확인한다.
-   새 runtime/재접속 후 정확히 한 번 정산하고, 반복 재접속에서도 같은 결과가 보존돼야 한다.
-   실패 주입을 마지막 행동 전 실패나 기존 in-memory 검사로 대체하지 않는다.
-
-변경 범위는 W04의 local runtime/dependency·transaction 경계와 필요한 회귀 검사다.
-새 프레임워크/저장 기능·W05 UI/host·CPU/룰/진행 정책·이미지·기존 자료 변경은 포함하지 않는다.
-현재 main의 검토 문서를 반영할 때 기존 PR/기능·검증 이력을 덮어쓰지 않는다.
-수정 후 기존 전체 unittest/대사 pytest·영향 build 및 정확한 수정 SHA의 Windows CI를 검증하고
-artifact의 source SHA/실행 결과를 대조한다. CURRENT_STATE/ARCHITECTURE/TASKS는 실제 결과로
-최소 갱신하되 미검증을 완료로 바꾸지 않는다. 기존 PR #61에 보완 commit을 올린다.
+이름 PATCH→GET→파일 DB→runtime 재시작 보존, REST/WS malformed capability 거절,
+local 전용 write intent·동시 읽기·기본 engine의 원본 transaction 보존, 파일 DB 정산 commit
+실패/rollback/cache eviction·재시작 후 exactly-once를 보완했다. 최종 code `455d400`의 실행
+결과는 CURRENT_STATE를 따른다. 기존 보완 지시/성공 이력은 PR #61/#62와 Git에 보존한다.
 
 ## 다음 Work에 입력할 지시문
 
 ```text
-https://github.com/danhk0612/no-riichi-no-fuku 의 최신 main과 기준 문서를 확인하고,
-TASKS.md의 “W04 PR #61 보완 지시문 — 현재 우선 작업”을 수행해.
+https://github.com/danhk0612/no-riichi-no-fuku 의 W05만 수행해.
 
-기존 task/w04-local-storage 브랜치와 PR #61을 유지해.
-이름 편집의 DB/재시작 보존, malformed capability 정상 거절,
-local 전용 쓰기 transaction과 동시 읽기 경계, 파일 DB 정산 commit 실패 복구를 보완해.
-기존 78 unittest/10 pytest·Windows CI 성공 이력과 W03 계약을 보존해.
-정확한 수정 SHA의 Windows CI·artifact를 확인하고 기존 PR과 기준 문서를 갱신해.
-branch push·PR 갱신·필요한 CI는 허용한다.
-직접 병합·Release/tag·W05 착수·범위 밖 제품/게임 규칙 변경은 하지 마.
+최신 main·열린 PR·브랜치와 AGENTS.md, README.md, PROJECT.md, REQUIREMENTS.md,
+ARCHITECTURE.md, CURRENT_STATE.md, TASKS.md, AI_WORKFLOW.md를 먼저 확인해.
+W04 PR #61의 최종 보완 code는 455d400이다. 최신 main 반영 여부와 이후 변경을 확인해.
+미병합이면 제품 변경을 시작하지 마. branch task/w05-windows-shell을 사용해.
+
+W03 계약과 W04 create_local_runtime을 재사용해 Electron host·번들 엔진 자동 기동,
+same-origin React/API/WS·identity/health 준비 확인·로그인 없는 profile/active 대국 진입,
+이름 편집·정상 종료와 owned child 회수를 연결해. W02 시험 임시 DB/seed 주입을 제품에 넣지 마.
+capability는 host와 owned engine의 private channel로만 전달하고 URL/명령줄/일반 로그/DB/
+artifact에 넣지 마. 기존 웹 인증·게임 화면 자산·local 소유 잠금/쓰기/복구 경계를 보존해.
+중복 기동·포트 점유·ready 실패·창 닫기/종료 실패·최종 commit 후 재실행 복구를 검사해.
+실제 Windows/CI 검사는 명시적 임시 data root만 쓰고 사용자 LocalAppData·웹 DB를 사용하지 마.
+
+번들 준비 전에 지원 OS·배포용 Python patch 공급 조건을 확인해. W02의 Python 3.12.10이
+제품의 장기 고정 버전으로 승인된 것은 아니다. 선택 변경이 필요하면 근거와 영향만 분리해
+사용자에게 제시하고 무관한 구현까지 중단하지 마. 같은 RiichiEnv 0.4.8/policy 1/2를 보존해.
+정확한 수정 SHA Windows CI/artifact의 source SHA·실제 결과를 대조하고 source/frozen 회귀와
+실제 renderer의 대국·중간 복구·완료 재접속을 확인해. 사용자 X 클릭·OS 수준 인터넷 차단과
+hosted CI를 구분하며 미검증은 그대로 기록해. 시험 ZIP은 가능하나 정식 Release/tag는 하지 마.
+
+CPU/룰/HP 0·완료/엔딩 정책·React 전체 재설계·ComfyUI·공유 콘텐츠·다중 프로필·백업 UI·
+기존 데이터 이전·W06 착수를 포함하지 마. 문서를 실제 변경/검증 결과로 갱신하고
+branch commit/push 및 PR 제출까지 진행해. 직접 병합·Release/tag는 하지 마.
+최종 보고에 SHA/PR·Windows artifact/검증 환경·미검증·잔여 조건·W06 인계를 포함해.
 ```
 
-권장 환경: **저성능 Work**. 검토에서 확정한 W04 결함·transaction 경계 보완과 회귀 검증이다.
-계약 자체의 변경이 필요하면 해당 부분만 고성능 Work/Chat으로 분리한다.
+권장 환경: **저성능 Work**. 확정된 W03 계약과 검증된 W04 runtime의 host/UI 통합 구현이다.
+배포용 Python/지원 OS 결정에 기술 교체가 필요하면 그 부분만 고성능 Work/Chat으로 검토한다.
