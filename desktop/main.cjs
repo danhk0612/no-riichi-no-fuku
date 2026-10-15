@@ -29,6 +29,31 @@ let bootstrapError
 
 function addCheck(name, detail = 'passed') { evidence.checks.push({ name, detail }) }
 
+function writeEvidence() {
+  if (!smoke || !evidencePath) return
+  try {
+    mkdirSync(require('node:path').dirname(resolve(evidencePath)), { recursive: true })
+    writeFileSync(resolve(evidencePath), JSON.stringify({ ...evidence, argv: process.argv }, null, 2))
+  } catch { /* preserve the original launch error */ }
+}
+
+if (smoke) {
+  evidence.startup = 'main module loaded'
+  writeEvidence()
+  process.on('uncaughtException', error => {
+    evidence.passed = false
+    evidence.error = error.stack || error.message
+    writeEvidence()
+    app.exit(1)
+  })
+  process.on('unhandledRejection', error => {
+    evidence.passed = false
+    evidence.error = error?.stack || String(error)
+    writeEvidence()
+    app.exit(1)
+  })
+}
+
 function resolveDataRoot() {
   if (explicitDataRoot) return resolve(explicitDataRoot)
   if (!process.env.LOCALAPPDATA) throw new Error('Windows LocalAppData is unavailable')
@@ -410,10 +435,7 @@ async function finishQuit() {
     evidence.shutdownError = error.message
     if (smoke) evidence.passed = false
   }
-  if (smoke && evidencePath) {
-    mkdirSync(require('node:path').dirname(resolve(evidencePath)), { recursive: true })
-    writeFileSync(resolve(evidencePath), JSON.stringify(evidence, null, 2))
-  }
+  writeEvidence()
   if (smoke) app.exit(evidence.passed ? 0 : 1)
   else app.quit()
 }
@@ -433,12 +455,18 @@ else {
   app.on('second-instance', () => { if (window) { if (window.isMinimized()) window.restore(); window.focus() } })
   app.whenReady().then(async () => {
     try {
+      evidence.startup = 'app ready'
+      writeEvidence()
       if (bootstrapError) throw bootstrapError
       mkdirSync(dataRoot, { recursive: true })
       await spawnEngine(dataRoot)
+      evidence.startup = 'engine ready'
+      writeEvidence()
       configureRequestBoundary()
       makeWindow(!smoke)
       await loadApplication()
+      evidence.startup = 'renderer loaded'
+      writeEvidence()
       if (smoke) {
         await smokeRun()
         await finishQuit()
