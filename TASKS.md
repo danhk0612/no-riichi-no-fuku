@@ -13,7 +13,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 정책·W04/W05 계약 확정 | W02 | 고성능 Chat |
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 완료(PR #61 병합) | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows hosted 검증·최종 검토 통과(개인 실기 미검증) | W04 | 저성능 Work |
-| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / 정책 확정, W06-A 설계 착수 가능 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
+| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / W06-A 설계 검토 통과, B/C 미구현 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
 | W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 목록·후보 관리 | P1 / 대기 | W05, W07 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
@@ -124,8 +124,11 @@ W05가 먼저 확정한다. W08/W09는 공유 schema·UI를 만지므로 순차 
 REQUIREMENTS D04/R16~R19가 확정 정책이다. CPU HP는 별도 시스템이 아니며 기존 stage를 유지한다.
 제품 구현은 저장/정산/초기화·엔딩/사운드의 계약을 좁힌 뒤 순차 진행한다.
 
-#### W06-A — 저장·복구·리소스 구현 계약 설계 (현재 우선)
+#### W06-A — 저장·복구·리소스 구현 계약 설계 (검토 통과)
 
+- 결과: main `e48aae9` 소스와 저장/정산/UI를 대조하고 ARCHITECTURE의 W06-A 계약을 작성했다.
+  제품·migration 실행·새 Windows 검증은 없다. 2026-10-15 재검토에서 최초 명단 후보 API와
+  local mutable HTTP의 response 전 commit/실패 검증을 명확히 했다. B는 A 병합 후 착수한다.
 - 환경: 고성능 Work. 제품 코드 변경 없이 문서 설계/작업 분해/소스 대조.
 - 범위: 게임 공통 자료와 고정 참가 명단·한 플레이의 진행 상태·대국 snapshot/action log·상시 사운드
   선택 설정의 최소 관계, schema/migration/API/UI, DB writer/transaction/cache 경계.
@@ -159,6 +162,34 @@ REQUIREMENTS D04/R16~R19가 확정 정책이다. CPU HP는 별도 시스템이 �
   실제 제공 리소스 검증과 mock/미등록 경로를 구분한다. 실제 자료 없으면 실측 대기는 명시한다.
 - 금지: 콘텐츠/모델/오디오 생성, 외부 생성 서비스 통합, 임의 seed/사용자 파일 삭제,
   새로운 플레이어/CPU HP·Tier 튜닝·대국 인원 변경·이미지 Level 자동 대응·ComfyUI 구현.
+
+### W06-B/C 파일·검증 인계
+
+계약 원본은 ARCHITECTURE의 W06-A 절이다. 아래는 구현 경계이며 별도 정책을 추가하지 않는다.
+
+| Task | 수정/추가 가능한 파일 범위 | 선행/분리 |
+|---|---|---|
+| B | `backend/app/db/models/`의 local play/roster 및 session 모델·exports, `backend/alembic/versions/`의 0004 다음 migration, `services/game_setup.py`, `game_result.py`, `game_registry.py`, 새 `services/local_play.py`, `api/game.py`, 새 `api/local_play.py`, `schemas/game.py`, 새 `schemas/local_play.py`, `local_runtime.py`, `services/admin.py`의 명단 참조 보호 | A 검토/병합. local 경로만 새 규칙, 웹 legacy 유지. CPU agent 파일 수정/튜닝 금지 |
+| B UI/검사 | `frontend/src/main.tsx`, `api.ts`, `CpuSelection.tsx`, `game/types.ts`, `game/MahjongTable.tsx`, 필요한 최소 `style.css`/새 명단·초기화·미등록 엔딩 컴포넌트, `backend/tests/` 관련 검사, `frontend/tests/`, `desktop/main.cjs`의 기존 smoke 경로, 기존 Windows workflow의 B branch trigger/검증 범위 | host 수명/보안 변경은 제외. 현재 smoke는 main.cjs 내부 구현이며 별도 파일로 분리하지 않음 |
+| C | 새 `db/models/` media/effect-set/track 및 exports·B 다음 migration, 새 `services/local_media.py`, `local_sound.py`, 새 `api/local_sound.py`, `schemas/local_sound.py`, `local_runtime.py` route 연결, B `services/local_play.py`의 ending payload resolve, `api/game.py`의 commit 후 기본 SFX 전달 | B 검토/병합. B의 세대·정산·ack 계약 재작성 금지 |
+| C UI/검사 | `frontend/src/api.ts`, `main.tsx`, `game/types.ts`, 새 최소 사운드/엔딩 설정·재생 컴포넌트, 필요한 style, 관련 backend/frontend tests·desktop smoke·Windows workflow, README | 최소 관리 화면만. W08 캐릭터/공유 후보 편집·외부 서비스·새 SFX hook 제외 |
+| 공통 문서 | `ARCHITECTURE.md`, `CURRENT_STATE.md`, `TASKS.md` | 실제 구현/검증과 차이를 기록, 기존 검증 이력 보존 |
+
+`db/session.py`의 W04 writer·인증·desktop/quit 계약은 우선 재사용한다. 계약상 불가능한 변경이
+필요하면 해당 지점만 근거/영향을 보고하고 범위 밖 수정으로 우회하지 않는다.
+
+| Task | 반드시 추가/보존할 검증 |
+|---|---|
+| B | 최소3·고정 명단/중복 확정·active 변경 참조 보호·명단 밖/추가 CPU 배제, 미완료 3/2/1/0·stage와 effective tier, 사람4위 HP 불변·보충CPU 1/4위 대사·오마케 대사/CG 억제 |
+| B 저장 | 0004 파일 DB upgrade/반복 bootstrap/legacy active·completed/HP0·원 snapshot/policy1/2/108행동, 정산 commit 실패/rollback/evict/재시작, 두 start/두 reset/action·정산·reset 경쟁, stale WS/캐시/지연 응답 차단, cancelled/recent 필터, 초기화 자료 hash 보존 |
+| B 엔딩 | 전체 완료/명단 확정 시 이미 완료인 경우, pending event 1개, 표시 중 재시작/중복 ack/ack 응답 유실·다른 event 거절, 미등록 안내로 omake 진입 |
+| C | format/size/path/auth·한글/공백 파일명·업로드/metadata commit 실패 기존 파일 불변, 등록/설정 재시작·독립 변경/비활성 참조·빈 목록, B reset 후 등록/설정/파일 hash 보존 |
+| C 표시 | event 중복·replay 무음·대사 없는 SFX·오마케 기본 SFX, BGM 목록 변경/엔딩 음악 분리, pending snapshot 불변·누락/실패/autoplay 거절·늦은 audio callback·명시 ack 후 omake 복구 |
+| B/C 공통 | backend unittest·대사 pytest·frontend build·관련 browser/live-game·W04 writer/인증/정산 실패·W05 renderer/일반 종료/재시작. 정확한 head SHA Windows hosted CI/artifact source와 ZIP hash. 개인 PC/전원 차단은 별도 미검증으로 표시 |
+
+기존 W05 workflow의 push trigger는 `task/w05-windows-shell`뿐이다. B/C에서 해당 작업 branch도
+검증하도록 최소 확장하고 PR workflow의 exact head checkout을 유지한다. packaged smoke는 `desktop/main.cjs` 내부에 있다. 기존 smoke를 갱신하며 새 중복 smoke를 만들지 않는다.
+C에 실제 제공 리소스가 없으면 mock/미등록 검사와 실제 CG·음악 출력 미검증(D11)을 분리한다.
 
 ### W07 — 콘텐츠·이미지 이벤트 계약 설계
 
@@ -231,44 +262,93 @@ local 전용 write intent·동시 읽기·기본 engine의 원본 transaction �
 실패/rollback/cache eviction·재시작 후 exactly-once를 보완했다. 최종 code `455d400`의 실행
 결과는 CURRENT_STATE를 따른다. 기존 보완 지시/성공 이력은 PR #61/#62와 Git에 보존한다.
 
-## 다음 Work에 입력할 지시문
+## 다음 Work에 입력할 지시문 — W06-B
+
+W06-A 문서 설계 검토/병합 후 사용한다. 권장 환경: **저성능 Work**.
 
 ```text
-https://github.com/danhk0612/no-riichi-no-fuku 의 W06-A만 수행해.
-최신 main·브랜치·열린 PR과 AGENTS.md 및 루트 기준 문서를 먼저 확인해.
-task/w06-a-contract에서 REQUIREMENTS D04/R16~R19와 TASKS W06-A를 따라.
-이번 작업은 고성능 Work에서 저장·복구·초기화·엔딩/리소스 기술 계약을 설계하고
-저성능 Work가 독립적으로 구현할 W06-B/C 지시문을 만드는 단계야. 제품 구현은 하지 마.
+danhk0612/no-riichi-no-fuku의 W06-B만 수행해.
+최신 main·현재 브랜치·열린 PR과 AGENTS.md 및 루트 기준 문서를 먼저 확인하고,
+TASKS의 W06-B와 ARCHITECTURE의 “W06-A 구현 계약 — W06-B/C 인계” 전체를 따라.
+A 설계가 검토/병합되지 않았거나 계약이 최신 코드와 충돌하면 그 지점만 보고해.
+task/w06-b-progression에서 제품 구현·회귀·Windows 검증을 진행해.
 
-확정 정책:
-- 플레이어 HP와 별도 CPU HP 시스템은 없음. 기존 stage 0~3 유지.
-- 최초 참가 CPU 명단 확정 후 초기화 전 명단 변경 불가. 대국은 그 안에서 서로 다른 CPU 3명.
-- 미완료 CPU가 3명 이상이면 완료 CPU 제외, 1~2명이면 완료 CPU Tier 0 참가 가능.
-  완료 전 보충 CPU 4위는 stage 불변·패배 대사, 1위는 승리 대사.
-- 참가 명단 모두 stage 3이면 CG/음악/대사 엔딩 후 Tier 2 오마케.
-  오마케는 진행 변경·추가 이벤트·승패 대사 없이 대국만 가능. 기본 마작 규칙/표시는 유지.
-- 초기화는 현재 대국/진행/엔딩/오마케/명단 선택을 새로 시작하고
-  등록된 캐릭터·효과음·BGM·설정·이미지/음악 파일은 보존.
-- 게임 공통 캐릭터/효과음 세트/BGM 목록과 설정의 상시 효과음/BGM 선택을 구분.
+범위는 Windows local runtime의 고정 참가 명단, HP 없는 새 진행 규칙,
+stage와 effective_tier 분리, 엔딩 pending/event/ack와 미등록 화면, 오마케,
+자료를 보존하는 초기화 및 기존 저장 호환이야. 웹 legacy/JWT/관리자 보안은 유지해.
+ARCHITECTURE의 필드·API·상태·writer 순서·초기화 세대·표시 payload를 구현해.
+새 프로필/슬롯/CPU HP를 추가하지 마. 기존 local stage는 전환 시 보존하고 명단은 명시 선택해.
+최초 명단 후보 API에는 stage3도 포함해. 대국용 선택 가능 목록으로 명단 후보를 대신하지 마.
+기존 active는 원본 agent/규칙 snapshot으로 끝내고 completed는 재정산하지 마.
+새 대국에만 새 규칙을 적용하고 policy1/2·legacy seed/actions/RNG/fixture를 유지해.
 
-기존 game_setup/game_result/game_registry, snapshots/WS/result-assets, local_runtime과
-DB models/migrations 및 React 화면을 대조해. 최소 schema/필드·관계·migration,
-API 요청/응답·UI 전이, writer/transaction/cache 경계와 정확히 한 번의 정산을 설계해.
-초기화와 진행 중 행동/정산·이전 socket·지연 응답 경쟁, 명단의 참조/등록 자료 변경,
-엔딩 pending/표시/오마케 전환·재시작, 기존 로컬 active/완료 기록 호환을 구체화해.
-기존 저장을 자동 삭제·초기화하거나 현재 진행도로 옛 agent를 재선택하지 마.
-정책/agent snapshot에 대국 시작 당시 적용 규칙을 보존하고 policy 1/2/legacy RNG는 유지해.
+local_play_states/roster와 session 필드/status migration은 기존 0004 다음에 추가해.
+DB writer 예약→play/record 재조회→registry lock→commit→응답 순서를 지켜.
+초기화는 active를 cancelled로 보존하고 local 진행/명단/엔딩만 재시작해.
+이전 generation의 start/action/settlement/socket/cache/fetch/CG callback을 차단해.
+정산 결과·stage·엔딩 event/payload는 같은 commit이며 실패 시 rollback/evict해.
+mutable HTTP는 응답 전 명시 commit/function scope를 보장하고 override 후처리 순서를 가정하지 마.
+start/roster/reset/ack commit 실패 시 HTTP 성공/새 세대·event 비노출 회귀를 추가해.
+명단 CPU 비활성화는 409로 거절하고 새 등록 CPU가 명단·완료 대상에 자동 포함되지 않게 해.
+오마케는 Tier2·진행/CG/캐릭터 대사/추가 이벤트 없음, 기본 마작 규칙/표시는 유지해.
+완료 전 보충 CPU는 Tier0·stage 불변·기존 match_first/last 대사를 저장해 재접속에도 유지해.
+엔딩 리소스 등록/사운드 재생은 C로 남기고 null payload·미등록 화면·명시 ack까지 연결해.
 
-사운드 등록·선택·엔딩 CG/음악/대사 참조/재생·미등록 처리의 최소 계약을 정해.
-실제 리소스가 없는 상태를 구현/실제 재생 완료로 기록하지 마. 파일/CG/오디오 생성·등록,
-외부 사운드 제작 서비스 연결·ComfyUI 구현·새 관리 부가 기능은 하지 마.
-D05~D11 미확정 콘텐츠 정책을 임의 채택하지 말고 독립 가능한 경계를 명시해.
+파일 범위는 TASKS의 B 파일 목록을 따라. 무관한 리팩터링/UI 변경·CPU 튜닝은 하지 마.
+backend unittest/대사 pytest/frontend build와 관련 browser/live-game을 실행해.
+미완료 3/2/1/0, 명단 밖 배제, 사람4위, 보충1/4위, 오마케 이벤트 억제를 검사해.
+파일 DB에서 action/reset/settlement 경쟁·동시 reset·마지막 행동 뒤 미정산 재시작·정산
+commit 실패·엔딩 ack 유실·이전 socket/지연 응답·캐시 우회·재기동을 검사해.
+등록 자료·설정·미디어 hash가 초기화/전환 전후 보존되는지 임시 자료에서 확인해.
+기존 legacy/policy1/2·local writer/인증·일반 종료 회귀를 유지해.
+정확한 수정 head SHA의 Windows CI·packaged renderer/일반 종료·재기동·artifact source SHA와
+ZIP hash를 확인해. 기존 smoke의 명단 없는 직접 start도 새 흐름으로 갱신해.
+Linux/Windows hosted/개인 PC/전원 차단·미등록 resource를 분리해 기록해.
 
-ARCHITECTURE/CURRENT_STATE/TASKS를 갱신하고 W06-B/C의 범위·파일·선행·검증·금지와
-전체 다음 Work 지시문을 작성해. 제품 정책은 다시 선택하지 말고 꼭 필요한 추가 제품
-결정이 발견되면 해당 지점만 근거와 함께 인계해. 문서 diff를 확인하고 branch commit/push·PR까지 해.
-제품 코드/migration 실행·사용자 데이터 수정·직접 병합·Release/tag는 하지 마.
+ARCHITECTURE/CURRENT_STATE/TASKS에 실제 결과·미검증·C 재개 조건을 반영해.
+브랜치 commit/push·PR 제출·검증 CI는 허용한다.
+직접 병합·Release/tag·W06-C 착수·ComfyUI·외부 오디오 API·콘텐츠 생성은 하지 마.
+실사용 DB/파일을 수정하거나 기존 자료를 삭제·자동 초기화하지 마.
 ```
 
-권장 환경: **고성능 Work**. 고정 명단/초기화/기존 세션 복구/엔딩·사운드 참조가 연결된
-계약 설계다. 설계 검토 후 W06-B/C 구현·검증은 **저성능 Work**로 진행한다.
+## 후속 Work에 입력할 지시문 — W06-C
+
+A 및 B 검토/병합 후 사용한다. 권장 환경: **저성능 Work**. B와 병렬 작업하지 않는다.
+
+```text
+danhk0612/no-riichi-no-fuku의 W06-C만 수행해.
+최신 main·현재 브랜치·열린 PR과 AGENTS.md 및 루트 기준 문서를 먼저 읽고,
+TASKS W06-C와 ARCHITECTURE의 “W06-A 구현 계약 — W06-B/C 인계” 전체를 따라.
+A/B 검토·병합과 B의 실제 schema/API/검증 결과를 먼저 확인해.
+task/w06-c-sound-ending에서 최소 사운드 등록·선택과 엔딩 리소스 표시/재생을 구현해.
+
+local_media_assets/sound_effect_sets/background_tracks와 공통 설정을 B 다음 migration으로 추가해.
+등록/수정/비활성화·media 업로드/file·sound-selection·ending-resources API와
+게임 내부 최소 관리/설정·엔딩 화면만 구현해. 캐릭터 P/N/공유 후보 관리 UI는 W08로 남겨.
+초기값은 효과음 null/BGM 빈 목록/엔딩 미등록. 실제/더미 CG·음악·대사를 생성·seed하지 마.
+asset UUID/상대 key·한글 경로·형식/크기·root 이탈 보호·인증·immutable 파일 계약을 지켜.
+파일 교체/참조 해제 시 기존 파일을 삭제하지 마. hard DELETE/자동 청소/변환 기능은 추가하지 마.
+명단과 사운드 선택은 독립이고 진행 중 설정 변경·재시작 보존을 지원해.
+B 엔딩 event/ack/generation 계약을 재설계하지 말고 리소스 resolve만 연결해.
+pending payload는 완료 시 한 번 고정하며 이후 설정 변경으로 바꾸지 마.
+
+선택 BGM은 목록 순서 순환, 기본 마작 6개 SFX는 대사 존재와 독립시켜.
+commit 뒤 event identity로 중복/복구 과거 재생을 막고 오마케에서도 기본 SFX는 유지해.
+오마케 캐릭터 대사/CG/승패 이벤트는 계속 억제해. 캐릭터 voice/새 SFX hook은 추가하지 마.
+엔딩은 일반 BGM 중지→등록 CG/음악 1회/평문 대사→명시 계속하기 ack→오마케 순서야.
+미등록/누락/비활성/재생 실패/autoplay 거절은 안내·무음으로 처리하고 대국/계속하기를 막지 마.
+음악 ended나 GET/파일 실패로 자동 ack하지 마. pending 재기동은 같은 엔딩,
+ack 응답 유실 뒤는 omake로 복구해. 초기화/화면 이탈/늦은 load/ended callback도 세대로 격리해.
+
+TASKS의 C 파일 범위·검증표를 따라 backend/frontend/browser 및 기존 B/legacy/writer/정산 회귀를
+실행해. 실제 사용자 폴더 대신 소유 임시 자료로 파일/설정/초기화 보존을 검사해.
+정확한 수정 SHA의 Windows CI·artifact source SHA/ZIP hash·packaged 흐름을 확인해.
+mock 재생/미등록 경로와 실제 제공 리소스의 CG 표시·오디오 출력 검증을 구분해.
+실제 자료가 없으면 완료로 과장하지 말고 PR에 D11 실측 대기와 정확한 재개 조건을 남겨.
+사운드 설정·pending/ack 후·reset 후 재실행과 한글/공백 경로를 검사해.
+
+CURRENT_STATE/TASKS/ARCHITECTURE와 사용자 README를 실제 구현 범위에서 갱신해.
+브랜치 commit/push·PR 제출·검증 CI는 허용한다.
+직접 병합·Release/tag·W07 착수·공유 콘텐츠 정책 확정·ComfyUI·외부 사운드 생성 서비스·
+파일/콘텐츠 생성·사용자 자료 수정/삭제는 하지 마.
+```
