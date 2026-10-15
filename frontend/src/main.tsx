@@ -115,7 +115,7 @@ function App() {
       setPlayers(activeGame.players)
       setCpus(null)
       setGameState({ status: 'waiting' })
-      connectGame(activeGame.session_id, token, activeGame.players)
+      connectGame(activeGame.session_id, token, activeGame.players, activeGame.generation)
       return
     }
     if (isDesktop && play?.phase === 'ending_pending' && play.ending_event_id) {
