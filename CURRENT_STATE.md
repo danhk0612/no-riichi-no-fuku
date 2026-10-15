@@ -2,27 +2,38 @@
 
 ## 기준
 
-- 확인일: 2026-10-14, W02 검토 후 main `eb5faae08bc6d6ea92078ba768b684343cb2fa1f`.
-  W02 시작/제품 baseline main은 `7523d4177140d303c5f4681c5ff94d92610db227`이다.
+- 확인일: 2026-10-15. 검토 시작 main `2361dd29a31b39cf5ccc89e0acb82299832c47da`.
+- W04 제품 코드 검증 SHA는 `455d400c4a8ddf11eaa0e3d676317c80b9a553b2`이다.
+  실제 PR/병합 상태는 PR #61 및 Git을 따른다. 다음 구현은 W05다.
 - PR #56(W00)·#57(W01)·#58(인계)는 main에 병합됐다. 열린 #35는 기존 Docker 문서이며 건드리지 않는다.
-- W01 제품/검사 baseline `5762267e2366fa5bdbdd69bc6f38672d141dcbc8`과 현재 backend/frontend
-  tree가 동일하다. legacy fixture SHA256도 보존한다. W02는 시험 코드·workflow·기준 문서만 변경한다.
+- W01 baseline 이후 W04는 local runtime·DB 연결/권한 경계·관련 회귀만 추가/수정했다.
+  CPU/규칙/정산 핵심·legacy fixture·기존 frontend는 보존했다.
 - W02 PR #59를 병합했다. 검증 code SHA 이후 변경은 기준 문서 4개뿐이며,
   CI job/다운로드 artifact의 source SHA·내외 ZIP hash·browser/frozen/renderer 증거를 다시 대조했다.
   이번 검토는 기존 Windows 실행 증거 검토이며 Windows를 새로 실행한 결과가 아니다.
-- 제품 Windows 전환은 미구현이다. W02 Windows Actions/PR #59 artifact·사용자 증거 첨부 경로와
+- 로컬 저장/runtime은 W04에 구현됐고 Windows 실행창·번들·로그인 없는 화면 진입은 아직 없다. W02 Windows Actions/PR #59 artifact·사용자 증거 첨부 경로와
   격리 후보 검증은 아래에 기록한다. 후보 통과를 제품 완료 또는 최종 기술 채택으로 해석하지 않는다.
 - Wayward 참고는 W00의 `5d80f118c590319881be34faba8214a0c3765fc2` 조사뿐이다.
   W02는 참고 코드 복사·ZIP 분석·이미지 생성·사용자 데이터 연결을 하지 않는다.
 
-## W04 PR #61 — 보완 검사 통과, PR 병합 대기
+## W04 PR #61 — 최종 검토·보완 결과
 
-2026-10-15 최신 main `2361dd2`의 보완 지시에 따라 기존 `task/w04-local-storage`와 PR #61을
-유지해 수정 중이다. PR은 main 미병합이다. 검토 대상 head `70c6d8bdc031803a713a324889e2f241c95750ac`
-에서는 Windows CI run 38573281946과 기존 78 unittest/10 pytest가 성공했지만 아래 경계가
-누락되어 있었다. 기존 W04 baseline SHA `3081dc56a2be95dd30ce0fa78a413da9b4bfeb29`의 hosted
-Windows run 38572718064 및 artifact `11897978928`은 유효한 과거 결과로 보존한다. 이 검토/수정
-작업이 해당 결과를 새 수정 SHA의 검증으로 대체하지 않는다.
+2026-10-15 W04 보완과 재검토를 수행했다. 사용자 프로필 수정은 요청 Session과 공유하고,
+local 읽기/쓰기 경계를 분리하며 파일 DB 정산 commit 실패 복구를 검사한다.
+최종 재검토에서 기본 SQLite engine에 남은 조회 잠금과 고립 surrogate 토큰 예외를 추가 재현했다.
+해당 두 회귀 검사는 수정 전 각각 database is locked/UnicodeEncodeError로 실패했다.
+`455d400`은 SQLite 설정을 local opt-in에만 설치하고 모든 비ASCII 토큰을 정상 거절한다.
+기본 engine의 원본 main 동시 읽기·FK 의미, local의 FK/쓰기 직렬화·이름/정산 복구를 함께 검증했다.
+최종 Linux Python 3.12.14/RiichiEnv 0.4.8 unittest 81개(35.752초), 대사 pytest 10개(0.10초) 통과.
+Windows 최종 검증: code `455d400c4a8ddf11eaa0e3d676317c80b9a553b2`의 push
+[CI 38660753146](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38660753146) 전체 success.
+Windows Server 2022 x64(build 20348)/Python 3.12.10/Node 24.19.0에서 unittest 81개
+(48.885초), 대사 pytest 10개(0.10초), frontend build를 통과했다. artifact `11937654546`
+`w04-windows-455d400c4a8ddf11eaa0e3d676317c80b9a553b2`의 다운로드 ZIP SHA256
+`3c628bcf53b70c10538b43732277400a790cc253a5805afae13a2cdb407b0631`이 Actions digest와
+일치하고 source-sha 및 로그의 81/10 통과를 대조했다. 이후 인계 commit은 문서만 바꾸며
+이 code SHA와 동일한 제품/검사/workflow에 한해 위 결과를 이어받는다.
+기존 성공 이력은 아래에 보존한다. W05 shell/사용자 Windows/전원 차단 성공으로 해석하지 않는다.
 
 이전 W04 검증 이력: code SHA `3081dc56a2be95dd30ce0fa78a413da9b4bfeb29`에서 Linux backend
 unittest 78/대사 pytest 10/frontend build를 통과했다. Windows Server 2022 Datacenter x64
@@ -32,7 +43,7 @@ pytest 10(0.13초), frontend build가 통과했다. artifact `w04-windows-3081dc
 2026-10-28 만료)의 source SHA와 test 로그를 확인한 기록을 보존한다. 기존 결과는 새 수정 SHA 검증이 아니다.
 
 이번 보완 코드는 local auth dependency가 요청 transaction의 User를 그대로 반환하도록 바꾸고,
-capability를 UTF-8 bytes로 비교한다. local session에 쓰기 의도를 명시해 해당 연결을 조회 전에
+capability의 ASCII 형식을 확인해 비교한다. local session에 쓰기 의도를 명시해 해당 연결을 조회 전에
 `BEGIN IMMEDIATE`로 시작하며 일반 읽기는 writer reservation을 얻지 않는다. 기본 engine의 기존
 SQLite transaction 기본값은 유지한다. profile PATCH→GET→재시작, member/admin/REST 및 WS의
 malformed·비ASCII·누락·이전 실행 capability 거절, 동시 읽기·writer·stale action, admin write,
@@ -40,10 +51,10 @@ malformed·비ASCII·누락·이전 실행 capability 거절, 동시 읽기·wri
 검사를 추가했다. 아래 결과는 이번 로컬 실행 결과이며 정확한 GitHub Windows CI/artifact 검증은
 push 후 별도로 확인한다.
 
-| 발견 | 실제 재현·원인 | 보완 결과 |
-|---|---|---|
+| 발견 | 보완 결과 |
+|---|---|
 | 이름 편집 비영속 | 보완 완료: local auth와 endpoint가 같은 요청 Session의 User를 공유하고 PATCH→GET→별도 DB/runtime 재시작 후 이름을 확인 |
-| 잘못된 토큰의 비정상 예외 | 보완 완료: UTF-8 bytes 비교로 REST/member/admin 및 WS에서 비ASCII·잘못됨·누락·이전 실행 토큰을 거절하고 WS 4401 close 확인. 응답에 secret을 내보내지 않음 |
+| 잘못된 토큰의 비정상 예외 | 보완 완료: ASCII 확인과 상수 시간 비교로 REST/member/admin 및 WS에서 비ASCII·잘못됨·누락·이전 실행 토큰을 거절하고 WS 4401 close 확인. 응답에 secret을 내보내지 않음 |
 | 조회 transaction의 배타 잠금 | 보완 완료: 로컬 read는 deferred transaction, local HTTP write/WS action·settlement는 첫 DB 조회 전 BEGIN IMMEDIATE. 별도 writer 예약 중 read 성공, 동시 active writer 및 stale action 검사 |
 
 정산 검사는 local runtime의 파일 DB에서 마지막 행동 commit 이후 정산 commit 실패만 주입했다.
@@ -62,7 +73,7 @@ artifact `w04-windows-d46782bef4947ff448b2d40555ac4b387b2bc25a` (ID `11938706685
 `source-sha.txt`는 정확히 `d46782bef4947ff448b2d40555ac4b387b2bc25a`이며, 다운로드 ZIP hash와
 Actions artifact digest가 일치하고 unittest/pytest 로그를 확인했다. PR-triggered run
 38659729790도 전체 성공이나 artifact의 source SHA는 pull_request merge ref이므로 exact branch
-검증 근거로는 위 push run을 기록한다. PR #61은 열린 상태이며 직접 병합하지 않았다. 전원 차단
+검증 근거로는 위 push run을 기록한다. 이는 이전 code SHA의 검증 이력이다. 전원 차단
 durability 및 사용자 Windows UI/LocalAppData는 여전히 미검증이다.
 
 ## 코드로 확인한 구현
@@ -344,8 +355,7 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 
 ## 다음
 
-현재 우선 작업은 **W04 PR #61 보완**이다. 기존 `task/w04-local-storage`에서 TASKS의
-보완 지시문을 수행하고 수정 SHA의 Windows CI·artifact를 확인해 같은 PR을 갱신한다.
-PR #61은 위 재현 결함과 검증 누락 해소 전 병합하지 않는다. W05도 착수하지 않는다.
-W03의 여섯 정책·현재 main 제품·W02/기존 검증 증거는 보존한다.
-지원 OS/Python 공급과 실제 Windows 오프라인 UI 검증은 W05/W12의 별도 잔여 조건이다.
+W04의 이름 저장·capability 정상 거절·local 전용 쓰기/기본 engine 읽기·파일 DB 정산 실패
+복구 보완은 완료했다. 다음 Task는 W05 Windows shell·로컬 runtime·같은 origin UI 통합이다.
+TASKS의 다음 Work 지시문으로 최신 main에 PR #61이 반영됐는지 확인하고 저성능 Work에서 진행한다.
+지원 OS/Python 공급·실제 clean PC/OS 오프라인·전원 차단은 남은 검증이며 완료로 올리지 않는다.
