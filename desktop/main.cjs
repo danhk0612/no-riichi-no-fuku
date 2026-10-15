@@ -25,6 +25,7 @@ let window
 let quitting = false
 let quitCoordinator
 let rendererExternalRequestBlocked = false
+let smokeOccupiedPortServer
 const evidence = { platform: process.platform, arch: process.arch, checks: [] }
 const delay = ms => new Promise(resolveDelay => setTimeout(resolveDelay, ms))
 let bootstrapError
@@ -401,7 +402,9 @@ async function smokePreflight() {
     throw new Error(`port collision did not reach bind failure: ${collisionError}`)
   }
   addCheck('occupied port rejected; unrelated listener remained open', collisionError)
-  await new Promise(resolveClose => occupied.close(resolveClose))
+  // Keep the port unavailable until the normal port-0 engine has bound. Windows can
+  // immediately recycle a just-closed listener's port for the next bind attempt.
+  smokeOccupiedPortServer = occupied
 }
 
 async function smokeRun() {
@@ -718,6 +721,10 @@ quitCoordinator = createQuitCoordinator({
   stopEngine,
   onStart: async reason => {
     quitting = true
+    if (smokeOccupiedPortServer) {
+      await new Promise(resolveClose => smokeOccupiedPortServer.close(resolveClose))
+      smokeOccupiedPortServer = undefined
+    }
     evidence.shutdownStarted = { reason, at: Date.now(), hostPid: process.pid, enginePid: child?.process.pid }
     if (window && !window.isDestroyed()) window.setEnabled(false)
     if (lifecycleTest) {
@@ -772,6 +779,10 @@ else {
       if (smoke) await smokePreflight()
       if (lifecycleTest) await testPackagedTimeoutCleanup()
       await spawnEngine(dataRoot)
+      if (smokeOccupiedPortServer) {
+        await new Promise(resolveClose => smokeOccupiedPortServer.close(resolveClose))
+        smokeOccupiedPortServer = undefined
+      }
       evidence.startup = 'engine ready'
       writeEvidence()
       configureRequestBoundary()
