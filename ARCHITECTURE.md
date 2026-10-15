@@ -80,7 +80,7 @@ stdin EOF로 owned Python child 종료를 요청하고, timeout 때 해당 child
 transport 연결을 담당한다. `api/game.py`·CPU agents·legacy fixture·frontend table의 규칙/대국
 로직은 우선 재사용한다. spike 코드를 그대로 제품 entry point로 승격하지 않는다.
 보안/인증·중복 instance·writer/FK·강제 종료 복구와 지원 OS는 아직 결정/검증이 필요하다.
-D01~D03/관리 UI는 이후 W03에서 사용자 승인됐다. D04 진행 정책은 여전히 미확정이다.
+D01~D03/관리 UI는 이후 W03에서 사용자 승인됐다. D04 주요 정책은 이후 2026-10-15 사용자 결정으로 갱신됐다. 아래 W06 경계를 따른다.
 
 공식 근거(2026-10-14 접속·내용 확인; 후보 설명이며 이 게임 실측과 별개):
 - [Python 3.12.10 release](https://www.python.org/downloads/release/python-31210/):
@@ -177,6 +177,24 @@ Windows packaged 일반 모드의 programmatic close/반복 quit·timeout·PID �
   웹 관리자 인증 흐름을 그대로 Windows 기본값으로 가져오지 않는다.
 - `pyproject.toml`은 엔진만 고정하고 나머지는 범위 지정이다. editable 설치의 setuptools
   자동 package 발견이 실패했다. W02에서 번들 빌드 경로와 의존성 재현 기준을 검증한다.
+
+## W06 진행 전환 — 사용자 정책 반영, 세부 구현 계약 조율 중
+
+목표 규칙은 REQUIREMENTS D04가 기준이다. 현재 game_setup은 HP>0/stage<3을 요구하고,
+game_result는 사람 4위 HP 감소·완료 CPU 정산 거절을 수행하므로 실제 코드 전환이 필요하다.
+HP 없음은 UI 숫자 숨기기만으로 끝나지 않는다. 시작 제한·정산·응답·게임 오버/결과 화면과
+저장 호환을 함께 검토한다. DB의 기존 HP column 즉시 삭제를 의미하지 않는다.
+
+CPU의 영속 stage(완료 여부)와 대국에 사용할 난이도를 분리한다. 완료 전 보충 참가의 매우 쉬움과
+전체 완료 후 최고 난이도는 같은 stage 3에서 다르다. 대국 시작 당시 적용한 규칙/난이도·CPU 정책을
+snapshot에 보존해 재시작 시 현재 진행도로 다른 agent를 선택하지 않도록 설계한다.
+기존 policy 1/2의 RNG·legacy fixture는 유지한다. 기존 active/완료 대국에 새 규칙을 소급할지의
+호환 방법은 구현 전 설계하고 기존 세션을 임의 삭제/재정산하지 않는다.
+
+CPU 4위 단계 상승과 전체 완료 판정은 기존 exactly-once 정산을 유지한다. 완료 CPU는 stage를
+올리거나 정산 오류로 거절하지 않는다. 1위 승리/4위 패배 대사와 엔딩의 표시/재접속은 규칙·CPU
+RNG와 분리한다. 엔딩 표시의 저장·반복 조건과 리소스 계약, 초기화의 대국/진행/설정/파일 경계,
+매우 쉬운 agent 수준은 추가 조율 대상이다. 실제 CG/음악/대사 생성이나 사용자 파일 삭제는 없다.
 
 ## 콘텐츠 데이터 구조 권고 — 스키마 미확정
 
