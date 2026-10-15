@@ -24,7 +24,7 @@ class MatchSettlementStateError(MatchSettlementError):
 @dataclass(frozen=True)
 class MatchSettlement:
     last_place_seat: int
-    current_hp: int
+    current_hp: int | None
     cpu_character_id: int | None
     defeat_stage: int | None
     game_over: bool

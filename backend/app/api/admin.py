@@ -8,6 +8,7 @@ from fastapi import (
     HTTPException,
     Path as ApiPath,
     Response,
+    Request,
     UploadFile,
     status,
 )
@@ -16,7 +17,7 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_superadmin, get_session, get_settings
 from app.core.config import Settings
-from app.db.models import CpuCharacter, CpuDialogue, CpuResultAsset, User
+from app.db.models import CpuCharacter, CpuDialogue, CpuResultAsset, LocalPlayRoster, User
 from app.schemas.admin import (
     CpuCharacterCreateRequest,
     CpuCharacterResponse,
@@ -121,14 +122,16 @@ def add_cpu_character(
 def edit_cpu_character(
     cpu_id: int,
     request: CpuCharacterUpdateRequest,
+    raw_request: Request,
     session: Session = Depends(get_session),
 ) -> CpuCharacter:
+    local_runtime = getattr(raw_request.app.state, "local_runtime", None)
+    updates = request.model_dump(exclude_unset=True)
+    if local_runtime is not None and updates.get("active") is False:
+        if session.get(LocalPlayRoster, (local_runtime.member_id, cpu_id)) is not None:
+            raise HTTPException(status_code=409, detail={"code": "roster_reference_conflict", "message": "a CPU in the fixed participant roster cannot be disabled"})
     try:
-        return update_cpu_character(
-            session,
-            cpu_id,
-            request.model_dump(exclude_unset=True),
-        )
+        return update_cpu_character(session, cpu_id, updates)
     except AdminEntityNotFoundError as error:
         raise not_found(error) from None
 

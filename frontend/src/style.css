@@ -156,6 +156,12 @@ button {
   gap: 20px;
 }
 
+.selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 .profile-editor {
   display: flex;
   align-items: center;

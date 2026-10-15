@@ -3,6 +3,8 @@ from __future__ import annotations
 import hmac
 import os
 import secrets
+import asyncio
+from threading import RLock
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -23,10 +25,11 @@ from app.api.dependencies import (
     get_settings,
 )
 from app.api.game import router as game_router
+from app.api.local_play import router as local_play_router
 from app.api.profile import router as profile_router
 from app.core.config import Settings
 from app.core.security import hash_password
-from app.db.models import CpuCharacter, GameSessionRecord, GameSetting, User, UserCpuProgress
+from app.db.models import CpuCharacter, GameSessionRecord, GameSetting, LocalPlayState, User, UserCpuProgress
 from app.db.session import (
     LocalRuntimeSession,
     create_database_engine,
@@ -38,6 +41,7 @@ from app.services.bootstrap import (
     seed_result_asset_slots,
 )
 from app.services.game_registry import GameRegistry, get_game_registry
+from app.services.local_play import ensure_local_play_state
 from app.schemas.game import CreateGameSessionResponse
 
 
@@ -188,6 +192,8 @@ class LocalRuntime:
     admin_id: int
     lock: DataRootLock
     registry: GameRegistry
+    sockets: dict[object, tuple[int, str | None, object]]
+    sockets_lock: object
 
     def accepts_capability(self, candidate: object) -> bool:
         return isinstance(candidate, str) and candidate.isascii() and hmac.compare_digest(
@@ -203,6 +209,22 @@ class LocalRuntime:
                 return None
             session.expunge(user)
             return user
+
+    def register_socket(self, websocket, user_id: int, generation: str | None) -> None:
+        with self.sockets_lock:
+            self.sockets[websocket] = (user_id, generation, asyncio.get_running_loop())
+
+    def unregister_socket(self, websocket) -> None:
+        with self.sockets_lock:
+            self.sockets.pop(websocket, None)
+
+    def close_generation_sockets(self, user_id: int, generation: str) -> None:
+        with self.sockets_lock:
+            targets = [(socket, identity[2]) for socket, identity in self.sockets.items()
+                       if identity[:2] == (user_id, generation)]
+        for socket, loop in targets:
+            if loop is not None and loop.is_running():
+                loop.call_soon_threadsafe(lambda target=socket: asyncio.create_task(target.close(code=4409)))
 
     def close(self) -> None:
         self.engine.dispose()
@@ -237,6 +259,7 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
             seed_cpu_dialogues(session)
             seed_result_asset_slots(session)
             member, admin = _ensure_single_local_profile(session)
+            ensure_local_play_state(session, member.id)
             member_id, admin_id = member.id, admin.id
 
         capability = secrets.token_urlsafe(32)
@@ -249,6 +272,7 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
         )
         app.include_router(local_admin_router)
         app.include_router(game_router)
+        app.include_router(local_play_router)
         app.include_router(profile_router)
         registry = GameRegistry()
         app.state.local_runtime = None  # assigned below after runtime construction
@@ -282,9 +306,14 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
             user: User = Depends(local_member),
             session: Session = Depends(get_session),
         ):
+            state = session.get(LocalPlayState, user.id)
             record = session.scalar(
                 select(GameSessionRecord)
-                .where(GameSessionRecord.user_id == user.id)
+                .where(
+                    GameSessionRecord.user_id == user.id,
+                    GameSessionRecord.status == "completed",
+                    GameSessionRecord.play_generation == (state.generation if state else ""),
+                )
                 .order_by(desc(GameSessionRecord.updated_at), desc(GameSessionRecord.id))
                 .limit(1)
             )
@@ -313,7 +342,8 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
         app.dependency_overrides[get_session] = _session_dependency(session_factory)
         app.dependency_overrides[get_game_registry] = lambda: registry
         runtime = LocalRuntime(
-            app, paths, capability, engine, session_factory, member_id, admin_id, lock, registry
+            app, paths, capability, engine, session_factory, member_id, admin_id,
+            lock, registry, {}, RLock()
         )
         app.state.local_runtime = runtime
         return runtime

@@ -60,6 +60,7 @@ export type CpuChoice = {
 export type GameSessionCreated = {
   session_id: string
   players: PlayerSeat[]
+  generation?: string | null
 }
 
 export type GameScreenState =
@@ -74,20 +75,32 @@ export type GameScreenState =
   | {
       status: 'complete'
       result: MatchResult
-      settlement: MatchSettlement
+      settlement: MatchSettlement | LocalMatchSettlement
       players: PlayerSeat[]
       resultAsset: ResultAsset | null
       resultAssetObjectUrl: string | null
       resultAssetLoadFailed: boolean
       resultDialogue: ResultDialogue | null
+      resultDialogues?: ResultDialogue[]
+      endingEventId?: string | null
     }
+  | { status: 'ending'; generation: string; eventId: string; payload: { version: number; cg_asset_id: string | null; music_asset_id: string | null; dialogue_text: string | null } | null }
 
 export type MatchSettlement = {
   last_place_seat: number
-  current_hp: number
+  current_hp: number | null
   cpu_character_id: number | null
   defeat_stage: number | null
   game_over: boolean
+  cpu_completed: boolean
+}
+
+export type LocalMatchSettlement = {
+  progression_version: 2
+  mode: 'progress' | 'omake'
+  cpu_character_id: number | null
+  defeat_stage: number | null
+  stage_changed: boolean
   cpu_completed: boolean
 }
 
@@ -106,8 +119,8 @@ export type ResultDialogue = {
 }
 
 export type GameClientMessage =
-  | { type: 'authenticate'; access_token: string }
-  | { type: 'action'; legal_action_index: number; action_version: number }
+  | { type: 'authenticate'; access_token: string; generation?: string }
+  | { type: 'action'; legal_action_index: number; action_version: number; generation?: string }
 
 export type DialogueEvent = {
   cpu_character_id: number
@@ -117,13 +130,17 @@ export type DialogueEvent = {
 }
 
 export type GameServerMessage =
-  | { type: 'human_turn'; action_version: number; turn: HumanTurn }
+  | { type: 'human_turn'; action_version: number; turn: HumanTurn; generation?: string | null; session_id?: string }
   | {
       type: 'match_complete'
       result: MatchResult
       settlement: MatchSettlement
       result_asset: ResultAsset | null
       result_dialogue: ResultDialogue | null
+      result_dialogues?: ResultDialogue[]
+      ending_event_id?: string | null
+      generation?: string | null
+      session_id?: string
     }
   | { type: 'dialogue_event'; cpu_character_id: number; seat: number; event_key: string; text: string }
   | { type: 'error'; code: string; message: string }

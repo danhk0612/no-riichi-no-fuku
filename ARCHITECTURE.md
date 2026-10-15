@@ -424,6 +424,21 @@ W06에 필요한 등록 슬롯/기본 마작 SFX/평문 엔딩만 독립시켰�
 실측·W12 배포 조건이며 B 저장 구현을 막지 않는다. 새 제품 정책 결정을 요구하는 차이가 발견되면
 그 지점만 보류/보고하고 이 계약을 임의 확대하지 않는다.
 
+## W06-B 구현 상태 (2026-10-15)
+
+W06-A 계약을 local-only service/API 경로로 구현했다. migration `20261015_0005`는
+`local_play_states`, `local_play_roster`, session generation/rules/presentation 및 cancelled status를
+추가한다. 새 local settlement snapshot은 rules version 2와 mode를 기록하고 CPU별
+`effective_tier`를 stage와 분리한다. 정산/진행/presentation/ending pending은 writer transaction에서
+함께 저장되며 저장 완료 뒤에만 registry 결과를 공개한다. reset은 이전 active를 cancelled 처리하고
+새 generation을 만든다. CPU/설정/파일과 기존 session/action 이력은 보존한다.
+
+실제 API/화면/저장 필드는 이 절 앞 계약의 의미를 따른다. 테스트는 `backend/tests/test_local_play.py`
+및 `test_local_runtime.py`에 있다. Linux 전체 backend unittest 88개, 대사 pytest 10개와
+frontend production build 통과. 정확한 branch SHA의 Windows run/artifact 증거는 CURRENT_STATE에서
+갱신한다. 사용자의 개인 Windows PC/전원 차단 내구성은 별도 미검증이다. C의 사운드 파일 등록,
+setting 및 실제 CG/음악 재생은 아직 구현하지 않았다.
+
 ## 콘텐츠 데이터 구조 권고 — 스키마 미확정
 
 | 개념 | 소유/관계 | 제안 책임 |

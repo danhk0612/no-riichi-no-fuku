@@ -150,6 +150,9 @@ REQUIREMENTS D04/R16~R19가 확정 정책이다. CPU HP는 별도 시스템이 �
   완료 전 보충 CPU 승패 무변동/대사와 오마케 이벤트 억제, 정확히 한 번의 완료 판정,
   초기화 동시 요청·오래된 socket/지연 응답 차단·재기동 및 자료 보존 검사.
   기존 policy 1/2/legacy·local writer/정산 실패 회귀·정확한 SHA Windows CI/artifact 확인.
+- 실행 기록: 2026-10-15 기준 main `24ed576`; 구현은 `task/w06-b-progression` PR로 제출한다.
+  Linux backend unittest 88개, 대사 pytest 10개, frontend build와 임시 자료 보존 검사가 통과했다.
+  exact-head Windows CI/artifact 결과 및 source/ZIP hash는 CURRENT_STATE의 W06-B 항목에 기록한다.
 
 #### W06-C — 사운드 자료·설정 및 엔딩 리소스 연결 (A 및 B 검토 후)
 

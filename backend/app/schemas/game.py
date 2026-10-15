@@ -17,6 +17,7 @@ class CpuChoiceResponse(BaseModel):
 
 class CreateGameSessionRequest(BaseModel):
     cpu_character_ids: tuple[int, int, int]
+    generation: str | None = None
 
 
 class GamePlayerResponse(BaseModel):
@@ -28,8 +29,11 @@ class GamePlayerResponse(BaseModel):
 
 
 class CreateGameSessionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     session_id: str
     players: tuple[GamePlayerResponse, ...]
+    generation: str | None = None
 
 
 class DialogueEventResponse(BaseModel):

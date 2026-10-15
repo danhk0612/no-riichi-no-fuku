@@ -1,5 +1,23 @@
 # 현재 상태
 
+## W06-B 구현 — 검토 가능한 PR
+
+기준 main/준비 SHA `24ed5766b8dac1850bbd05267ac228733d549616`; 작업 브랜치 `task/w06-b-progression`.
+W06-A 계약을 Windows local 경로에 구현했다. local state/고정 roster와 0005 migration,
+stage/effective tier 분리, HP 없는 새 정산, 완료 CPU Tier 0 보충, 전체 완료 pending ending 및 명시 ack,
+omake, generation 검증/취소형 reset을 추가했다. 기존 stage·CPU/설정·파일과 세션 이력을 보존하며,
+legacy active는 기존 snapshot으로 이어가고 completed는 재정산하지 않는다. 웹 legacy 경로는 그대로 둔다.
+
+Linux에서 `/tmp/nrnf-w06b/bin/python -m unittest discover -s tests -v` 88개,
+`pytest tests/test_dialogue_service.py -v` 10개, `frontend/npm run build` 통과.
+추가 회귀에는 0004 파일 DB 전환/재기동, writer/reset 경쟁, commit 실패, 세대 stale 차단,
+명단/완료 판정, 미등록 ending ack가 포함된다. 임시 DB 초기화 보존 검사에서 등록 CPU, 설정,
+미디어 파일의 bytes와 세션 이력이 유지됨을 확인한다.
+
+Windows hosted CI/artifact는 아직 이 branch head에 대해 실행 전이며 결과를 아래 기록에 추가한다.
+실제 사용자 PC 및 전원 차단 내구성은 미검증이다. 실제 ending CG/음악은 C 범위이며 미등록/null
+payload 안내·ack만 구현했다. W06-C는 이 PR 검토/병합 후에만 착수한다.
+
 ## 기준
 
 - 확인일: 2026-10-15. W05 보완 기준 main `4f09869`; PR #63 수정 source SHA는 `7d9a20b97f7ef60b5dda4a43a24d3cbf08723ffb`.
