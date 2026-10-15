@@ -23,6 +23,18 @@ from app.local_runtime import create_local_runtime, resolve_data_paths
 
 class LocalRuntimeTests(unittest.TestCase):
     @staticmethod
+    def _fix_roster(client, headers, cpu_ids):
+        play = client.get("/api/local/play", headers=headers).json()
+        if play["phase"] == "roster_required":
+            response = client.post("/api/local/play/roster", json={
+                "generation": play["generation"], "cpu_character_ids": cpu_ids,
+            }, headers=headers)
+            if response.status_code != 200:
+                raise AssertionError(response.text)
+            play = response.json()
+        return play["generation"]
+
+    @staticmethod
     def _receive_human_turn(websocket):
         while True:
             message = websocket.receive_json()
@@ -46,7 +58,7 @@ class LocalRuntimeTests(unittest.TestCase):
                     )
                     self.assertEqual(
                         connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one(),
-                        "20260912_0004",
+                        "20261015_0005",
                     )
                 with runtime.session_factory.begin() as session:
                     member = session.get(User, runtime.member_id)
@@ -289,9 +301,10 @@ class LocalRuntimeTests(unittest.TestCase):
                 first_client = TestClient(first.app)
                 headers = {"X-Local-Capability": first.capability}
                 cpu_ids = [cpu["id"] for cpu in first_client.get("/api/game/cpus", headers=headers).json()][:3]
+                generation = self._fix_roster(first_client, headers, cpu_ids)
                 started = first_client.post(
                     "/api/game/sessions",
-                    json={"cpu_character_ids": cpu_ids},
+                    json={"cpu_character_ids": cpu_ids, "generation": generation},
                     headers=headers,
                 )
                 self.assertEqual(started.status_code, 201)
@@ -300,7 +313,7 @@ class LocalRuntimeTests(unittest.TestCase):
                     f"/api/game/sessions/{session_id}/ws"
                 ) as websocket:
                     websocket.send_json(
-                        {"type": "authenticate", "capability": first.capability}
+                        {"type": "authenticate", "capability": first.capability, "generation": generation}
                     )
                     before = self._receive_human_turn(websocket)
                     websocket.send_json(
@@ -308,6 +321,7 @@ class LocalRuntimeTests(unittest.TestCase):
                             "type": "action",
                             "legal_action_index": 0,
                             "action_version": before["action_version"],
+                            "generation": generation,
                         }
                     )
                     committed_turn = self._receive_human_turn(websocket)
@@ -324,12 +338,12 @@ class LocalRuntimeTests(unittest.TestCase):
                 self.assertEqual(active.json()["session_id"], session_id)
                 recent = client.get("/api/game/sessions/recent", headers=headers)
                 self.assertEqual(recent.status_code, 200)
-                self.assertEqual(recent.json()["session_id"], session_id)
+                self.assertIsNone(recent.json())
                 with client.websocket_connect(
                     f"/api/game/sessions/{session_id}/ws"
                 ) as websocket:
                     websocket.send_json(
-                        {"type": "authenticate", "capability": restarted.capability}
+                        {"type": "authenticate", "capability": restarted.capability, "generation": generation}
                     )
                     restored_turn = self._receive_human_turn(websocket)
                     websocket.send_json(
@@ -337,6 +351,7 @@ class LocalRuntimeTests(unittest.TestCase):
                             "type": "action",
                             "legal_action_index": 0,
                             "action_version": 0,
+                            "generation": generation,
                         }
                     )
                     self.assertEqual(
@@ -429,16 +444,18 @@ class LocalRuntimeTests(unittest.TestCase):
                     ).status_code,
                     404,
                 )
-                cpu_ids = [
-                    cpu["id"]
-                    for cpu in client.get(
-                        "/api/game/cpus",
-                        headers={"X-Local-Capability": runtime.capability},
-                    ).json()
-                ][:3]
+                play = client.get("/api/local/play", headers={"X-Local-Capability": runtime.capability}).json()
+                candidates = client.get("/api/local/play/roster-candidates", headers={"X-Local-Capability": runtime.capability}).json()
+                cpu_ids = [cpu["id"] for cpu in candidates[:3]]
+                roster = client.post(
+                    "/api/local/play/roster",
+                    json={"generation": play["generation"], "cpu_character_ids": cpu_ids},
+                    headers={"X-Local-Capability": runtime.capability},
+                )
+                self.assertEqual(roster.status_code, 200, roster.text)
                 created = client.post(
                     "/api/game/sessions",
-                    json={"cpu_character_ids": cpu_ids},
+                    json={"cpu_character_ids": cpu_ids, "generation": play["generation"]},
                     headers={"X-Local-Capability": runtime.capability},
                 )
                 self.assertEqual(created.status_code, 201)
@@ -448,7 +465,7 @@ class LocalRuntimeTests(unittest.TestCase):
                     headers={"X-Local-Capability": runtime.capability},
                 ) as websocket:
                     websocket.send_json(
-                        {"type": "authenticate", "capability": "ignored-renderer-value"}
+                        {"type": "authenticate", "capability": "ignored-renderer-value", "generation": play["generation"]}
                     )
                     self.assertEqual(websocket.receive_json()["type"], "human_turn")
                 with client.websocket_connect(
@@ -491,7 +508,7 @@ class LocalRuntimeTests(unittest.TestCase):
                     f"/api/game/sessions/{session_id}/ws"
                 ) as websocket:
                     websocket.send_json(
-                        {"type": "authenticate", "capability": runtime.capability}
+                        {"type": "authenticate", "capability": runtime.capability, "generation": play["generation"]}
                     )
                     self.assertEqual(websocket.receive_json()["type"], "human_turn")
                 self.assertIsNone(runtime.websocket_member("old-run-capability"))
@@ -514,6 +531,8 @@ class LocalRuntimeTests(unittest.TestCase):
                 )
                 self.assertEqual(profile.status_code, 200)
                 self.assertEqual(profile.json()["player_name"], "로컬 이름")
+                self.assertIsNone(profile.json()["current_hp"])
+                self.assertIsNone(profile.json()["max_hp"])
             finally:
                 persisted.close()
 
@@ -527,9 +546,10 @@ class LocalRuntimeTests(unittest.TestCase):
                 cpu["id"]
                 for cpu in client.get("/api/game/cpus", headers=headers).json()
             ][:3]
+            generation = self._fix_roster(client, headers, cpu_ids)
             created = client.post(
                 "/api/game/sessions",
-                json={"cpu_character_ids": cpu_ids},
+                json={"cpu_character_ids": cpu_ids, "generation": generation},
                 headers=headers,
             )
             self.assertEqual(created.status_code, 201, created.text)
@@ -584,7 +604,7 @@ class LocalRuntimeTests(unittest.TestCase):
                             f"/api/game/sessions/{session_id}/ws"
                         ) as websocket:
                             websocket.send_json(
-                                {"type": "authenticate", "capability": runtime.capability}
+                                {"type": "authenticate", "capability": runtime.capability, "generation": generation}
                             )
                             websocket.receive_json()
 
@@ -619,7 +639,7 @@ class LocalRuntimeTests(unittest.TestCase):
                         f"/api/game/sessions/{session_id}/ws"
                     ) as websocket:
                         websocket.send_json(
-                            {"type": "authenticate", "capability": restarted.capability}
+                            {"type": "authenticate", "capability": restarted.capability, "generation": generation}
                         )
                         messages = []
                         while True:
@@ -643,9 +663,7 @@ class LocalRuntimeTests(unittest.TestCase):
                         len(record.human_action_indices), final_action_count
                     )
                     member = session.get(User, restarted.member_id)
-                    self.assertEqual(
-                        member.current_hp, results[0]["settlement"]["current_hp"]
-                    )
+                    self.assertEqual(member.current_hp, 3)
                     self.assertEqual(
                         dict(
                             session.execute(

@@ -13,7 +13,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 정책·W04/W05 계약 확정 | W02 | 고성능 Chat |
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 완료(PR #61 병합) | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows hosted 검증·최종 검토 통과(개인 실기 미검증) | W04 | 저성능 Work |
-| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / W06-A 완료, B PR #68 보완 우선·C 대기 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
+| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B 최종 검토 통과·C 인계 준비 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
 | W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 목록·후보 관리 | P1 / 대기 | W05, W07 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
@@ -150,6 +150,11 @@ REQUIREMENTS D04/R16~R19가 확정 정책이다. CPU HP는 별도 시스템이 �
   완료 전 보충 CPU 승패 무변동/대사와 오마케 이벤트 억제, 정확히 한 번의 완료 판정,
   초기화 동시 요청·오래된 socket/지연 응답 차단·재기동 및 자료 보존 검사.
   기존 policy 1/2/legacy·local writer/정산 실패 회귀·정확한 SHA Windows CI/artifact 확인.
+- 실행 기록: 2026-10-15 기준 main `24ed576`; 구현은 `task/w06-b-progression` PR로 제출한다.
+  Linux backend unittest 90개, 대사 pytest 10개, frontend build와 임시 자료 보존 검사가 통과했다.
+  Windows Server 2022 exact code head `d2740c80a29b694b1f2f00889db46c2cdf19a2a2`의 CI run
+  [38701271329](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38701271329)와 packaged smoke가 통과했다.
+  artifact source SHA와 API ZIP digest는 CURRENT_STATE의 W06-B 항목에 기록한다.
 
 #### W06-C — 사운드 자료·설정 및 엔딩 리소스 연결 (A 및 B 검토 후)
 
@@ -262,47 +267,24 @@ local 전용 write intent·동시 읽기·기본 engine의 원본 transaction �
 실패/rollback/cache eviction·재시작 후 exactly-once를 보완했다. 최종 code `455d400`의 실행
 결과는 CURRENT_STATE를 따른다. 기존 보완 지시/성공 이력은 PR #61/#62와 Git에 보존한다.
 
-## 다음 Work에 입력할 지시문 — W06-B PR #68 보완 (현재 우선)
+## W06-B PR #68 보완 결과
 
-권장 환경: **저성능 Work**. 기존 설계에 대한 회귀·누락 보완이며 새 정책 선택은 없다.
+기존 `task/w06-b-progression`과 PR #68을 유지했다. 최신 main `1646bd9580d7aaa34d1d793b7272d74163fc57f2`
+및 기준 문서 충돌 정리 `ece3a08b639d1da4b67db8ca543ede728ebbb59d`를 확인하고 W06-A 계약 범위에서
+legacy 취소 후 늦은 정산, 웹 HP 0 member의 대국 생성, `ending_pending` 화면, reset/ack 복구,
+generation/request-token stale 응답을 보완했다. 수정 전 실패와 수정 후 통과를 포함한 재현·검증 내역은
+[CURRENT_STATE.md](CURRENT_STATE.md)의 “W06-B PR #68”에 기록한다.
 
-```text
-danhk0612/no-riichi-no-fuku의 W06-B PR #68 보완만 수행해.
-최신 main·브랜치·열린 PR, AGENTS.md 및 루트 기준 문서를 읽고
-CURRENT_STATE의 “W06-B PR #68 검토 — 보완 전 병합 금지”와 W06-A 계약을 따라.
-기존 task/w06-b-progression 및 PR #68을 유지하고 완료된 구현을 다시 만들지 마.
-검토 head는 3cc15dd3f82b2be8c3d353a6326a7091e428d111이야. 이후 변경도 먼저 확인해.
+최종 검토 source `300892a93d923e0565c9c668ffb8a1a7b635cfd6`에서 reset 실패 후 renderer를
+reload하지 않고 다음 행동·전체 대국까지 완료하도록 smoke를 보강했다. W05 push run
+[38808520631](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38808520631), PR run `38808528623`,
+W04 run `38808528770` 모두 성공했다. 다운로드 artifact `12007637653`의 source SHA, 외부 archive와
+내부 Windows ZIP hash 및 renderer/lifecycle JSON을 대조했다. unittest 94개·dialogue pytest 10개,
+frontend build·Node 종료 회귀도 통과했다. 상세 SHA/hash·검사 범위·이전 증거는 CURRENT_STATE를 따른다.
+최종 검토는 통과했으며 병합 상태/SHA는 PR #68과 Git을 확인한다. 개인 Windows PC·전원 차단 및
+실제 ending CG/음악은 미검증이다. W06-C는 아직 착수하지 않았고 Release/tag도 수행하지 않았다.
 
-1. 초기화 뒤 취소 legacy 대국의 늦은 정산을 차단해.
-   임시 local 파일 DB에 legacy rules_snapshot=NULL 대국/마지막 행동 기록과 완료 game 객체를 준비하고,
-   reset API 성공 후 record cancelled/stage0 확인→이전 객체로 settle/commit 시도를 재현해.
-   현재 코드는 completed/stage1로 바뀐다. legacy/version2·cached settlement 포함 취소/세대를
-   DB에서 정산 전에 검증해. action/reset/settlement 양쪽 순서·commit 실패/재시작 회귀를 추가해.
-2. 웹 신규 대국은 기존 member/HP 조건을 복구해. HP0 웹 member의 API POST는 409,
-   새 local 규칙은 HP에 의존하지 않아야 해. registry.create가 기존 create_game_session을
-   우회하면서 생긴 회귀이므로 Tier/CPU 정책·web JWT/보안은 바꾸지 마.
-3. 명단 확정 응답이 ending_pending이면 엔딩/ack 화면으로 연결해.
-   이미 stage3인 참가 명단을 확정한 직후와 일반 대국 최종 완료/재실행 경로를 browser에서 검사해.
-4. reset 오류/응답 유실 후 GET play 결과로 화면과 연결까지 복구해.
-   commit 전 실패는 이전 active 연결/turn 복구, commit 뒤 응답 유실은 새 명단 선택 복구가 필요해.
-   반복 reset 자동 재전송·사용자 자료 삭제로 우회하지 마. ack 응답 유실도 같은 상태 복구 계약으로 검사해.
-5. start/confirm/ack·화면 load의 응답을 generation+요청 토큰으로 검증하고,
-   초기화 후 도착한 옛 응답이 old socket/결과/명단을 덮지 못하게 해.
-   busy 버튼과 별도로 강제 순서 회귀를 만들고 실제 도달 가능한 UI 경로도 확인해.
-
-수정 전 실패/수정 후 통과하는 회귀를 만들고 backend unittest/대사 pytest/frontend build,
-관련 browser와 기존 policy1/2/108행동·writer·정산 commit 실패·Windows renderer/일반 종료를 유지해.
-테스트 수나 기존 CI 성공만으로 위 결함 해소를 주장하지 마. mocked/stub·browser·실제 Windows를 구분해.
-기존 Windows 성공 run 38702603775/artifact 11956942201과 검증 이력은 보존해.
-정확한 수정 source SHA의 Windows CI/artifact source SHA·ZIP hash·실제 결과를 다시 대조해.
-기준 문서/PR 본문을 실제 결과로 갱신하고 main 검토 문서와 충돌을 정리해.
-
-사용자 LocalAppData·웹 DB/미디어가 아닌 명시적 임시 root만 사용해.
-새 HP·진행 정책·Tier 튜닝·ComfyUI·사운드 기능·무관한 UI 재설계는 추가하지 마.
-commit/push·기존 PR 갱신·검증 CI는 허용해. 직접 병합·Release/tag·W06-C 착수는 하지 마.
-```
-
-## 후속 Work에 입력할 지시문 — W06-C
+## 다음 Work에 입력할 지시문 — W06-C
 
 A 및 B 검토/병합 후 사용한다. 권장 환경: **저성능 Work**. B와 병렬 작업하지 않는다.
 

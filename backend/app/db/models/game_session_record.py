@@ -20,7 +20,7 @@ class GameSessionRecord(TimestampMixin, Base):
     __tablename__ = "game_sessions"
     __table_args__ = (
         CheckConstraint(
-            "status IN ('active', 'completed')",
+            "status IN ('active', 'completed', 'cancelled')",
             name="ck_game_sessions_status",
         ),
         Index(
@@ -44,3 +44,6 @@ class GameSessionRecord(TimestampMixin, Base):
     scores: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
     ranks: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
     settlement: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    play_generation: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    rules_snapshot: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    presentation: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)

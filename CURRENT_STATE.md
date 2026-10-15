@@ -1,36 +1,55 @@
 # 현재 상태
 
-## W06-B PR #68 검토 — 보완 전 병합 금지
+## W06-B PR #68 — 최종 검토 통과
 
-검토 head `3cc15dd3f82b2be8c3d353a6326a7091e428d111`, 기준 main `24ed5766b8dac1850bbd05267ac228733d549616`.
-PR의 고정 명단/새 local 정산/초기화/UI 구현을 검토했다. 아래 결함이 재현돼 W06-C는 착수하지 않는다.
-main의 W06-A 계약은 유지하며 이번 검토는 제품 코드를 수정하지 않았다.
+확인일 2026-10-15. 최신 기준 main은 `1646bd9580d7aaa34d1d793b7272d74163fc57f2`;
+기준 문서 병합 충돌은 작업 브랜치의 `ece3a08b639d1da4b67db8ca543ede728ebbb59d`에서 정리했다.
+기존 `task/w06-b-progression` 및 PR #68에서 최종 검토를 통과했다. 병합 상태/SHA는 PR과 Git을 따른다.
+W06-A 계약과 정책은 변경하지 않았다.
 
-| 발견 | 재현/영향 | 필요한 보완 |
+### 보완 전 재현과 수정
+
+| 회귀 | 보완 전 확인 | 보완 |
 |---|---|---|
-| 취소한 legacy 대국의 늦은 정산 | 실제 임시 local 파일 DB에 rules_snapshot=NULL인 마지막 행동 저장 대국을 두고 reset. record=cancelled/stage=0을 확인한 뒤 기존 RegisteredGame으로 registry.settle+commit하면 completed/stage=1로 바뀜 | 정산 entry에서 취소/현재 세대/record 세대를 legacy 포함 검증. 완료 cache/기존 결과 재사용도 우회하지 못하게 하고 초기화 후 이전 진행 적용 금지 |
-| 웹 HP 제한 회귀 | 기존 GameWebSocketApiTest fixture에서 member HP=0으로 POST /api/game/sessions. main 24ed576은 409, PR head는 201 및 새 session 생성 | local만 새 HP 없는 규칙. 웹 create는 원래 create_game_session의 member/HP 시작 조건 유지 |
-| 이미 완료된 CPU로 명단 확정 시 엔딩 누락 | 실제 main.tsx의 startGame/loadLocalCpus를 Vite Oxc로 TSX 변환해 Node VM/React hook stub에서 실행. confirm 응답 ending_pending인데 screen=waiting, CPU 선택 화면 유지/rosterMode=false | confirm 이후 phase에 따라 엔딩 화면으로 진입. 새 대국 POST는 서버에서 거절되므로 상대 선택 화면에 머물지 않게 함 |
-| reset 실패·성공 응답 유실 복구 누락 | reset 응답만 실패시키고 GET play는 commit된 새 generation/roster_required 반환. storeLocalPlay만 실행돼 명단 선택 화면/기존 socket·대국 UI는 복구되지 않음 | GET으로 확인한 authoritative phase/active/recent에 맞춰 실제 화면/연결을 재구성. 미commit 실패라면 기존 active 복구, commit 뒤 유실이면 새 명단 선택 복구 |
-| 초기화 후 지연 응답 차단 불완전 | start Promise를 지연→reset generation B→옛 A start 응답 순서로 hook harness 실행 시 old-A-session socket을 새로 열고 새 명단 화면을 지움 | start/confirm/ack 등 mutable 응답과 화면 load를 generation+요청 토큰으로 검증. busy 버튼 비활성화만으로 데이터 경계 보장을 대신하지 않음 |
+| reset 후 legacy 취소 대국의 늦은 정산 | 임시 파일 DB에서 `rules_snapshot=NULL` legacy record를 reset해 cancelled/stage 0으로 만든 뒤, 완료 객체의 `settle/commit`이 completed/stage 1로 되돌리는 것을 재현 | cached settlement 반환 전 DB status/generation 검증. legacy·version 2 모두 현재 generation과 active record 확인. reset/정산 순서, commit 실패·재시작을 회귀로 고정 |
+| 웹 member HP 0 대국 생성 | 보완 전 `POST /api/game/sessions`가 409 대신 201 반환 | 웹 legacy 경로의 member/HP precondition 복원. 새 local 규칙은 기존대로 HP에 의존하지 않음 |
+| 완료 명단 확정 | 실제 renderer 함수 harness에서 `ending_pending` 응답 후 상대 선택 화면에 남음 | ending/ack 화면으로 전환하고 실제 packaged renderer smoke에서 검증 |
+| reset/ack 오류·응답 유실 | commit 후 reset 응답 유실 때 GET play는 새 generation인데 화면/연결 불일치. 미commit 오류 뒤 기존 active turn 복구와 ack 유실 복구 누락 | GET play 권위 상태로 roster/active/ending 화면과 연결 복구. reset 반복 전송·사용자 자료 삭제 없음 |
+| 초기화 뒤 오래된 응답 | 지연된 이전 generation start 응답이 reset 후 새 roster 화면/연결을 덮는 것을 harness로 재현 | start/confirm/ack 및 화면 load를 generation+request token으로 검증. busy 상태와 별개로 강제 순서 회귀 |
 
-프런트 재현은 실제 함수 소스를 사용하는 제어 흐름 harness다. DOM/browser/Windows 실기 재현이라고
-표시하지 않는다. 지연 start 시나리오는 요청 순서를 주입한 계약 검사이며 일반 UI에서 busy 버튼을
-연속 클릭해 재현했다고 주장하지 않는다. 종료·세대 경계의 회귀에는 실제 browser/packaged 검사를 추가한다.
+보완 전 legacy DB reset/settlement와 HP=0 API 실패를 기록했고, frontend harness에서 ending/reset/stale
+start 불일치를 재현했다. 수정 후 backend·dialogue·frontend 검사와 Windows packaged smoke가 통과했다.
+기존 성공 이력 run `38702603775` / artifact `11956942201`은 보존했다. 보완 전 성공만으로 위 결함이
+해소됐다고 간주하지 않았다.
 
-legacy reset 재현은 대국 완료 상태의 stub 결과를 사용해 실제 reset API와 실제 registry.settle/DB commit을
-순서대로 실행했다. 동시에 실행하는 확률적 실험이 아니라 reset이 먼저 commit된 순서를 고정한 검사다.
-취소 record를 정산하지 않는다는 계약이 legacy 경로에서 지켜지지 않음을 보여준다.
+### 최종 검토와 exact-SHA 증거
 
-기존 Windows 성공 근거는 보존한다. 최종 head의 [push run 38702603775](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38702603775)는
-backend unittest 90/pytest 10·frontend build·packaged renderer·일반 종료 모두 success다.
-artifact `11956942201`을 내려받아 source SHA와 archive SHA256
-`58a82f2f1d2f2811c195971522f0efdbe5bee93028c7df255b58d1d73caf3b24`를 대조했다.
-로그의 unittest 90(80.371초), renderer의 명단/정상 reset/active·completed 복구 성공을 확인했다.
-이 성공은 위 오류/응답 유실/legacy 취소 정산까지 검증했다는 뜻이 아니다.
-이번 Linux의 기존 unittest 90개(실행 결과 failures=0/errors=0), frontend npm ci/build,
-대사 pytest 10개(0.19초)는 통과했다. 이 90개에는 위 추가 재현 harness/직접 API 호출이 포함되지 않는다.
-정확한 수정 SHA로 회귀와 Windows CI/artifact를 다시 검증해야 한다. 사용자 자료/정책 변경은 없다.
+최종 검증 source는 `300892a93d923e0565c9c668ffb8a1a7b635cfd6`이다. 제품 수정은 기존
+`9bab63ecdfe7775130f98791f44b306e8eaac429`와 같고, 검토에서 desktop smoke만 보강했다.
+기존 smoke는 미commit reset 뒤 화면을 즉시 검사하고 renderer를 reload했으므로 복구된 socket의
+실제 행동 성공을 충분히 입증하지 못했다. 주입 실행·busy 해제·행동 가능 상태를 기다리고,
+reload 없이 다음 행동을 완료한 후 기존 전체 대국/재기동 검사를 이어가도록 바꿨다.
+
+- Windows Server 2022 W05 [push run 38808520631](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38808520631),
+  [PR run 38808528623](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38808528623),
+  W04 [run 38808528770](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38808528770) 모두 success.
+- 다운로드한 push artifact `12007637653`(203,293,872 bytes, 2026-10-29 만료)의 `source-sha.txt`가
+  위 SHA와 일치한다. API digest와 다운로드 archive SHA256은
+  `7e720ec8322b41dd65face8ac2a0bd3e713e4bfbbeb9d737b058f4b47bafb8d9`;
+  내부 Windows ZIP SHA256은 `c71f7abc7f942a353b14cf95ba6d2701e51913e68bc2bbf44654d451153705a7`.
+- artifact unittest 94개/73.997초, dialogue pytest 10개/0.15초 통과. frontend 및 Electron build 통과.
+  renderer `passed: true`, 19 checks 중 `next action completed after reset failure recovery without renderer reload`를 확인했다.
+  reset/ack 응답 유실, stale confirm/start 차단, 완료 명단 ending 화면, 정상 전체 대국,
+  active/completed 재기동·정산 중복 없음도 통과했다. 일반 모드 종료와 같은 data root 재실행의
+  engine 종료→창 파괴→host 종료 순서를 JSON에서 대조했다.
+- Linux에서도 unittest 94개, dialogue pytest 10개, frontend production build 및 Node 종료 회귀 3개가 통과했다.
+- 이전 `9bab63e` run `38778254234`/artifact `11994663467`, 문서 head `cf197c7` run `38780085847`/
+  artifact `11995014249`와 최초 run `38702603775`/artifact `11956942201`은 검증 이력으로 보존한다.
+  `778970f`의 일반 대국 실패와 이후 reload 우회는 위의 무reload 검사 성공으로 다시 검증했다.
+
+테스트는 사용자 LocalAppData가 아닌 소유 임시 root를 사용했다. 개인 Windows PC, OS 전원 차단
+내구성, 실제 ending CG/음악 재생은 미검증이다. 실제 사운드/엔딩 리소스 연결은 W06-C에 남긴다.
+Release/tag는 수행하지 않았다. 이 source 뒤 문서만 변경한 commit은 PR/Git으로 확인한다.
 
 ## 기준
 
@@ -61,12 +80,12 @@ REQUIREMENTS D04/R16~R19는 확정 정책이고, ARCHITECTURE의 W06-A 절에 �
 TASKS에 B/C 파일 범위·의존·회귀표와 저성능 Work용 전체 지시문을 작성했다. B 검토/병합 후 C를
 순차 수행한다. D05~D11 콘텐츠/생성 정책은 미확정으로 유지한다. 추가 제품 정책은 확정하지 않았다.
 
-검증은 소스/문서 대조와 문서 diff·링크/필수 항목 확인이다. 이번 변경은 ARCHITECTURE,
-CURRENT_STATE, TASKS뿐이며 제품 구현/migration 실행·사용자 자료 수정·새 Linux/Windows 실행은 없다.
-기존 아래 CI/실기 이력을 새 W06 구현 성공으로 해석하지 않는다. 현재 제품은 여전히 HP/완료 CPU
-제외 규칙이고 고정 명단·초기화·엔딩/오마케·사운드 관리는 미구현이다. 실제 리소스도 생성/등록하지 않았다.
+당시 W06-A 문서 검토의 검증은 소스/문서 대조와 diff·링크/필수 항목 확인뿐이었다.
+이 절은 W06-B 구현 전의 역사적 상태를 기록하며, 당시에는 제품 변경·migration 실행·사용자 자료 수정·
+새 Linux/Windows 실행을 하지 않았다. 당시 제품은 HP/완료 CPU 제외 규칙이었고 고정 명단·초기화·
+엔딩/오마케·사운드 관리는 미구현이었다. 실제 리소스도 생성/등록하지 않았다.
 2026-10-15 검토에서 완료 CPU도 포함하는 최초 명단 후보 API와 local HTTP의 response 전 commit·
-실패 응답 검증을 명확히 했다. 문서 외 제품 변경/실행 검증은 없다. A 병합 후 다음은 W06-B다.
+실패 응답 검증을 명확히 했다. 이후 W06-B 보완 결과는 이 문서 앞의 “W06-B PR #68 보완” 절을 따른다.
 실제 CG/오디오 출력은
 C에서 자료가 제공된 범위만 검증하고 없으면 D11 실측 대기로 남긴다.
 
@@ -458,7 +477,9 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 - `frontend/tests/README.md`: 3개 routed browser 회귀와 `live-game.browser.mjs` 재현 절차.
   `backend/tests/fixtures/README.md`: legacy replay 원본·계산 기준.
 
-## 중요한 차단/불일치
+## 초기 분석 당시 차단/불일치 — 역사적 기록
+
+아래 1~3은 Windows 전환 전 baseline이며 현재 구현 판정은 이 문서 앞의 W04~W06-B 결과를 따른다.
 
 1. **진행:** 선택 가능 CPU 3명이 필요하고 stage 3은 제외된다. 6명 중 4명을 완료하면
    2명만 남아 이후 시작 불가능. 모든 CPU 완료라는 기존 목표와 실제 진행 경로가 충돌한다.
@@ -474,6 +495,6 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 
 ## 다음
 
-고성능 Work에서 TASKS의 W06-A 지시문으로 기술 계약을 설계한 뒤 저성능 Work의 W06-B/C로
-구현을 인계한다. 확정 정책을 다시 선택하지 않고 기술상 미해결 경계만 좁혀 보고한다.
-W06-A는 문서 설계만이며 제품 구현·사용자 데이터 초기화·콘텐츠 생성·Release/tag는 하지 않는다.
+W06-B 검토를 통과했다. PR #68 병합을 확인한 뒤 TASKS의 W06-C 지시문에 따라 사운드 자료·설정 및 ending 리소스 연결을
+별도 착수한다. 현재 W06-C는 시작하지 않았다. 개인 Windows 실기, 전원 차단 durability 및
+실제 ending CG/음악 재생은 해당 범위에서 증거를 별도로 확보한다.

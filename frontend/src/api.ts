@@ -10,6 +10,17 @@ export type LocalProfile = {
   max_hp: number | null
 }
 
+export type LocalPlayState = {
+  generation: string
+  phase: 'roster_required' | 'progress' | 'ending_pending' | 'omake'
+  roster: { cpu_character_id: number; defeat_stage: number }[]
+  ending_event_id: string | null
+  ending_payload: { version: number; cg_asset_id: string | null; music_asset_id: string | null; dialogue_text: string | null } | null
+  active_session_id: string | null
+  recent_session_id: string | null
+  legacy_active: boolean
+}
+
 async function apiRequest<T>(
   path: string,
   init: RequestInit = {},
@@ -65,10 +76,37 @@ export function getSelectableCpus(accessToken: string): Promise<CpuChoice[]> {
 export function createGameSession(
   accessToken: string,
   cpuCharacterIds: number[],
+  generation?: string,
 ): Promise<GameSessionCreated> {
   return apiRequest('/api/game/sessions', {
     method: 'POST',
-    body: JSON.stringify({ cpu_character_ids: cpuCharacterIds }),
+    body: JSON.stringify({ cpu_character_ids: cpuCharacterIds, ...(generation ? { generation } : {}) }),
+  }, accessToken)
+}
+
+export function getLocalPlay(accessToken: string): Promise<LocalPlayState> {
+  return apiRequest('/api/local/play', {}, accessToken)
+}
+
+export function getRosterCandidates(accessToken: string): Promise<CpuChoice[]> {
+  return apiRequest('/api/local/play/roster-candidates', {}, accessToken)
+}
+
+export function confirmLocalRoster(accessToken: string, generation: string, ids: number[]): Promise<LocalPlayState> {
+  return apiRequest('/api/local/play/roster', {
+    method: 'POST', body: JSON.stringify({ generation, cpu_character_ids: ids }),
+  }, accessToken)
+}
+
+export function resetLocalPlay(accessToken: string, generation: string): Promise<LocalPlayState> {
+  return apiRequest('/api/local/play/reset', {
+    method: 'POST', body: JSON.stringify({ generation, confirm: true }),
+  }, accessToken)
+}
+
+export function acknowledgeLocalEnding(accessToken: string, generation: string, endingEventId: string): Promise<LocalPlayState> {
+  return apiRequest('/api/local/play/ending/ack', {
+    method: 'POST', body: JSON.stringify({ generation, ending_event_id: endingEventId }),
   }, accessToken)
 }
 

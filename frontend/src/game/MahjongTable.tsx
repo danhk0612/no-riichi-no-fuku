@@ -3,6 +3,7 @@ import type {
   GameScreenState,
   HumanObservation,
   LegalAction,
+  MatchSettlement,
   PlayerSeat,
 } from './types'
 import { defeatStageLabel } from '../stages'
@@ -28,6 +29,7 @@ type MahjongTableProps = {
   onAction: (legalActionIndex: number) => void
   actionsDisabled?: boolean
   onNextGame?: () => void
+  allowGameOverContinue?: boolean
 }
 
 function Tile({ tileId, disabled = false, onClick }: {
@@ -227,9 +229,11 @@ function ActiveTable({
 function CompletedTable({
   state,
   onNextGame,
+  allowGameOverContinue,
 }: {
   state: Extract<GameScreenState, { status: 'complete' }>
   onNextGame?: () => void
+  allowGameOverContinue: boolean
 }) {
   const playersBySeat = new Map(state.players.map((player) => [player.seat, player]))
   const rows = state.result.ranks
@@ -239,9 +243,13 @@ function CompletedTable({
       name: playersBySeat.get(seat)?.name ?? `좌석 ${seat + 1}`,
     }))
     .sort((left, right) => left.rank - right.rank)
-  const defeatedCpuName = state.settlement.last_place_seat === 0
-    ? null
-    : playersBySeat.get(state.settlement.last_place_seat)?.name ?? 'CPU'
+  const localResult = 'progression_version' in state.settlement ? state.settlement : null
+  const localSettlement = localResult !== null
+  const legacySettlement = localSettlement ? null : state.settlement as MatchSettlement
+  const defeatedSeat = localResult ? state.result.ranks.indexOf(4) : legacySettlement?.last_place_seat
+  const defeatedCpuName = defeatedSeat !== undefined && defeatedSeat !== 0
+    ? playersBySeat.get(defeatedSeat)?.name ?? 'CPU'
+    : null
 
   return (
     <section className="match-result">
@@ -255,17 +263,25 @@ function CompletedTable({
         ))}
       </ol>
       <p className="settlement-summary">
-        {state.settlement.last_place_seat === 0
-          ? `플레이어 HP ${state.settlement.current_hp}`
-          : `${defeatedCpuName} · ${defeatStageLabel(state.settlement.defeat_stage ?? 0)}`}
+        {localResult
+          ? (localResult.mode === 'omake'
+            ? '오마케 대국 · 진행 이벤트와 캐릭터 대사는 발생하지 않습니다.'
+            : localResult.cpu_character_id === null
+              ? '플레이어 진행도는 변경되지 않았습니다.'
+              : localResult.stage_changed
+                ? `${defeatedCpuName} · ${defeatStageLabel(localResult.defeat_stage ?? 0)}`
+                : `${defeatedCpuName} · 완료 CPU · 진행도 변화 없음`)
+          : legacySettlement?.last_place_seat === 0
+            ? (allowGameOverContinue ? '플레이어 진행도 변화 없음' : `플레이어 HP ${legacySettlement.current_hp}`)
+            : `${defeatedCpuName} · ${defeatStageLabel(legacySettlement?.defeat_stage ?? 0)}`}
       </p>
-      {state.resultDialogue && (
-        <blockquote className="result-dialogue">
-          <strong>{defeatedCpuName}</strong>
-          <p>{state.resultDialogue.text}</p>
+      {(state.resultDialogues?.length ? state.resultDialogues : (state.resultDialogue ? [state.resultDialogue] : [])).map((dialogue, index) => (
+        <blockquote className="result-dialogue" key={`${dialogue.cpu_character_id}-${dialogue.event_key}-${index}`}>
+          <strong>{defeatedCpuName ?? 'CPU 결과 대사'}</strong>
+          <p>{dialogue.text}</p>
         </blockquote>
-      )}
-      {state.settlement.cpu_character_id !== null && (
+      ))}
+      {legacySettlement && legacySettlement.cpu_character_id !== null && (
         <figure className="result-asset">
           {state.resultAsset && state.resultAssetObjectUrl
             ? (
@@ -292,12 +308,12 @@ function CompletedTable({
           </figcaption>
         </figure>
       )}
-      {state.settlement.game_over && (
+      {legacySettlement?.game_over && !allowGameOverContinue && (
         <p className="settlement-summary" role="status">게임 오버 · HP가 모두 소진되었습니다.</p>
       )}
-      {onNextGame && !state.settlement.game_over && (
+      {onNextGame && (localSettlement || !legacySettlement?.game_over || allowGameOverContinue) && (
         <button className="primary-button" onClick={onNextGame} type="button">
-          다음 대국 선택
+          {localSettlement && state.endingEventId ? '엔딩 화면 보기' : '다음 대국 선택'}
         </button>
       )}
     </section>
@@ -309,6 +325,7 @@ export function MahjongTable({
   onAction,
   actionsDisabled = false,
   onNextGame,
+  allowGameOverContinue = false,
 }: MahjongTableProps) {
   if (state.status === 'waiting') {
     return (
@@ -320,7 +337,17 @@ export function MahjongTable({
     )
   }
   if (state.status === 'complete') {
-    return <CompletedTable state={state} onNextGame={onNextGame} />
+    return <CompletedTable state={state} onNextGame={onNextGame} allowGameOverContinue={allowGameOverContinue} />
+  }
+  if (state.status === 'ending') {
+    return (
+      <section className="match-result ending-panel" aria-label="엔딩">
+        <p className="eyebrow">ENDING</p>
+        <h2>모든 참가 CPU 완료</h2>
+        <p>{state.payload?.dialogue_text ?? '엔딩 대사가 등록되지 않았습니다.'}</p>
+        <p className="result-asset-placeholder">엔딩 CG와 음악은 아직 등록되지 않았습니다.</p>
+      </section>
+    )
   }
   return (
     <ActiveTable

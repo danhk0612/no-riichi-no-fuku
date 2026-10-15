@@ -45,6 +45,9 @@ class CpuChoice:
     speed_preference: float
     # Missing in pre-versioned persisted snapshots: preserve the original policy.
     policy_version: int = 1
+    # Present only in new local progression snapshots; legacy snapshots infer
+    # their tier from defeat_stage exactly as before.
+    effective_tier: int | None = None
 
 
 class CpuAgentFactory(Protocol):
@@ -98,7 +101,8 @@ def create_production_cpu_agent(
     *,
     seed: int | None,
 ) -> MahjongAgent:
-    if choice.defeat_stage == 0:
+    tier = choice.defeat_stage if choice.effective_tier is None else choice.effective_tier
+    if tier == 0:
         return Tier0Agent(
             seed=seed,
             aggression=choice.aggression,
@@ -108,7 +112,7 @@ def create_production_cpu_agent(
             hand_value_preference=choice.hand_value_preference,
             speed_preference=choice.speed_preference,
         )
-    elif choice.defeat_stage == 1:
+    elif tier == 1:
         return Tier1Agent(
             seed=seed,
             aggression=choice.aggression,
@@ -118,7 +122,7 @@ def create_production_cpu_agent(
             hand_value_preference=choice.hand_value_preference,
             speed_preference=choice.speed_preference,
         )
-    elif choice.defeat_stage == 2:
+    elif tier == 2:
         return Tier2Agent(
             policy_version=choice.policy_version,
             seed=seed,
@@ -131,7 +135,7 @@ def create_production_cpu_agent(
         )
     else:
         raise CpuTierUnavailableError(
-            f"CPU tier {choice.defeat_stage} is not implemented"
+            f"CPU tier {tier} is not implemented"
         )
 
 
