@@ -1,10 +1,10 @@
 # 현재 상태
 
-## W06-B PR #68 보완 — 구현·Windows 검증 완료, 검토 대기
+## W06-B PR #68 — 최종 검토 통과
 
 확인일 2026-10-15. 최신 기준 main은 `1646bd9580d7aaa34d1d793b7272d74163fc57f2`;
 기준 문서 병합 충돌은 작업 브랜치의 `ece3a08b639d1da4b67db8ca543ede728ebbb59d`에서 정리했다.
-기존 `task/w06-b-progression` 및 PR #68은 유지한다. PR은 open이며 병합하지 않았다.
+기존 `task/w06-b-progression` 및 PR #68에서 최종 검토를 통과했다. 병합 상태/SHA는 PR과 Git을 따른다.
 W06-A 계약과 정책은 변경하지 않았다.
 
 ### 보완 전 재현과 수정
@@ -22,20 +22,34 @@ start 불일치를 재현했다. 수정 후 backend·dialogue·frontend 검사�
 기존 성공 이력 run `38702603775` / artifact `11956942201`은 보존했다. 보완 전 성공만으로 위 결함이
 해소됐다고 간주하지 않았다.
 
-### 최종 코드 SHA의 검증
+### 최종 검토와 exact-SHA 증거
 
-코드 변경 SHA `9bab63ecdfe7775130f98791f44b306e8eaac429`에 대해 Windows Server 2022에서 실행했다.
+최종 검증 source는 `300892a93d923e0565c9c668ffb8a1a7b635cfd6`이다. 제품 수정은 기존
+`9bab63ecdfe7775130f98791f44b306e8eaac429`와 같고, 검토에서 desktop smoke만 보강했다.
+기존 smoke는 미commit reset 뒤 화면을 즉시 검사하고 renderer를 reload했으므로 복구된 socket의
+실제 행동 성공을 충분히 입증하지 못했다. 주입 실행·busy 해제·행동 가능 상태를 기다리고,
+reload 없이 다음 행동을 완료한 후 기존 전체 대국/재기동 검사를 이어가도록 바꿨다.
 
-- W05 [run 38778254234](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38778254234): backend unittest 및 dialogue pytest, frontend build, Electron packaged build, packaged renderer·general-mode lifecycle smoke 전체 success.
-- packaged renderer에서 committed reset 응답 유실 복구, stale confirm/start 응답 차단, ending_pending 화면, ack 응답 유실, 미commit reset 후 active turn 복구·renderer 재연결, roster 선택, engine 재기동 뒤 active/completed 결과 복원, 정상 local 대국 완료와 host 종료를 통과.
-- W05 artifact ID `11994663467`, 크기 203,294,014 bytes, 2026-10-29 만료. Artifact API SHA256 `dc65ae3918d35d28ce6e1e5bf076ea8ede188ac9b5b56d115dd7030375988e5d`. workflow는 checkout SHA를 `source-sha.txt`로 기록했으며 run checkout SHA와 artifact 이름이 위 코드 SHA와 같다.
-- 보조 W04 [run 38778254269](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38778254269) 및 artifact `11994243465`도 성공. 저장 회귀 및 frontend build를 확인했다.
-- 최종 source SHA 이전 iteration `778970f38cb0d8ecc175008243f73d4bd3b64519`에서는 W06 전용 packaged checks는 통과했지만 정상 대국 smoke가 첫 행동 뒤 180초간 화면 변화를 확인하지 못해 실패했다. reset 실패 복구를 검증한 renderer를 다시 load해 active socket을 재연결한 뒤 일반 대국을 진행하도록 수정했고, 위 최종 SHA에서 전체 smoke를 재실행해 통과했다.
-- Linux 검증에서는 backend unittest 94개, dialogue pytest 10개, frontend production build가 통과했다. 최종 smoke 보완은 desktop harness에 한정되며 Windows exact-SHA run으로 다시 검증했다. Windows source regressions는 최종 W05 run이 판정한다.
+- Windows Server 2022 W05 [push run 38808520631](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38808520631),
+  [PR run 38808528623](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38808528623),
+  W04 [run 38808528770](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38808528770) 모두 success.
+- 다운로드한 push artifact `12007637653`(203,293,872 bytes, 2026-10-29 만료)의 `source-sha.txt`가
+  위 SHA와 일치한다. API digest와 다운로드 archive SHA256은
+  `7e720ec8322b41dd65face8ac2a0bd3e713e4bfbbeb9d737b058f4b47bafb8d9`;
+  내부 Windows ZIP SHA256은 `c71f7abc7f942a353b14cf95ba6d2701e51913e68bc2bbf44654d451153705a7`.
+- artifact unittest 94개/73.997초, dialogue pytest 10개/0.15초 통과. frontend 및 Electron build 통과.
+  renderer `passed: true`, 19 checks 중 `next action completed after reset failure recovery without renderer reload`를 확인했다.
+  reset/ack 응답 유실, stale confirm/start 차단, 완료 명단 ending 화면, 정상 전체 대국,
+  active/completed 재기동·정산 중복 없음도 통과했다. 일반 모드 종료와 같은 data root 재실행의
+  engine 종료→창 파괴→host 종료 순서를 JSON에서 대조했다.
+- Linux에서도 unittest 94개, dialogue pytest 10개, frontend production build 및 Node 종료 회귀 3개가 통과했다.
+- 이전 `9bab63e` run `38778254234`/artifact `11994663467`, 문서 head `cf197c7` run `38780085847`/
+  artifact `11995014249`와 최초 run `38702603775`/artifact `11956942201`은 검증 이력으로 보존한다.
+  `778970f`의 일반 대국 실패와 이후 reload 우회는 위의 무reload 검사 성공으로 다시 검증했다.
 
-테스트는 사용자 LocalAppData가 아닌 명시적 임시 root를 사용했다. 개인 Windows PC, OS 전원 차단 durability,
-실제 ending CG/음악 재생은 미검증이다. C는 착수하지 않았고, Release/tag/직접 병합도 하지 않았다.
-PR #68은 검토 대기 상태다.
+테스트는 사용자 LocalAppData가 아닌 소유 임시 root를 사용했다. 개인 Windows PC, OS 전원 차단
+내구성, 실제 ending CG/음악 재생은 미검증이다. 실제 사운드/엔딩 리소스 연결은 W06-C에 남긴다.
+Release/tag는 수행하지 않았다. 이 source 뒤 문서만 변경한 commit은 PR/Git으로 확인한다.
 
 ## 기준
 
@@ -463,7 +477,9 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 - `frontend/tests/README.md`: 3개 routed browser 회귀와 `live-game.browser.mjs` 재현 절차.
   `backend/tests/fixtures/README.md`: legacy replay 원본·계산 기준.
 
-## 중요한 차단/불일치
+## 초기 분석 당시 차단/불일치 — 역사적 기록
+
+아래 1~3은 Windows 전환 전 baseline이며 현재 구현 판정은 이 문서 앞의 W04~W06-B 결과를 따른다.
 
 1. **진행:** 선택 가능 CPU 3명이 필요하고 stage 3은 제외된다. 6명 중 4명을 완료하면
    2명만 남아 이후 시작 불가능. 모든 CPU 완료라는 기존 목표와 실제 진행 경로가 충돌한다.
@@ -479,6 +495,6 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 
 ## 다음
 
-PR #68의 검토/병합 뒤 TASKS의 W06-C 지시문에 따라 사운드 자료·설정 및 ending 리소스 연결을
+W06-B 검토를 통과했다. PR #68 병합을 확인한 뒤 TASKS의 W06-C 지시문에 따라 사운드 자료·설정 및 ending 리소스 연결을
 별도 착수한다. 현재 W06-C는 시작하지 않았다. 개인 Windows 실기, 전원 차단 durability 및
 실제 ending CG/음악 재생은 해당 범위에서 증거를 별도로 확보한다.

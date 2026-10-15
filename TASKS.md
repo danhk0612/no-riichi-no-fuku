@@ -13,7 +13,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 정책·W04/W05 계약 확정 | W02 | 고성능 Chat |
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 완료(PR #61 병합) | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows hosted 검증·최종 검토 통과(개인 실기 미검증) | W04 | 저성능 Work |
-| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B 보완 완료, PR #68 검토 대기·C 대기 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
+| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B 최종 검토 통과·C 인계 준비 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
 | W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 목록·후보 관리 | P1 / 대기 | W05, W07 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
@@ -273,18 +273,18 @@ local 전용 write intent·동시 읽기·기본 engine의 원본 transaction �
 및 기준 문서 충돌 정리 `ece3a08b639d1da4b67db8ca543ede728ebbb59d`를 확인하고 W06-A 계약 범위에서
 legacy 취소 후 늦은 정산, 웹 HP 0 member의 대국 생성, `ending_pending` 화면, reset/ack 복구,
 generation/request-token stale 응답을 보완했다. 수정 전 실패와 수정 후 통과를 포함한 재현·검증 내역은
-[CURRENT_STATE.md](CURRENT_STATE.md)의 “W06-B PR #68 보완”에 기록한다.
+[CURRENT_STATE.md](CURRENT_STATE.md)의 “W06-B PR #68”에 기록한다.
 
-정확한 코드 SHA `9bab63ecdfe7775130f98791f44b306e8eaac429` Windows Server 2022 W05 run
-[38778254234](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38778254234)이 backend,
-dialogue pytest, frontend build, packaged renderer·일반 종료 smoke 모두 통과했다. artifact
-`11994663467`의 API archive SHA256은
-`dc65ae3918d35d28ce6e1e5bf076ea8ede188ac9b5b56d115dd7030375988e5d`; checkout source SHA와 artifact
-`source-sha.txt` 기록을 대조했다. 보조 W04 run `38778254269`도 성공했다. 이전 run
-`38702603775` / artifact `11956942201`은 검증 이력으로 보존한다. PR #68은 open·검토 대기다.
-W06-C·직접 병합·Release/tag는 수행하지 않았다.
+최종 검토 source `300892a93d923e0565c9c668ffb8a1a7b635cfd6`에서 reset 실패 후 renderer를
+reload하지 않고 다음 행동·전체 대국까지 완료하도록 smoke를 보강했다. W05 push run
+[38808520631](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38808520631), PR run `38808528623`,
+W04 run `38808528770` 모두 성공했다. 다운로드 artifact `12007637653`의 source SHA, 외부 archive와
+내부 Windows ZIP hash 및 renderer/lifecycle JSON을 대조했다. unittest 94개·dialogue pytest 10개,
+frontend build·Node 종료 회귀도 통과했다. 상세 SHA/hash·검사 범위·이전 증거는 CURRENT_STATE를 따른다.
+최종 검토는 통과했으며 병합 상태/SHA는 PR #68과 Git을 확인한다. 개인 Windows PC·전원 차단 및
+실제 ending CG/음악은 미검증이다. W06-C는 아직 착수하지 않았고 Release/tag도 수행하지 않았다.
 
-## 후속 Work에 입력할 지시문 — W06-C
+## 다음 Work에 입력할 지시문 — W06-C
 
 A 및 B 검토/병합 후 사용한다. 권장 환경: **저성능 Work**. B와 병렬 작업하지 않는다.
 
