@@ -178,33 +178,246 @@ Windows packaged 일반 모드의 programmatic close/반복 quit·timeout·PID �
 - `pyproject.toml`은 엔진만 고정하고 나머지는 범위 지정이다. editable 설치의 setuptools
   자동 package 발견이 실패했다. W02에서 번들 빌드 경로와 의존성 재현 기준을 검증한다.
 
-## W06 진행 전환 — 정책 확정, W06-A 기술 설계 대상
+## W06-A 구현 계약 — W06-B/C 인계
 
-목표 규칙은 REQUIREMENTS D04가 기준이다. 현재 game_setup은 HP>0/stage<3을 요구하고,
-game_result는 사람 4위 HP 감소·완료 CPU 정산 거절을 수행하므로 실제 코드 전환이 필요하다.
-HP 없음은 UI 숫자 숨기기만으로 끝나지 않는다. 시작 제한·정산·응답·게임 오버/결과 화면과
-저장 호환을 함께 검토한다. DB의 기존 HP column 즉시 삭제를 의미하지 않는다.
+설계 기준: main `e48aae94e37f19fc445717f456b18321354b30a2` (2026-10-15).
+이 절은 REQUIREMENTS D04/R16~R19를 구현할 기술 명세다. **제품·migration은 아직 미구현**이며
+B/C는 이 설계 검토 후 순차 착수한다. 아래 필드/API 이름은 구현 계약이다. D05~D11을 확정하지 않는다.
+적용 범위는 Windows local runtime이다. 기존 웹 JWT/관리자 보안과 웹의 legacy 진행 경로는 보존한다.
 
-CPU의 영속 stage(완료 여부)와 대국에 사용할 난이도를 분리한다. 완료 전 보충 참가 Tier 0과
-엔딩 후 오마케 Tier 2는 같은 stage 3에서 다르다. 대국 시작 당시 적용한 규칙/난이도·CPU 정책을
-snapshot에 보존해 재시작 시 현재 진행도로 다른 agent를 선택하지 않도록 설계한다.
-기존 policy 1/2의 RNG·legacy fixture는 유지한다. 기존 active/완료 대국에 새 규칙을 소급할지의
-호환 방법은 구현 전 설계하고 기존 세션을 임의 삭제/재정산하지 않는다.
+### 소스 대조와 변경 지점
 
-CPU 4위 단계 상승과 확정 참가 명단 전체 완료 판정은 기존 exactly-once 정산을 유지한다.
-완료 CPU는 stage를 올리거나 정산 오류로 거절하지 않는다. 완료 전 보충 CPU의 1위 승리/4위 패배
-대사와 엔딩은 규칙·CPU RNG와 분리한다. 오마케에서는 대사/추가 콘텐츠 이벤트를 내보내지 않는다.
-별도 CPU HP를 저장하지 않으며 기존 stage만 사용한다.
+| 현재 코드의 사실 | B/C에서 바꿀 경계 |
+|---|---|
+| `game_setup.py`는 active/stage<3만 선택, HP>0 요구, `CpuChoice.defeat_stage`로 agent 선택 | B: local 명단/phase 검증, stage와 `effective_tier` 분리 |
+| `game_registry.py`는 `asdict(CpuChoice)`/seed/actions 저장, 완료 JSON 재사용 | B: 진행 규칙 snapshot/세대 검증 추가. 기존 snapshot decoder와 RNG 보존 |
+| `game_result.py`는 사람 HP 감소, stage 3 CPU 정산 거절 | B: 새 local 규칙만 별도 정산. 결과/진행/엔딩을 같은 commit |
+| `api/game.py`는 WS auth 뒤 cache 객체 유지, send 중 정산, 결과 대사/CG를 매번 조회 | B: 세대 확인/정산 후 응답, 저장된 결과 표시 payload, 오마케 대사 억제 |
+| `local_runtime.py`의 recent는 사용자 전체에서 최신 record 조회 | B: 현재 세대만 조회. 초기화 뒤 옛 completed record 재진입 금지 |
+| `UserCpuProgress`는 user+cpu PK, stage 0~3; `GameSetting`은 key+JSON | B: stage 재사용, 현재 플레이만 별도 관계. C: 공통 설정 key 사용 |
+| `services/admin.py`의 CPU PATCH는 active 포함 자유 수정; CPU 삭제 API는 현재 없음 | B: 명단 참조 active 변경 차단. C/W08에도 같은 보호 규칙 적용 |
+| `result_assets.py`는 상대 key/서명 검사/임시 파일/원자 rename/인증 file 응답 | C: 경로 보호 패턴 재사용, 기존 CG 업로드의 교체/삭제 의미는 바꾸지 않음 |
+| `main.tsx`는 active→recent→상대선택, HP/game_over 결과와 load version으로 CG 표시 | B: 플레이 상태 우선 복구·명단선택·초기화. C: 사운드 설정/엔딩 표시 |
 
-게임 공통 등록 자료/파일, 한 플레이의 고정 CPU 명단/진행/엔딩 상태, 대국별 snapshot/action log,
-상시 편집하는 사운드 선택 설정을 구분한다. 초기화는 현재 대국·한 플레이의 상태와 명단 선택을
-재시작하며 공통 자료/파일을 지우지 않는다. W06-A는 이 관계의 최소 schema/migration/API/UI와
-transaction 경계를 설계한다. 초기화 중 진행 중인 행동/정산, 이전 socket·늦은 응답이 새 플레이에
-영향을 주지 않는 계약이 필요하다. 슬롯/백업/새 전역 시스템을 추가하지 않는다.
+### B: 최소 저장 관계와 migration
 
-엔딩 pending→표시 완료→오마케의 저장/재기동 계약과 CG/음악/대사 참조·리소스 미등록 시 동작을
-W06-A에서 구체화한다. 사운드 자료 관리·선택과 재생도 여기서 구현 경계를 정하고 W06-C로 인계한다.
-실제 CG/음악/대사 생성·파일 삭제·외부 생성 서비스 연결은 없다.
+공통 캐릭터/대사/CG/설정과 파일은 그대로 둔다. 새 프로필/세이브 슬롯/CPU HP는 만들지 않는다.
+`users.current_hp/max_hp` 및 기존 HP 설정은 legacy용으로 유지하되 새 local 진행/응답/UI에서는 사용하지 않는다.
+
+| 저장소 | 필드·제약과 책임 |
+|---|---|
+| 새 `local_play_states` | `user_id` PK/FK users RESTRICT, `generation` UUID 문자열 UNIQUE NOT NULL, `phase` CHECK `roster_required/progress/ending_pending/omake`, `ending_event_id` nullable UNIQUE UUID, `ending_payload` nullable JSON. member 1명당 현재 행 1개 |
+| 새 `local_play_roster` | `(user_id,cpu_character_id)` PK, 양쪽 FK RESTRICT. 현재 확정 명단이며 stage는 복사하지 않고 기존 progress join. 명단 확정은 최소 서로 다른 성인 active CPU 3명(4인 대국의 필수조건), 상한은 등록 수 |
+| 기존 `user_cpu_progress` | 현재 플레이 stage의 유일한 원본. 명단 밖의 행도 보존하되 완료 판정/선택에서 제외. 새 캐릭터 추가가 명단을 늘리지 않음 |
+| 기존 `game_sessions` 추가 | nullable `play_generation` String(36)/index, nullable `rules_snapshot` JSON, nullable `presentation` JSON. status CHECK에 `cancelled` 추가; active partial unique index 유지 |
+
+state 불변조건은 service에서 검증한다: roster_required는 빈 명단/엔딩 NULL,
+progress는 명단 3명 이상/엔딩 NULL, ending_pending·omake는 명단 전원 stage 3와
+non-null event/payload다. ack 후 event/payload는 반복 ack 판별을 위해 유지하고 reset에서만 비운다.
+새 session의 play_generation은 생성 당시 값이며 reset 때 history 값을 새 값으로 바꾸지 않는다.
+
+`rules_snapshot` 새 local 값은 `{version:2, mode:"progress"|"omake"}`. CPU snapshot에는
+`effective_tier:0|1|2`를 추가하고 `defeat_stage`는 시작 당시 영속 stage, `policy_version`은 기존대로
+보존한다. version 2에서 effective_tier 누락/범위 오류는 저장 손상으로 거절한다. unknown version도
+명시 실패하며 legacy로 추측하지 않는다. 기존 규칙은 `rules_snapshot IS NULL` 또는 명시 version 1로
+구별하고, 기존 `CpuChoice`와 동일하게 effective tier=저장된 stage, 누락 policy=1로 복구한다.
+progress/omake와 CPU policy 1/2는 서로 다른 버전 축이다. Tier 구현·seed*10+seat·legal action 순서·
+RiichiEnv 버전·legacy fixture를 변경하지 않는다. 새 stage 3 CPU를 stage 0/2로 바꿔 저장하지 않는다.
+
+B migration은 기존 0004 다음의 additive revision이며 SQLite batch로 status CHECK만 확장한다.
+원래 seed/CPU choices/actions/scores/ranks/settlement JSON을 재작성하지 않는다. 웹 사용자에게
+local state를 일괄 생성하지 않는다. local bootstrap이 소유 잠금 확보·migration 뒤 기존 local member에
+state가 없을 때만 generation과 `roster_required`를 한 writer transaction으로 만든다. 반복 bootstrap은
+기존 phase/명단/stage/설정을 유지한다. 기존 세션은 이 최초 bootstrap 때 해당 local member의
+NULL generation 기록을 현재 generation에 연결하되 규칙 snapshot/기록 내용은 그대로 둔다.
+이는 호환 연결이며 사용자 선택 없이 명단을 추정하거나 stage/HP를 초기화하는 migration이 아니다.
+전환 실패는 rollback/실패 표시로 멈추고 DB 삭제·다시 seed해서 복구하지 않는다.
+
+### B: 기존 저장 호환과 진행 상태
+
+| 상태/예시 | 계약 |
+|---|---|
+| 최초 설치·명단 없음 | `roster_required`, active 없음. 등록 CPU에서 명단을 명시 확정한 뒤 상대 3명 선택 |
+| 업그레이드 시 legacy active | 명단 미확정이어도 그 active 대국부터 원 snapshot으로 재생/완료. 최초 명단 확정은 active 종료 전 409. 완료 시 기존 정산을 한 번만 적용하고 다음 대국부터 새 규칙 |
+| 업그레이드 시 legacy completed/HP 0 | 완료 JSON/CG/결과는 원본대로 조회, 재정산 없음. local 결과 화면은 HP/game_over로 새 플레이를 차단하지 않음. 이어서 명단 선택, 보존된 stage로 시작 |
+| 명단 확정 시 일부 stage 보유 | 기존 stage를 보존. 참가 명단 외 progress는 완료 인원에 포함하지 않음. 전부 stage 3이면 즉시 ending_pending을 한 번 생성 |
+| 미완료 3명 이상 | 그 명단의 stage<3만 선택 가능. 예: [0,1,2,3]이면 앞의 3명만 |
+| 미완료 2명/1명 | 명단 내 stage 3도 Tier 0 참가 가능. 상대 3명은 사용자가 선택하며 미완료 전원 강제 참가 같은 규칙을 추가하지 않음 |
+| 마지막 미완료 CPU 4위 | stage 2→3·session completed·ending_pending/event/payload를 동일 commit. 사람 4위/완료 CPU 4위는 진행 불변 |
+| ending_pending | 새 대국 시작 불가, 결과 확인 후 엔딩. 표시 중 종료/재접속이면 같은 event와 payload 재표시 |
+| 엔딩 확인 완료 | 같은 generation/event의 명시 acknowledge commit 후 omake. stage 3 그대로, 모두 effective Tier 2 |
+| omake | 기본 마작 event/점수/순위는 유지. 진행/캐릭터 대사/결과 CG/승패 대사/새 엔딩 이벤트는 발생시키지 않음. 일반 마작 조작 SFX/BGM은 사용 가능 |
+
+legacy active 정산은 legacy HP/stage 규칙을 보존하는 **기존 한 대국에만 한정한 호환 경로**다.
+새 version 2 대국은 HP를 읽거나 바꾸지 않는다. legacy 완료가 명단 없는 상태에서 전체 완료 엔딩을
+추측하지 않는다. legacy 손상(예: active snapshot stage 3, 필요한 progress 누락)은 명시 오류/증거를
+남기며 새 agent 선택·자동 초기화로 덮지 않는다. 웹 경로는 계속 legacy로 신규 대국을 만든다.
+
+명단 확정 이후 명단 CPU의 `active=false`와 hard delete는 local 관리 API에서 409
+`roster_reference_conflict`로 거절한다. active 상태를 몰래 바꿔 전체 완료 대상에서 빼지 않는다.
+명단 밖 CPU는 기존 active 변경 가능. 이름/설명/성향 편집은 등록 자료 수정이며 진행도는 바꾸지 않는다.
+이미 시작한 대국은 저장된 이름/성향/난이도를 사용한다. 초기화 후에는 이전 명단 보호가 해제된다.
+미래 삭제 API도 남은 progress/history 참조를 고려해야 하므로 B에서 새 삭제 API는 추가하지 않는다.
+
+### B: API/UI와 세대·transaction 경계
+
+아래 `/api/local/`는 local runtime에만 등록하고 기존 capability/member/admin dependency를 사용한다.
+웹에 무인증 경로를 열지 않는다. `generation`은 공개 상태 식별자이며 capability의 대체물이 아니다.
+
+| 요청 | 입력 → 응답/거절 |
+|---|---|
+| GET `/api/local/play` | `{generation,phase,roster:[{cpu_character_id,defeat_stage}],ending_event_id,active_session_id,recent_session_id,legacy_active}`. recent는 현재 세대의 completed만, cancelled 제외 |
+| POST `/api/local/play/roster` | `{generation,cpu_character_ids:[...]}` → play 상태. roster_required·active 없음·고유/active/adult/최소3 검사. 확정 뒤 변경/중복 제출은 409 |
+| POST `/api/game/sessions` (local 확장) | 기존 cpu_character_ids + `generation` → 기존 session_id/players + generation. 명단·phase·3명·가능 인원 검증 후 rules/agents snapshot 저장 |
+| WS authenticate/action (local 확장) | authenticate에 generation, action에 generation + 기존 action_version/index. 모든 human_turn/match_complete/dialogue_event/error 응답은 generation/session_id 포함 |
+| POST `/api/local/play/reset` | `{generation,confirm:true}` → 새 generation/roster_required. false/누락 400, 이전 세대 409 `play_generation_stale`. 화면에 현재 대국 종료·진행/명단 초기화·등록 자료 보존 확인 표시 |
+| POST `/api/local/play/ending/ack` | `{generation,ending_event_id}` → omake 상태. 동일 event 반복은 성공/동일 상태, 다른 event/세대 409. 시간 경과/GET/음악 ended만으로 ack하지 않음 |
+
+local profile은 HP 없는 전용 응답 또는 optional legacy HP 필드를 사용하고 desktop에서 HP를 노출하지
+않는다. 기존 웹 response schema는 유지한다. 새 local `match_complete`는 기존 점수/순위와
+`{progression_version:2,mode,cpu_character_id,defeat_stage,stage_changed,cpu_completed}` settlement,
+`result_asset`, `result_dialogues:[]`, `ending_event_id`를 보낸다. HP/game_over는 새 local 필수 필드가
+아니다. legacy 저장 JSON은 전용 decoder/응답 adapter로 읽어 UI의 새 타입에 맞추며 원본을 변경하지 않는다.
+
+`presentation`은 version 2 정산 때 선택한 결과 CG 참조와 대사 목록(문장 포함)을 JSON으로 저장한다.
+일반 stage 상승은 기존 `defeat_stage_N` 대사/CG를 재사용한다. 완료 전 보충 CPU 1위/4위는 기존
+`match_first`/`match_last` 대사 pool을 별도 콘텐츠 RNG로 선택해 저장하며 stage/CG unlock은 불변이다.
+승자와 패자의 대사가 함께 필요할 수 있으므로 배열로 전달한다. pool 없으면 빈 배열로 표시하고
+새 문장 seed는 만들지 않는다. 재접속은 같은 저장 payload이며 새 선택/진행 이벤트를 만들지 않는다.
+오마케에서는 pending engine events를 소비하되 `extract_game_events`/대사 선택·CG 표시를 호출하지
+않는다. 리치/치/퐁/깡/론/쯔모의 기본 규칙 이벤트 자체는 버리지 않는다.
+
+writer 순서/수명은 다음을 지킨다.
+
+1. local mutable 연산(명단확정/start/action/settlement/reset/ack)은 **첫 조회 전에** W04
+   `mark_write_intent`/BEGIN IMMEDIATE. 공통 순서는 DB writer 예약→현재 play/record 재조회→
+   registry/registered lock→변경/flush/commit→cache 정리/응답이다. 현재 send 함수의
+   registered lock→DB writer 순서는 B에서 이 local 경로에 맞춰 조정해 교착을 피한다.
+   await/network/audio/file IO 동안 writer나 registry lock을 잡지 않는다.
+2. DB에서 current generation=요청 generation=record generation, status/phase를 매번 검사한다.
+   `get_owned` cache hit도 이 검사를 우회하지 못한다. 객체가 있거나 같은 user라는 이유로 옛 대국을
+   허용하지 않는다. 모든 local HTTP 응답은 dependency commit 완료 뒤 성공으로 확정한다.
+3. 행동 log commit 뒤 정산은 기존처럼 별도 transaction. 마지막 행동 뒤 crash면 snapshot replay 후
+   정산한다. session completed 결과/진행 stage/결과 presentation/엔딩 생성은 한 정산 commit이다.
+   record completed를 먼저 확인해 중복 정산하지 않는다. commit 실패는 rollback+cache eviction,
+   재접속에서 DB 재생한다. commit 전 만든 메모리 ending/settlement를 성공으로 보내지 않는다.
+4. reset은 writer 안에서 active record를 `cancelled`로 바꾸고 log/snapshot은 보존한다(정산 안 함).
+   기존 completed/history도 지우지 않는다. local member의 progress만 모두 stage 0, roster 비우기,
+   generation 교체·phase roster_required·ending 필드 NULL을 같은 commit. 이름/프로필·공통 자료·
+   HP legacy 열·settings·media/config 파일은 변경하지 않는다. 다른 member/웹 자료는 건드리지 않는다.
+5. reset commit 후 해당 user cache eviction·이전 socket close(4409)를 수행한다. close 실패와 무관하게
+   다음 DB 검사에서 옛 세대는 거절된다. 취소 record는 restore/recent/정산 대상에서 제외한다.
+   reset 실패 시 옛 세대/대국/진행 유지, 영향 cache만 evict 후 재조회한다.
+6. 정산이 writer를 먼저 얻으면 그 commit 뒤 reset이 모두 초기화한다. reset이 먼저면 미정산 최종
+   행동 log가 있어도 cancelled/옛 세대로 정산 거절한다. 양쪽 모두 새 플레이에 이전 stage/엔딩을
+   반영하지 않는다. 두 reset 중 첫 요청만 새 세대 생성, 두 번째는 stale 409다.
+7. UI는 초기화 확인 후 입력 잠금·socket 분리·fetch/CG/audio load 토큰 무효화 후 reset 전송.
+   모든 비동기 callback은 요청 당시 generation과 화면 load token/socket identity를 대조한다.
+   새 generation 수신 후 play부터 재조회한다. 실패·응답 유실이면 play 재조회로 commit 여부 확인;
+   이전 reset을 새 generation으로 자동 재시도하지 않는다. 늦게 도착한 old generation 상태는 폐기한다.
+
+### C: 사운드/엔딩 등록과 파일 계약
+
+공통 자료는 최소 등록/목록/수정/비활성화 UI만 제공한다. 기존 CPU 목록은 B의 명단선택에서
+재사용하고 캐릭터 P/N·공유 후보 CRUD는 W08로 남긴다. 오디오 제작/보이스팩/볼륨 프리셋/플레이리스트
+편집기/외부 API는 추가하지 않는다. 게임 내부 설정 화면만 사용한다.
+
+| 저장소 | 최소 필드/참조 |
+|---|---|
+| 새 `local_media_assets` | UUID PK, `kind` CHECK image/audio, `storage_key` UNIQUE 상대 key, `mime_type`, `byte_size`. 파일은 LocalAppData media/w06 아래 immutable key. 사용자 원본 경로/외부 URL 저장·직접 재생 금지 |
+| 새 `sound_effect_sets` | UUID PK, `label`, `active`, `clips` JSON (`event_key:media_asset_id`). 키는 현재 전달 가능한 `chi/pon/kan/riichi/ron/tsumo`만. 각 clip audio FK 상당 검증을 service에서 수행 |
+| 새 `background_tracks` | UUID PK, `label`, `active`, `media_asset_id` FK RESTRICT (audio) |
+| `game_settings[local_sound_selection]` | `{effect_set_id:null|UUID,bgm_ids:[UUID,...]}`. 중복 BGM ID 거절; 빈 목록/효과음 null은 무음. 누락 key 기본은 null/[]이며 seed로 자동 선택하지 않음 |
+| `game_settings[local_ending_resources]` | `{cg_asset_id:null|UUID,music_track_id:null|UUID,dialogue_text:null|string}`. 단일 엔딩 슬롯, 전부 optional. 대사는 입력된 평문만, D10 변수 치환 없음 |
+| B `local_play_states.ending_payload` | 전체 완료 commit에서 `{version:1,cg_asset_id,music_asset_id,dialogue_text}`를 현재 등록 설정에서 한 번 snapshot. event UUID는 그 세대의 완료 식별자, ack까지 payload 불변 |
+
+C migration은 B revision 다음으로 추가하며 기존 CPU CG 테이블/슬롯은 엔딩용으로 전용하지 않는다.
+B는 엔딩 설정이 없어도 null 필드의 version 1 payload를 만들 수 있게 구현한다. C는 그 생성 helper를
+실제 자료 resolve로 확장한다. B가 이미 만든 pending payload에 뒤늦은 등록 설정을 소급 주입하지 않는다.
+공통 등록 수정은 다음 엔딩/새 재생에 반영된다. 초기화는 이 표의 공통 행·설정을 모두 보존한다.
+
+로컬 admin/capability 경계의 API는 다음과 같다. 목록 응답은 ID/label/active 및 참조 ID만 담고,
+파일의 실제 절대 경로를 노출하지 않는다. 모든 JSON 쓰기는 W04 writer를 따른다. 등록/설정 쓰기는 local admin, 게임의 media/선택 설정/엔딩 읽기는 local member로 제한한다.
+
+- POST `/api/local/media` multipart file+kind → `{id,kind,mime_type,byte_size,url}` (201).
+  image는 기존 JPEG/PNG/WebP·5 MiB 검사 재사용. audio는 MP3/WAV/Ogg의 서명/확장자/MIME 일치와
+  32 MiB 업로드 상한(기술상 버퍼/보관 제한)을 검사한다. 실제 decode 가능 여부는 renderer에서
+  별도 확인하며 MIME 성공만으로 재생 성공이라 기록하지 않는다. 범위 밖 형식은 400/크기 초과 413.
+- GET `/api/local/media/{id}/file` → 인증된 FileResponse(no-store, audio Range 지원 여부 검증).
+  상대 key resolve/root 이탈 거절은 기존 storage_path와 동일한 보호를 사용한다.
+- GET/POST `/api/local/sound-effect-sets`, PATCH `/{id}`: `{label,active,clips}`.
+  GET/POST `/api/local/background-tracks`, PATCH `/{id}`: `{label,active,media_asset_id}`.
+  참조 asset 존재/종류 검사. PATCH는 metadata/참조 교체이며 옛 asset/file을 삭제하지 않는다.
+- GET/PUT `/api/local/sound-selection`: 위 local_sound_selection JSON을 전체 교체/반환.
+  PUT은 현재 active 자료만 허용(404 missing/409 inactive), CPU 명단/진행/대국 snapshot은 바꾸지 않음.
+- GET/PUT `/api/local/ending-resources`: 위 local_ending_resources JSON. nullable 필드는 명시 해제 가능.
+  유효 image/active BGM 참조만 저장. 진행 상태/ending_pending payload는 변경하지 않음.
+- GET `/api/local/play/ending?generation=...&event_id=...`: pending이면 저장 payload와 안전한
+  media URL/누락 상태를 반환. omake의 같은 event는 `{acknowledged:true}`만, stale는 409.
+
+C는 공통 등록의 hard DELETE나 미사용 파일 청소를 제공하지 않는다. 비활성화된 선택 ID는 설정에
+보존하되 현재 재생에서는 unavailable/무음으로 응답·표시하고 사용자가 다시 선택할 수 있게 한다.
+엔딩 pending의 immutable asset 참조는 등록 목록의 active 변경과 독립으로 읽을 수 있다.
+사용자가 외부에서 파일을 지웠다면 missing으로 표시한다. DB 참조만 믿고 임의 파일을 생성하지 않는다.
+업로드는 제한 크기 스트림→소유 temp 파일→서명 검사→unique key rename→metadata commit 순서.
+실패 시 해당 요청이 만든 temp/새 파일만 정리한다. crash로 남은 orphan 파일은 자동 청소하지 않는다.
+기존 사용자 파일·기존 참조 파일을 overwrite/unlink하지 않는다. startup/migration/reset에 파일 IO는 없다.
+
+### C: 재생·엔딩 화면과 재시작
+
+- 기본 BGM은 선택 bgm_ids 순서로 순환 재생한다(첫 항목부터, RNG 없음). 목록 변경 시 현재 track이
+  남아 있으면 유지하고 제거/비활성화면 중지 후 새 목록 첫 곡. 전부 없으면 무음. renderer 재시작은
+  첫 곡부터이며 재생 위치 영속화는 하지 않는다. 엔딩 중에는 일반 BGM을 멈추고 엔딩 음악을
+  1회 재생, ack 뒤 일반 BGM을 다시 시작한다. 엔딩 음악은 일반 사용 BGM 목록과 독립 참조다.
+- SFX는 기존 기본 마작 event에서만 재생하며 대사 문장의 존재에 의존하지 않는다. B/C는 규칙 event와
+  dialogue_event를 구분해 `{generation,session_id,action_version,event_index,event_key}` 식별을
+  commit 성공 후 전달한다. 같은 renderer 연결의 중복 ID는 재생 안 함. snapshot replay는 과거 event를 버리는 현재
+  계약 유지. 오마케도 이 기본 SFX 가능, 캐릭터 대사/콘텐츠 이벤트는 불가. 패 내려놓기/섞기/점수봉 등
+  아직 노출되지 않은 새 SFX hook/캐릭터 voice 시스템은 C 범위가 아니다.
+- 오디오와 CG는 같은 origin의 인증된 요청으로 가져온 blob/object URL만 사용한다. 부하/재생 promise
+  실패는 표시하고 무음으로 계속한다. autoplay 거절이면 사용자 재생 버튼을 제공한다. 외부 URL,
+  renderer 파일시스템 직접 접근, codec 변환·FFmpeg·추가 runtime은 필요하지 않다.
+- UI는 `play`→active 복구→pending 엔딩→현재 세대 recent 결과 또는 명단/상대 선택 순으로 진입한다.
+  마지막 대국 직후에는 결과/단계 CG를 먼저 보고 '엔딩 보기'로 진입한다. 엔진 재시작 시 pending
+  상태는 엔딩으로 돌아와도 되며 같은 event를 새로 만들지 않는다. 엔딩 화면은 CG·음악·대사와
+  '계속하기'를 제공하고 성공 ack 뒤 omake 선택 화면으로 전환한다. B에서도 미등록 엔딩 안내와
+  명시 ack 버튼을 연결해 검증 가능한 흐름으로 남긴다.
+- 실제 resource가 없으면 각각 미등록 안내/무음/빈 대사로 표시하고 '계속하기'는 항상 사용 가능하다.
+  파일 누락/재생 오류/브라우저 종료로 자동 ack하지 않는다. 표시만 한 상태의 crash는 같은 pending
+  엔딩을 다시 표시·음악 처음부터 재생할 수 있다. **DB 완료 전환은 exactly-once, 인간이 봄/들음의
+  exactly-once는 보장하지 않는다.** ack 응답 유실 후 재접속은 omake여서 다시 엔딩을 재생하지 않는다.
+- 화면 이탈/초기화/설정 교체/종료에서 이전 audio 정지·object URL 해제, 늦은 load/ended callback은
+  generation+화면 토큰으로 차단한다. 소리 재생/파일 로딩은 action/정산 DB commit을 기다리게 하지 않는다.
+
+### 구현 분리와 검증 예제
+
+B는 저장/진행/초기화·엔딩 event/ack·미등록 화면까지, C는 공통 미디어 등록/선택과 실제 표시/재생까지다.
+B/C는 동일 main.tsx/models/API/문서를 수정하므로 병렬 구현하지 않는다. B 검토/병합 후 C를 시작한다.
+
+| 검사 | 필요한 기대값 |
+|---|---|
+| 명단 [0,1,2,3], [2,3,3], [3,3,3] | 순서대로 미완료 3만 가능 / 완료 Tier0 가능 / pending→ack 후 모두 Tier2 |
+| 사람4위 / 보충 CPU4위·1위 / omake | HP 변화 없음 / stage 불변·match_last/first 저장 / stage·CG·대사·엔딩 변화 없음 |
+| 마지막 stage 증가 commit 실패·동시 재접속 | stage/result/pending 전부 rollback, 재시작 한 번 정산·한 event |
+| 마지막 행동 저장 후 reset과 정산 경쟁 | writer 순서에 따른 결과, reset 뒤 옛 요청/캐시/socket이 새 진행을 변경하지 못함 |
+| reset 성공 응답 유실·두 번 클릭·old fetch/media callback | 새 세대 1개, stale 거절, 옛 화면/오디오 재등장 없음 |
+| legacy active/completed, policy1/2/누락, HP0 | replay 원본 보존·completed 재정산 없음·명단 명시 선택 후 HP 없는 새 규칙 |
+| 명단 CPU 비활성화·새 CPU 등록 | 참조 conflict / 전체 완료 대상 변동 없음 |
+| 엔딩 표시 중 종료 / ack commit 후 응답 유실 | 같은 event/payload 재표시 / omake로 복구·추가 엔딩 없음 |
+| sound 설정 변경·reset·한글 파일명·업로드 실패 | 재시작 보존/명단 독립·등록/파일 hash 보존·root 이탈 거절·기존 파일 불변 |
+| 빈/누락/비활성 asset·autoplay 거절 | 무음/안내·계속 가능, 정산/ack를 자동 변경하지 않음 |
+
+필수 회귀는 기존 backend unittest/대사 pytest/frontend build·browser/live-game·policy1/2/legacy
+108행동·파일 DB writer/정산 commit 실패 및 packaged 일반 종료/재시작이다. Windows workflow의
+exact head checkout/artifact source SHA/ZIP hash를 대조한다. CI에 맞춰 임시 데이터만 사용하고
+사용자 자료는 실행하지 않는다. C의 mock 재생과 실제 제공 리소스의 Windows 출력은 따로 기록한다.
+실제 자료가 없으면 '미등록/모의 검증 완료, 실제 CG·오디오 출력 미검증(D11)'로 남긴다.
+
+D05 stage↔Level/event→상황, D06 공유 후보 삭제, D07 모델/LoRA, D08 생성 캐시/파일 삭제,
+D09 ComfyUI 수명, D10 공유 대사/변수 이전, D11 실제 목록/권리는 이 계약으로 결정하지 않는다.
+W06에 필요한 등록 슬롯/기본 마작 SFX/평문 엔딩만 독립시켰다. 실제 리소스/권리 확보는 C의
+실측·W12 배포 조건이며 B 저장 구현을 막지 않는다. 새 제품 정책 결정을 요구하는 차이가 발견되면
+그 지점만 보류/보고하고 이 계약을 임의 확대하지 않는다.
 
 ## 콘텐츠 데이터 구조 권고 — 스키마 미확정
 
