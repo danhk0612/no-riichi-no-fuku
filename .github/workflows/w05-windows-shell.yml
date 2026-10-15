@@ -1,0 +1,100 @@
+name: W05 Windows shell regression
+
+on:
+  push:
+    branches: [task/w05-windows-shell]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'desktop/**'
+      - '.github/workflows/w05-windows-shell.yml'
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: '1'
+
+jobs:
+  windows-shell:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+          architecture: x64
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+      - name: Resolve Windows build dependencies and record source
+        run: |
+          New-Item -ItemType Directory -Force out/w05-evidence | Out-Null
+          git rev-parse HEAD | Out-File -Encoding ascii out/w05-evidence/source-sha.txt
+          python -c "import tomllib,pathlib; p=tomllib.loads(pathlib.Path('backend/pyproject.toml').read_text()); pathlib.Path('out/w05-evidence/requirements.txt').write_text('\n'.join(p['project']['dependencies']+p['project']['optional-dependencies']['test']+['pytest==9.1.1','pyinstaller==6.22.3','setuptools==80.9.0']))"
+          python -m pip install -r out/w05-evidence/requirements.txt --report out/w05-evidence/pip-report.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pip freeze | Out-File -Encoding ascii out/w05-evidence/requirements-resolved.txt
+          python --version | Out-File -Encoding ascii out/w05-evidence/python-version.txt
+          node --version | Out-File -Encoding ascii out/w05-evidence/node-version.txt
+          npm --version | Out-File -Encoding ascii out/w05-evidence/npm-version.txt
+          Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion, OsBuildNumber, OsArchitecture | ConvertTo-Json | Out-File out/w05-evidence/windows.json
+      - name: Source backend and local runtime regressions
+        working-directory: backend
+        run: |
+          python -m unittest discover -s tests -v *> ../out/w05-evidence/unittest.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pytest tests/test_dialogue_service.py -v *> ../out/w05-evidence/dialogue-pytest.txt
+          exit $LASTEXITCODE
+      - name: Build React renderer
+        working-directory: frontend
+        run: |
+          npm ci
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run build
+          exit $LASTEXITCODE
+      - name: Freeze engine and package Electron shell
+        run: |
+          node --check desktop/main.cjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node --check desktop/preload.cjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm ci --prefix desktop
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python desktop/build.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $product = 'out/w05/package/No-Riichi-No-Fuku-win32-x64'
+          if (-not (Test-Path "$product/No-Riichi-No-Fuku.exe")) { throw 'packaged Electron executable is missing' }
+          python -c "import pathlib; p=pathlib.Path(r'$product'); total=sum(f.stat().st_size for f in p.rglob('*') if f.is_file()); pathlib.Path('out/w05-evidence/bundle-bytes.txt').write_text(str(total))"
+      - name: Run packaged renderer, match, restart, and lifecycle smoke
+        run: |
+          $product = (Resolve-Path 'out/w05/package/No-Riichi-No-Fuku-win32-x64').Path
+          $testRoot = Join-Path (Get-Location) 'out/w05-scratch/explicit-test-data'
+          $evidence = Join-Path (Get-Location) 'out/w05-evidence/renderer-smoke.json'
+          New-Item -ItemType Directory -Force (Split-Path $testRoot) | Out-Null
+          $process = Start-Process -FilePath "$product/No-Riichi-No-Fuku.exe" -ArgumentList @('--smoke','--data',"`"$testRoot`"",'--evidence',"`"$evidence`"") -PassThru -Wait -WindowStyle Hidden
+          if ($process.ExitCode -ne 0) {
+            if (Test-Path $evidence) { Get-Content $evidence -Raw }
+            throw "packaged renderer smoke failed with exit $($process.ExitCode)"
+          }
+          Get-Content $evidence -Raw
+      - name: Package ZIP and hash
+        if: success()
+        run: |
+          $product = 'out/w05/package/No-Riichi-No-Fuku-win32-x64'
+          Compress-Archive -Path "$product/*" -DestinationPath out/w05-evidence/No-Riichi-No-Fuku-W05-Windows.zip -CompressionLevel Optimal
+          Get-FileHash out/w05-evidence/No-Riichi-No-Fuku-W05-Windows.zip -Algorithm SHA256 | ConvertTo-Json | Out-File out/w05-evidence/zip-sha256.json
+          Get-ChildItem out/w05-evidence -Recurse -File | Select-Object FullName,Length | ConvertTo-Json | Out-File out/w05-evidence/manifest-files.json
+      - name: Upload exact-source Windows evidence and test ZIP
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w05-windows-${{ github.sha }}
+          path: out/w05-evidence/
+          retention-days: 14

@@ -9,7 +9,7 @@ from pathlib import Path
 from alembic import command
 from alembic.config import Config
 from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, Request, status
-from sqlalchemy import select
+from sqlalchemy import desc, select
 from sqlalchemy.engine import Engine, URL
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -26,7 +26,7 @@ from app.api.game import router as game_router
 from app.api.profile import router as profile_router
 from app.core.config import Settings
 from app.core.security import hash_password
-from app.db.models import CpuCharacter, GameSetting, User, UserCpuProgress
+from app.db.models import CpuCharacter, GameSessionRecord, GameSetting, User, UserCpuProgress
 from app.db.session import (
     LocalRuntimeSession,
     create_database_engine,
@@ -38,6 +38,7 @@ from app.services.bootstrap import (
     seed_result_asset_slots,
 )
 from app.services.game_registry import GameRegistry, get_game_registry
+from app.schemas.game import CreateGameSessionResponse
 
 
 PRODUCT_DIRECTORY = "NoRiichiNoFuku"
@@ -275,6 +276,21 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
             if user.role != "member":
                 raise HTTPException(status_code=403, detail="member access required")
             return user
+
+        @app.get("/api/game/sessions/recent", response_model=CreateGameSessionResponse | None)
+        def recent_local_game(
+            user: User = Depends(local_member),
+            session: Session = Depends(get_session),
+        ):
+            record = session.scalar(
+                select(GameSessionRecord)
+                .where(GameSessionRecord.user_id == user.id)
+                .order_by(desc(GameSessionRecord.updated_at), desc(GameSessionRecord.id))
+                .limit(1)
+            )
+            if record is None:
+                return None
+            return registry.get_owned(session, record.id, user.id)
 
         def local_admin(
             x_local_capability: str | None = Header(default=None),

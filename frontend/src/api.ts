@@ -4,6 +4,12 @@ type TokenResponse = {
   access_token: string
 }
 
+export type LocalProfile = {
+  player_name: string | null
+  current_hp: number | null
+  max_hp: number | null
+}
+
 async function apiRequest<T>(
   path: string,
   init: RequestInit = {},
@@ -70,6 +76,23 @@ export function getActiveGameSession(
   accessToken: string,
 ): Promise<GameSessionCreated | null> {
   return apiRequest('/api/game/sessions/active', {}, accessToken)
+}
+
+export function getRecentGameSession(
+  accessToken: string,
+): Promise<GameSessionCreated | null> {
+  return apiRequest('/api/game/sessions/recent', {}, accessToken)
+}
+
+export function getProfile(accessToken: string): Promise<LocalProfile> {
+  return apiRequest('/api/profile/me', {}, accessToken)
+}
+
+export function updatePlayerName(accessToken: string, playerName: string): Promise<LocalProfile> {
+  return apiRequest('/api/profile/me', {
+    method: 'PATCH',
+    body: JSON.stringify({ player_name: playerName }),
+  }, accessToken)
 }
 
 export function gameWebSocketUrl(sessionId: string): string {

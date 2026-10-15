@@ -84,8 +84,11 @@ D01~D03/관리 UI는 이후 W03에서 사용자 승인됐다. D04 진행 정책�
 
 공식 근거(2026-10-14 접속·내용 확인; 후보 설명이며 이 게임 실측과 별개):
 - [Python 3.12.10 release](https://www.python.org/downloads/release/python-31210/):
-  Windows x64 installer/embeddable 제공. 이후 3.12는 security-only다. W01 Linux 3.12.14와
-  동일 patch 공급을 Windows Actions에서 가정하지 않는다.
+  Windows x64 installer/embeddable 제공. Python.org now marks it superseded by 3.12.15;
+  3.12.10 was the last full maintenance release. The [Python version status](https://devguide.python.org/versions/)
+  says security-phase releases are source-only and publish no new binaries. W05 reuses 3.12.10
+  only as the previously Windows-tested packaging input; this is not a long-term product patch approval.
+  Reassess a source-built patched runtime before distribution. W01 Linux 3.12.14 is not equivalent.
 - [Python embeddable 설명](https://docs.python.org/3.12/using/windows.html#the-embeddable-package):
   pip 미포함, vendoring 및 Microsoft C Runtime 제공 책임.
 - [PyInstaller usage](https://pyinstaller.org/en/stable/usage.html): onedir/data/hidden imports 수집.
@@ -144,17 +147,32 @@ local session의 쓰기 의도만 명시적으로 `BEGIN IMMEDIATE`로 시작한
 
 ### W05 실행창·번들·자동 진입
 
-Electron은 한 data root의 단일 소유 host로 동작하고 번들 engine을 자동 기동한다.
-같은 loopback origin에서 정적 React와 기존 API/WS를 제공한다. 준비 identity/health를
-확인한 뒤 local capability를 제한된 host 채널로 전달해 로그인 화면 없이 profile/active
-session으로 진입한다. renderer Node 비활성/contextIsolation/sandbox를 유지한다.
-engine/DB 구현은 W04 결과를 사용하며 spike의 임시 DB·시험 seed/stage·시험 helper를
-제품 진입점으로 복사하지 않는다. 이름 편집·일반 대국 화면은 기존 자산을 활용한다.
-정상 종료 시 새 입력을 멈추고 이미 승인된 transaction을 마친 뒤 owned engine의 종료를
-요청/대기한다. 다른 프로그램·ComfyUI를 종료하지 않는다. 강제 종료 후 복구 범위는 마지막
-commit까지이며 host crash/전원 차단의 실기 검증은 별도로 한다.
-배포용 Python binary/지원 OS의 남은 조건은 번들 검증 전에 확인하고 필요한 선택 변경은 사용자에게 제시한다.
-캐릭터/공유 목록/생성 설정 관리 화면의 실제 기능은 W08~W11이며 W05에 앞당겨 구현하지 않는다.
+W05 host is `desktop/main.cjs`; `desktop/preload.cjs` exposes only a desktop marker.
+The frozen `backend/app/windows_engine.py` entry point reuses `create_local_runtime`, serves the
+production React build and existing REST/WS on one loopback origin, and reports a random identity
+and bound port over its owned stdout pipe. Electron confirms child PID, identity, `/api/health`,
+and the static React shell before requesting the capability over the private child pipe. Electron
+adds it only to same-window `/api/*` requests; the renderer never receives the capability. The
+WebSocket endpoint reads the host-injected header in local mode and retains the W04 message path
+for existing in-process tests. Web JWT behavior stays unchanged.
+
+Renderer startup enters the single local profile without web login, prefers the active session,
+then reconnects the latest completed session to preserve its result screen. The existing game UI
+and APIs remain in use; the desktop adds only local player-name editing. Electron enforces a
+single-instance lock, the engine enforces the W04 data-root lock, and normal window close requests
+graceful shutdown before the host reaps its owned child. The host cancels renderer requests outside
+its verified origin. The packaged runtime defaults to `%LOCALAPPDATA%/NoRiichiNoFuku`; test runs
+must pass an explicit scratch data root.
+
+The Windows x64 package is built on Windows Server 2022 with Python 3.12.10 x64 / PyInstaller
+6.22.3 and Electron 44.7.2 / Node 24.19.0. This validates that runner and architecture, not a
+minimum Windows client OS. Windows 10/11 client support, OS-level network disconnection, a physical
+title-bar X click, clean-machine Microsoft C runtime availability, and power-loss behavior remain
+unverified. The CI smoke exercises the packaged Electron renderer against the frozen SQLite engine,
+including an actual match, engine restarts, and completed-result reconnect. W02 test seed/stage
+injection is excluded from the product engine. See `CURRENT_STATE.md` for exact SHA and artifact.
+
+Character/shared-data and ComfyUI management remain W08-W11 work.
 
 ## 저장 전환에서 해결할 점
 

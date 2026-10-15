@@ -11,8 +11,8 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W01 | 기존 기능·회귀 기준 확정 | P0 / 기준 확정 완료(브라우저 환경 차단) | W00 | 저성능 Work |
 | W02 | Windows 실행·엔진 번들 기술 검증 | P0 / 기술 검증 완료(Windows CI, 사용자 실기 미검증) | W01 | 고성능 Work |
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 정책·W04/W05 계약 확정 | W02 | 고성능 Chat |
-| W04 | 로컬 저장·복구 기반 전환 | P0 / 보완 코드·Linux/Windows CI 통과, PR #61 병합 대기 | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
-| W05 | Windows shell·오프라인 게임 통합 | P0 / 다음 착수(main 반영 확인) | W04 | 저성능 Work |
+| W04 | 로컬 저장·복구 기반 전환 | P0 / PR #61 병합 완료, main 반영 | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
+| W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows packaged renderer CI 통과; minimum client OS와 개인 PC 증거는 미확정 | W04 | 저성능 Work |
 | W06 | 진행 규칙 결정·게임 회귀 | P0 / 결정 대기 | W05, D04 | 고성능 Chat → 저성능 Work |
 | W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 목록·후보 관리 | P1 / 대기 | W05, W07 | 저성능 Work |
@@ -114,9 +114,15 @@ W05가 먼저 확정한다. W08/W09는 공유 schema·UI를 만지므로 순차 
 - 범위: W03 확정 host에 React build/로컬 엔진 묶기, 기동 준비·포트·owned child 종료·오류 표시,
   확정 프로필 진입·복구 연결. 기존 테이블과 transport를 우선 재사용.
 - 선행: W04, W02 증거와 W03 계약.
-- 완료: Python/Node/Docker/PostgreSQL/ComfyUI 사전 설치와 인터넷 없이 기본 대국·결과·
-  재실행 복구, UI 종료 시 owned 프로세스 처리, 사용자 데이터 보존을 실제 Windows에서 검증.
+- 완료: W05 Windows workflow의 packaged Electron renderer + frozen engine에서 로그인 없는 진입,
+  이름 저장, 실제 대국/정산, active 중간 복구, 완료 결과 재접속, owned child 정상/강제 회수,
+  duplicate root/port/startup 오류 검증. CI 실행 사실과 개인 Windows UI/X-click·OS 인터넷 차단은 구분.
 - 금지: UI 전체 재설계, ComfyUI 자동 기동, 다른 프로세스 종료, 진행 정책 변경, Release.
+- 결과: host/shell/SQLite app bundle을 구현하고 `w05-windows-shell.yml`에 exact-source Windows
+  artifact + source/frozen/renderer 검사를 추가한다. Python 3.12.10 x64는 W02에서 검증된 마지막
+  공식 Windows full-maintenance binary이므로 이번 build input으로 재사용한다; 최신 security-only
+  Python 3.12 patch용 Windows binary는 공식 공급되지 않는다. 장기 배포 patch 승인은 아니다.
+  최종 source SHA·artifact/사용 제한은 CURRENT_STATE를 따른다.
 - 환경: 저성능 Work. 승인된 실행 계약 구현; 범위 밖 구조 판단은 인계.
 
 ### W06 — 진행 규칙 결정·게임 회귀
@@ -199,36 +205,9 @@ local 전용 write intent·동시 읽기·기본 engine의 원본 transaction �
 실패/rollback/cache eviction·재시작 후 exactly-once를 보완했다. 최종 code `455d400`의 실행
 결과는 CURRENT_STATE를 따른다. 기존 보완 지시/성공 이력은 PR #61/#62와 Git에 보존한다.
 
-## 다음 Work에 입력할 지시문
+## 다음 작업 제한
 
-```text
-https://github.com/danhk0612/no-riichi-no-fuku 의 W05만 수행해.
-
-최신 main·열린 PR·브랜치와 AGENTS.md, README.md, PROJECT.md, REQUIREMENTS.md,
-ARCHITECTURE.md, CURRENT_STATE.md, TASKS.md, AI_WORKFLOW.md를 먼저 확인해.
-W04 PR #61의 최종 보완 code는 455d400이다. 최신 main 반영 여부와 이후 변경을 확인해.
-미병합이면 제품 변경을 시작하지 마. branch task/w05-windows-shell을 사용해.
-
-W03 계약과 W04 create_local_runtime을 재사용해 Electron host·번들 엔진 자동 기동,
-same-origin React/API/WS·identity/health 준비 확인·로그인 없는 profile/active 대국 진입,
-이름 편집·정상 종료와 owned child 회수를 연결해. W02 시험 임시 DB/seed 주입을 제품에 넣지 마.
-capability는 host와 owned engine의 private channel로만 전달하고 URL/명령줄/일반 로그/DB/
-artifact에 넣지 마. 기존 웹 인증·게임 화면 자산·local 소유 잠금/쓰기/복구 경계를 보존해.
-중복 기동·포트 점유·ready 실패·창 닫기/종료 실패·최종 commit 후 재실행 복구를 검사해.
-실제 Windows/CI 검사는 명시적 임시 data root만 쓰고 사용자 LocalAppData·웹 DB를 사용하지 마.
-
-번들 준비 전에 지원 OS·배포용 Python patch 공급 조건을 확인해. W02의 Python 3.12.10이
-제품의 장기 고정 버전으로 승인된 것은 아니다. 선택 변경이 필요하면 근거와 영향만 분리해
-사용자에게 제시하고 무관한 구현까지 중단하지 마. 같은 RiichiEnv 0.4.8/policy 1/2를 보존해.
-정확한 수정 SHA Windows CI/artifact의 source SHA·실제 결과를 대조하고 source/frozen 회귀와
-실제 renderer의 대국·중간 복구·완료 재접속을 확인해. 사용자 X 클릭·OS 수준 인터넷 차단과
-hosted CI를 구분하며 미검증은 그대로 기록해. 시험 ZIP은 가능하나 정식 Release/tag는 하지 마.
-
-CPU/룰/HP 0·완료/엔딩 정책·React 전체 재설계·ComfyUI·공유 콘텐츠·다중 프로필·백업 UI·
-기존 데이터 이전·W06 착수를 포함하지 마. 문서를 실제 변경/검증 결과로 갱신하고
-branch commit/push 및 PR 제출까지 진행해. 직접 병합·Release/tag는 하지 마.
-최종 보고에 SHA/PR·Windows artifact/검증 환경·미검증·잔여 조건·W06 인계를 포함해.
-```
-
-권장 환경: **저성능 Work**. 확정된 W03 계약과 검증된 W04 runtime의 host/UI 통합 구현이다.
-배포용 Python/지원 OS 결정에 기술 교체가 필요하면 그 부분만 고성능 Work/Chat으로 검토한다.
+W05가 끝났지만 W06 구현은 시작하지 않는다. D04의 CPU 부족·모든 CPU 완료·HP 0 이후 정책이
+사용자 결정 대기이므로 다음 지시문은 해당 결정을 먼저 확정한 뒤 작성한다. Windows 최소 client OS,
+개인 PC title-bar X/OS network-off 및 장기 배포용 Python 보안 patch는 별도 후속 조건이며
+CPU·게임 진행 규칙이나 다음 Task에 임의 포함하지 않는다.
