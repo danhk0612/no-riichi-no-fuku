@@ -1,5 +1,42 @@
 # 현재 상태
 
+## W06-C PR #70 검토 — 보완 필요, 병합 보류
+
+확인일 2026-10-16(KST), 기준 main `7525b7f2613be3b9d58f4764cc9cced9dc8780ea`.
+검토 head는 `b8065358e60c43314ac16c599013158f7c019c96`(제품 `567a1a3`)이다.
+PR #70과 `task/w06-c-sound-ending`을 유지하며 제품 수정은 후속 Work에 인계한다.
+W06-A 제품 정책을 새로 정하거나 W07을 시작하지 않는다.
+
+### 재현·코드 대조 결과
+
+| 우선 | 항목 | 확인한 동작과 기대값 |
+|---|---|---|
+| P1 | 한 곡 BGM 반복 | 실제 `BackgroundMusic` 함수를 Vite Oxc로 변환해 hook/Audio 모의 실행. A 한 곡 재생 후 ended를 전달해도 Audio 인스턴스 1개·play 1회에 멈춤. 같은 trackId setState가 다음 재생을 만들지 않음. 한 곡도 계속 순환해야 함 |
+| P1 | BGM 변경/늦은 callback | A 재생 중 [A,B]→[B,A] 변경 시 기존 A pause 1회·새 Audio 생성으로 곡을 재시작. 폐기한 A의 ended를 나중에 호출하면 현재 A가 B로 바뀜. 현재 곡을 유지하고 이전 audio callback을 무효화해야 함. 같은 ID의 media URL 교체도 현재 dependency로는 새 재생에 반영되지 않는 경로가 있음 |
+| P1 | 마지막 론·쯔모 효과음 취소 | 실제 `connectGame`/`stopGameAudio`를 모의 WebSocket/지연 media Promise로 실행. sound_effect(ron)→match_complete→media 응답 순서에서 play 0회·blob revoke. backend도 SFX 뒤 match_complete를 보내므로 결과 처리의 stopGameAudio가 마지막 정상 SFX를 취소함. 정산된 마지막 효과음도 한 번 재생되어야 함 |
+| P2 | 비활성 BGM 선택 해제 UI | 임시 실제 runtime에서 선택 곡 비활성화 후 GET은 ID 보존·available=false, 그대로 PUT은 400. `LocalSoundPanel` 코드는 active/available 곡만 checkbox로 제공하고 선택 순서 목록에는 이동 버튼만 있어 그 ID를 제거할 수 없음(코드 대조, 실제 DOM 미실행). unavailable 참조를 명시적으로 해제하고 선택을 저장할 수 있어야 함 |
+| P2 | 비활성화 후 새 엔딩 음악 | 임시 실제 API에서 엔딩 음악 등록→track 비활성화→전원 stage3 명단 확정 시 새 ending payload가 비활성 track의 asset을 snapshot하고 resolved music.available=true. 새 재생의 unavailable/무음 계약을 확인·보완해야 함. 비활성화 전에 이미 만들어진 pending payload의 immutable 참조는 계속 유지해야 함 |
+
+위 모의 검사는 실제 source 함수 실행이며 브라우저 DOM/실제 codec/실기 오디오 출력의 증거가 아니다.
+기존 `local-sound.browser.mjs`는 SFX 중복 검사를 담고 있으나 작성 당시 로컬에서 미실행이고,
+Windows packaged smoke의 추가 두 검사는 설정 화면/무음·미등록 기본값이다. 위 BGM·지연 SFX
+실패를 검증하지 않은 21 checks 성공을 실제 재생 회귀 통과로 간주하지 않는다.
+
+### 성공 증거와 범위
+
+- 재검증 Linux: backend unittest 100개/40.720초, dialogue pytest 10개/0.09초, frontend production build,
+  Node 종료 회귀 3개 통과. 사용자 자료 대신 소유 임시 runtime/file fixture를 사용했다.
+- head `b806535`의 Windows W04 run `38812476825`, W05 PR `38812477096`/push `38812469230` success.
+  PR artifact `12009995428`(203,331,514 bytes)의 `source-sha.txt`가 head와 일치한다.
+  다운로드 archive SHA256 `8c82a3ae15b2713fe88643a65d7beb88e2ad879817d876c088877fed1bb62770`,
+  내부 Windows ZIP SHA256 `33d17fa62395c0483614d11aec7350812e44c04d100549edf27d9a56414efc81`를 대조했다.
+  artifact unittest 100개/79.698초 OK, renderer passed=true/21 checks를 확인했다.
+- 개인 Windows PC/전원 차단 내구성·실제 CG 표시/오디오 출력(D11)은 계속 미검증이다.
+  현재 결함은 실제 사용자 파일 없이 재현 가능한 제어 흐름 문제이므로 D11 대기로 미루지 않는다.
+
+다음 작업은 TASKS의 “W06-C PR #70 보완 — 현재 우선”이다. 기존 CI/artifact·수정 전 실패를
+보존하고 mock/browser 회귀 및 정확한 수정 SHA Windows CI를 통과한 뒤 다시 검토한다.
+
 ## W06-B PR #68 — 최종 검토 통과
 
 확인일 2026-10-15. 최신 기준 main은 `1646bd9580d7aaa34d1d793b7272d74163fc57f2`;
@@ -495,6 +532,6 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 
 ## 다음
 
-W06-B 검토를 통과했다. PR #68 병합을 확인한 뒤 TASKS의 W06-C 지시문에 따라 사운드 자료·설정 및 ending 리소스 연결을
-별도 착수한다. 현재 W06-C는 시작하지 않았다. 개인 Windows 실기, 전원 차단 durability 및
+W06-B PR #68은 병합됐다. W06-C PR #70은 검토에서 보완이 필요하므로 TASKS의 현재 우선 지시를 따른다.
+개인 Windows 실기, 전원 차단 durability 및
 실제 ending CG/음악 재생은 해당 범위에서 증거를 별도로 확보한다.
