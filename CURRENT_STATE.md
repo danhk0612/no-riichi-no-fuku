@@ -1,11 +1,11 @@
 # 현재 상태
 
-## W06-C PR #70 검토 — 보완 필요, 병합 보류
+## W06-C PR #70 보완 — 검증 완료, 병합 보류
 
-확인일 2026-10-16(KST), 기준 main `7525b7f2613be3b9d58f4764cc9cced9dc8780ea`.
+확인일 2026-10-16(KST), 최신 main `4b170f83545f338c66f2888a6d641f00ba908444`.
 검토 head는 `b8065358e60c43314ac16c599013158f7c019c96`(제품 `567a1a3`)이다.
-PR #70과 `task/w06-c-sound-ending`을 유지하며 제품 수정은 후속 Work에 인계한다.
-W06-A 제품 정책을 새로 정하거나 W07을 시작하지 않는다.
+기존 `task/w06-c-sound-ending`과 열린 PR #70을 유지했다. 아래 수정 전 재현을 보존하고,
+회귀·Windows 검증을 통과한 보완을 PR #70에 갱신했다. W06-A 정책과 콘텐츠 범위는 변경하지 않았다.
 
 ### 재현·코드 대조 결과
 
@@ -34,8 +34,26 @@ Windows packaged smoke의 추가 두 검사는 설정 화면/무음·미등록 �
 - 개인 Windows PC/전원 차단 내구성·실제 CG 표시/오디오 출력(D11)은 계속 미검증이다.
   현재 결함은 실제 사용자 파일 없이 재현 가능한 제어 흐름 문제이므로 D11 대기로 미루지 않는다.
 
-다음 작업은 TASKS의 “W06-C PR #70 보완 — 현재 우선”이다. 기존 CI/artifact·수정 전 실패를
-보존하고 mock/browser 회귀 및 정확한 수정 SHA Windows CI를 통과한 뒤 다시 검토한다.
+### 보완 후 검증
+
+- 보완 source SHA `e9918fec249e909faa135227399e96136d2b984e`는 이 문서 기록 전의 제품·검사 head다.
+  BGM 1곡 반복/순서 변경 시 현재 곡 유지/동일 ID의 media 교체/낡은 callback 차단, 파일 실패와
+  autoplay 재시도, 비활성 효과음·BGM·엔딩 선택 해제, 최종 SFX와 `match_complete` 순서 및 reset 뒤
+  지연 SFX 차단, 새 ending의 비활성 음악 미참조와 기존 pending snapshot 보존을 추가 검사했다.
+- Linux: backend unittest 100, `test_local_sound` 6, dialogue pytest 10, frontend production build,
+  Node 종료 회귀 3 통과. 브라우저 테스트는 로컬 Chromium 미설치/CDN archive 손상으로 실행하지 못했으며,
+  Windows hosted Playwright Chromium에서 실제 renderer DOM과 mock Audio를 실행했다.
+- Windows Server 2022 x64 exact source: W04 PR run [38823272350](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38823272350),
+  W05 push run [38823267255](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38823267255) 통과.
+  W05 PR run [38823272327](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38823272327)도 같은 SHA에서 통과했다. push artifact
+  `12012999384`의 `source-sha.txt`가 SHA와 일치한다. artifact ZIP SHA256
+  `839804e93f47eadc5ffbbb8c488fc3b3667a312819b2da3b48bdc2732a2961f3`, 내부 Windows ZIP SHA256
+  `deca88e1ab2ee99b44e7f3773ccedebbafc12aa30e315ace9740af0dbde716e4`를 대조했다. artifact는
+  unittest 100/77.065초, dialogue pytest 10, renderer `passed: true`/22 checks, 한 곡 mock 재생,
+  일반 대국/재시작/종료 smoke를 기록한다. 업로드 artifact digest와 다운로드 archive SHA가 일치한다.
+- 실제 CG/음악 콘텐츠·기기 출력과 개인 Windows PC/전원 차단 내구성(D11)은 미검증이다. 열린 PR #70은
+  병합하지 않았고 Release/tag/W07은 수행하지 않았다. 이후 문서 전용 commit의 exact-SHA Windows 결과는
+  아래 추가 기록으로 남긴다.
 
 ## W06-B PR #68 — 최종 검토 통과
 
