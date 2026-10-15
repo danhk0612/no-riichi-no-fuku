@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+import json
 
 import jwt
 from fastapi import (
@@ -43,7 +44,7 @@ from app.services.game_registry import (
     StaleGameActionError,
     get_game_registry,
 )
-from app.services.dialogue_service import DialogueSelector, extract_game_events
+from app.services.dialogue_service import DialogueSelector, _map_event_type_to_key, extract_game_events
 from app.services.game_setup import (
     CpuChoice,
     CpuTierUnavailableError,
@@ -52,6 +53,7 @@ from app.services.game_setup import (
     list_selectable_cpus,
 )
 from app.services.local_play import LocalPlayConflict
+from app.services.local_sound import selected_effect_clip
 from app.services.result_assets import (
     get_unlocked_result_asset,
     get_unlocked_result_asset_by_id,
@@ -202,10 +204,35 @@ async def send_registered_game_state(
 ) -> bool:
     """Build a snapshot under the registry lock, then perform network IO unlocked."""
     dialogue_messages: list[dict[str, object]] = []
+    sound_messages: list[dict[str, object]] = []
     with registered.lock:
         game = registered.game
         if game is not None:
             pending = game.pending_events()
+            if pending.events and local_runtime is not None and registered.play_generation is not None:
+                with session_factory() as session:
+                    for event_index, event_raw in enumerate(pending.events):
+                        try:
+                            event = json.loads(event_raw) if isinstance(event_raw, str) else event_raw
+                        except (json.JSONDecodeError, TypeError):
+                            continue
+                        if not isinstance(event, dict):
+                            continue
+                        event_key = _map_event_type_to_key(event.get("type"), event)
+                        if event_key not in {"chi", "pon", "kan", "riichi", "ron", "tsumo"}:
+                            continue
+                        clip = selected_effect_clip(session, event_key, local_runtime.paths.media)
+                        if clip is None:
+                            continue
+                        sound_messages.append({
+                            "type": "sound_effect",
+                            "generation": registered.play_generation,
+                            "session_id": registered.session_id,
+                            "action_version": registered.action_version,
+                            "event_index": event_index,
+                            "event_key": event_key,
+                            **clip,
+                        })
             if pending.events and registered.rules_mode != "omake":
                 with session_factory() as session:
                     events = extract_game_events(
@@ -261,6 +288,8 @@ async def send_registered_game_state(
 
     for dialogue in dialogue_messages:
         await websocket.send_json(dialogue)
+    for sound in sound_messages:
+        await websocket.send_json(sound)
     if is_done:
         result = registered.result
         if result is None:

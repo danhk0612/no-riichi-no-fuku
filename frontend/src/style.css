@@ -156,6 +156,43 @@ button {
   gap: 20px;
 }
 
+.sound-panel {
+  margin: 18px 0 24px;
+  padding: 22px;
+  border: 1px solid rgba(215, 185, 110, 0.3);
+  border-radius: 18px;
+  background: rgba(8, 38, 29, 0.94);
+}
+
+.sound-panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.sound-panel-heading h2 { margin: 6px 0 0; }
+.sound-panel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 18px; }
+.sound-card { display: grid; align-content: start; gap: 10px; padding: 16px; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; background: rgba(4,25,19,.65); }
+.sound-card h3 { margin: 8px 0 2px; color: #e6ce8d; }
+.sound-card label { display: grid; gap: 5px; color: #cbdad4; font-size: .88rem; }
+.sound-card input:not([type="checkbox"]), .sound-card select, .sound-card textarea { width: 100%; min-width: 0; padding: 9px 10px; color: #f4f1e8; border: 1px solid rgba(215,185,110,.28); border-radius: 8px; background: #102d23; }
+.sound-card input[type="file"] { padding: 7px; }
+.sound-card input[type="checkbox"] { accent-color: #d7b96e; }
+.sound-card .inline-check { display: flex; align-items: center; gap: 8px; }
+.sound-card button, .audio-resume { width: fit-content; padding: 8px 12px; border: 1px solid rgba(215,185,110,.42); border-radius: 8px; color: #f4f1e8; background: #174734; cursor: pointer; }
+.sound-list { display: grid; gap: 8px; padding: 0; list-style: none; }
+.sound-list li { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.track-order { display: grid; gap: 7px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,.04); }
+.selected-track-order { display: grid; gap: 6px; padding-left: 24px; }
+.selected-track-order li { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.selected-track-order li span:last-child { display: flex; gap: 5px; }
+.muted { color: #a9bbb3; font-size: .85rem; }
+.ending-panel { gap: 10px; }
+.ending-image { display: block; max-width: min(100%, 920px); max-height: 62vh; margin: 10px auto; object-fit: contain; border-radius: 12px; }
+.ending-audio { width: min(480px, 100%); margin: 0 auto; }
+.audio-resume { position: fixed; right: 16px; bottom: 16px; z-index: 10; }
+
 .selection-actions {
   display: flex;
   align-items: center;

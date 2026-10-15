@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import { AuthPanel } from './AuthPanel'
 import { CpuSelection } from './CpuSelection'
@@ -18,8 +18,12 @@ import {
   loginMember,
   registerMember,
   updatePlayerName,
+  getLocalMediaObjectUrl,
+  getResolvedEnding,
+  getSoundSelection,
 } from './api'
-import type { LocalPlayState } from './api'
+import type { LocalPlayState, ResolvedEnding, SoundSelection } from './api'
+import { LocalSoundPanel } from './LocalSoundPanel'
 import { MahjongTable } from './game/MahjongTable'
 import type {
   CpuChoice,
@@ -55,13 +59,36 @@ function App() {
   const [desktopProfile, setDesktopProfile] = useState<string | null>(null)
   const [profileName, setProfileName] = useState('')
   const [profileBusy, setProfileBusy] = useState(false)
+  const [soundSelection, setSoundSelection] = useState<SoundSelection | null>(null)
+  const [soundSettingsOpen, setSoundSettingsOpen] = useState(false)
+  const [soundError, setSoundError] = useState<string | null>(null)
   const socketRef = useRef<WebSocket | null>(null)
   const resultAssetUrlRef = useRef<string | null>(null)
   const resultAssetLoadVersionRef = useRef(0)
   const desktopStartedRef = useRef(false)
   const localGenerationRef = useRef<string | null>(null)
   const localRequestTokenRef = useRef(0)
+  const playedSoundEventsRef = useRef(new Set<string>())
+  const gameAudioTokenRef = useRef(0)
+  const activeSoundEffectsRef = useRef(new Map<string, { audio: HTMLAudioElement; url: string }>())
   const isDesktop = window.nrnfDesktop?.isDesktop === true
+
+  useEffect(() => {
+    if (!isDesktop || !accessToken) { setSoundSelection(null); return }
+    let current = true
+    void getSoundSelection(accessToken).then((selection) => { if (current) setSoundSelection(selection) }).catch(() => {})
+    return () => { current = false }
+  }, [accessToken, isDesktop])
+
+  function stopGameAudio() {
+    gameAudioTokenRef.current += 1
+    for (const { audio, url } of activeSoundEffectsRef.current.values()) {
+      audio.pause()
+      audio.src = ''
+      URL.revokeObjectURL(url)
+    }
+    activeSoundEffectsRef.current.clear()
+  }
 
   function beginLocalRequest(): number {
     localRequestTokenRef.current += 1
@@ -82,6 +109,7 @@ function App() {
 
   useEffect(() => () => {
     socketRef.current?.close(1000)
+    stopGameAudio()
     if (resultAssetUrlRef.current) URL.revokeObjectURL(resultAssetUrlRef.current)
   }, [])
 
@@ -289,6 +317,28 @@ function App() {
           : current)
         return
       }
+      if (message.type === 'sound_effect') {
+        const identity = `${message.generation}:${message.session_id}:${message.action_version}:${message.event_index}:${message.event_key}`
+        if (playedSoundEventsRef.current.has(identity)) return
+        playedSoundEventsRef.current.add(identity)
+        const audioToken = gameAudioTokenRef.current
+        void getLocalMediaObjectUrl(token, message.url).then((url) => {
+          if (audioToken !== gameAudioTokenRef.current || message.generation !== localGenerationRef.current) {
+            URL.revokeObjectURL(url)
+            return
+          }
+          const audio = new Audio(url)
+          activeSoundEffectsRef.current.set(identity, { audio, url })
+          const release = () => {
+            if (activeSoundEffectsRef.current.get(identity)?.audio === audio) activeSoundEffectsRef.current.delete(identity)
+            URL.revokeObjectURL(url)
+          }
+          audio.addEventListener('ended', release, { once: true })
+          audio.addEventListener('error', release, { once: true })
+          void audio.play().catch(() => { release(); setSoundError('효과음을 재생할 수 없습니다.') })
+        }).catch(() => {})
+        return
+      }
       if (message.type === 'human_turn') {
         setGameState({
           status: 'human_turn',
@@ -303,6 +353,7 @@ function App() {
       }
       if (message.type === 'match_complete') {
         completed = true
+        stopGameAudio()
         clearResultAssetUrl()
         setGameState({
           status: 'complete',
@@ -467,6 +518,7 @@ function App() {
       const updated = await acknowledgeLocalEnding(accessToken, gameState.generation, gameState.eventId)
       if (!isCurrentLocalRequest(requestToken, expectedGeneration)) return
       await restoreLocalPlay(accessToken, updated, requestToken)
+      setSoundError(null)
       clearResultAssetUrl()
     } catch (caught) {
       if (isCurrentLocalRequest(requestToken, expectedGeneration)) {
@@ -487,6 +539,7 @@ function App() {
     setError(null)
     socketRef.current?.close(1000)
     socketRef.current = null
+    stopGameAudio()
     clearResultAssetUrl()
     try {
       const updated = await resetLocalPlay(accessToken, localPlay.generation)
@@ -506,6 +559,7 @@ function App() {
     beginLocalRequest()
     socketRef.current?.close(1000)
     socketRef.current = null
+    stopGameAudio()
     clearResultAssetUrl()
     setAccessToken(null)
     setCpus(null)
@@ -524,7 +578,10 @@ function App() {
         <p className="eyebrow">4-PLAYER RIICHI MAHJONG</p>
         <h1>No Riichi No Fuku</h1>
         <p>플레이어 1명과 CPU 3명이 진행하는 동풍전</p>
+        {isDesktop && accessToken && <button className="text-button" type="button" onClick={() => setSoundSettingsOpen((open) => !open)}>사운드·자료 설정</button>}
       </header>
+      {isDesktop && accessToken && soundSettingsOpen && <LocalSoundPanel accessToken={accessToken} onClose={() => setSoundSettingsOpen(false)} onSelectionChanged={setSoundSelection} />}
+      {isDesktop && soundError && <p className="form-error" role="status">{soundError}</p>}
       {!isDesktop && !accessToken && (
         <AuthPanel
           busy={busy}
@@ -565,13 +622,7 @@ function App() {
           </div>
           {error && <p className="form-error" role="alert">{error}</p>}
           {gameState.status === 'ending' ? (
-            <section className="match-result ending-panel" aria-label="엔딩">
-              <p className="eyebrow">ENDING</p>
-              <h2>모든 참가 CPU 완료</h2>
-              <p>{gameState.payload?.dialogue_text ?? '엔딩 대사가 등록되지 않았습니다.'}</p>
-              <p className="result-asset-placeholder">엔딩 CG와 음악은 아직 등록되지 않았습니다.</p>
-              <button className="primary-button" disabled={busy} onClick={continueFromEnding} type="button">오마케로 계속하기</button>
-            </section>
+            <EndingScreen accessToken={accessToken} generation={gameState.generation} eventId={gameState.eventId} fallback={gameState.payload} busy={busy} onContinue={continueFromEnding} />
           ) : <MahjongTable
             actionsDisabled={actionPending}
             allowGameOverContinue={isDesktop}
@@ -581,7 +632,116 @@ function App() {
           />}
         </>
       )}
+      {isDesktop && accessToken && <BackgroundMusic accessToken={accessToken} selection={soundSelection} paused={gameState.status === 'ending'} />}
     </main>
+  )
+}
+
+function BackgroundMusic({ accessToken, selection, paused }: { accessToken: string; selection: SoundSelection | null; paused: boolean }) {
+  const [trackId, setTrackId] = useState<string | null>(null)
+  const [blocked, setBlocked] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const orderedTracks = useMemo(() => {
+    if (!selection) return []
+    return selection.bgm_ids.map((id) => selection.tracks.find((track) => track.id === id))
+      .filter((track): track is NonNullable<typeof track> => !!track && track.active && track.available && !!track.url)
+  }, [selection])
+  const trackOrder = orderedTracks.map((track) => track.id).join(',')
+
+  useEffect(() => {
+    setTrackId((current) => orderedTracks.some((track) => track.id === current) ? current : orderedTracks[0]?.id ?? null)
+  }, [trackOrder])
+
+  useEffect(() => {
+    let current = true
+    let objectUrl: string | null = null
+    const track = orderedTracks.find((item) => item.id === trackId)
+    if (!track || paused) {
+      audioRef.current?.pause()
+      return () => { current = false }
+    }
+    setBlocked(false)
+    void getLocalMediaObjectUrl(accessToken, track.url!).then(async (url) => {
+      if (!current) { URL.revokeObjectURL(url); return }
+      objectUrl = url
+      const audio = new Audio(url)
+      audioRef.current = audio
+      audio.addEventListener('ended', () => {
+        const index = orderedTracks.findIndex((item) => item.id === track.id)
+        setTrackId(orderedTracks[(index + 1) % orderedTracks.length]?.id ?? null)
+      }, { once: true })
+      try { await audio.play() } catch { if (current) setBlocked(true) }
+    }).catch(() => { if (current) setBlocked(true) })
+    return () => {
+      current = false
+      audioRef.current?.pause()
+      audioRef.current = null
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [accessToken, trackId, trackOrder, paused])
+
+  if (!blocked || paused || orderedTracks.length === 0) return null
+  return <button className="text-button audio-resume" type="button" onClick={() => { void audioRef.current?.play().then(() => setBlocked(false)).catch(() => setBlocked(true)) }}>배경음 재생</button>
+}
+
+function EndingScreen({ accessToken, generation, eventId, fallback, busy, onContinue }: {
+  accessToken: string
+  generation: string
+  eventId: string
+  fallback: { version: number; cg_asset_id: string | null; music_asset_id: string | null; dialogue_text: string | null } | null
+  busy: boolean
+  onContinue: () => void
+}) {
+  const [resources, setResources] = useState<ResolvedEnding | null>(null)
+  const [cgUrl, setCgUrl] = useState<string | null>(null)
+  const [musicUrl, setMusicUrl] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState(false)
+  const [imageError, setImageError] = useState(false)
+  const requestRef = useRef(0)
+
+  useEffect(() => {
+    let active = true
+    const request = ++requestRef.current
+    setResources(null); setCgUrl(null); setMusicUrl(null); setLoadError(false); setImageError(false)
+    let loadedCg: string | null = null
+    let loadedMusic: string | null = null
+    void getResolvedEnding(accessToken, generation, eventId).then(async (resolved) => {
+      if (!active || request !== requestRef.current) return
+      setResources(resolved)
+      if (resolved.cg?.url) {
+        try {
+          const url = await getLocalMediaObjectUrl(accessToken, resolved.cg.url)
+          if (!active || request !== requestRef.current) URL.revokeObjectURL(url)
+          else { loadedCg = url; setCgUrl(url) }
+        } catch { if (active) setLoadError(true) }
+      }
+      if (resolved.music?.url) {
+        try {
+          const url = await getLocalMediaObjectUrl(accessToken, resolved.music.url)
+          if (!active || request !== requestRef.current) URL.revokeObjectURL(url)
+          else { loadedMusic = url; setMusicUrl(url) }
+        } catch { if (active) setLoadError(true) }
+      }
+    }).catch(() => { if (active) setLoadError(true) })
+    return () => {
+      active = false
+      requestRef.current += 1
+      if (loadedCg) URL.revokeObjectURL(loadedCg)
+      if (loadedMusic) URL.revokeObjectURL(loadedMusic)
+    }
+  }, [accessToken, generation, eventId])
+
+  const text = resources?.dialogue_text ?? fallback?.dialogue_text
+  return (
+    <section className="match-result ending-panel" aria-label="엔딩">
+      <p className="eyebrow">ENDING</p>
+      <h2>모든 참가 CPU 완료</h2>
+      {cgUrl && !imageError ? <img className="ending-image" src={cgUrl} alt="엔딩 CG" onError={() => { setImageError(true); setLoadError(true) }} /> : <p className="result-asset-placeholder">{resources ? '엔딩 CG가 등록되지 않았거나 파일을 읽을 수 없습니다.' : '엔딩 자료를 불러오는 중…'}</p>}
+      <p>{text || '엔딩 대사가 등록되지 않았습니다.'}</p>
+      {musicUrl && <audio className="ending-audio" src={musicUrl} controls autoPlay onError={() => setLoadError(true)} />}
+      {loadError && <p className="muted">일부 엔딩 자료를 재생하거나 불러오지 못했습니다. 계속하기는 사용할 수 있습니다.</p>}
+      <button className="primary-button" disabled={busy || resources?.acknowledged === true} onClick={onContinue} type="button">오마케로 계속하기</button>
+    </section>
   )
 }
 

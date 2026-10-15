@@ -21,6 +21,7 @@ Run the check in another terminal:
 node tests/dialogue.browser.mjs
 node tests/connection.browser.mjs
 node tests/result-asset.browser.mjs
+node tests/local-sound.browser.mjs
 ```
 
 For a different Vite address, set `TEST_BASE_URL`.
@@ -46,6 +47,10 @@ REST/WebSocket fixtures rather than a real server restart.
 `result-asset.browser.mjs` uses metadata and HTTP 503 responses without image files. It checks
 that CG failure replaces the loading message while scores/next-match controls remain available,
 and that a failed asset response arriving after next-match selection cannot display an old error.
+
+`local-sound.browser.mjs` uses a desktop-mode renderer fixture to inspect the local sound settings
+surface and send a repeated committed SFX identity through the game socket. It verifies the same
+event plays only once; no audio content is generated.
 
 ## Real-server browser integration
 

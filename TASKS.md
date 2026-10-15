@@ -13,7 +13,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 정책·W04/W05 계약 확정 | W02 | 고성능 Chat |
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 완료(PR #61 병합) | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows hosted 검증·최종 검토 통과(개인 실기 미검증) | W04 | 저성능 Work |
-| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B 최종 검토 통과·C 인계 준비 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
+| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B 최종 검토 통과·C PR 검증 대기 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
 | W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 목록·후보 관리 | P1 / 대기 | W05, W07 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
@@ -282,9 +282,15 @@ W04 run `38808528770` 모두 성공했다. 다운로드 artifact `12007637653`�
 내부 Windows ZIP hash 및 renderer/lifecycle JSON을 대조했다. unittest 94개·dialogue pytest 10개,
 frontend build·Node 종료 회귀도 통과했다. 상세 SHA/hash·검사 범위·이전 증거는 CURRENT_STATE를 따른다.
 최종 검토는 통과했으며 병합 상태/SHA는 PR #68과 Git을 확인한다. 개인 Windows PC·전원 차단 및
-실제 ending CG/음악은 미검증이다. W06-C는 아직 착수하지 않았고 Release/tag도 수행하지 않았다.
+실제 ending CG/음악은 미검증이다. W06-C PR의 검증 상태는 `CURRENT_STATE.md`를 따른다.
 
-## 다음 Work에 입력할 지시문 — W06-C
+## W06-C 구현 기록
+
+W06-C는 `task/w06-c-sound-ending`에서 구현했다. 상세 코드 SHA, 테스트, Windows CI/artifact 증거와
+D11 한계는 `CURRENT_STATE.md`의 W06-C 절에 기록한다. 실제 사용자 CG·음악·대사를 생성하거나
+seed하지 않았고 실제 출력 검증을 주장하지 않는다. 병합·Release/tag 및 W07 착수는 하지 않았다.
+
+## 완료된 Work 지시문 — W06-C
 
 A 및 B 검토/병합 후 사용한다. 권장 환경: **저성능 Work**. B와 병렬 작업하지 않는다.
 

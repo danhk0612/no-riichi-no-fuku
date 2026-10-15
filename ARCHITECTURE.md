@@ -424,6 +424,20 @@ W06에 필요한 등록 슬롯/기본 마작 SFX/평문 엔딩만 독립시켰�
 실측·W12 배포 조건이며 B 저장 구현을 막지 않는다. 새 제품 정책 결정을 요구하는 차이가 발견되면
 그 지점만 보류/보고하고 이 계약을 임의 확대하지 않는다.
 
+### W06-C 구현 상태
+
+2026-10-16 구현은 B migration `20261015_0005` 뒤 `20261016_0006`에서 media UUID·상대 storage key,
+효과음 세트, BGM track 테이블을 추가했다. Windows local runtime에 `/api/local/media`,
+`/sound-effect-sets`, `/background-tracks`, `/sound-selection`, `/ending-resources`,
+`/play/ending`을 등록했다. 파일 원본은 LocalAppData media root 아래 immutable key로 저장하며
+교체/비활성화/초기화는 기존 파일을 삭제하지 않는다. 오디오 단일 byte-range 요청도 지원한다.
+
+`local_play_states.ending_payload`는 기존 B version 1 형식을 유지하며 완료 시점의 CG asset UUID,
+엔딩 track의 media UUID, 평문을 고정한다. 기본 마작 여섯 event SFX는 대사와 독립해 committed
+action snapshot에 generation/session/action/event identity와 함께 전달한다. frontend는 중복 identity,
+세대 지연 callback, 재생 객체 URL을 관리하고, 선택 BGM은 설정 배열 순서대로 순환한다. 실제 리소스
+미등록·파일 누락은 안내/무음 상태이며 재생이나 파일 로딩은 엔딩 ack를 호출하지 않는다.
+
 ## W06-B 구현·보완 상태 (2026-10-15)
 
 W06-A 계약을 local-only service/API 경로로 구현했다. migration `20261015_0005`는

@@ -2,7 +2,7 @@ name: W05 Windows shell regression
 
 on:
   push:
-    branches: [task/w05-windows-shell, task/w06-b-progression]
+    branches: [task/w05-windows-shell, task/w06-b-progression, task/w06-c-sound-ending]
   pull_request:
     branches: [main]
     paths:
@@ -96,6 +96,8 @@ jobs:
           }
           $required = @(
             'same-origin React loaded without login',
+            'renderer opened local sound and ending settings',
+            'new local profile starts silent with ending resources unregistered',
             'renderer name editor persisted the local profile',
             'renderer recovered roster selection after committed reset response loss',
             'renderer entered ending screen after completed-roster confirmation response',

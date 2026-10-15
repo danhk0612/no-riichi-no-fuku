@@ -425,6 +425,20 @@ async function smokeRun() {
     throw new Error('desktop renderer showed web login')
   }
   addCheck('same-origin React loaded without login')
+  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('사운드'))?.click()")
+  await waitForRenderer("Boolean(document.querySelector('.sound-panel'))")
+  const soundDefaults = await window.webContents.executeJavaScript(`Promise.all([
+    fetch('/api/local/sound-selection').then(response => response.json()),
+    fetch('/api/local/ending-resources').then(response => response.json()),
+  ]).then(([selection, ending]) => ({ selection, ending }))`)
+  if (soundDefaults.selection.effect_set_id !== null || soundDefaults.selection.bgm_ids.length !== 0
+    || soundDefaults.ending.cg_asset_id !== null || soundDefaults.ending.music_track_id !== null
+    || soundDefaults.ending.dialogue_text !== null) {
+    throw new Error('new local profile did not start with silent and unregistered sound/ending settings')
+  }
+  addCheck('renderer opened local sound and ending settings')
+  addCheck('new local profile starts silent with ending resources unregistered')
+  await window.webContents.executeJavaScript("document.querySelector('.sound-panel-heading button')?.click()")
   const externalBlocked = await window.webContents.executeJavaScript(
     "fetch('https://example.com').then(() => false, () => true)",
   )

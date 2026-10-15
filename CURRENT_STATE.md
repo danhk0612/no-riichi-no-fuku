@@ -51,6 +51,24 @@ reload 없이 다음 행동을 완료한 후 기존 전체 대국/재기동 검�
 내구성, 실제 ending CG/음악 재생은 미검증이다. 실제 사운드/엔딩 리소스 연결은 W06-C에 남긴다.
 Release/tag는 수행하지 않았다. 이 source 뒤 문서만 변경한 commit은 PR/Git으로 확인한다.
 
+## W06-C — 사운드·엔딩 리소스 연결
+
+W06-B PR #68 병합 후 최신 `main`에서 `task/w06-c-sound-ending`으로 구현했다. 기준 SHA는
+`7525b7f2613be3b9d58f4764cc9cced9dc8780ea`이다. 이 변경은 local runtime 전용 media/settings API,
+immutable 업로드 저장, BGM/SFX 선택 UI, 완료 시점 ending resource snapshot과 명시적 ack 화면을
+추가한다. 기본값은 효과음 미선택/BGM 빈 목록/ending 미등록이다. 자료 파일이나 seed 콘텐츠는 없다.
+
+로컬 검증: 전체 backend unittest 100개, dialogue pytest 10개, frontend production build,
+Python compileall, desktop/browser script Node syntax, Electron 종료 회귀 3개가 통과했다.
+W06-C 전용 backend suite 6개도 통과했다. Browser/renderer smoke는 환경에 Chromium이 없어
+실행하지 못했다. Playwright Chromium 설치 다운로드도 손상된 ZIP으로 실패했다.
+정확한 PR head의 Windows packaged CI/artifact source SHA 및 ZIP hash는 PR 제출 뒤 기록한다.
+
+이 환경에서 실제 사용자 이미지/오디오가 없어 CG 디코딩 및 실기 오디오 출력을 확인하지 않았다.
+미등록/mock 경로와 metadata/file/ack 경계 검사는 실제 콘텐츠 출력 증거와 구분한다(D11).
+실제 파일 제공 후 합법적 사용 권리를 확인하고 Windows packaged 환경에서 CG 표시와 음악 출력을
+확인하는 시점에 D11 실측을 재개한다. 개인 Windows PC와 전원 차단 내구성도 미검증이다.
+
 ## 기준
 
 - 확인일: 2026-10-15. W05 보완 기준 main `4f09869`; PR #63 수정 source SHA는 `7d9a20b97f7ef60b5dda4a43a24d3cbf08723ffb`.
@@ -495,6 +513,5 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 
 ## 다음
 
-W06-B 검토를 통과했다. PR #68 병합을 확인한 뒤 TASKS의 W06-C 지시문에 따라 사운드 자료·설정 및 ending 리소스 연결을
-별도 착수한다. 현재 W06-C는 시작하지 않았다. 개인 Windows 실기, 전원 차단 durability 및
-실제 ending CG/음악 재생은 해당 범위에서 증거를 별도로 확보한다.
+W06-C PR의 exact-head Windows 검증 결과를 확인한다. 병합·Release/tag 및 W07 착수는 별도 승인/Work로
+남긴다. D11 실제 CG·음악 출력은 실제 자료와 사용 권리가 준비된 뒤 별도로 실측한다.

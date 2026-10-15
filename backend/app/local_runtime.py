@@ -26,6 +26,7 @@ from app.api.dependencies import (
 )
 from app.api.game import router as game_router
 from app.api.local_play import router as local_play_router
+from app.api.local_sound import router as local_sound_router
 from app.api.profile import router as profile_router
 from app.core.config import Settings
 from app.core.security import hash_password
@@ -273,6 +274,7 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
         app.include_router(local_admin_router)
         app.include_router(game_router)
         app.include_router(local_play_router)
+        app.include_router(local_sound_router)
         app.include_router(profile_router)
         registry = GameRegistry()
         app.state.local_runtime = None  # assigned below after runtime construction
@@ -358,7 +360,10 @@ def _session_dependency(session_factory: sessionmaker[Session]):
     def get_local_session(request: Request):
         with session_factory() as session:
             try:
-                if request.method.upper() not in {"GET", "HEAD", "OPTIONS"}:
+                # Media bytes are streamed to an owned temporary file before the
+                # metadata writer transaction is reserved by the upload route.
+                defer_media_writer = request.method.upper() == "POST" and request.url.path == "/api/local/media"
+                if request.method.upper() not in {"GET", "HEAD", "OPTIONS"} and not defer_media_writer:
                     mark_write_intent(session)
                 yield session
                 session.commit()
