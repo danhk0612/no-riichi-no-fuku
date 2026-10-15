@@ -13,7 +13,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 정책·W04/W05 계약 확정 | W02 | 고성능 Chat |
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 완료(PR #61 병합) | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows hosted 검증·최종 검토 통과(개인 실기 미검증) | W04 | 저성능 Work |
-| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / W06-A 설계 검토 통과, B/C 미구현 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
+| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A 설계 검토, B 구현·검증 PR #68 제출, C 대기 | W05, D04 | A 고성능 Work → B/C 저성능 Work |
 | W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 목록·후보 관리 | P1 / 대기 | W05, W07 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
@@ -151,9 +151,10 @@ REQUIREMENTS D04/R16~R19가 확정 정책이다. CPU HP는 별도 시스템이 �
   초기화 동시 요청·오래된 socket/지연 응답 차단·재기동 및 자료 보존 검사.
   기존 policy 1/2/legacy·local writer/정산 실패 회귀·정확한 SHA Windows CI/artifact 확인.
 - 실행 기록: 2026-10-15 기준 main `24ed576`; 구현은 `task/w06-b-progression` PR로 제출한다.
-  Linux backend unittest 89개, 대사 pytest 10개, frontend build와 임시 자료 보존 검사가 통과했다.
-  Windows Server 2022 exact code head `a5792359fd772391eb6ce04b0373570ee2a07470`의 CI와
-  packaged smoke가 통과했다. artifact source SHA와 ZIP hash는 CURRENT_STATE의 W06-B 항목에 기록한다.
+  Linux backend unittest 90개, 대사 pytest 10개, frontend build와 임시 자료 보존 검사가 통과했다.
+  Windows Server 2022 exact code head `d2740c80a29b694b1f2f00889db46c2cdf19a2a2`의 CI run
+  [38701271329](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38701271329)와 packaged smoke가 통과했다.
+  artifact source SHA와 API ZIP digest는 CURRENT_STATE의 W06-B 항목에 기록한다.
 
 #### W06-C — 사운드 자료·설정 및 엔딩 리소스 연결 (A 및 B 검토 후)
 

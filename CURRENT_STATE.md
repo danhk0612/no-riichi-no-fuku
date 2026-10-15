@@ -8,19 +8,18 @@ stage/effective tier 분리, HP 없는 새 정산, 완료 CPU Tier 0 보충, 전
 omake, generation 검증/취소형 reset을 추가했다. 기존 stage·CPU/설정·파일과 세션 이력을 보존하며,
 legacy active는 기존 snapshot으로 이어가고 completed는 재정산하지 않는다. 웹 legacy 경로는 그대로 둔다.
 
-Linux에서 `/tmp/nrnf-w06b/bin/python -m unittest discover -s tests -v` 89개,
+Linux에서 `/tmp/nrnf-w06b/bin/python -m unittest discover -s tests -v` 90개,
 `pytest tests/test_dialogue_service.py -v` 10개, `frontend/npm run build` 통과.
 추가 회귀에는 0004 파일 DB 전환/재기동, writer/reset 경쟁, commit 실패, 세대 stale 차단,
 명단/완료 판정, 미등록 ending ack가 포함된다. 임시 DB 초기화 보존 검사에서 등록 CPU, 설정,
 미디어 파일의 bytes와 세션 이력이 유지됨을 확인한다.
 
-Windows hosted run `38699420976`은 Windows Server 2022에서 통과했다. tested code head와 artifact의
-`source-sha.txt`는 모두 `a5792359fd772391eb6ce04b0373570ee2a07470`이다. Windows unittest 89개,
-대사 pytest 10개, frontend build, packaged app build, renderer match/roster/active·completed 재기동 및
-종료 smoke가 통과했다. artifact `w05-windows-a5792359fd772391eb6ce04b0373570ee2a07470`
-(ID `11955981080`, 203,278,374 bytes, 2026-10-29 만료)의 artifact ZIP SHA256은
-`78ca101eb68af8ad042d4342de4fdd875d141aaaca082cc96f4507735191b0c0`이며 API digest와 일치한다.
-안쪽 Windows app ZIP SHA256은 `91c9975cf33e9667136a50581c15e6bff4d9404ba33addb2ba998feaf29994c1`이다.
+Windows hosted run [38701271329](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38701271329)은 Windows Server 2022에서 통과했다. tested code head와 artifact의
+`source-sha.txt`는 모두 `d2740c80a29b694b1f2f00889db46c2cdf19a2a2`이다. Windows unittest 90개,
+대사 pytest 10개, frontend build, packaged app build, 명단 초기화 smoke, renderer match/roster/active·completed
+재기동 및 종료 smoke가 통과했다. artifact `w05-windows-d2740c80a29b694b1f2f00889db46c2cdf19a2a2`
+(ID `11956770377`, 203,277,275 bytes, 2026-10-29 만료)의 artifact ZIP SHA256은
+`b46f221a8f512c01d5f8df62744350b855c90db40689d6830e9e5ae9a832b697`이며 Actions API digest와 일치한다.
 실제 사용자 PC 및 전원 차단 내구성은 미검증이다. 실제 ending CG/음악은 C 범위이며 미등록/null
 payload 안내·ack만 구현했다. W06-C는 이 PR 검토/병합 후에만 착수한다.
 
