@@ -3,7 +3,7 @@
 ## 기준
 
 - 확인일: 2026-10-15. W05 보완 기준 main `4f09869`; PR #63 수정 source SHA는 `7d9a20b97f7ef60b5dda4a43a24d3cbf08723ffb`.
-- W04 제품 코드 검증 SHA는 `455d400c4a8ddf11eaa0e3d676317c80b9a553b2`이다. PR #61은 main에 병합됐다. W05 PR #63은 수정·Windows 검증을 마쳤으나 아직 열린 상태다.
+- W04 제품 코드 검증 SHA는 `455d400c4a8ddf11eaa0e3d676317c80b9a553b2`이다. PR #61은 main에 병합됐다. W05 PR #63은 최종 검토와 Windows 검증을 마쳤다. 최신 병합 상태/SHA는 PR #63 및 Git을 따른다.
 - PR #56(W00)·#57(W01)·#58(인계)는 main에 병합됐다. 열린 #35는 기존 Docker 문서이며 건드리지 않는다.
 - W01 baseline 이후 W04는 local runtime·DB 연결/권한 경계·관련 회귀만 추가/수정했다.
   CPU/규칙/정산 핵심·legacy fixture·기존 frontend는 보존했다.
@@ -13,6 +13,35 @@
 - 로컬 저장/runtime은 W04, Windows 실행창·번들·로그인 없는 진입은 W05 PR #63에 구현됐다. 정확한 W05 Windows 결과와 남은 사용자 PC 제한은 아래에서 구분한다.
 - Wayward 참고는 W00의 `5d80f118c590319881be34faba8214a0c3765fc2` 조사뿐이다.
   W02는 참고 코드 복사·ZIP 분석·이미지 생성·사용자 데이터 연결을 하지 않는다.
+
+## W05 최종 검토 — 종료 및 실제 포트 충돌 검증
+
+일반 종료 보완을 재검토하고 Node 종료 순서 회귀 3개를 다시 통과했다. 이전 final head
+`5b3c58a45ff8289d6ea91d0d26a4bc17860900c5`의 Windows run 38688037360/artifact 11950014750을
+내려받아 source SHA, archive SHA256 `1a66154bdb9275157f01ff44b136cd2d59e309fbf24ba1281c9f16df234168a8`,
+내부 ZIP `cbcaf0da8e3752e92d83cd2860e2e100c229af44c3cce4af82a95a44beddbe76` 및
+두 일반 모드 실행의 engine close→window destroy→host exit(0)를 확인했다.
+
+추가 검토에서 포트 충돌 smoke의 collision-data 폴더가 없어 engine bind 전에 spawn/cwd 오류로
+통과할 수 있음을 발견했다. 같은 spawn 조건의 Node 검사에서 ENOENT/engine 미실행을 재현했다.
+`a45abce5856bba4870d9a1ebe99690204808468c`는 시험 폴더를 먼저 만들고 실제 Windows bind
+오류(10048/address already in use)와 무관 listener 생존을 모두 확인한다. 제품 게임 동작 변경은 없다.
+Linux 실제 engine 점유 포트 시험도 bind 오류로 실패하고 무관 listener는 유지됐다.
+Linux source unittest 81개(35.923초), 대사 pytest 10개(0.09초), Node 회귀 3개 통과.
+
+최종 code의 Windows Server 2022 x64 [push CI 38691436063](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38691436063)은
+unittest 81/pytest 10·React build·engine freeze/Electron package·renderer smoke·일반 모드
+종료/동일 data-root 재실행·ZIP 생성 모두 success다. exact-source artifact `11951374188`
+`w05-windows-a45abce5856bba4870d9a1ebe99690204808468c`의 archive SHA256은
+`3e710f282b37c67c13cb044dcc43f9882f34a82c2c80f0e77ad0ab17852eb38f`이며 2026-10-29 만료다.
+다운로드 archive/source-sha 및 로그의 unittest 81(62.085초)/pytest 10(0.14초)을 대조했다.
+내부 Windows ZIP SHA256 `821052f34c1b0c207807dd5a5e1eecf19f15e423bc739e344317fea3ff916e55`도
+기록과 일치했다. Renderer evidence에서 실제 Errno/WinError 10048과 무관 listener 보존,
+일반 모드 두 실행의 child close→창 파괴→host exit(0) 순서를 다시 확인했다.
+기존 검증은 아래에 보존한다. 후속 문서 commit은 이 code와 동일한 제품/검사에 한해서만
+위 결과를 이어받는다. 개인 PC/물리 X·Alt+F4/OS network-off/clean-machine VC runtime/전원 차단과
+장기 Python patch는 미검증이다. W05 검토를 통과했으며 다음은 D04 정책 결정이다.
+W06 구현·Release/tag는 하지 않는다.
 
 ## W05 PR #63 — 일반 모드 종료 보완 및 Windows 검증
 

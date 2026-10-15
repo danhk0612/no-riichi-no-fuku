@@ -12,7 +12,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W02 | Windows 실행·엔진 번들 기술 검증 | P0 / 기술 검증 완료(Windows CI, 사용자 실기 미검증) | W01 | 고성능 Work |
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 정책·W04/W05 계약 확정 | W02 | 고성능 Chat |
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 완료(PR #61 병합) | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
-| W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·수정 SHA Windows 종료/복구 검증 완료, PR #63 검토 대기 | W04 | 저성능 Work |
+| W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows hosted 검증·최종 검토 통과(개인 실기 미검증) | W04 | 저성능 Work |
 | W06 | 진행 규칙 결정·게임 회귀 | P0 / 결정 대기 | W05, D04 | 고성능 Chat → 저성능 Work |
 | W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 목록·후보 관리 | P1 / 대기 | W05, W07 | 저성능 Work |
@@ -201,8 +201,8 @@ local 전용 write intent·동시 읽기·기본 engine의 원본 transaction �
 
 ## 다음 작업 제한
 
-W05 PR #63은 수정 source `7d9a20b`의 Windows 일반 모드 종료·재기동 및 기존 renderer 복구
-검증을 마쳤으며 아직 열려 있다. 이 작업에서 직접 병합·Release/tag는 하지 않았다.
+W05 PR #63은 종료 보완과 실제 포트 bind 충돌 검사 보완 code `a45abce`의 Windows CI/artifact를
+대조해 최종 검토를 통과했다. 최신 병합 상태/SHA는 PR #63 및 Git을 따른다. Release/tag는 만들지 않았다.
 
 다음 구현 Work는 시작하지 않는다. D04의 CPU 3명 미만, 전체 CPU 완료/엔딩, HP 0 이후 정책이
 미결정이므로 먼저 고성능 Chat에서 사용자 결정을 확정한다. W06 구현은 그 결정과 별도 지시 이후에만
