@@ -335,11 +335,11 @@ async function clickHumanAction() {
       return current.result || (current.error && current.error !== before.error)
         || current.table !== before.table || current.hand !== before.hand || current.round !== before.round
         ? current : false
-    }, 90000)
+    }, 180000)
     if (next.error && next.error !== before.error) throw new Error(`renderer reported an action error: ${next.error}`)
   } catch (error) {
     const current = await rendererSnapshot()
-    throw new Error(`${error.message}; renderer after action: ${JSON.stringify(current)}`)
+    throw new Error(`${error.message}; renderer before action: ${JSON.stringify(before)}; after action: ${JSON.stringify(current)}`)
   }
 }
 
