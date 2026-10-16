@@ -67,6 +67,17 @@ def upgrade():
             ["id"],
             ondelete="RESTRICT",
         )
+    with op.batch_alter_table("content_packs") as batch:
+        batch.add_column(
+            sa.Column("registered_revision_id", sa.String(36), nullable=True)
+        )
+        batch.create_foreign_key(
+            "fk_pack_registered_revision",
+            "content_pack_revisions",
+            ["registered_revision_id"],
+            ["id"],
+            ondelete="RESTRICT",
+        )
     op.create_table(
         "content_pack_files",
         sa.Column(
@@ -97,6 +108,8 @@ def downgrade():
     op.drop_table("content_pack_scan_entries")
     op.drop_table("content_pack_files")
     with op.batch_alter_table("content_packs") as batch:
+        batch.drop_constraint("fk_pack_registered_revision", type_="foreignkey")
+        batch.drop_column("registered_revision_id")
         batch.drop_constraint("fk_pack_current_revision", type_="foreignkey")
         batch.drop_column("current_revision_id")
     op.drop_table("content_pack_revisions")

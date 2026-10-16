@@ -597,7 +597,8 @@ migration 0007은 content_packs(kind/namespace/pack_id unique), content_pack_rev
 (pack/revision 및 pack/content_digest unique), content_pack_files(revision/relative_path PK,
 media FK/digest), content_pack_scan_entries(source 상대 식별자/identity/status/issues)를 추가한다.
 `current_revision_id`는 **적용된** revision용 nullable FK로 예약하며 W08-A는 항상 null로 둔다.
-GET의 `registered_revision`은 가장 최근에 인식한 revision이고 `applied_revision_id`와 별개다.
+GET의 `registered_revision`은 마지막 성공 scan이 인식한 revision(`registered_revision_id` FK)이며
+`applied_revision_id`와 별개다. A→B→A 복원 시 A 포인터만 변경하고 revision/파일은 추가하지 않는다.
 과거 content_digest 재인식은 unchanged이며 새 revision/적용을 만들지 않는다. 원본 manifest JSON과
 canonical manifest SHA256, 정렬된 `[상대경로,SHA256]` 목록을 함께 canonical JSON으로 해시한
 content_digest를 저장한다(UTF-8, ensure_ascii=false, sort_keys=true, separators=(',',':')).

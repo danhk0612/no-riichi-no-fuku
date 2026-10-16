@@ -292,13 +292,27 @@ class ContentPackRegistry:
                     ContentPack.pack_id == pack_id,
                 )
             )
-            if pack and session.scalar(
-                select(ContentPackRevision.id).where(
-                    ContentPackRevision.pack_id == pack.id,
-                    ContentPackRevision.content_digest == candidate.content_digest,
+            known = (
+                session.scalar(
+                    select(ContentPackRevision).where(
+                        ContentPackRevision.pack_id == pack.id,
+                        ContentPackRevision.content_digest == candidate.content_digest,
+                    )
                 )
-            ):
+                if pack
+                else None
+            )
+            if known is not None and pack.registered_revision_id == known.id:
                 return "unchanged"
+            known_id, pack_uuid = (known.id, pack.id) if known else (None, None)
+        if known_id:
+            # A -> B -> A recognizes the existing A without applying it or copying files.
+            with self.sessions() as session:
+                mark_write_intent(session)
+                pack = session.get(ContentPack, pack_uuid)
+                pack.registered_revision_id = known_id
+                session.commit()
+            return "unchanged"
         owned = []
         try:
             # Prepare immutable copies before taking any DB writer reservation.
@@ -360,7 +374,17 @@ class ContentPackRegistry:
                         ContentPackRevision.pack_id == pack.id
                     )
                 ).all()
-                if any(r.content_digest == candidate.content_digest for r in revisions):
+                existing = next(
+                    (
+                        r
+                        for r in revisions
+                        if r.content_digest == candidate.content_digest
+                    ),
+                    None,
+                )
+                if existing:
+                    pack.registered_revision_id = existing.id
+                    session.commit()
                     return "unchanged"
                 revision = ContentPackRevision(
                     id=str(uuid4()),
@@ -373,6 +397,7 @@ class ContentPackRegistry:
                 session.add(revision)
                 session.add_all(asset for _, _, asset in assets)
                 session.flush()
+                pack.registered_revision_id = revision.id
                 session.add_all(
                     ContentPackFile(
                         revision_id=revision.id,
@@ -470,7 +495,9 @@ class ContentPackRegistry:
                     status = "conflict"
                 for entry in matching:
                     issues.extend(entry.issues)
-                latest = revisions[-1] if revisions else None
+                latest = next(
+                    (r for r in revisions if r.id == pack.registered_revision_id), None
+                )
                 if latest:
                     if latest.manifest.get("shared_dependencies"):
                         issues.append("shared_dependencies_unresolved")
@@ -523,9 +550,14 @@ class ContentPackRegistry:
                         "pack_id": pack.pack_id,
                         "status": status,
                         "issues": sorted(set(issues)),
-                        "registered_revision": revision_payloads[-1]
-                        if revision_payloads
-                        else None,
+                        "registered_revision": next(
+                            (
+                                r
+                                for r in revision_payloads
+                                if r["id"] == pack.registered_revision_id
+                            ),
+                            None,
+                        ),
                         "applied_revision_id": pack.current_revision_id,
                         "revisions": revision_payloads,
                     }

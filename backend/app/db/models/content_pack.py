@@ -30,6 +30,14 @@ class ContentPack(TimestampMixin, Base):
     kind: Mapped[str] = mapped_column(String(12), nullable=False)
     namespace: Mapped[str] = mapped_column(String(80), nullable=False)
     pack_id: Mapped[str] = mapped_column(String(80), nullable=False)
+    registered_revision_id: Mapped[str | None] = mapped_column(
+        ForeignKey(
+            "content_pack_revisions.id",
+            name="fk_pack_registered_revision",
+            use_alter=True,
+            ondelete="RESTRICT",
+        )
+    )
     current_revision_id: Mapped[str | None] = mapped_column(
         ForeignKey(
             "content_pack_revisions.id",

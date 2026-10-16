@@ -5,7 +5,9 @@
 기준 main `01da78461a8e58bebc8e05d583fac2c5a0a9b38c`, PR #75~#78 병합 및 열린 별도 Docker 문서 #35를 확인했다.
 `task/w08-a-pack-registry`에서 migration 0007, 4종 manifest v1 검증, startup/rescan·DB 목록 API,
 pack/revision·manifest/content digest·파일별 immutable UUID 복사를 구현했다. 같은 manifest의 파일 bytes
-변경은 새 revision, 동일 content 재검색/과거 버전 재인식은 unchanged다. 실패/누락/충돌 시 기존 등록·파일은 보존한다.
+변경은 새 revision, 동일 content 재검색/과거 버전 재인식은 unchanged다(인식 포인터는 해당 버전으로 갱신). 실패/누락/충돌 시 기존 등록·파일은 보존한다.
+마지막 성공 인식 revision은 별도 FK로 저장한다. A→B→A 복원 시 기존 A를 다시 가리키며
+새 revision/파일을 추가하지 않는다. 자동 리뷰의 해당 지적은 수정 전 회귀 실패 1건을 재현한 뒤 보완했다.
 적용 pointer는 null이며 기존 CPU/명단/로컬 편집/재생 설정에 연결하지 않는다. 원본과 과거 revision은 수정하지 않는다.
 외모·상의 속옷·하의 속옷 P/N 및 4 Level×3종 이미지/구도 P/N은 manifest snapshot으로 보존한다.
 실제 콘텐츠/CG/오디오·기본 팩을 생성·seed하지 않았다. W07 전체 미완료, W08 전체 구현 착수도 아니다.

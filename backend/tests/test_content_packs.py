@@ -15,7 +15,7 @@ from pydantic import ValidationError
 from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-from app.db.models import ContentPackRevision
+from app.db.models import ContentPack, ContentPackRevision
 from app.local_runtime import create_local_runtime
 from app.schemas.local_content import PackManifest, relative_file
 from app.services.content_packs import ContentPackRegistry, canonical, digest
@@ -141,7 +141,10 @@ class PackRegistryTests(unittest.TestCase):
         self.install(audio("voice", "same", "other-character"))
         self.assertEqual(len(self.scan()["accepted"]), 5)
         # GET lists registered metadata only; it never examines the source/media filesystem.
-        with patch("app.services.content_packs.media_path", side_effect=AssertionError("GET touched files")):
+        with patch(
+            "app.services.content_packs.media_path",
+            side_effect=AssertionError("GET touched files"),
+        ):
             self.assertEqual(len(self.listing()["packs"]), 5)
         self.assertEqual(
             len(
@@ -192,8 +195,30 @@ class PackRegistryTests(unittest.TestCase):
             b"ID3first-fixture",
         )
         (folder / "효과 음.mp3").write_bytes(b"ID3first-fixture")
+        real_commit = Session.commit
+
+        def fail_recognition(session):
+            if any(
+                isinstance(row, ContentPack) for row in session.identity_map.values()
+            ):
+                raise SQLAlchemyError("injected recognition pointer commit failure")
+            return real_commit(session)
+
+        with patch.object(Session, "commit", new=fail_recognition):
+            self.assertTrue(self.scan()["issues"])
+        self.assertEqual(
+            self.listing()["packs"][0]["registered_revision"]["id"], second["id"]
+        )
         self.assertEqual(len(self.scan()["unchanged"]), 1)
         self.assertEqual(len(self.listing()["packs"][0]["revisions"]), 2)
+        self.assertEqual(
+            self.listing()["packs"][0]["registered_revision"]["id"], first["id"]
+        )
+        self.assertIsNone(self.listing()["packs"][0]["applied_revision_id"])
+        self.restart()
+        self.assertEqual(
+            self.listing()["packs"][0]["registered_revision"]["id"], first["id"]
+        )
         self.assertEqual(len(list((self.runtime.paths.media / "packs").iterdir())), 2)
 
     def test_invalid_or_missing_source_preserves_existing_revision(self):
