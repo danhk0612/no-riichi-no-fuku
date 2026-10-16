@@ -551,7 +551,7 @@ Level 변경 패배 대사와 기타 캐릭터 이벤트의 노출 정책은 기
 - 시작 시 로컬 엔진이 한 번 scan하고 설정의 팩 목록 진입 시 scan한다. 상시 watcher는 만들지 않는다.
   `POST /api/local/packs/rescan`은 같은 scan을 명시 호출한다. GET은 DB 목록만 읽는다.
   중복 identity의 서로 다른 manifest가 한 scan에 있으면 둘 다 conflict, 기존 정상 등록은 유지한다.
-  같은 위치의 새 content_digest는 새 revision으로 등록하되 기존 파일을 삭제하지 않는다. 적용/로컬 편집 병합은 Q-PACK 응답을 따른다.
+  같은 위치의 새 content_digest는 새 revision으로 등록하되 기존 파일을 삭제하지 않는다. 적용/로컬 편집 병합은 확정된 Q-PACK A를 따른다.
   불완전 복사/오류 팩은 진단 목록에 남기고 대국 기동을 막지 않는다. 사라진 폴더도 기존 복사본/등록을 삭제하지 않는다.
 - scan은 파일 읽기·검증·복사를 writer 밖에서 수행하고 pack 단위 metadata를 한 transaction에 commit한다.
   실패 시 기존 current revision과 설정은 불변. 이번 시도 소유 임시 파일만 정리하며 등록된 파일은 삭제하지 않는다.
@@ -656,9 +656,14 @@ Level 이동·상황 소속 변경과 신규 항목 자동 포함은 이번 삭�
 pack_revision_id nullable, revision, appearance/upper_underwear/lower_underwear P/N)와
 `character_level_images`(cpu_id, level 0..3, kind profile/full_body/cg unique,
 media_id nullable, framing P/N, revision)에 저장한다. 선택/진행과 콘텐츠 revision은 별개다.
-새 팩 revision과 로컬 편집 충돌 시 덮어쓰기 여부는 Q-PACK 응답 전 보류한다.
+Q-PACK A를 채택한다. P/N은 각 문자열 필드 단위의 로컬 편집 여부를 기록한다. 예를 들어
+appearance.positive 편집이 appearance.negative를 자동 override로 만들지 않는다. 빈 문자열도
+명시 편집값이면 보호한다. 새 원본과 값이 같다는 이유만으로 편집 기록을 지우지 않는다.
+원본/적용 revision과 로컬 편집을 분리해 미편집 필드만 새 원본에서 resolve한다.
+조회/재검색은 편집 표시를 만들지 않으며 과거 snapshot은 당시 값/revision 그대로다.
+W08-B는 기존 CPU의 독립 편집/기록만 구현하고 팩 첫 연결·실제 적용·자동 갱신은 후속으로 분리한다.
 `character_voice_links`는 cpu_id unique, default_pack_id nullable, selected_pack_id nullable,
-selection_mode `default|selected|off`, revision을 저장한다. default 갱신 적용 시점도 Q-PACK 대상이다.
+selection_mode `default|selected|off`, revision을 저장한다. Q-PACK A에 따라 연결된 동일 팩 갱신 적용 때 default만 갱신하고 selected/off는 유지한다. W08-B는 이 연결/재생을 구현하지 않는다.
 DB default_pack_id/selected_pack_id는 content_packs UUID FK다. 배포 manifest의 `{character_id,id}`를
 voice namespace에서 UUID로 resolve하며 같은 내부 pack_id만 비교하지 않는다. 캐릭터 이미지팩과
 음성팩의 character_id가 같아야 한다는 제한을 추가하지 않는다. 미설치 선택 참조는 unresolved로 표시하고 캐릭터 지정 기본 팩을 확인한다. 기본 팩도 없으면 무음이다.
@@ -681,16 +686,41 @@ voice namespace에서 UUID로 resolve하며 같은 내부 pack_id만 비교하�
 | method / local 경로 | 요청·응답 핵심 | 담당/게이트 |
 |---|---|---|
 | GET `/packs?kind=…` / POST `/packs/rescan` | pack identity/revision/status/issues; scan 결과 accepted/unchanged/conflicts/issues | W08-A 4종 scanner, W08-S 적용/재생은 별도 |
-| GET/PATCH `/characters/{cpu_id}/content` | metadata, P/N, default voice 참조, expected_revision | W08; 치수·override·팩 편집 충돌은 응답 후 |
+| GET/PATCH `/characters/{cpu_id}/content` | W08-B는 기본/구도 P/N·문자열별 override·expected_revision만 편집 | metadata/default voice·팩 실제 적용은 후속 W08/W08-S |
 | GET/PUT `/characters/{cpu_id}/levels/{level}/images/{kind}` | immutable media_id nullable, framing P/N, expected_revision | W08, 자동 생성은 없음 |
 | GET/PUT `/characters/{cpu_id}/candidates/{level}` | 네 kind의 명시 stable ID 집합·revision, 미설정의 지정 기본값과 구분 | W08; 신규 자동 포함 없음, 같은 Level 허용 후보 조합 |
 | GET/POST `/content/{kind}` / PATCH/DELETE `/content/{kind}/{id}` | 원본 필드·참조 영향·revision; DELETE는 영향 확인 후 논리 제외·기본 재연결을 원자 commit | W08; D05-c/D06/D10-a |
 | GET/PUT `/audio-selection` | sfx_pack_id/bgm_pack_id nullable, enabled flags, revision | W08-S; legacy 전환 Q-AUDIO 승인 후 |
-| GET/PUT `/characters/{cpu_id}/voice-selection` | selection_mode, selected_pack_id, revision | W08-S; 기본 연결 Q-PACK 승인 후 |
+| GET/PUT `/characters/{cpu_id}/voice-selection` | selection_mode, selected_pack_id, revision | W08-S; Q-PACK A 확정, 실제 연결/재생은 해당 Task에서 구현 |
 | GET `/characters/{cpu_id}/display?context=selection` | 아래 CharacterDisplay | W11-U 읽기, W08 asset 공급 |
 | GET `/presentations/{selection_id}` | snapshot·이미지 상태·artifact·재시도 허용 여부 | W11, D08 승인 후 |
 | POST `/presentations/{selection_id}/retry` | expected_generation/request_id, 명시 재시도만; 202 job 또는 기존 job | W11; D08-c 승인 후 |
 | GET/PUT `/generation-settings` | revision, endpoint/adapter/workflow/model 입력 | W10; D07/D09 응답·node 검증 후 필드 확정 |
+
+### W08-B 독립 편집 계약 — 생성/팩 실제 적용 전
+
+대상은 기존 cpu_characters PK다. 기존 name/slug/adult/style·성향 값은 조회용이며 바꾸지 않는다.
+`character_content`에 cpu_id unique, nullable pack_revision_id(이번에는 null), revision,
+appearance/upper_underwear/lower_underwear P/N과 해당 문자열별 override 기록을 저장한다.
+단계별 3종 구도 P/N은 cpu_id/level/kind unique로 분리하고 P/N 각각의 편집 여부를 저장한다.
+이미지 참조/파일 업로드는 이번 편집 모델에 함께 넣지 않는다. 기존 result asset을 옮기지 않는다.
+
+GET `/api/local/characters/{cpu_id}/content`는 저장 행이 없으면 빈 P/N·revision 0을 반환하며
+DB를 쓰거나 문구를 seed하지 않는다. 구도도 Level 0..3/profile/full_body/cg별 빈 쌍을 조회할 수 있다.
+PATCH content는 세 기본 쌍과 Level/kind별 구도의 **명시된 문자열 필드만** 받는다. 기존
+expected_revision/commit 뒤 응답/409 충돌/local admin capability 계약을 유지한다.
+PATCH에 명시한 문자열은 override=true로 기록하고 다른 필드 기록은 보존한다. 프론트는
+실제로 변경한 필드만 전송해 전체 폼 저장으로 미편집 항목까지 보호하지 않는다.
+빈 문자열은 유효한 편집값이며 null/필드 누락과 혼동하지 않는다.
+
+최소 내부 관리 UI는 기존 캐릭터 선택·세 기본 P/N·Level별 이미지 종류 구도 P/N의 편집/저장,
+등록된 팩 목록/상태/진단·명시 재검색만 제공한다. 팩 목록 진입 시 rescan 호출을 직렬화하고
+일반 목록 GET은 DB 조회만 한다. 캐릭터 전환 후 늦은 응답/저장 결과가 다른 캐릭터 폼을 덮지 않는다.
+저장 실패/충돌 시 입력을 보존하고 이미 저장된 값이라고 표시하지 않는다.
+
+재시작/진행 초기화 후 편집 내용과 override 기록을 보존한다. 팩 등록/재검색이 로컬 값을
+덮지 않아야 한다. 팩 CPU 생성/연결/적용, 공유 후보/대사/변수, 모델/LoRA, metadata 확장,
+이미지 생성·미리보기·파일 편집·승리/음성 hook은 후속 범위다. 실제 프롬프트 작성은 최소화한다.
 
 ### 텍스트·음성·기본 음향 event 계약
 
