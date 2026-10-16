@@ -296,6 +296,185 @@ class PackRegistryTests(unittest.TestCase):
         after = self.client.get(path, headers=self.headers).json()
         self.assertEqual(after["prompts"]["appearance"]["negative"], "local test edit")
 
+    def application(self, pack, expected=0, cpu=1):
+        return self.client.post(f"/api/local/characters/{cpu}/pack-application", headers=self.headers, json={
+            "expected_revision": expected, "pack_id": pack["id"],
+            "registered_revision_id": pack["registered_revision"]["id"],
+        })
+
+    def content(self, cpu=1):
+        return self.client.get(f"/api/local/characters/{cpu}/content", headers=self.headers).json()
+
+    def filled_character(self, label):
+        value = character()
+        for group, pair in value["prompts"].items():
+            pair.update(positive=f"test-{label}-{group}-P", negative=f"test-{label}-{group}-N")
+        for level, data in value["levels"].items():
+            for kind, pair in data["framing"].items():
+                pair.update(positive=f"test-{label}-{level}-{kind}-P", negative=f"test-{label}-{level}-{kind}-N")
+        return value
+
+    def test_character_pack_link_update_field_history_and_immutable_media(self):
+        with self.runtime.session_factory() as session:
+            before = [tuple(row) for row in session.execute(text("SELECT * FROM cpu_characters ORDER BY id"))]
+            progress = [tuple(row) for row in session.execute(text("SELECT * FROM user_cpu_progress ORDER BY user_id, cpu_character_id"))]
+        value = self.filled_character('a')
+        value['levels']['2']['images']['cg'] = 'image.png'
+        image_a = b'\x89PNG\r\n\x1a\nfirst-test'
+        folder = self.install(value, {'image.png': image_a})
+        first = self.scan()['registry']['packs'][0]
+        self.assertIsNone(self.content()['pack'])  # registration never connects a CPU
+        edit = dict(expected_revision=0, prompts={'appearance': {'positive': ''}, 'upper_underwear': {'negative': value['prompts']['upper_underwear']['negative']}},
+                    framing=[{'level': 2, 'kind': 'cg', 'positive': ''}, {'level': 0, 'kind': 'profile', 'negative': value['levels']['0']['framing']['profile']['negative']}])
+        self.assertEqual(self.client.patch('/api/local/characters/1/content', headers=self.headers, json=edit).status_code, 200)
+        response = self.application(first, expected=1)
+        self.assertEqual(response.status_code, 200, response.text)
+        applied = response.json()
+        self.assertEqual(applied['pack_revision_id'], first['registered_revision']['id'])
+        self.assertEqual(applied['prompts']['appearance']['positive'], '')
+        original = self.client.get(f"/api/local/characters/1/pack-revisions/{applied['pack_revision_id']}", headers=self.headers).json()
+        old_url = original['media']['2']['cg']['url']
+        self.assertEqual(self.client.get(old_url, headers=self.headers).content, image_a)
+        value_b = self.filled_character('b')
+        value_b['levels']['2']['images']['cg'] = 'image.png'
+        self.install(value_b, {'image.png': b'\x89PNG\r\n\x1a\nsecond-test'})
+        second = self.scan()['registry']['packs'][0]
+        self.assertEqual(self.content()['pack_revision_id'], applied['pack_revision_id'])
+        self.assertTrue(self.content()['pack']['update_available'])
+        self.assertEqual(self.application(first, expected=2).status_code, 409)  # stale registry pointer
+        updated = self.application(second, expected=2)
+        self.assertEqual(updated.status_code, 200, updated.text)
+        updated = updated.json()
+        for group, pair in updated['prompts'].items():
+            for field in ('positive', 'negative'):
+                override = f'{group}.{field}' in ('appearance.positive', 'upper_underwear.negative')
+                expected = applied['prompts'][group][field] if override else value_b['prompts'][group][field]
+                self.assertEqual(pair[field], expected)
+                self.assertEqual(pair['overrides'][field], override)
+        for level, kinds in updated['levels'].items():
+            for kind, pair in kinds.items():
+                for field in ('positive', 'negative'):
+                    override = (level, kind, field) in [('2', 'cg', 'positive'), ('0', 'profile', 'negative')]
+                    expected = applied['levels'][level][kind][field] if override else value_b['levels'][level]['framing'][kind][field]
+                    self.assertEqual(pair[field], expected)
+                    self.assertEqual(pair['overrides'][field], override)
+        self.assertNotEqual(updated['levels']['2']['cg']['media']['media_id'], original['media']['2']['cg']['media_id'])
+        self.assertEqual(self.client.get(f"/api/local/characters/1/pack-revisions/{applied['pack_revision_id']}", headers=self.headers).json(), original)
+        self.assertEqual(self.client.get(old_url, headers=self.headers).content, image_a)
+        self.assertEqual(json.loads((folder/'manifest.json').read_text()), value_b)
+        self.assertIsNone(self.content(2)['pack'])
+        # Same registry pack may be explicitly linked independently to a second CPU.
+        self.assertEqual(self.application(first, cpu=2).status_code, 409)
+        self.assertEqual(self.application(second, cpu=2).status_code, 200)
+        with self.runtime.session_factory() as session:
+            self.assertEqual(before, [tuple(row) for row in session.execute(text("SELECT * FROM cpu_characters ORDER BY id"))])
+            self.assertEqual(progress, [tuple(row) for row in session.execute(text("SELECT * FROM user_cpu_progress ORDER BY user_id, cpu_character_id"))])
+            self.assertTrue(all(p.current_revision_id is None for p in session.scalars(select(ContentPack))))
+        # A retained response is a display snapshot; reset/startup never rewrites it or current content.
+        play = self.client.get('/api/local/play', headers=self.headers).json()
+        self.assertEqual(self.client.post('/api/local/play/reset', headers=self.headers, json={'generation': play['generation'], 'confirm': True}).status_code, 200)
+        self.restart()
+        self.assertEqual(self.content(), updated)
+        self.assertEqual(self.client.get(old_url, headers=self.headers).content, image_a)
+        self.assertEqual(self.application(second, expected=updated['revision']).json(), updated)  # idempotent
+
+    def test_character_pack_application_failures_preserve_content(self):
+        value = self.filled_character('a')
+        self.install(value)
+        first = self.scan()['registry']['packs'][0]
+        self.assertEqual(self.application(first).status_code, 200)
+        original = self.content()
+        # Different pack IDs / non-character packs cannot replace a link.
+        other = character(); other['id'] = other['character_id'] = 'other'
+        self.install(other); self.install(audio())
+        packs = self.scan()['registry']['packs']
+        for pack in packs:
+            if pack['id'] != first['id']:
+                self.assertIn(self.application(pack, expected=1).status_code, (409, 422))
+        self.assertEqual(self.client.get(f"/api/local/characters/1/pack-revisions/{next(p for p in packs if p['pack_id']=='other')['registered_revision']['id']}", headers=self.headers).status_code, 404)
+        value['prompts']['appearance']['negative'] = 'test-new'
+        folder = self.install(value)
+        second = next(p for p in self.scan()['registry']['packs'] if p['id'] == first['id'])
+        self.assertEqual(self.application(second, expected=0).status_code, 409)
+        with TestClient(self.runtime.app, raise_server_exceptions=False) as failing:
+            with patch.object(Session, 'commit', side_effect=SQLAlchemyError('injected')):
+                result = failing.post('/api/local/characters/1/pack-application', headers=self.headers, json={'expected_revision': 1, 'pack_id': second['id'], 'registered_revision_id': second['registered_revision']['id']})
+        self.assertEqual(result.status_code, 500)
+        current = self.content(); original['pack'] = current['pack']
+        self.assertEqual(current, original)
+        # Incomplete and conflicting live sources block new application and preserve old values.
+        (folder/'manifest.json').write_text('{"kind":"character","id":"test-character",')
+        self.scan()
+        self.assertEqual(self.application(second, expected=1).status_code, 409)
+        self.install(value)
+        self.install(value, source='characters/duplicate')
+        self.scan()
+        self.assertEqual(self.application(second, expected=1).status_code, 409)
+        self.assertEqual(self.content(), current)
+        shutil.rmtree(self.root/'packs'/'characters'/'duplicate')
+        shutil.rmtree(folder)  # preserved registration can be applied without its source folder
+        self.scan()
+        self.assertEqual(self.application(second, expected=1).status_code, 200)
+
+    def test_character_pack_missing_immutable_media_and_dependency_auth(self):
+        from app.db.models import ContentPackFile, LocalMediaAsset
+        value = character(); value['levels']['0']['images']['profile'] = 'image.png'
+        self.install(value, {'image.png': b'\x89PNG\r\n\x1a\ntest'})
+        first = self.scan()['registry']['packs'][0]
+        path = '/api/local/characters/1/pack-application'
+        body = {'expected_revision': 0, 'pack_id': first['id'], 'registered_revision_id': first['registered_revision']['id']}
+        self.assertEqual(self.client.post(path, json=body).status_code, 401)
+        self.assertEqual(self.client.post(path, headers=self.headers, json={**body, 'expected_revision': None}).status_code, 422)
+        self.assertEqual(self.client.post('/api/local/characters/999/pack-application', headers=self.headers, json=body).status_code, 404)
+        with self.runtime.session_factory() as session:
+            ref = session.scalar(select(ContentPackFile))
+            asset = session.get(LocalMediaAsset, ref.media_asset_id)
+            stored = self.runtime.paths.media / asset.storage_key
+        saved = stored.read_bytes(); stored.write_bytes(b'corrupted-test')
+        self.assertEqual(self.application(first).status_code, 409)
+        self.assertIsNone(self.content()['pack'])
+        stored.write_bytes(saved)
+        self.assertEqual(self.application(first).status_code, 200)
+        value['shared_dependencies'] = [{'namespace': 'test', 'id': 'test', 'revision_digest': 'a'*64}]
+        self.install(value, {'image.png': saved})
+        second = self.scan()['registry']['packs'][0]
+        self.assertEqual(self.application(second, expected=1).status_code, 409)
+        self.assertEqual(self.content()['pack_revision_id'], first['registered_revision']['id'])
+
+    def test_character_pack_edit_apply_and_two_applications_race(self):
+        value = self.filled_character('a'); self.install(value)
+        first = self.scan()['registry']['packs'][0]
+        self.assertEqual(self.application(first).status_code, 200)
+        value = self.filled_character('b'); self.install(value)
+        second = self.scan()['registry']['packs'][0]
+        from threading import Barrier
+        barrier = Barrier(2)
+        def request(apply):
+            with TestClient(self.runtime.app) as client:
+                barrier.wait(timeout=10)
+                if apply:
+                    return client.post('/api/local/characters/1/pack-application', headers=self.headers, json={'expected_revision': 1, 'pack_id': second['id'], 'registered_revision_id': second['registered_revision']['id']})
+                return client.patch('/api/local/characters/1/content', headers=self.headers, json={'expected_revision': 1, 'prompts': {'appearance': {'negative': ''}}})
+        with ThreadPoolExecutor(2) as pool:
+            results = list(pool.map(request, (True, False)))
+        self.assertEqual(sorted(r.status_code for r in results), [200, 409])
+        current = self.content()
+        if results[1].status_code == 200:
+            self.assertTrue(current['prompts']['appearance']['overrides']['negative'])
+            self.assertEqual(self.application(second, expected=2).status_code, 200)
+            self.assertEqual(self.content()['prompts']['appearance']['negative'], '')
+        else:
+            self.assertFalse(current['prompts']['appearance']['overrides']['negative'])
+        # Two first-link requests cannot overwrite each other.
+        barrier = Barrier(2)
+        def link(_):
+            with TestClient(self.runtime.app) as client:
+                barrier.wait(timeout=10)
+                return client.post('/api/local/characters/2/pack-application', headers=self.headers, json={'expected_revision': 0, 'pack_id': second['id'], 'registered_revision_id': second['registered_revision']['id']})
+        with ThreadPoolExecutor(2) as pool:
+            results = list(pool.map(link, range(2)))
+        self.assertEqual(sorted(r.status_code for r in results), [200, 409])
+
     def test_bytes_revision_canonical_noop_revert_and_history(self):
         value = audio()
         value["slots"] = {"tile_discard": "효과 음.mp3"}

@@ -241,3 +241,9 @@ class CharacterContentPatch(StrictModel):
         if not self.prompts and not self.framing:
             raise ValueError("at least one explicit field edit is required")
         return self
+
+
+class CharacterPackApplication(StrictModel):
+    expected_revision: StrictInt = Field(ge=0)
+    pack_id: Annotated[StrictStr, Field(min_length=1, max_length=36)]
+    registered_revision_id: Annotated[StrictStr, Field(min_length=1, max_length=36)]

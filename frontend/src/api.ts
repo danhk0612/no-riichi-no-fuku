@@ -45,8 +45,10 @@ export type CharacterContent = {
   cpu_id: number
   revision: number
   pack_revision_id: string | null
+  pack_source: { prompts: Record<'appearance' | 'upper_underwear' | 'lower_underwear', { positive: string; negative: string }>; levels: Record<string, { framing: Record<'profile' | 'full_body' | 'cg', { positive: string; negative: string }> }> } | null
+  pack: { id: string; pack_id: string; applied_revision_id: string; applied_revision: number; registered_revision_id: string | null; update_available: boolean } | null
   prompts: Record<'appearance' | 'upper_underwear' | 'lower_underwear', PromptPair>
-  levels: Record<string, Record<'profile' | 'full_body' | 'cg', PromptPair & { revision: number }>>
+  levels: Record<string, Record<'profile' | 'full_body' | 'cg', PromptPair & { revision: number; media: { media_id: string; url: string; digest: string } | null }>>
 }
 export type LocalCharacterChoice = { id: number; slug: string; name: string }
 export type ContentPack = {
@@ -57,7 +59,7 @@ export type ContentPack = {
   pack_id: string
   status: 'normal' | 'unresolved' | 'conflict'
   issues: string[]
-  registered_revision: { revision: number; content_digest: string; manifest_digest: string } | null
+  registered_revision: { id: string; revision: number; content_digest: string; manifest_digest: string } | null
   applied_revision_id: string | null
   revisions: { id: string; revision: number; content_digest: string; manifest_digest: string }[]
 }
@@ -240,4 +242,10 @@ export async function getResultAssetObjectUrl(
     throw new Error(`결과 CG를 불러오지 못했습니다. (${response.status})`)
   }
   return URL.createObjectURL(await response.blob())
+}
+
+export function applyCharacterPack(accessToken: string, cpuId: number, changes: {
+  expected_revision: number; pack_id: string; registered_revision_id: string
+}): Promise<CharacterContent> {
+  return apiRequest(`/api/local/characters/${cpuId}/pack-application`, { method: 'POST', body: JSON.stringify(changes) }, accessToken)
 }
