@@ -247,7 +247,15 @@ main `eaaae74`에서 #72~#74 병합과 열린 Docker 문서 #35를 확인했다.
 ARCHITECTURE의 “W07 구체 기술 계약”에 팩 v1·ID/폴더/scan·immutable 파일,
 Level×kind·DTO·event ordinal·W06 보존과 조건부 생성/job 계약을 구체화했다.
 REQUIREMENTS의 기존 미응답 질문 및 D-WIN/Q-META/Q-IMAGE/Q-FRAME/Q-PACK/Q-AUDIO/Q-OMAKE-VOICE/Q-LEGACY는
-사용자 응답 대기다. **W07 전체 미완료, 아래 후속은 구현 지시 템플릿이며 실행 승인이 아니다.**
+사용자 응답 대기다. 단 D-DEFAULT·D06-b A·D06-c 삭제 처리는 후속 사용자 응답으로 확정됐다.
+신규 자동 포함·Level 이동/소속 변경·D06-d 및 다른 정책은 계속 대기한다.
+**W07 전체 미완료, 아래 후속은 구현 지시 템플릿이며 실행 승인이 아니다.**
+
+W08은 지정 기본 참조·미설정/대상 누락 resolve·기본까지 없을 때 출력 생략과 삭제 영향 목록 확인→
+자동 해제/기본 재연결의 원자 commit을 계약에 포함한다. W08-S는 선택 팩 자체 없음→지정 기본팩과
+유효 voice 팩 슬롯 없음→무음을 구분한다. 명시 off·명단 고정·과거 snapshot/파일을 보존하며
+기본 자료 배포 목표만으로 미제공 리소스를 seed하지 않는다. 검증에는 기본값 없음/자기 삭제/
+영향 변경 재확인/commit 실패 rollback/폴더 제거 뒤 유효 복사본을 포함한다.
 
 공통 시작 지시: 대상 저장소의 최신 main·현재 branch·열린 PR·AGENTS와 루트 기준 문서를 읽는다.
 해당 Task의 정책 응답이 REQUIREMENTS에 기록되고 ARCHITECTURE 조건부 필드가 최종 계약으로
@@ -259,7 +267,7 @@ CPU/규칙/seed/action replay·legacy fixture 변경, 실콘텐츠 생성·사�
 | Task | 선행 정책·병합 게이트 | 허용 파일 범위·구체 구현 지시 | 완료 검증 |
 |---|---|---|---|
 | W08 | W05·W07 최종 계약, D05-c/D06 전체/D07-b/D10-a, Q-META/Q-PACK/Q-LEGACY | `db/models/`·exports·head 다음 additive migration, 새 `services/content_packs.py`/`character_content.py`·`schemas/local_content.py`·`api/local_content.py`, `local_runtime.py` 등록, `services/admin.py` 참조 보호. 기존 CpuSelection/main/api와 새 최소 캐릭터/공유 편집 UI. v1 scanner·stable ID·4단계 3종 참조/P/N·공유 관계·후보·메타데이터·voice 기본 참조 구현. bootstrap은 승인 legacy 대응만, 모델 override는 승인 범위만. generation/event resolver 구현 금지 | ID/중복/버전/의존 누락/경로·불완전 scan·metadata 실패·반복 upgrade/bootstrap; Level/kind/FK·후보/삭제 승인 사례·편집/재시작/reset 보존·기존 PK/파일 hash |
-| W08-S | W08 병합, Q-PACK/Q-AUDIO, Q-OMAKE-VOICE는 오마케 음성 경계 전, D-WIN은 승리 슬롯 전 필수 | 위 registry의 sfx/bgm/voice 확장, `services/local_sound.py`/새 audio resolver·`schemas/local_sound.py`·`api/local_sound.py`, 최소 선택 UI `LocalSoundPanel.tsx`/api/main, `api/game.py` 승인 hook·game types. 각각 단일 팩·slot default fallback·voice 단일 연결·세대 격리 구현. SFX source 검증 뒤 연결. 공유 mapper는 W09가 중복 작성하지 않게 명시 소유. D-WIN 미응답이면 승리 신규 hook 보류, Task 전체 완료 표시 금지 | selected/default/양쪽누락·voice 무fallback·off·잘못된 actor·파일실패·전환 중 늦은 play·재시작/reset. W06 legacy/pending 보존과 중복 음성 없음. source 미확인은 미연결로 인계 |
+| W08-S | W08 병합, Q-PACK/Q-AUDIO, Q-OMAKE-VOICE는 오마케 음성 경계 전, D-WIN은 승리 슬롯 전 필수 | 위 registry의 sfx/bgm/voice 확장, `services/local_sound.py`/새 audio resolver·`schemas/local_sound.py`·`api/local_sound.py`, 최소 선택 UI `LocalSoundPanel.tsx`/api/main, `api/game.py` 승인 hook·game types. 각각 단일 팩·slot default fallback·voice 단일 연결·세대 격리 구현. SFX source 검증 뒤 연결. 공유 mapper는 W09가 중복 작성하지 않게 명시 소유. D-WIN 미응답이면 승리 신규 hook 보류, Task 전체 완료 표시 금지 | selected/default/양쪽누락·voice 팩 누락 기본 연결/슬롯 누락 무음·off·잘못된 actor·파일실패·전환 중 늦은 play·재시작/reset. W06 legacy/pending 보존과 중복 음성 없음. source 미확인은 미연결로 인계 |
 | W09 | W08/W08-S 병합, D05-b/c·D06-b/d·D08-b·D10-a, D-WIN/Q-OMAKE-VOICE/Q-LEGACY | `dialogue_service.py`와 새 content resolver, `api/game.py`/`game_registry.py` 표시/정산 저장 경계·필요 additive migration·types/main/MahjongTable. 원 pending ordinal 유지·공통 선언과 actor 음성, event/상황/캐릭터/Level 교집합·승리와 Level 패배 텍스트·변수 snapshot. W06 version2/오마케 억제·노출 policy 유지. ComfyUI submit 금지 | source index/ron-tsumo/reach_accepted·actor·승패/보충/omake·대사 고갈·변수·중복/재접속·commit 실패·policy1/2/legacy replay |
 | W10 | W07 D07-a/b·D08-a·D09-a, Q-FRAME, W08 입력 schema | 새 ComfyUI adapter/client/workflow/settings service/schema/API, `local_runtime.py` 수명·최소 설정 UI/api. 승인 endpoint 정책과 job 입력/snapshot/unknown 상태 구현. 실제 지원 workflow의 object_info/input/output·Anima/encoder/VAE/LoRA·한도/파일 decode를 기술 확인. 실환경 없으면 mock 범위만 제출하고 실출력 완료 금지. 게임 RNG/정산·모델 다운로드·전역 interrupt 금지 | mock submit/status/result·응답유실·재기동/자기 job·endpoint 미연결 기본 게임·종료 소유권. 실제 생성은 별도 사용자 승인/환경/D11 제공 때만 실측 |
 | W11 | W06·W09/W10 병합, D05-b·D06·D08 전체, Q-IMAGE/Q-FRAME | 새 selection/job/artifact 연동 services/API·필요 additive migration, W09 표시 hook·W10 adapter 호출, types/api/main 최소 표시/명시 retry. seed/cache/4단계3종 분리·재렌더 무추첨·writer 밖 submit·late result 격리·원본/이전 파일 보존 구현 | 입력/label/모델 revision별 cache·동시 동일 요청·submit unknown·DB 실패·A→B/새 대국/reset 후 완료·missing 파일·명시 retry·재시작 snapshot. 실제 ComfyUI와 mock 구분 |
