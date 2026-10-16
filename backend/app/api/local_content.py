@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 
 from app.api.dependencies import get_current_superadmin, get_session
+from app.db.session import mark_write_intent
 from app.schemas.local_content import PackKind
 from app.schemas.local_content import CharacterContentPatch, CharacterPackApplication
 from app.services.character_content import (get_character_content, patch_character_content,
@@ -43,11 +44,15 @@ def edit_character_content(
     request: Request,
     session=Depends(get_session),
 ):
+    session.rollback()
+    mark_write_intent(session)
     return patch_character_content(session, cpu_id, change)
 
 
 @character_router.post("/{cpu_id}/pack-application")
 def apply_pack(cpu_id: int, change: CharacterPackApplication, request: Request, session=Depends(get_session)):
+    session.rollback()
+    mark_write_intent(session)
     paths = request.app.state.local_runtime.paths
     return apply_character_pack(session, cpu_id, change, paths.root, paths.media)
 

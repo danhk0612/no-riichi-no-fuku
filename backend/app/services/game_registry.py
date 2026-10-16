@@ -397,7 +397,7 @@ class GameRegistry:
                     raise GameRegistryError("CPU stage changed during active local match")
                 settlement = MatchSettlement(last_seat, None, cpu_id, stage, False, completed)
                 asset = None
-                event_key = "match_last" if not stage_changed and int(choice_snapshot.get("defeat_stage", 0)) == 3 else f"defeat_stage_{stage}"
+                event_key = f"defeat_stage_{stage}"
                 if stage_changed and cpu_id is not None:
                     asset_row = get_unlocked_result_asset(db_session, registered.user_id, cpu_id, stage)
                     if asset_row is not None:
@@ -411,7 +411,7 @@ class GameRegistry:
                 asset = None
             # Completed CPUs can receive only the explicitly approved first/last
             # result lines during progress mode; no dialogue pool is added here.
-            for seat, event_key in ((winner_seat, "match_first"), (last_seat, "match_last")):
+            for seat, event_key in ((winner_seat, "match_first"),):
                 char_id = game.cpu_character_by_seat.get(seat)
                 snapshot = choice_by_id.get(char_id, {}) if char_id is not None else {}
                 if char_id is None or int(snapshot.get("defeat_stage", 0)) != 3:
@@ -432,7 +432,16 @@ class GameRegistry:
         else:
             settlement = MatchSettlement(last_seat, None, None, None, False, False)
             asset = None
-            registered.presentation = {"version": 2, "result_asset": None, "result_dialogues": [],
+            dialogues = []
+            if last_seat != HUMAN_SEAT:
+                cpu_id = game.cpu_character_by_seat.get(last_seat)
+                if cpu_id is not None:
+                    text = DialogueSelector(rng=__import__("random").Random(
+                        f"{registered.session_id}:defeat_stage_3:{cpu_id}"
+                    )).select_dialogue(db_session, cpu_id, "defeat_stage_3")
+                    if text:
+                        dialogues.append({"cpu_character_id": cpu_id, "event_key": "defeat_stage_3", "text": text})
+            registered.presentation = {"version": 2, "result_asset": None, "result_dialogues": dialogues,
                                        "settlement": {"progression_version": 2, "mode": mode,
                                            "last_place_seat": last_seat,
                                            "cpu_character_id": None, "defeat_stage": None,

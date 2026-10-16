@@ -73,6 +73,7 @@ function App() {
   const playedSoundEventsRef = useRef(new Set<string>())
   const gameAudioTokenRef = useRef(0)
   const activeSoundEffectsRef = useRef(new Map<string, { audio: HTMLAudioElement; url: string }>())
+  const voiceQueueRef = useRef<Promise<void>>(Promise.resolve())
   const isDesktop = window.nrnfDesktop?.isDesktop === true
 
   useEffect(() => {
@@ -344,6 +345,48 @@ function App() {
             release()
             if (current) setSoundError('효과음을 재생할 수 없습니다.')
           })
+        }).catch(() => {})
+        return
+      }
+      if (message.type === 'voice_effect') {
+        const identity = `${message.generation}:${message.session_id}:${message.action_version}:${message.event_index}:${message.source_kind ?? 'action'}:${message.actor_seat}:${message.event_key}`
+        if (playedSoundEventsRef.current.has(identity)) return
+        playedSoundEventsRef.current.add(identity)
+        const audioToken = gameAudioTokenRef.current
+        voiceQueueRef.current = voiceQueueRef.current.then(async () => {
+          if (audioToken !== gameAudioTokenRef.current || message.generation !== localGenerationRef.current) return
+          let url: string
+          try { url = await getLocalMediaObjectUrl(token, message.url) } catch { return }
+          if (audioToken !== gameAudioTokenRef.current || message.generation !== localGenerationRef.current) { URL.revokeObjectURL(url); return }
+          const audio = new Audio(url)
+          activeSoundEffectsRef.current.set(identity, { audio, url })
+          const release = () => {
+            if (activeSoundEffectsRef.current.get(identity)?.audio === audio) activeSoundEffectsRef.current.delete(identity)
+            URL.revokeObjectURL(url)
+          }
+          let finishPlayback!: () => void
+          let playbackFinished = false
+          const finished = new Promise<void>((resolve) => {
+            finishPlayback = () => {
+              if (playbackFinished) return
+              playbackFinished = true
+              resolve()
+            }
+          })
+          audio.addEventListener('ended', finishPlayback)
+          audio.addEventListener('error', finishPlayback)
+          audio.addEventListener('pause', finishPlayback)
+          try {
+            await audio.play()
+            await finished
+          } catch { /* Audio failure never blocks game progression or the next queued voice. */ }
+          finally {
+            finishPlayback()
+            audio.removeEventListener('ended', finishPlayback)
+            audio.removeEventListener('error', finishPlayback)
+            audio.removeEventListener('pause', finishPlayback)
+          }
+          release()
         }).catch(() => {})
         return
       }
@@ -642,12 +685,12 @@ function App() {
           />}
         </>
       )}
-      {isDesktop && accessToken && <BackgroundMusic accessToken={accessToken} selection={soundSelection} paused={gameState.status === 'ending'} />}
+      {isDesktop && accessToken && <BackgroundMusic accessToken={accessToken} selection={soundSelection} screen={cpus ? 'selection' : gameState.status === 'complete' ? 'result' : 'game'} paused={gameState.status === 'ending'} />}
     </main>
   )
 }
 
-function BackgroundMusic({ accessToken, selection, paused }: { accessToken: string; selection: SoundSelection | null; paused: boolean }) {
+function BackgroundMusic({ accessToken, selection, screen, paused }: { accessToken: string; selection: SoundSelection | null; screen: 'title' | 'selection' | 'game' | 'result'; paused: boolean }) {
   const [trackId, setTrackId] = useState<string | null>(null)
   const [blocked, setBlocked] = useState(false)
   const [retryRequired, setRetryRequired] = useState(false)
@@ -656,9 +699,14 @@ function BackgroundMusic({ accessToken, selection, paused }: { accessToken: stri
   const tracksRef = useRef<NonNullable<SoundSelection['tracks']>>([])
   const orderedTracks = useMemo(() => {
     if (!selection) return []
+    const packs = selection.audio_packs
+    if (packs?.bgm_mode === 'pack') {
+      const slot = packs.bgm_slots?.[screen]
+      return slot ? [{ id: slot.asset_id, label: screen, active: true, media_asset_id: slot.asset_id, available: true, url: slot.url }] : []
+    }
     return selection.bgm_ids.map((id) => selection.tracks.find((track) => track.id === id))
       .filter((track): track is NonNullable<typeof track> => !!track && track.active && track.available && !!track.url)
-  }, [selection])
+  }, [selection, screen])
   const trackOrder = orderedTracks.map((track) => track.id).join(',')
   tracksRef.current = orderedTracks
   const selectedTrack = orderedTracks.find((item) => item.id === trackId)

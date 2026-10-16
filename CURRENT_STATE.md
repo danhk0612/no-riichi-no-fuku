@@ -1,5 +1,24 @@
 # 현재 상태
 
+## W08-S — 오디오팩·캐릭터 음성 연결
+
+PR #83은 열려 있고 원격 head `a6912e6ac14f061d1eb6c74b099a40ddec81accd`다. 기준 main은 PR #82 병합
+`5d00c9e`다. SFX/BGM 단일 팩 선택과 slot fallback, CPU별 default/selected/off 음성 연결, 선언·화료·최종
+4위 단계 패배 voice routing, 최소 UI 및 legacy 자료 보존을 구현했다. Q-AUDIO A, 오마케 기본 선언·화료·최종
+4위 대사 재생, stage/Tier 및 추가 진행/CG 불변 규칙을 REQUIREMENTS/ARCHITECTURE/TASKS에 반영했다.
+
+Backend unittest 127개와 frontend production build가 통과했다. exact head에서 Windows W04 #93
+(`38963035573`)과 W05 #134 (`38963035473`)가 모두 성공했다. W04 artifact `12072984879`의 SHA-256은
+`c07868360375701d095f3453f35fa30a33fd3c4215b3ee56a7edcbf8d7728d88`다. W05 artifact `12073183759`의
+SHA-256은 `67630c176bcf49999facb6e3b7e6f6c5692f8469ad7bb59d119225d878740555`이며, artifact metadata의
+`head_sha`와 내부 `source-sha.txt`가 모두 `a6912e6ac14f061d1eb6c74b099a40ddec81accd`다.
+
+W05 packaged renderer/match/restart smoke, general-mode close/quit/timeout cleanup, ZIP packaging 및 hash 단계가
+모두 통과했다. 내부 `No-Riichi-No-Fuku-W05-Windows.zip` SHA-256 기록과 직접 계산값은
+`0518ab259f339492610f0e40297f33e383807264d8ff16ab3dcb6557a6d839ac`로 일치한다. local browser 회귀는
+Playwright Chromium 다운로드가 0-byte ZIP으로 실패해 실행하지 못했으며, Windows W05 browser/content 회귀는
+통과했다. PR은 열려 있고 직접 병합하지 않았다.
+
 ## W08-C — 기존 캐릭터팩 연결·동일 팩 갱신
 
 준비/시작 main `e2e38d1dc89503623463b8ad2fcd62369ceda751`을 확인했고 PR #79~#81은 병합됐다.

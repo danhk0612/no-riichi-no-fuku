@@ -177,6 +177,7 @@ class PackManifest(StrictModel):
                     "riichi",
                     "ron",
                     "tsumo",
+                "win",
                     "defeat_stage_1",
                     "defeat_stage_2",
                     "defeat_stage_3",
