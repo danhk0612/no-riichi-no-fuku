@@ -2,26 +2,25 @@
 
 ## W08-S — 오디오팩·캐릭터 음성 연결
 
-PR #83은 열려 있고 원격 head `02f70d3369beae8116c6ebea064b94a2401a323a`다. 기준 main은
+PR #83은 열려 있고 원격 head `016723d5a631ab831f428f7b97afa7b4a44031e6`다. 기준 main은
 PR #82 병합 `5d00c9e`다. SFX/BGM 단일 팩 선택과 slot fallback, CPU별 default/selected/off 음성 연결,
 선언·화료·최종 4위 단계 패배 voice routing, 최소 UI 및 legacy 자료 보존을 구현했다. Q-AUDIO A,
 오마케 기본 선언·화료·최종 4위 대사 재생, stage/Tier 및 추가 진행/CG 불변 규칙을 REQUIREMENTS/
 ARCHITECTURE/TASKS에 반영했다.
 
-Backend unittest 127개, frontend production build, Windows W04 #91 (`38961150206`)가 통과했다.
-W04 artifact `12071904647`의 SHA-256은
-`01d0371f44c13dec978b52dbc60255351bc3bf36023e555e82bccf34f2675e6d`다. W05 #132
-(`38961150238`)에서 backend/local regression, renderer build, browser/content 회귀와 Electron 패키지 생성은
-통과했지만 packaged renderer smoke가 BGM 등록 후 `.track-order` input을 기다리다 timeout됐다. diagnostic
-artifact `12073356087` (SHA-256 `4ffa2ece182b26392a4e2eb79dee042b1ae52ca61d836bc61bb7d5271e67e798`)은
-source SHA `02f70d3369beae8116c6ebea064b94a2401a323a`를 가리킨다. 등록 버튼 직전 상태는 disabled였고 upload
-refresh 완료 전에 option 수만 먼저 증가해 smoke가 비활성 버튼을 눌렀다. `WinError 10048`은 의도된 occupied-port
-preflight에서 나온 로그이며 packaged failure의 원인이 아니다.
+Backend unittest 127개, frontend production build, Windows W04 #92 (`38962124863`)가 통과했다.
+W04 artifact `12073366719`의 SHA-256은
+`10d00f8c1eb860a6c8cc084b5af321121283ce4d0f833ed161acf508aebc433b`다. W05 #133
+(`38962124918`)에서 backend/local regression, renderer build, browser/content 회귀와 Electron 패키지 생성은
+통과했지만 packaged smoke가 사운드 선택 저장 후 첫 BGM 재생을 기다리다 timeout됐다. diagnostic artifact
+`12073432328` (SHA-256 `6540dac35b8d118e0564d3bab0ae116112d712d6839c3c4ee92c624e73896339`)은
+source SHA `016723d5a631ab831f428f7b97afa7b4a44031e6`를 가리킨다. 이 head에서 업로드 완료 race 수정은
+BGM 등록까지 통과했다. 다음 smoke 단계는 track row가 보일 때 설정 refresh가 끝났는지 기다리지 않았다.
 
-현재 수정은 media option과 함께 upload input 활성화까지 기다린 뒤 등록하고, 실패 시 API 상태를 한 번만
-조회해 기록한다. 이 동기화 수정의 exact-SHA 재검증 및 성공한 W05 ZIP hash 전에는 W08-S를 완료 처리하지
-않는다. 로컬 Playwright Chromium 다운로드가 0-byte ZIP으로 실패해 local browser 회귀는 실행하지 못했지만,
-Windows W05 browser/content 회귀는 #129~#132에서 통과했다.
+현재 수정은 선택 저장 버튼이 활성화될 때까지 기다린 후 선택을 저장한다. 이 동기화 변경의 exact-SHA
+재검증 및 성공한 W05 ZIP hash 전에는 W08-S를 완료 처리하지 않는다. 로컬 Playwright Chromium 다운로드가
+0-byte ZIP으로 실패해 local browser 회귀는 실행하지 못했으나, Windows W05 browser/content 회귀는 #129~#133에서
+통과했다.
 
 ## W08-C — 기존 캐릭터팩 연결·동일 팩 갱신
 

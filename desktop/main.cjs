@@ -520,7 +520,15 @@ async function smokeRun() {
   }
   await window.webContents.executeJavaScript(`(() => {
     document.querySelector('.track-order input').click()
-    Array.from(document.querySelectorAll('.sound-panel button')).find(button => button.innerText === '사운드 선택 저장').click()
+  })()`)
+  await waitForRenderer(`(() => {
+    const saveButton = Array.from(document.querySelectorAll('.sound-panel button')).find(button => button.innerText === '사운드 선택 저장')
+    return Boolean(document.querySelector('.track-order input') && saveButton && !saveButton.disabled)
+  })()`, 30000)
+  await window.webContents.executeJavaScript(`(() => {
+    const saveButton = Array.from(document.querySelectorAll('.sound-panel button')).find(button => button.innerText === '사운드 선택 저장')
+    if (!saveButton || saveButton.disabled) throw new Error('sound selection save remained disabled after track refresh')
+    saveButton.click()
   })()`)
   await waitForRenderer(`window.__w06MockAudios?.length === 1 && window.__w06MockAudios[0].__w06PlayCount === 1`, 30000)
   await window.webContents.executeJavaScript(`window.__w06MockAudios[0].dispatchEvent(new Event('ended'))`)
