@@ -2,25 +2,22 @@
 
 ## W08-S — 오디오팩·캐릭터 음성 연결
 
-PR #83은 열려 있고 원격 head `016723d5a631ab831f428f7b97afa7b4a44031e6`다. 기준 main은
-PR #82 병합 `5d00c9e`다. SFX/BGM 단일 팩 선택과 slot fallback, CPU별 default/selected/off 음성 연결,
-선언·화료·최종 4위 단계 패배 voice routing, 최소 UI 및 legacy 자료 보존을 구현했다. Q-AUDIO A,
-오마케 기본 선언·화료·최종 4위 대사 재생, stage/Tier 및 추가 진행/CG 불변 규칙을 REQUIREMENTS/
-ARCHITECTURE/TASKS에 반영했다.
+PR #83은 열려 있고 원격 head `a6912e6ac14f061d1eb6c74b099a40ddec81accd`다. 기준 main은 PR #82 병합
+`5d00c9e`다. SFX/BGM 단일 팩 선택과 slot fallback, CPU별 default/selected/off 음성 연결, 선언·화료·최종
+4위 단계 패배 voice routing, 최소 UI 및 legacy 자료 보존을 구현했다. Q-AUDIO A, 오마케 기본 선언·화료·최종
+4위 대사 재생, stage/Tier 및 추가 진행/CG 불변 규칙을 REQUIREMENTS/ARCHITECTURE/TASKS에 반영했다.
 
-Backend unittest 127개, frontend production build, Windows W04 #92 (`38962124863`)가 통과했다.
-W04 artifact `12073366719`의 SHA-256은
-`10d00f8c1eb860a6c8cc084b5af321121283ce4d0f833ed161acf508aebc433b`다. W05 #133
-(`38962124918`)에서 backend/local regression, renderer build, browser/content 회귀와 Electron 패키지 생성은
-통과했지만 packaged smoke가 사운드 선택 저장 후 첫 BGM 재생을 기다리다 timeout됐다. diagnostic artifact
-`12073432328` (SHA-256 `6540dac35b8d118e0564d3bab0ae116112d712d6839c3c4ee92c624e73896339`)은
-source SHA `016723d5a631ab831f428f7b97afa7b4a44031e6`를 가리킨다. 이 head에서 업로드 완료 race 수정은
-BGM 등록까지 통과했다. 다음 smoke 단계는 track row가 보일 때 설정 refresh가 끝났는지 기다리지 않았다.
+Backend unittest 127개와 frontend production build가 통과했다. exact head에서 Windows W04 #93
+(`38963035573`)과 W05 #134 (`38963035473`)가 모두 성공했다. W04 artifact `12072984879`의 SHA-256은
+`c07868360375701d095f3453f35fa30a33fd3c4215b3ee56a7edcbf8d7728d88`다. W05 artifact `12073183759`의
+SHA-256은 `67630c176bcf49999facb6e3b7e6f6c5692f8469ad7bb59d119225d878740555`이며, artifact metadata의
+`head_sha`와 내부 `source-sha.txt`가 모두 `a6912e6ac14f061d1eb6c74b099a40ddec81accd`다.
 
-현재 수정은 선택 저장 버튼이 활성화될 때까지 기다린 후 선택을 저장한다. 이 동기화 변경의 exact-SHA
-재검증 및 성공한 W05 ZIP hash 전에는 W08-S를 완료 처리하지 않는다. 로컬 Playwright Chromium 다운로드가
-0-byte ZIP으로 실패해 local browser 회귀는 실행하지 못했으나, Windows W05 browser/content 회귀는 #129~#133에서
-통과했다.
+W05 packaged renderer/match/restart smoke, general-mode close/quit/timeout cleanup, ZIP packaging 및 hash 단계가
+모두 통과했다. 내부 `No-Riichi-No-Fuku-W05-Windows.zip` SHA-256 기록과 직접 계산값은
+`0518ab259f339492610f0e40297f33e383807264d8ff16ab3dcb6557a6d839ac`로 일치한다. local browser 회귀는
+Playwright Chromium 다운로드가 0-byte ZIP으로 실패해 실행하지 못했으며, Windows W05 browser/content 회귀는
+통과했다. PR은 열려 있고 직접 병합하지 않았다.
 
 ## W08-C — 기존 캐릭터팩 연결·동일 팩 갱신
 
