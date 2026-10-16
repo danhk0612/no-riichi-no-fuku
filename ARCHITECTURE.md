@@ -519,7 +519,8 @@ Level 변경 패배 대사와 기타 캐릭터 이벤트의 노출 정책은 기
 ## W07 구체 기술 계약 — 2026-10-16 정책 응답과 분리
 
 기준 main `eaaae74`. PR #72~#74 병합, 열린 #35는 Docker 문서로 이번 범위와 무관하다.
-이 절은 최신 기술 명세이며 아래 최초 초안과 충돌하면 이 절을 따른다. **제품 미구현·W07 부분 설계**다.
+이 절은 최신 기술 명세이며 아래 최초 초안과 충돌하면 이 절을 따른다. **W07 부분 설계**이며,
+등록 기반의 실제 구현은 아래 W08-A 절과 CURRENT_STATE를 따른다.
 정책 독립 필드는 구현용 계약으로 정리하되 `조건부`는 REQUIREMENTS 응답 뒤에만 채택한다.
 문서 PR 병합이나 예시 JSON은 미응답 정책 승인·후속 구현 착수 승인이 아니다.
 
@@ -582,6 +583,50 @@ Level 2는 누적 탈의이며 Level 1에서 브래지어를 제거하지 않는
 공유 항목 자체를 팩에 포함하는 배포 범위·후보 표현은 D06 응답 전 확정하지 않는다.
 팩 자체와 의존 해소 상태는 분리해서 목록에 표시한다.
 
+### W08-A 등록 구현 계약 — 적용과 분리
+
+이번 사용자 승인 범위는 4종 registry만이다. `schemas/local_content.py`는 v1의 필수 구조와
+엄격한 ID/종류/상대 경로를 검증한다. manifest는 UTF-8 JSON 최대 1 MiB이며 중복 key·NaN/Infinity를 거절한다. character의 `id=character_id=폴더명`, sfx/bgm의
+`id=폴더명`, voice의 `character_id=상위 폴더명`·`id=하위 폴더명`이 필수다.
+팩/캐릭터/음성 namespace ID는 Windows 폴더명으로도 유효해야 하므로
+`con/prn/aux/nul/com1..9/lpt1..9` 예약 장치명을 파일 경로와 동일하게 거절한다.
+`console`·`aux-pack`·`com10` 등 일반 이름까지 제외하지 않는다.
+metadata는 `name`(비어 있지 않은 문자열)·`adult:true`만 필수로 검증하며 description/style은
+문자열로 보존한다. 미결정 Q-META의 추가 metadata는 JSON 그대로 보관하고 능력치/단위를 추측하지 않는다.
+slot은 v1 표의 sfx 3개, bgm 4개, voice 선언 6개·defeat_stage_1/2/3·match_first/last만 허용한다.
+승리 신규 slot은 D-WIN 결정 전 추가하지 않는다. null이 아닌 참조 파일은 모두 존재/형식/한도를 검증한다.
+
+migration 0007은 content_packs(kind/namespace/pack_id unique), content_pack_revisions
+(pack/revision 및 pack/content_digest unique), content_pack_files(revision/relative_path PK,
+media FK/digest), content_pack_scan_entries(source 상대 식별자/identity/status/issues)를 추가한다.
+`current_revision_id`는 **적용된** revision용 nullable FK로 예약하며 W08-A는 항상 null로 둔다.
+GET의 `registered_revision`은 마지막 성공 scan이 인식한 revision(`registered_revision_id` FK)이며
+`applied_revision_id`와 별개다. A→B→A 복원 시 A 포인터만 변경하고 revision/파일은 추가하지 않는다.
+과거 content_digest 재인식은 unchanged이며 새 revision/적용을 만들지 않는다. 원본 manifest JSON과
+canonical manifest SHA256, 정렬된 `[상대경로,SHA256]` 목록을 함께 canonical JSON으로 해시한
+content_digest를 저장한다(UTF-8, ensure_ascii=false, sort_keys=true, separators=(',',':')).
+
+시작 scan과 POST rescan은 동일 service의 process lock으로 직렬화한다. 인증 조회 transaction은
+해제하고 source 검증/복사는 writer 밖에서 수행한다. 참조 파일과 manifest를 다시 읽어 digest/파일
+identity·size·mtime이 바뀌면 incomplete_copy로 보류한다. 정상 파일 전체의 UUID 복사가 끝난 뒤
+pack별 BEGIN IMMEDIATE/원자 commit한다. DB 실패 시 이번 시도 소유 복사본만 지운다.
+상시 watcher·완료 marker는 없으므로 두 읽기 사이 안정된 파일을 대상으로 하며 제작자가 유효한
+부분 팩으로 manifest까지 완성한 시점을 추측하지 않는다. 파일을 다 넣고 manifest를 마지막에 놓는다.
+symlink/junction/reparse point는 source 경로 각 구성요소에서 거절하며 Windows drive/UNC/ADS,
+예약 장치명·후행 공백/점·상위 이동·URL도 거절한다. 목록에는 절대 경로/예외 원문을 노출하지 않는다.
+
+GET `/api/local/packs?kind=character|sfx|bgm|voice`는 DB만 읽고
+`{schema_version:1,packs:[identity,registered_revision,applied_revision_id,status,issues,revisions],
+scan_entries:[source,identity,status,issues]}`를 반환한다. POST `/api/local/packs/rescan`은
+accepted/unchanged/conflicts/issues와 같은 목록 snapshot을 반환한다. 둘 다 local capability가 필요하다.
+목록 진입 시 rescan 호출은 후속 설정 UI가 담당하며 이번에는 UI를 추가하지 않는다.
+상태는 normal/unresolved/conflict. 잘못된/비지원 manifest·파일 누락은 scan_entries의 unresolved,
+충돌은 conflict다. 기존 정상 등록/revision은 진단 실패와 독립적으로 남는다. source_missing도
+원본 등록/복사본을 제거하지 않는다. 중복 claim은 모든 후보를 conflict로 보류한다.
+shared_dependencies는 현재 공유 registry가 없어 비어 있지 않으면 unresolved이며 등록 snapshot은 보관한다.
+미설치 default_voice_pack도 unresolved 진단만 남긴다. 캐릭터 CPU/voice 연결·기본 적용은 하지 않는다.
+팩 디렉터리가 없어도 시작 가능하고 새 콘텐츠 seed는 없다. 진행 초기화는 registry를 변경하지 않는다.
+
 ### 최신 기본값 해석·삭제 계약 — 2026-10-16 사용자 확정
 
 REQUIREMENTS의 D-DEFAULT/D06-b/삭제 정책을 적용한다. 목록 표시 순서와 기본값 식별은 분리한다.
@@ -635,7 +680,7 @@ voice namespace에서 UUID로 resolve하며 같은 내부 pack_id만 비교하�
 
 | method / local 경로 | 요청·응답 핵심 | 담당/게이트 |
 |---|---|---|
-| GET `/packs?kind=…` / POST `/packs/rescan` | pack identity/revision/status/issues; scan 결과 accepted/unchanged/conflicts/issues | W08 scanner, W08-S 음향 종류 확장 |
+| GET `/packs?kind=…` / POST `/packs/rescan` | pack identity/revision/status/issues; scan 결과 accepted/unchanged/conflicts/issues | W08-A 4종 scanner, W08-S 적용/재생은 별도 |
 | GET/PATCH `/characters/{cpu_id}/content` | metadata, P/N, default voice 참조, expected_revision | W08; 치수·override·팩 편집 충돌은 응답 후 |
 | GET/PUT `/characters/{cpu_id}/levels/{level}/images/{kind}` | immutable media_id nullable, framing P/N, expected_revision | W08, 자동 생성은 없음 |
 | GET/PUT `/characters/{cpu_id}/candidates/{level}` | 네 kind의 명시 stable ID 집합·revision, 미설정의 지정 기본값과 구분 | W08; 신규 자동 포함 없음, 같은 Level 허용 후보 조합 |
@@ -686,7 +731,7 @@ W06 SFX identity·엔딩 UUID·action index·rules snapshot은 바꾸지 않는�
 ### W06 보존과 additive migration
 
 현행 Alembic head `20261016_0006` 다음에서 신규 관계만 추가한다. W08이 다음 revision을 소유하고
-W08-S/W09/W10/W11은 앞 PR 병합 뒤 실제 head에서 번호를 정한다. migration 실행은 이번 작업 금지다.
+W08-S/W09/W10/W11은 앞 PR 병합 뒤 실제 head에서 번호를 정한다. 당시 W07 문서 작업에서는 migration을 실행하지 않았으며, 후속 W08-A에서 0007을 구현했다.
 CPU PK/명단/progress, seed/actions/policy1/2, 기존 completed presentation version 2와
 ending pending snapshot/ack는 재작성하지 않는다. 새 콘텐츠 DTO version과 progression_version은 별개다.
 신규 표시만 content_schema_version=1을 가지며 legacy는 기존 renderer adapter로 계속 읽는다.

@@ -15,7 +15,8 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows hosted 검증·최종 검토 통과(개인 실기 미검증) | W04 | 저성능 Work |
 | W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B·C 최종 검토 통과(D11 실측 대기) | W05, D04 | A 고성능 Work → B/C 저성능 Work |
 | W07 | 콘텐츠·팩·이미지/음성/UI 계약 설계 | P1 / 정책 독립 계약 구체화·미응답 게이트 유지 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
-| W08 | 캐릭터·공유 후보·단계별 3종 이미지/팩 등록 기반 | P1 / 계약 후 구현 대기 | W05, W07 | 저성능 Work |
+| W08-A | 팩 등록·revision·immutable 파일 기반 | P1 / 독립 구현·회귀·Windows CI/artifact 검증 완료 | W05, PR #75~#78, 사용자 독립 승인 | 저성능 Work |
+| W08 | 캐릭터·공유 후보·단계별 이미지 편집/적용 | P1 / 정책 의존 부분 대기 | W08-A, W07 관련 결정 | 저성능 Work |
 | W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / 새 후속 범위 | W07 팩/event 계약, W08 등록 기반 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
 | W10 | 독립 ComfyUI·Anima adapter | P1 / 대기 | W03, W07 | 저성능 Work |
@@ -281,7 +282,7 @@ CPU/규칙/seed/action replay·legacy fixture 변경, 실콘텐츠 생성·사�
 | Task | 선행 정책·병합 게이트 | 허용 파일 범위·구체 구현 지시 | 완료 검증 |
 |---|---|---|---|
 | W08 | W05·W07 최종 계약, D05-c/D06 전체/D07-b/D10-a, Q-META/Q-PACK/Q-LEGACY | `db/models/`·exports·head 다음 additive migration, 새 `services/content_packs.py`/`character_content.py`·`schemas/local_content.py`·`api/local_content.py`, `local_runtime.py` 등록, `services/admin.py` 참조 보호. 기존 CpuSelection/main/api와 새 최소 캐릭터/공유 편집 UI. v1 scanner·stable ID·4단계 3종 참조/P/N·공유 관계·후보·메타데이터·voice 기본 참조 구현. bootstrap은 승인 legacy 대응만, 모델 override는 승인 범위만. generation/event resolver 구현 금지 | ID/중복/버전/의존 누락/경로·불완전 scan·metadata 실패·반복 upgrade/bootstrap; Level/kind/FK·후보/삭제 승인 사례·편집/재시작/reset 보존·기존 PK/파일 hash |
-| W08-S | W08 병합, Q-PACK/Q-AUDIO, Q-OMAKE-VOICE는 오마케 음성 경계 전, D-WIN은 승리 슬롯 전 필수 | 위 registry의 sfx/bgm/voice 확장, `services/local_sound.py`/새 audio resolver·`schemas/local_sound.py`·`api/local_sound.py`, 최소 선택 UI `LocalSoundPanel.tsx`/api/main, `api/game.py` 승인 hook·game types. 각각 단일 팩·slot default fallback·voice 단일 연결·세대 격리 구현. SFX source 검증 뒤 연결. 공유 mapper는 W09가 중복 작성하지 않게 명시 소유. D-WIN 미응답이면 승리 신규 hook 보류, Task 전체 완료 표시 금지 | selected/default/양쪽누락·voice 팩 누락 기본 연결/슬롯 누락 무음·off·잘못된 actor·파일실패·전환 중 늦은 play·재시작/reset. W06 legacy/pending 보존과 중복 음성 없음. source 미확인은 미연결로 인계 |
+| W08-S | W08 병합, Q-PACK/Q-AUDIO, Q-OMAKE-VOICE는 오마케 음성 경계 전, D-WIN은 승리 슬롯 전 필수 | W08-A의 4종 registry 재사용, 승인 후 적용/선택 연결과 `services/local_sound.py`/새 audio resolver·`schemas/local_sound.py`·`api/local_sound.py`, 최소 선택 UI `LocalSoundPanel.tsx`/api/main, `api/game.py` 승인 hook·game types. 각각 단일 팩·slot default fallback·voice 단일 연결·세대 격리 구현. SFX source 검증 뒤 연결. 공유 mapper는 W09가 중복 작성하지 않게 명시 소유. D-WIN 미응답이면 승리 신규 hook 보류, Task 전체 완료 표시 금지 | selected/default/양쪽누락·voice 팩 누락 기본 연결/슬롯 누락 무음·off·잘못된 actor·파일실패·전환 중 늦은 play·재시작/reset. W06 legacy/pending 보존과 중복 음성 없음. source 미확인은 미연결로 인계 |
 | W09 | W08/W08-S 병합, D05-b/c·D06-b/d·D08-b·D10-a, D-WIN/Q-OMAKE-VOICE/Q-LEGACY | `dialogue_service.py`와 새 content resolver, `api/game.py`/`game_registry.py` 표시/정산 저장 경계·필요 additive migration·types/main/MahjongTable. 원 pending ordinal 유지·공통 선언과 actor 음성, event/상황/캐릭터/Level 교집합·승리와 Level 패배 텍스트·변수 snapshot. W06 version2/오마케 억제·노출 policy 유지. ComfyUI submit 금지 | source index/ron-tsumo/reach_accepted·actor·승패/보충/omake·대사 고갈·변수·중복/재접속·commit 실패·policy1/2/legacy replay |
 | W10 | W07 D07-a/b·D08-a·D09-a, Q-FRAME, W08 입력 schema | 새 ComfyUI adapter/client/workflow/settings service/schema/API, `local_runtime.py` 수명·최소 설정 UI/api. 승인 endpoint 정책과 job 입력/snapshot/unknown 상태 구현. 실제 지원 workflow의 object_info/input/output·Anima/encoder/VAE/LoRA·한도/파일 decode를 기술 확인. 실환경 없으면 mock 범위만 제출하고 실출력 완료 금지. 게임 RNG/정산·모델 다운로드·전역 interrupt 금지 | mock submit/status/result·응답유실·재기동/자기 job·endpoint 미연결 기본 게임·종료 소유권. 실제 생성은 별도 사용자 승인/환경/D11 제공 때만 실측 |
 | W11 | W06·W09/W10 병합, D05-b·D06·D08 전체, Q-IMAGE/Q-FRAME | 새 selection/job/artifact 연동 services/API·필요 additive migration, W09 표시 hook·W10 adapter 호출, types/api/main 최소 표시/명시 retry. seed/cache/4단계3종 분리·재렌더 무추첨·writer 밖 submit·late result 격리·원본/이전 파일 보존 구현 | 입력/label/모델 revision별 cache·동시 동일 요청·submit unknown·DB 실패·A→B/새 대국/reset 후 완료·missing 파일·명시 retry·재시작 snapshot. 실제 ComfyUI와 mock 구분 |
@@ -291,12 +292,38 @@ CPU/규칙/seed/action replay·legacy fixture 변경, 실콘텐츠 생성·사�
 W08→W08-S→W09는 공통 schema/API/UI 충돌 때문에 순차다. W10 독립 작업은 정책 확정과
 models/main/local_runtime/API/문서 소유 분리 후만 가능하며 이번에 병렬 agent를 실행하지 않는다.
 W11은 W09/W10 이후, W11-U 수용은 W11 이후다. W12는 이 여섯 Task와 D11 실제 콘텐츠/권리·
-Windows 실기 게이트를 기다린다. 현재 문서 PR만으로 어느 구현 Task도 자동 착수하지 않는다.
+Windows 실기 게이트를 기다린다. W08-A만 후속 사용자 지시로 독립 승인됐다. 나머지는 문서 PR만으로 자동 착수하지 않는다.
 
 모든 구현 Task는 관련 unittest와 별도 dialogue pytest·frontend build/browser·writer/정산 실패·
 W05 종료/재시작·W06 pending/reset/사운드 회귀를 변경 영향대로 실행한다.
 정확한 head SHA의 Windows hosted CI/artifact source/ZIP hash를 대조한다. 개인 PC·OS 인터넷 차단·
 전원 차단/실제 CG·오디오·ComfyUI는 실제 수행한 범위만 기록한다. 사용자 폴더 대신 소유 임시 자료로 검사한다.
+
+### W08-A — 팩 등록 기반 시스템 (독립 승인 범위)
+
+- 최종 검토 보완: 제품 source `ad12e6f`에서 Windows 예약 장치명을 팩/캐릭터/voice namespace ID에서도
+  거절한다. 수정 전 실패 재현과 registry 15개 통과를 확인했다. 원본 `0742a9d`의 Windows 성공과
+  수정본 검증은 구분하며 최종 head/CI/artifact/병합 상태는 PR #79를 따른다.
+
+- 결과: 제품 source `ca2c2ef`의 Linux/Windows unittest 114개·대사 10개, build/종료 및
+  W05 packaged renderer 22개·일반 종료/restart 검증을 통과했다. artifact/source/ZIP hash는
+  CURRENT_STATE에 기록했다. [PR #79](https://github.com/danhk0612/no-riichi-no-fuku/pull/79) 제출, 직접 병합 없음.
+  A→B→A 인식 포인터 회귀는 수정 전 실패를 재현한 뒤 보완했다. 실제 리소스 출력은 미검증이다.
+
+- 기준: main `01da784`, PR #75~#78 병합 확인. W07 전체 완료나 W08 전체 착수가 아니다.
+- 범위: character/sfx/bgm/voice 영문 identity·manifest v1 검증, 지정 폴더 startup scan/명시 rescan,
+  DB 목록·진단, pack/revision/content digest, immutable media 복사·과거 revision 보존, additive migration과 local API.
+- 구현 계약은 ARCHITECTURE의 W08-A 절을 따른다. 외모/상의 속옷/하의 속옷 P/N,
+  4 Level × 3종 이미지·구도 P/N을 원본 manifest snapshot으로 검증·보존한다. 실제 문구/자료 seed 없음.
+- 제외: 캐릭터/공유 후보 편집·삭제/재연결 UI, CPU 생성/기존 CPU 연결·팩 실제 적용,
+  음향 선택/재생 전환·event·생성·화면 개편. 기존 W06 설정/자료/pending/진행/엔딩은 그대로 유지.
+- Q-PACK은 revision 적용/로컬 편집 병합을 막으며 등록·보관은 막지 않는다. Q-META는 편집/표시,
+  Q-LEGACY는 기존 대사 이전, D06-c/D05-c/D10-a는 후보 이동/event/변수, Q-AUDIO는 W08-S 전환,
+  Q-OMAKE-VOICE/D-WIN은 신규 음성 hook, Q-IMAGE/Q-FRAME/D07~D09는 생성/표시 수명을 막는다.
+- 검증: ID·namespace/폴더 일치·중복/버전/불완전 복사·경로 이탈, 참조 bytes 변경 revision,
+  반복 migration/scan·실패 rollback·restart/reset·과거 파일/hash 보존·capability·기존 회귀.
+  Windows hosted CI/artifact는 정확한 source SHA로 확인하고 임시 signature fixture 검증과 실제 리소스 출력을 구분한다.
+- 제출: `task/w08-a-pack-registry` commit/push/PR. 직접 병합·Release/tag·사용자 자료 변경/삭제 금지.
 
 ### W08 — 캐릭터·공유 목록·후보 관리
 

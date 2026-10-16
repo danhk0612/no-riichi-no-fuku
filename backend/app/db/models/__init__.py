@@ -1,3 +1,4 @@
+from .content_pack import ContentPack, ContentPackRevision, ContentPackFile, ContentPackScanEntry
 from .cpu_character import CpuCharacter
 from .cpu_dialogue import CpuDialogue
 from .cpu_result_asset import CpuResultAsset
@@ -9,6 +10,7 @@ from .user import User
 from .user_cpu_progress import UserCpuProgress
 
 __all__ = [
+    "ContentPack", "ContentPackRevision", "ContentPackFile", "ContentPackScanEntry",
     "CpuCharacter",
     "CpuDialogue",
     "CpuResultAsset",
