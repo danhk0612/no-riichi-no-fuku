@@ -1,9 +1,9 @@
 # 현재 상태
 
-## W06-C PR #70 보완 — 검증 완료, 병합 보류
+## W06-C PR #70 — 최종 검토 통과
 
 확인일 2026-10-16(KST), 최신 main `4b170f83545f338c66f2888a6d641f00ba908444`.
-검토 head는 `b8065358e60c43314ac16c599013158f7c019c96`(제품 `567a1a3`)이다.
+최초 검토 head는 `b8065358e60c43314ac16c599013158f7c019c96`(제품 `567a1a3`)이다.
 기존 `task/w06-c-sound-ending`과 열린 PR #70을 유지했다. 아래 수정 전 재현을 보존하고,
 회귀·Windows 검증을 통과한 보완을 PR #70에 갱신했다. W06-A 정책과 콘텐츠 범위는 변경하지 않았다.
 
@@ -60,6 +60,33 @@ Windows packaged smoke의 추가 두 검사는 설정 화면/무음·미등록 �
 SHA256 `741e25cb2b30cbf501624e9c3235bfcad6918997a7d6471a12f83546c4cf4541`, 내부 Windows ZIP SHA256
 `7eb0393d43d2158c95d83f29655125f3b587346f7952335ebc8eb4d8ff40c0ee`를 대조했다. 이 문서 추가는
 제품 코드·검사 경로를 바꾸지 않는다.
+
+### 최종 재검토 (2026-10-16 KST)
+
+최종 검증 source는 `efd5a0316ff4f3f6f51c05d24566c0b1b5829157`이다. 이전 보완 source의
+핵심 5개 항목을 source 함수 모의 검사·API·실제 Windows browser 검사로 다시 대조했다.
+검토에서 수동 BGM 재생 응답과 SFX play rejection에도 현재 Audio/세대 검사를 추가했다.
+교체 전 BGM 재시도 실패와 초기화 전 SFX 실패가 나중에 새 화면의 오류를 켜지 않는 회귀를 보강했다.
+지연 SFX fetch 검사는 응답 완료까지 기다려 초기화 뒤 Audio가 만들어지지 않음을 판정한다.
+
+- Linux unittest 100개/38.172초, dialogue pytest 10개/0.09초, 수정 renderer production build,
+  Node 종료 회귀 3개 통과.
+- Windows Server 2022 W04 PR run `38826559169`, W05 PR `38826559160`/push `38826553799` 모두 success.
+  최종 browser mock 재생·packaged renderer·일반 종료/같은 data root 재시작을 통과했다.
+- artifact/source/내외 ZIP 및 renderer/browser 증거: push artifact `12015980287`(203,332,722 bytes, 2026-10-30 만료)의 source SHA가 위 source와 일치.
+  API digest와 다운로드 archive SHA256은 `149c355acba76e972c03f0daa6880d9fee16d1218d547bb1b2fd95065e1777a3`,
+  내부 Windows ZIP SHA256은 `973ebb7d481c1fa69c3d013b9ef65b26544fa6c71d690479a1f24f56a32fda56`.
+  artifact unittest 100개/80.676초 OK, browser PASS, renderer passed=true/22 checks와
+  두 일반 모드 종료/재시작 JSON의 engine→창→host 종료 순서를 대조했다.
+- 중간 source `04cae5f`는 browser를 통과했지만 PR run `38826086985`의 packaged 검사에서
+  stale-confirm reset 직후 다음 명단 선택 대기에 실패했다(artifact `12015024353`). 같은 source의
+  push run `38826082557`은 전체 통과했다. 제목만 확인하던 harness를 실제 enabled CPU 카드
+  3개 이상까지 기다리도록 보완했으며, 제한 시간·검사 범위·제품 복구 동작은 바꾸지 않았다.
+  위 최종 source의 PR/push 모두 통과한 결과로 다시 확인했다. 이전 실패/성공 이력은 보존한다.
+
+최종 검토를 통과했다. 이 source 뒤 문서 commit과 병합 상태/SHA는 PR #70/Git을 따른다.
+실제 콘텐츠/기기 출력(D11), 개인 Windows PC와 전원 차단 내구성은 계속 미검증이다.
+W07 제품 구현·콘텐츠 생성·Release/tag는 수행하지 않았다.
 
 ## W06-B PR #68 — 최종 검토 통과
 
@@ -556,6 +583,6 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 
 ## 다음
 
-W06-B PR #68은 병합됐다. W06-C PR #70은 검토에서 보완이 필요하므로 TASKS의 현재 우선 지시를 따른다.
+W06-B PR #68은 병합됐고 W06-C PR #70은 최종 검토를 통과했다. 병합을 확인한 뒤 TASKS의 W07 설계 준비 지시를 따른다.
 개인 Windows 실기, 전원 차단 durability 및
 실제 ending CG/음악 재생은 해당 범위에서 증거를 별도로 확보한다.

@@ -13,7 +13,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W03 | 실행·저장·프로필 정책 확정 | P0 / 정책·W04/W05 계약 확정 | W02 | 고성능 Chat |
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 완료(PR #61 병합) | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows hosted 검증·최종 검토 통과(개인 실기 미검증) | W04 | 저성능 Work |
-| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B 완료·C 보완 검증 완료(PR #70 열린 상태) | W05, D04 | A 고성능 Work → B/C 저성능 Work |
+| W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B·C 최종 검토 통과(D11 실측 대기) | W05, D04 | A 고성능 Work → B/C 저성능 Work |
 | W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 목록·후보 관리 | P1 / 대기 | W05, W07 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
@@ -282,9 +282,9 @@ W04 run `38808528770` 모두 성공했다. 다운로드 artifact `12007637653`�
 내부 Windows ZIP hash 및 renderer/lifecycle JSON을 대조했다. unittest 94개·dialogue pytest 10개,
 frontend build·Node 종료 회귀도 통과했다. 상세 SHA/hash·검사 범위·이전 증거는 CURRENT_STATE를 따른다.
 최종 검토는 통과했으며 병합 상태/SHA는 PR #68과 Git을 확인한다. 개인 Windows PC·전원 차단 및
-실제 ending CG/음악은 미검증이다. 이 B 검토 당시에는 W06-C 미착수였다. C 보완 검증은 아래 결과를 따르며 PR #70은 열린 상태다.
+실제 ending CG/음악은 미검증이다. 이 B 검토 당시에는 W06-C 미착수였다. C 최종 검토와 병합 상태는 아래 결과 및 PR #70을 따른다.
 
-## W06-C PR #70 보완 — 완료, 병합 보류
+## W06-C PR #70 — 최종 검토 통과
 
 기존 `task/w06-c-sound-ending`과 PR #70을 유지했다. 수정 전 실패 5건은 CURRENT_STATE 표에
 보존했다. BGM 반복·순서변경 시 곡 유지·media 교체·늦은 callback/재시도, 완료 결과 화면을 가로지르는
@@ -297,8 +297,38 @@ source SHA와 외부 archive SHA256 `839804e93f47eadc5ffbbb8c488fc3b3667a312819b
 내부 Windows ZIP SHA256 `deca88e1ab2ee99b44e7f3773ccedebbafc12aa30e315ace9740af0dbde716e4`를 대조했다.
 Linux unittest 100, focused sound 6, dialogue pytest 10, frontend build, 종료 회귀 3도 통과했다.
 최종 문서 SHA와 CI/artifact 증거, 실제 미검증 범위는 CURRENT_STATE에 기록한다.
-실제 CG/음악 출력과 개인 PC/전원 차단(D11)은 미검증이다. PR은 직접 병합하지 않았고
+실제 CG/음악 출력과 개인 PC/전원 차단(D11)은 미검증이다. 보완 제출 당시에는 PR을 직접 병합하지 않았고
 Release/tag/W07을 수행하지 않았다.
+
+최종 검토 source `efd5a0316ff4f3f6f51c05d24566c0b1b5829157`에서 BGM/SFX의 늦은 play 응답
+격리 회귀와 명단 초기화 뒤 실제 선택 가능 상태를 기다리는 smoke 조건을 보강했다.
+W04 `38826559169`, W05 PR `38826559160`/push `38826553799` 모두 통과했다. artifact/source/ZIP
+검증 및 중간 실패 이력은 CURRENT_STATE를 따른다. 최종 검토를 통과했으며 병합 상태는 PR #70/Git으로 확인한다.
+
+## 다음 Work에 입력할 지시문 — W07 설계 준비
+
+권장 환경: **고성능 Work**. W06-C PR #70 병합을 확인한 뒤 시작한다. 제품 구현보다
+D05~D10 정책 조율이 선행한다. 아래는 기존 W07의 분석·설계 준비 범위다.
+
+```text
+danhk0612/no-riichi-no-fuku의 W07 설계 준비만 수행해.
+최신 main·열린 PR·AGENTS.md와 루트 기준 문서를 확인하고 W06-C 검토/병합 상태를 먼저 확인해.
+task/w07-content-contract에서 R07~R14와 현재 CPU 대사/CG/event/replay 코드를 대조해.
+
+기존 구현으로 재사용할 부분, 새 콘텐츠 관계와 API/UI 책임, migration/구 자료 호환,
+게임 RNG와 콘텐츠 선택 분리, event identity/늦은 생성 결과 차단을 문서로 정리해.
+D05 stage↔Level/표시 시점/event→상황, D06 후보 추가·빈 후보·삭제 참조,
+D07 P/N 결합·모델/LoRA, D08 재사용 식별·실패/대기·파일 보존,
+D09 ComfyUI 수명, D10 대사 변수·기존 대사 이전의 사용자 결정 항목을 추려.
+이미 확정된 정책은 다시 묻지 말고, 미확정 항목은 구체적 예시·선택지·영향·권고를 적어.
+미확정 정책에 의존하지 않는 계약 초안과 승인 후 W08~W11의 구현 경계를 준비해.
+
+미확정 제품 정책을 임의 확정하거나 완료로 표시하지 마.
+사용자 결정을 받아야 하는 부분은 정확한 질문/의존 작업으로 남겨 검토받아.
+REQUIREMENTS/ARCHITECTURE/TASKS/CURRENT_STATE를 각 문서 책임에 맞게 갱신해.
+문서 commit/push·PR 제출까지 진행하고, 제품 코드/migration/UI 구현·CPU/규칙 변경·
+콘텐츠/CG/오디오 생성·사용자 자료 수정/삭제·ComfyUI 실행·직접 병합·Release/tag는 하지 마.
+```
 
 ## 최초 구현 지시문 — W06-C (과거 지시, 이력)
 
