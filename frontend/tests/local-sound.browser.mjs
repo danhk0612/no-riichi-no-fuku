@@ -239,15 +239,21 @@ try {
   await page.evaluate(() => window.__audioInstances.at(-1).dispatchEvent(new Event('ended')))
   await page.waitForTimeout(30)
   assert.equal(await page.evaluate(() => window.__audioInstances.length), beforeVoice + 2, 'queued actor voices should serialize without duplicates')
+  const lateVoice = { type: 'voice_effect', generation: play.generation, session_id: 'sound-match', action_version: 3,
+    event_index: 8, actor_seat: 2, event_key: 'win', asset_id: 'audio-voice-late', url: '/api/local/media/asset-sfx-late/file' }
+  const delayedVoiceLoad = page.waitForRequest((request) => request.url().includes('/asset-sfx-late/'), { timeout: 8000 })
+  const delayedVoiceResponse = page.waitForResponse((response) => response.url().includes('/asset-sfx-late/'), { timeout: 8000 })
+  socket.send(JSON.stringify(lateVoice))
+  await delayedVoiceLoad
   assert.ok(await page.locator('.match-result').count())
   await page.evaluate(() => { window.confirm = () => true })
   await page.getByRole('button', { name: '초기화' }).click()
   await page.locator('.selection-panel').waitFor()
   await page.evaluate(() => window.__rejectDeferredPlay())
-  await (await delayedSfxResponse).finished()
+  await Promise.all([delayedSfxResponse, delayedVoiceResponse].map(async (response) => (await response).finished()))
   await page.waitForTimeout(50)
   assert.equal(await page.getByText('효과음을 재생할 수 없습니다.', { exact: true }).count(), 0, 'discarded SFX play rejection must not show an error after reset')
-  assert.equal(await page.evaluate(() => window.__audioInstances.length), beforeSfx + 1, 'late SFX fetch after reset/new generation must not create audio')
+  assert.equal(await page.evaluate(() => window.__audioInstances.length), beforeVoice + 2, 'late SFX and voice fetches after reset/new generation must not create audio')
   assert.deepEqual(errors, [])
   assert.equal(disabledSetClearSaved, true)
   assert.equal(endingClearSaved, true)

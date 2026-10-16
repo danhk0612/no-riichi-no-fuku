@@ -1,5 +1,26 @@
 # 현재 상태
 
+## W08-S — 오디오팩·캐릭터 음성 연결
+
+PR #83은 열려 있고 현재 원격 head는 `05af467ad3f71c9ee09b36ef95b4e43a7e2b39ce`다. 기준 main은
+PR #82 병합 `5d00c9e`다. SFX/BGM 단일 팩 선택과 slot fallback, CPU별 default/selected/off 음성 연결,
+선언·화료·최종 4위 단계 패배 voice routing, 최소 UI 및 legacy 자료 보존을 구현했다. Q-AUDIO A,
+오마케 기본 선언·화료·최종 4위 대사 재생, stage/Tier 및 추가 진행/CG 불변 규칙을 REQUIREMENTS/
+ARCHITECTURE/TASKS에 반영했다.
+
+로컬 검증은 backend unittest 127개와 frontend production build가 통과했다. 원격 PR head의 Windows
+W04 run `38882555503`은 성공했고 artifact `12037374572`의 SHA-256은
+`f4eff8b077be8805ae2cf092557ab4ac87f6940f878a3df8e1cb145152278f67`이다. Windows W05 run
+`38882555509`은 `local-sound.browser.mjs:237`에서 음성 종료 직후 다음 음성이 큐에서 재생되지 않아
+실패했다. artifact `12037633893`은 실패 진단 자료이며 패키징 단계가 실행되지 않았다. 재생 종료
+listener를 `play()` 완료 전에 등록하고 pause 시 큐를 풀도록 로컬 코드를 보완했다. 이 변경을 포함한
+정확한 SHA의 browser/Windows 재검증과 artifact 대조는 아직 없다.
+
+현재 실행 환경에서 Playwright Chromium 다운로드가 0-byte ZIP으로 실패해 local browser 회귀는
+미실행이다. 추가한 voice queue/reset 회귀와 위 순서 보완을 포함해 Windows W05를 다시 통과시키고,
+정확한 최종 source SHA 및 artifact 내부 source SHA를 확인해야 W08-S를 완료 처리할 수 있다. PR branch
+업데이트도 자동 승인 검토에서 차단되어 원격에는 반영되지 않았다.
+
 ## W08-C — 기존 캐릭터팩 연결·동일 팩 갱신
 
 준비/시작 main `e2e38d1dc89503623463b8ad2fcd62369ceda751`을 확인했고 PR #79~#81은 병합됐다.

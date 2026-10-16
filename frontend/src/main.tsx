@@ -364,14 +364,28 @@ function App() {
             if (activeSoundEffectsRef.current.get(identity)?.audio === audio) activeSoundEffectsRef.current.delete(identity)
             URL.revokeObjectURL(url)
           }
+          let finishPlayback!: () => void
+          let playbackFinished = false
+          const finished = new Promise<void>((resolve) => {
+            finishPlayback = () => {
+              if (playbackFinished) return
+              playbackFinished = true
+              resolve()
+            }
+          })
+          audio.addEventListener('ended', finishPlayback)
+          audio.addEventListener('error', finishPlayback)
+          audio.addEventListener('pause', finishPlayback)
           try {
             await audio.play()
-            await new Promise<void>((resolve) => {
-              audio.addEventListener('ended', () => resolve(), { once: true })
-              audio.addEventListener('error', () => resolve(), { once: true })
-              if (audio.ended) resolve()
-            })
+            await finished
           } catch { /* Audio failure never blocks game progression or the next queued voice. */ }
+          finally {
+            finishPlayback()
+            audio.removeEventListener('ended', finishPlayback)
+            audio.removeEventListener('error', finishPlayback)
+            audio.removeEventListener('pause', finishPlayback)
+          }
           release()
         }).catch(() => {})
         return
