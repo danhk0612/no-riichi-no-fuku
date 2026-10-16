@@ -18,6 +18,11 @@
 - 검증 범위는 문서 diff·공백·로컬 링크·4개 파일 제한·legacy fixture byte 불변·최신 main/PR 재확인이다.
   backend/build/browser/Windows CI·artifact·migration/ComfyUI는 실행하지 않았다.
   새 제품 성공 증거는 없으며 기존 W06 exact-SHA 결과는 아래 이력 그대로다.
+- PR #75 검토에서 manifest JSON digest와 참조 파일을 포함한 content digest를 분리했다. JSON이
+  같아도 이미지/음성 bytes 변경은 새 revision 후보이며, 동일 content digest만 no-op다. 배포용
+  voice 참조는 namespace까지 포함한 `{character_id,id}`, DB는 pack UUID로 대응한다. 이미지팩과
+  선택 voice pack의 캐릭터 ID를 강제로 일치시키지 않는다. 오마케 기본 선언 voice 억제는
+  미승인 단정 대신 Q-OMAKE-VOICE로 분리했다. 문서/링크/범위를 재검증하며 제품 구현은 없다.
 - 다음: REQUIREMENTS 미응답 ID별 정책 조율 후 조건부 schema/API를 최종화하고 후속 착수 게이트를
   재검토한다. D11 콘텐츠/권리·개인 Windows/전원 차단·실제 이미지/오디오/ComfyUI는 계속 미검증이다.
   제품 구현·콘텐츠 생성·사용자 자료 변경·직접 병합·Release/tag 없음.

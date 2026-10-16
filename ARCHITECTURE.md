@@ -536,11 +536,11 @@ Level 변경 패배 대사와 기타 캐릭터 이벤트의 노출 정책은 기
   SFX/BGM은 `(kind, pack_id)`. 같은 영문 문자열이 다른 종류에 있어도 충돌하지 않는다.
 - 공통 필수 manifest 필드: `schema_version:1`, `kind:character|sfx|bgm|voice`, `id`,
   `version`(팩 작성자 버전 문자열), `label`. voice는 `character_id` 필수다.
-  `schema_version`은 parser 호환, `version`은 작성자 표시, `manifest_digest`는 실제 JSON 내용 식별로 구분한다.
+  `schema_version`은 parser 호환, `version`은 작성자 표시, `manifest_digest`는 정규화한 JSON 내용 식별, `content_digest`는 manifest와 참조 파일 bytes를 합친 revision 식별로 구분한다.
   unknown schema_version은 비지원 상태로 등록하지 않으며 기존 유효 revision을 덮지 않는다.
 - DB `content_packs`의 UUID PK, kind/namespace/id unique, current_revision FK;
-  `content_pack_revisions`의 UUID, pack FK, manifest_digest, manifest JSON, revision 정수와
-  파일별 digest/immutable media UUID 대응을 저장한다. 동일 digest 재인식은 no-op다.
+  `content_pack_revisions`의 UUID, pack FK, manifest_digest/content_digest, manifest JSON, revision 정수와
+  파일별 digest/immutable media UUID 대응을 저장한다. 동일 content_digest 재인식만 no-op다. manifest JSON이 같아도 참조 파일 bytes가 바뀌면 새 revision 후보로 인식한다.
   원본 폴더는 읽기만 하며 인식 시 참조 파일을 런타임 immutable UUID 미디어로 복사한다.
   과거 snapshot은 revision/media UUID를 고정하므로 원본 폴더 교체가 과거 표시를 바꾸지 않는다.
 - 경로는 팩 루트 기준 `/` 상대 경로만 허용한다. 절대 경로·drive/UNC·`..`·URL·symlink/junction
@@ -550,17 +550,18 @@ Level 변경 패배 대사와 기타 캐릭터 이벤트의 노출 정책은 기
 - 시작 시 로컬 엔진이 한 번 scan하고 설정의 팩 목록 진입 시 scan한다. 상시 watcher는 만들지 않는다.
   `POST /api/local/packs/rescan`은 같은 scan을 명시 호출한다. GET은 DB 목록만 읽는다.
   중복 identity의 서로 다른 manifest가 한 scan에 있으면 둘 다 conflict, 기존 정상 등록은 유지한다.
-  같은 위치의 새 digest는 새 revision으로 등록하되 기존 파일을 삭제하지 않는다.
+  같은 위치의 새 content_digest는 새 revision으로 등록하되 기존 파일을 삭제하지 않는다. 적용/로컬 편집 병합은 Q-PACK 응답을 따른다.
   불완전 복사/오류 팩은 진단 목록에 남기고 대국 기동을 막지 않는다. 사라진 폴더도 기존 복사본/등록을 삭제하지 않는다.
 - scan은 파일 읽기·검증·복사를 writer 밖에서 수행하고 pack 단위 metadata를 한 transaction에 commit한다.
   실패 시 기존 current revision과 설정은 불변. 이번 시도 소유 임시 파일만 정리하며 등록된 파일은 삭제하지 않는다.
-  같은 scan 재시도는 unique digest로 중복 등록되지 않는다. 진행 초기화는 팩·revision·media·설정을 보존한다.
+  content_digest는 canonical manifest와 경로 순으로 정렬한 참조 파일의 상대 경로·SHA256 목록으로 계산한다.
+  같은 scan 재시도는 pack별 unique content_digest로 중복 등록되지 않는다. 진행 초기화는 팩·revision·media·설정을 보존한다.
 
 | 종류 | v1 전용 필드/참조 | 의미 |
 |---|---|---|
-| character | `character_id`, `metadata`, `prompts`, `levels`, `shared_dependencies`, `default_voice_pack_id`(nullable) | name/adult=true/기존 설명·style. voice 기본 참조는 독립 namespace, 미설치 가능 |
+| character | `character_id`, `metadata`, `prompts`, `levels`, `shared_dependencies`, `default_voice_pack`(nullable `{character_id,id}`) | name/adult=true/기존 설명·style. voice 기본 참조는 배포용 복합 identity, 미설치 가능 |
 | sfx / bgm | `slots:{slot_key:relative_path}` | 누락 슬롯 허용. default 팩 identity는 각 종류의 `default`, 없으면 무음. 임의 첫 팩을 기본으로 삼지 않음 |
-| voice | `character_id`, `slots:{slot_key:relative_path}` | 이미지/CG 의존성 없음. 다른 캐릭터 팩을 같은 이름이라는 이유로 연결하지 않음 |
+| voice | `character_id`, `slots:{slot_key:relative_path}` | 이미지/CG 의존성 없음. character_id는 음성 배포 namespace이며 연결 대상 CPU를 제한하는 FK가 아님. 명시 선택은 독립 팩 identity로 수행 |
 
 character `levels`는 정확히 0/1/2/3 네 키다. 각 값은
 `images:{profile:null|path,full_body:null|path,cg:null|path}`,
@@ -583,6 +584,9 @@ media_id nullable, framing P/N, revision)에 저장한다. 선택/진행과 콘�
 새 팩 revision과 로컬 편집 충돌 시 덮어쓰기 여부는 Q-PACK 응답 전 보류한다.
 `character_voice_links`는 cpu_id unique, default_pack_id nullable, selected_pack_id nullable,
 selection_mode `default|selected|off`, revision을 저장한다. default 갱신 적용 시점도 Q-PACK 대상이다.
+DB default_pack_id/selected_pack_id는 content_packs UUID FK다. 배포 manifest의 `{character_id,id}`를
+voice namespace에서 UUID로 resolve하며 같은 내부 pack_id만 비교하지 않는다. 캐릭터 이미지팩과
+음성팩의 character_id가 같아야 한다는 제한을 추가하지 않는다. 미설치 참조는 unresolved/무음이다.
 선택 팩의 슬롯 누락 시 default로 돌아가지 않는다. `off`는 무음이며 미선택 기본 연결과 다르다.
 
 공유 원본은 stable UUID, kind, level, label, positive/negative, revision, active를 가진다.
@@ -616,7 +620,9 @@ selection_mode `default|selected|off`, revision을 저장한다. default 갱신 
 캐릭터별 문장 후보나 음성 유무와 무관하다. actor 좌석→저장 CPU mapping→선택 voice pack으로 resolve한다.
 사람 actor는 연결된 NPC 음성이 없으므로 NPC 음성을 대신 쓰지 않는다.
 기존 문장 확률/cooldown은 별도 상황 대사에만 보존한다. 공통 선언·voice를 문장 후보 존재에 묶지 않는다.
-오마케는 기본 공통 텍스트/SFX 유지, 캐릭터 음성/상황·승패/CG 이벤트는 억제한다.
+오마케는 기본 공통 텍스트/SFX 유지, 상황·승패/CG 이벤트는 기존대로 억제한다.
+기본 선언 voice를 추가 캐릭터 이벤트로 취급해 억제할지는 Q-OMAKE-VOICE 응답 전 확정하지 않는다.
+기본 선언/음성 분리 확정만으로 오마케 음소거 정책을 추가하지 않는다.
 
 | domain | v1 slot / source | 처리 |
 |---|---|---|
@@ -722,7 +728,9 @@ ComfyUI endpoint/object_info·Anima workflow/node·encoder/VAE/LoRA 호환·outp
 2. 한 배치 `[bad,chi,pon]`의 source ordinal 1/2 유지; actor별 voice, 슬롯 누락은 무출력,
    공통 선언은 문장 후보가 없어도 표시. 재접속/replay 중 과거 voice/SFX는 재생하지 않음.
 3. SFX 선택 tile_discard 누락/default 존재→default, 양쪽 누락→무음; voice 누락은 다른 팩 무음.
-4. 같은 팩 재scan no-op, 충돌/잘못된 경로/불완전 파일로 기존 revision 불변. 복사 후 metadata 실패,
+4. 동일 content_digest 재scan no-op, JSON 불변·참조 음성/이미지 bytes 변경은 새 revision 후보.
+   같은 내부 pack_id의 다른 voice namespace와 명시 교차 연결도 올바르게 resolve.
+   충돌/잘못된 경로/불완전 파일로 기존 revision 불변. 복사 후 metadata 실패,
    수정/재시작/reset에도 기존 W06 UUID/선택/ending snapshot/파일 hash 유지.
 5. 빠른 A→B hover, 결과 표시 뒤 팩 교체, reset 후 늦은 job/play/load는 현 화면 불변.
 6. D06/D08 각 승인 조합대로 후보 고갈·삭제/참조·입력 수정/재사용·복구를 검사한다.
