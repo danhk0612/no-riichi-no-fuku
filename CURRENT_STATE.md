@@ -13,12 +13,21 @@ pack/revision·manifest/content digest·파일별 immutable UUID 복사를 구�
 실제 콘텐츠/CG/오디오·기본 팩을 생성·seed하지 않았다. W07 전체 미완료, W08 전체 구현 착수도 아니다.
 
 Linux Python 3.12.14/RiichiEnv 0.4.8에서 backend unittest 114개(신규 registry 14개 포함),
-대사 pytest 10개, frontend npm ci/build, Node 종료 회귀 3개를 검증한다. 신규 검사는 0006→0007
+대사 pytest 10개, frontend npm ci/build, Node 종료 회귀 3개가 통과했다. 신규 검사는 0006→0007
 업그레이드/반복 migration·startup scan·reset/restart·한글/공백 경로·W06 행/설정/파일 bytes 보존,
 중복/경로 이탈/link·불완전/비지원 manifest·변경 중인 파일·동시 scan·DB commit/파일 복사 실패를 포함한다.
 모든 자료는 소유 임시 signature fixture이며 실제 이미지 decode/오디오 출력 검증이 아니다.
-Windows W04는 PR head 직접 checkout·artifact 이름을 exact head로 맞췄고 기존 W05 packaged
-renderer/종료/restart와 함께 source SHA·artifact/ZIP hash를 확인할 예정이다. 아직 Windows 성공으로 기록하지 않는다.
+제품 source `ca2c2efdeca564ca142c904efa4aa4d7d9206c38`의 Windows Server 2022 x64 CI가 통과했다.
+W04 [38845126341](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38845126341)와
+W05 [38845126360](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38845126360) 모두 exact head checkout이다.
+W04 artifact `12022728009`의 source SHA·archive SHA256
+`f03a9dcc88ece661e3f7f7d3718d02b13600b90ce42b656deb9ba636ab1d8a76`, unittest 114·대사 10 결과를 대조했다.
+다운로드한 W05 artifact `12023410265`의 source SHA·archive SHA256
+`be3a402c0c38636df7786df2ed71e959b7a549a2d14eda49568e3fd4ff8c1192`와 내부 Windows ZIP SHA256
+`d1d101549a866fe3af9d3f370125d1a6fc02d6fa88d6c2559174ff1a5f7cec7f`를 CI 기록과 대조했다.
+renderer smoke 22개·일반 모드 child/창/host 종료 순서·같은 data root 재시작,
+기존 W06 sound browser·Windows unittest 114/대사 10도 확인했다. 제품 파일은 위 source로 고정하며
+후속 증거 문서 commit의 head/CI 상태는 [PR #79](https://github.com/danhk0612/no-riichi-no-fuku/pull/79)를 따른다.
 개인 Windows PC/전원 차단·실제 리소스 출력·ComfyUI는 미검증이다.
 
 Q-PACK은 새 revision 적용/로컬 편집 병합, Q-META는 편집/표시 필드, Q-LEGACY는 기존 대사 이전,

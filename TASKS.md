@@ -15,7 +15,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows hosted 검증·최종 검토 통과(개인 실기 미검증) | W04 | 저성능 Work |
 | W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B·C 최종 검토 통과(D11 실측 대기) | W05, D04 | A 고성능 Work → B/C 저성능 Work |
 | W07 | 콘텐츠·팩·이미지/음성/UI 계약 설계 | P1 / 정책 독립 계약 구체화·미응답 게이트 유지 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
-| W08-A | 팩 등록·revision·immutable 파일 기반 | P1 / 구현·Linux 검증 완료, Windows 검증 대기 | W05, PR #75~#78, 사용자 독립 승인 | 저성능 Work |
+| W08-A | 팩 등록·revision·immutable 파일 기반 | P1 / 독립 구현·회귀·Windows CI/artifact 검증 완료 | W05, PR #75~#78, 사용자 독립 승인 | 저성능 Work |
 | W08 | 캐릭터·공유 후보·단계별 이미지 편집/적용 | P1 / 정책 의존 부분 대기 | W08-A, W07 관련 결정 | 저성능 Work |
 | W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / 새 후속 범위 | W07 팩/event 계약, W08 등록 기반 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
@@ -300,6 +300,11 @@ W05 종료/재시작·W06 pending/reset/사운드 회귀를 변경 영향대로 
 전원 차단/실제 CG·오디오·ComfyUI는 실제 수행한 범위만 기록한다. 사용자 폴더 대신 소유 임시 자료로 검사한다.
 
 ### W08-A — 팩 등록 기반 시스템 (독립 승인 범위)
+
+- 결과: 제품 source `ca2c2ef`의 Linux/Windows unittest 114개·대사 10개, build/종료 및
+  W05 packaged renderer 22개·일반 종료/restart 검증을 통과했다. artifact/source/ZIP hash는
+  CURRENT_STATE에 기록했다. [PR #79](https://github.com/danhk0612/no-riichi-no-fuku/pull/79) 제출, 직접 병합 없음.
+  A→B→A 인식 포인터 회귀는 수정 전 실패를 재현한 뒤 보완했다. 실제 리소스 출력은 미검증이다.
 
 - 기준: main `01da784`, PR #75~#78 병합 확인. W07 전체 완료나 W08 전체 착수가 아니다.
 - 범위: character/sfx/bgm/voice 영문 identity·manifest v1 검증, 지정 폴더 startup scan/명시 rescan,

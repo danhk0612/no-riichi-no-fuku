@@ -586,7 +586,7 @@ Level 2는 누적 탈의이며 Level 1에서 브래지어를 제거하지 않는
 ### W08-A 등록 구현 계약 — 적용과 분리
 
 이번 사용자 승인 범위는 4종 registry만이다. `schemas/local_content.py`는 v1의 필수 구조와
-엄격한 ID/종류/상대 경로를 검증한다. character의 `id=character_id=폴더명`, sfx/bgm의
+엄격한 ID/종류/상대 경로를 검증한다. manifest는 UTF-8 JSON 최대 1 MiB이며 중복 key·NaN/Infinity를 거절한다. character의 `id=character_id=폴더명`, sfx/bgm의
 `id=폴더명`, voice의 `character_id=상위 폴더명`·`id=하위 폴더명`이 필수다.
 metadata는 `name`(비어 있지 않은 문자열)·`adult:true`만 필수로 검증하며 description/style은
 문자열로 보존한다. 미결정 Q-META의 추가 metadata는 JSON 그대로 보관하고 능력치/단위를 추측하지 않는다.
