@@ -18,8 +18,19 @@ Electron 데스크톱 설정에 기본/구도 P/N 편집·필드별 편집 기�
 로컬 검증: Python 3.12.14/RiichiEnv 0.4.8의 backend unittest 119개, dialogue pytest 10개,
 frontend `npm run build`, Electron 종료 회귀 3개 통과. 신규 API 회귀는 GET 무쓰기, 빈 문자열/필드별
 override, 서로 다른 구도, stale revision, 권한, commit 실패 rollback, reset/restart 보존, 팩 재검색 후
-로컬 편집 불변을 확인한다. 이번 문서 갱신 시 정확한 최종 source SHA의 Windows hosted CI와 artifact는
-아직 대기 중이며 확인 후 이 절을 갱신한다. 개인 Windows PC·실제 이미지/오디오 출력·ComfyUI는 미검증이다.
+로컬 편집 불변을 확인한다.
+
+제품 commit `4b1d817e55c12f1cc2e97520b6eee21a727f8e38`의 Windows Server 2022 x64 검증은 통과했다.
+W04 run [38868373458](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38868373458)과
+W05 run [38868373403](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38868373403)은 둘 다
+정확한 head를 checkout했다. W04 artifact `12032177797`의 archive SHA-256은
+`a086fbaf3c822d289ff6cfe67ca552e02958a144172c6acea1d525de56d0e830`이며 source-sha.txt가 제품 SHA와
+일치한다. W04 evidence의 backend 119·dialogue 10 검사를 확인했다. W05 artifact `12031629509`의
+archive SHA-256은 `6904595e351f0ecbcee7eb21ffdcc342cb7f6360bdeaa5c3db8635e023241a06`이며 내부
+source-sha.txt도 같은 SHA다. 내부 Windows ZIP SHA-256은 `33fec22a58cabf814c12f3e94fcc731495e1a4f737c33856abed8c158dabaf71`로
+zip-sha256.json과 일치한다. Windows backend 119·dialogue 10·renderer smoke 22 checks 및 일반 모드
+종료/재시작 lifecycle evidence도 통과를 확인했다. PR #81은 열린 상태이며 직접 병합하지 않았다.
+개인 Windows PC·실제 이미지/오디오 출력·ComfyUI는 미검증이다.
 
 W08-B는 W08-A 기반 편집/목록 UI 범위만 다루며 W07 전체 완료나 W08 전체 구현 완료를 뜻하지 않는다.
 
