@@ -247,6 +247,7 @@ try {
     settlement: { last_place_seat: 3, current_hp: null, cpu_character_id: null, defeat_stage: null, game_over: false, cpu_completed: false },
     result_asset: null, result_dialogue: null, result_dialogues: [], ending_event_id: null,
   }))
+  await page.locator('.match-result').waitFor()
   assert.ok(await page.locator('.match-result').count())
   await delayedSfxResponse
   await page.waitForFunction((count) => window.__audioInstances.length === count + 1, beforeComplete)

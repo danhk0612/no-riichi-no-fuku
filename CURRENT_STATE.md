@@ -9,12 +9,12 @@ PR #82 병합 `5d00c9e`다. SFX/BGM 단일 팩 선택과 slot fallback, CPU별 d
 ARCHITECTURE/TASKS에 반영했다.
 
 로컬 backend unittest 127개와 frontend production build가 통과했다. 정확한 원격 head에서 Windows
-W04 run `38956768774`은 성공했고 artifact `12071181078`의 SHA-256은
-`dcc390865e848b2bb2394e62f6a54aee7f19944aaee739af3bed5bf4d30aa268`다. Windows W05 run
-`38956769054`는 browser 회귀에서 실패했고 artifact `12069744927`은 진단 자료만 포함해 패키징 단계는
-건너뛰었다. fixture는 `match_complete`가 WebSocket을 닫기 전에 음성을 보내도록 재배치했다. 다만
-artifact의 `local-sound-browser.txt`는 브라우저 종료 뒤 미완료 `waitForResponse` rejection만 출력해
-최초 실패를 가렸다. 대기 promise rejection을 처리해 원인을 확인하도록 보완했으며 W05 재실행 대기 중이다.
+W04 run `38957539170`은 성공했고 artifact `12072145289`의 SHA-256은
+`924834dc78f8e6ed61b2034988a9b99f39d94e3e38e2ec1f14fe02a6d8772828`다. Windows W05 run
+`38957539009`는 browser 회귀에서 실패했고 artifact `12071745795`은 진단 자료만 포함해 패키징 단계는
+건너뛰었다. 미완료 response waiter rejection을 처리한 뒤 최초 실패가 드러났다. `match_complete` 직후
+React가 결과 화면을 반영하기 전에 `.match-result`를 동기 검사하고 있어 DOM 표시를 기다리도록 수정했다.
+이 수정의 W05 재실행은 대기 중이다.
 
 현재 실행 환경에서 Playwright Chromium 다운로드가 0-byte ZIP으로 실패해 local browser 회귀는
 미실행이다. 재배치한 voice queue/reset fixture를 포함해 Windows W05를 통과시키고, 정확한 최종 source
