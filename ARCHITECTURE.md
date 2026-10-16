@@ -519,7 +519,8 @@ Level 변경 패배 대사와 기타 캐릭터 이벤트의 노출 정책은 기
 ## W07 구체 기술 계약 — 2026-10-16 정책 응답과 분리
 
 기준 main `eaaae74`. PR #72~#74 병합, 열린 #35는 Docker 문서로 이번 범위와 무관하다.
-이 절은 최신 기술 명세이며 아래 최초 초안과 충돌하면 이 절을 따른다. **제품 미구현·W07 부분 설계**다.
+이 절은 최신 기술 명세이며 아래 최초 초안과 충돌하면 이 절을 따른다. **W07 부분 설계**이며,
+등록 기반의 실제 구현은 아래 W08-A 절과 CURRENT_STATE를 따른다.
 정책 독립 필드는 구현용 계약으로 정리하되 `조건부`는 REQUIREMENTS 응답 뒤에만 채택한다.
 문서 PR 병합이나 예시 JSON은 미응답 정책 승인·후속 구현 착수 승인이 아니다.
 
@@ -675,7 +676,7 @@ voice namespace에서 UUID로 resolve하며 같은 내부 pack_id만 비교하�
 
 | method / local 경로 | 요청·응답 핵심 | 담당/게이트 |
 |---|---|---|
-| GET `/packs?kind=…` / POST `/packs/rescan` | pack identity/revision/status/issues; scan 결과 accepted/unchanged/conflicts/issues | W08 scanner, W08-S 음향 종류 확장 |
+| GET `/packs?kind=…` / POST `/packs/rescan` | pack identity/revision/status/issues; scan 결과 accepted/unchanged/conflicts/issues | W08-A 4종 scanner, W08-S 적용/재생은 별도 |
 | GET/PATCH `/characters/{cpu_id}/content` | metadata, P/N, default voice 참조, expected_revision | W08; 치수·override·팩 편집 충돌은 응답 후 |
 | GET/PUT `/characters/{cpu_id}/levels/{level}/images/{kind}` | immutable media_id nullable, framing P/N, expected_revision | W08, 자동 생성은 없음 |
 | GET/PUT `/characters/{cpu_id}/candidates/{level}` | 네 kind의 명시 stable ID 집합·revision, 미설정의 지정 기본값과 구분 | W08; 신규 자동 포함 없음, 같은 Level 허용 후보 조합 |
@@ -726,7 +727,7 @@ W06 SFX identity·엔딩 UUID·action index·rules snapshot은 바꾸지 않는�
 ### W06 보존과 additive migration
 
 현행 Alembic head `20261016_0006` 다음에서 신규 관계만 추가한다. W08이 다음 revision을 소유하고
-W08-S/W09/W10/W11은 앞 PR 병합 뒤 실제 head에서 번호를 정한다. migration 실행은 이번 작업 금지다.
+W08-S/W09/W10/W11은 앞 PR 병합 뒤 실제 head에서 번호를 정한다. 당시 W07 문서 작업에서는 migration을 실행하지 않았으며, 후속 W08-A에서 0007을 구현했다.
 CPU PK/명단/progress, seed/actions/policy1/2, 기존 completed presentation version 2와
 ending pending snapshot/ack는 재작성하지 않는다. 새 콘텐츠 DTO version과 progression_version은 별개다.
 신규 표시만 content_schema_version=1을 가지며 legacy는 기존 renderer adapter로 계속 읽는다.

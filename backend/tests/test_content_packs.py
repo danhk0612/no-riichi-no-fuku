@@ -140,6 +140,9 @@ class PackRegistryTests(unittest.TestCase):
         self.install(character())
         self.install(audio("voice", "same", "other-character"))
         self.assertEqual(len(self.scan()["accepted"]), 5)
+        # GET lists registered metadata only; it never examines the source/media filesystem.
+        with patch("app.services.content_packs.media_path", side_effect=AssertionError("GET touched files")):
+            self.assertEqual(len(self.listing()["packs"]), 5)
         self.assertEqual(
             len(
                 self.client.get(

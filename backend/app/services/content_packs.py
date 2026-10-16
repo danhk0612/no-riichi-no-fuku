@@ -497,13 +497,8 @@ class ContentPackRegistry:
                                 "url": media_url(ref.media_asset_id),
                             }
                         )
-                        if (
-                            asset is None
-                            or not media_path(
-                                self.media_root, asset.storage_key
-                            ).is_file()
-                        ):
-                            issues.append("stored_file_missing")
+                        if asset is None:
+                            issues.append("stored_media_metadata_missing")
                     revision_payloads.append(
                         {
                             "id": revision.id,
