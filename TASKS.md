@@ -248,9 +248,16 @@ ARCHITECTURE의 “W07 구체 기술 계약”에 팩 v1·ID/폴더/scan·immuta
 Level×kind·DTO·event ordinal·W06 보존과 조건부 생성/job 계약을 구체화했다.
 REQUIREMENTS의 기존 미응답 질문 및 D-WIN/Q-META/Q-IMAGE/Q-FRAME/Q-PACK/Q-AUDIO/Q-OMAKE-VOICE/Q-LEGACY는
 사용자 응답 대기다. 단 D-DEFAULT·D06-b A·D06-c 삭제 처리는 후속 사용자 응답으로 확정됐다.
-신규 자동 포함·Level 이동/소속 변경·D06-d 및 다른 정책은 계속 대기한다.
+D06-a A(신규 명시 연결)/D06-d A(같은 Level 허용 후보 조합)와 외모/상의 속옷/하의 속옷 P/N도 확정됐다.
+Level 이동/소속 변경·Q-UNDER 단계별 속옷 적용표 및 다른 미응답 정책은 계속 대기한다.
 **W07 전체 미완료, 아래 후속은 구현 지시 템플릿이며 실행 승인이 아니다.**
 
+W08은 외모/상의 속옷/하의 속옷 P/N 독립 저장·편집과 명시 후보 집합을 구현 범위로 삼는다.
+겉옷은 공유 복장 상태에서 정의하며 기존 기본 복장 문구를 속옷으로 자동 이전하지 않는다.
+새 공유 항목 추가 시 기존 후보 불변, 같은 Level 허용 후보 조합, 상황별 추가 제약 없음도 검사한다.
+W10 builder/W11 입력 snapshot·cache는 적용 속옷 부분과 각 P/N revision을 반영하고
+미적용 부분은 P/N 모두 제외한다. Level 3 양쪽 제외, Level 0~2 적용은 Q-UNDER 응답 전 보류한다.
+정확한 조합 순서는 D07-a/Q-FRAME 대기이며 실제 프롬프트·seed를 만들지 않는다.
 W08은 지정 기본 참조·미설정/대상 누락 resolve·기본까지 없을 때 출력 생략과 삭제 영향 목록 확인→
 자동 해제/기본 재연결의 원자 commit을 계약에 포함한다. W08-S는 선택 팩 자체 없음→지정 기본팩과
 유효 voice 팩 슬롯 없음→무음을 구분한다. 명시 off·명단 고정·과거 snapshot/파일을 보존하며

@@ -489,7 +489,7 @@ W06-C의 UUID 업로드·6개 선언 SFX·BGM 순환 목록은 현재 구현/회
 | 팩 규격 | 버전/metadata·상대 참조·공유 후보 의존성·미디어 슬롯·프롬프트를 한 팩으로 배포 가능하게 정의. 정확한 폴더명/파일명/manifest는 다음 계약에서 확정. 원본 팩과 런타임 생성 파일의 소유·수정/보존 경계 정의 | W07→W08, 실제 자료는 W12 |
 | 기본 음향 | SFX/BGM 각각 한 팩 ID 선택. slot별 selected→default→silence. 시작/선택 화면 등 BGM slot과 패 타격/리치봉 등 SFX event 목록을 source와 대조해 확정. W06 old selection/파일을 삭제하지 않고 호환 경계 설계 | W07→W08-S |
 | 음성/텍스트 | 캐릭터는 image pack과 독립인 voice pack ID 기본값/현재값. 음성 누락은 무출력. 기본 선언은 간단한 공통 화면 텍스트, 음성은 actor 캐릭터의 선택팩. 캐릭터별 Level 패배 텍스트·음성 event slot은 별도 참조로 확정 | W07→W08/W08-S→W09 |
-| 생성 입력 | 기존 외모+기본 복장+Level 복장 상태+상황+포즈와 이미지 종류별 구도의 책임 정리. 모든 관련 prompt는 추가/수정 가능, 구도·의상 문구를 코드 상수로만 고정하지 않음. 실제 모델/파일은 생성·seed하지 않음 | W07→W08→W10→W11 |
+| 생성 입력 | 외모+적용 상의/하의 속옷+Level 복장 상태+상황+포즈와 이미지 종류별 구도의 책임 정리. 모든 관련 prompt는 추가/수정 가능, 구도·의상 문구를 코드 상수로만 고정하지 않음. 실제 모델/파일은 생성·seed하지 않음 | W07→W08→W10→W11 |
 | 화면 | 선택 목록의 정사각 프로필·hover/선택 정보/CG+전신, 좌석 프로필/클릭 상세, 단계 상승 결과 연출·CG→전신·하단 대화·CG 전용/줌/팬. 렌더는 확정 selection을 표시하고 hover/줌 자체로 재추첨/생성하지 않음 | W08 데이터 계약→W11-U |
 
 D04-count 재확인으로 W06의 미완료 `<3` 조건을 유지한다. 진행 코드 변경은 필요 없다.
@@ -567,7 +567,12 @@ character `levels`는 정확히 0/1/2/3 네 키다. 각 값은
 `images:{profile:null|path,full_body:null|path,cg:null|path}`,
 `framing:{profile:{positive,negative},full_body:{positive,negative},cg:{positive,negative}}`다.
 이미지 12개 슬롯은 모두 존재하되 아직 생성하지 않은 파일 참조는 null이다. kind/Level 대체 참조는 금지한다.
-`prompts`는 `appearance:{positive,negative}`, `base_clothing:{positive,negative}`를 가진다.
+`prompts`는 `appearance:{positive,negative}`, `upper_underwear:{positive,negative}`,
+`lower_underwear:{positive,negative}`를 가진다. 각 쌍은 독립 편집하며 `base_clothing` 제안은 대체한다.
+겉옷은 공유 복장 상태 P/N이 담당한다. 미구현 schema 제안 변경이며 기존 사용자 문구를
+속옷으로 자동 분류/이전하지 않는다.
+속옷 P/N은 적용 부분만 포함하고 미적용 부분은 P/N 모두 제외한다. Level 3은 둘 다 제외한다.
+Level 0~2 적용표는 Q-UNDER 응답 뒤 계약에 반영하며 임의 기본 표/프롬프트를 만들지 않는다.
 각 이미지 구도 P/N도 편집 가능한 데이터이며 얼굴 정사각/전신/CG의 출력 크기는 생성 설정과 분리 검증한다.
 `shared_dependencies`는 `{namespace,id,revision_digest}` 목록으로 원본 공유 ID를 참조한다.
 부족한 의존성은 unresolved로 표시한다. 출력 시 최신 기본값 계약에 따라 지정된 유효 기본만 확인하며 임의 다른 후보로 대체하지 않는다.
@@ -600,7 +605,7 @@ Level 이동·상황 소속 변경과 신규 항목 자동 포함은 이번 삭�
 
 아래는 새 local 전용 경계이며 웹 admin/인증 경로를 대체하지 않는다.
 캐릭터 로컬 편집은 원본 팩 JSON을 수정하지 않고 `character_content`(cpu_id unique,
-pack_revision_id nullable, revision, appearance/base_clothing P/N)와
+pack_revision_id nullable, revision, appearance/upper_underwear/lower_underwear P/N)와
 `character_level_images`(cpu_id, level 0..3, kind profile/full_body/cg unique,
 media_id nullable, framing P/N, revision)에 저장한다. 선택/진행과 콘텐츠 revision은 별개다.
 새 팩 revision과 로컬 편집 충돌 시 덮어쓰기 여부는 Q-PACK 응답 전 보류한다.
@@ -613,7 +618,10 @@ voice namespace에서 UUID로 resolve하며 같은 내부 pack_id만 비교하�
 
 공유 원본은 stable UUID, kind, level, label, positive/negative, revision, active를 가진다.
 대사는 situation FK·text, event binding은 situation FK·event_key unique 관계다.
-빈 후보 생략·삭제 확인 후 기본 재연결은 최신 확정 계약을 따른다. 후보 allow/deny 표현·이동 동작·조합 제약·변수 검증은 D05-c/남은 D06/D10-a 응답에 따라 확정한다.
+명시 후보 stable ID 참조를 저장하며 새 공유 항목은 자동 포함하지 않는다(D06-a A).
+같은 Level의 허용 후보끼리 조합하고 상황별 복장 상태/포즈 제약 관계는 추가하지 않는다(D06-d A).
+미설정/대상 누락은 지정 기본값, 기본값도 없는 빈 후보는 출력 생략한다. 삭제는 확인 후 기본 재연결한다.
+이동 동작·event 매핑 편집 방향·변수 검증은 남은 D06-c/D05-c/D10-a 응답에 따라 확정한다.
 미응답을 nullable 기본값이나 임시 seed로 우회하여 구현하지 않는다.
 
 응답은 `schema_version:1`, entity `revision`을 포함한다. PATCH/PUT은 `expected_revision` 필수,
@@ -627,7 +635,7 @@ voice namespace에서 UUID로 resolve하며 같은 내부 pack_id만 비교하�
 | GET `/packs?kind=…` / POST `/packs/rescan` | pack identity/revision/status/issues; scan 결과 accepted/unchanged/conflicts/issues | W08 scanner, W08-S 음향 종류 확장 |
 | GET/PATCH `/characters/{cpu_id}/content` | metadata, P/N, default voice 참조, expected_revision | W08; 치수·override·팩 편집 충돌은 응답 후 |
 | GET/PUT `/characters/{cpu_id}/levels/{level}/images/{kind}` | immutable media_id nullable, framing P/N, expected_revision | W08, 자동 생성은 없음 |
-| GET/PUT `/characters/{cpu_id}/candidates/{level}` | 네 kind의 stable ID 집합·revision | W08; D06 응답 후 정확한 포함 의미 명세 |
+| GET/PUT `/characters/{cpu_id}/candidates/{level}` | 네 kind의 명시 stable ID 집합·revision, 미설정의 지정 기본값과 구분 | W08; 신규 자동 포함 없음, 같은 Level 허용 후보 조합 |
 | GET/POST `/content/{kind}` / PATCH/DELETE `/content/{kind}/{id}` | 원본 필드·참조 영향·revision; DELETE는 영향 확인 후 논리 제외·기본 재연결을 원자 commit | W08; D05-c/D06/D10-a |
 | GET/PUT `/audio-selection` | sfx_pack_id/bgm_pack_id nullable, enabled flags, revision | W08-S; legacy 전환 Q-AUDIO 승인 후 |
 | GET/PUT `/characters/{cpu_id}/voice-selection` | selection_mode, selected_pack_id, revision | W08-S; 기본 연결 Q-PACK 승인 후 |
@@ -720,7 +728,7 @@ ending_pending으로 이어지고, 엔딩 계속하기만 기존 ack를 호출�
 선택 후보 ID/revision, 구도 P/N, 최종 P/N, workflow_digest/adapter_version,
 model/encoder/VAE 참조+사용자 revision, 순서 있는 LoRA 참조/강도,
 width/height/steps/CFG/sampler/scheduler, 독립 seed를 가진다.
-구도와 기존 5요소의 정확한 결합 위치는 Q-FRAME/D07-a 응답 후 고정한다.
+구도와 최신 프롬프트 구성 요소의 정확한 결합 위치는 Q-FRAME/D07-a 응답 후 고정한다.
 D07-b 응답 전 캐릭터 override 필드를 구현하지 않는다. 모델 실파일은 복사/배포하지 않는다.
 
 cache는 canonical JSON(SHA256, UTF-8, key 정렬, 배열 순서 유지, 숫자 표현 고정)의
@@ -757,7 +765,9 @@ ComfyUI endpoint/object_info·Anima workflow/node·encoder/VAE/LoRA 호환·outp
    충돌/잘못된 경로/불완전 파일로 기존 revision 불변. 복사 후 metadata 실패,
    수정/재시작/reset에도 기존 W06 UUID/선택/ending snapshot/파일 hash 유지.
 5. 빠른 A→B hover, 결과 표시 뒤 팩 교체, reset 후 늦은 job/play/load는 현 화면 불변.
-6. D06/D08 각 승인 조합대로 후보 고갈·삭제/참조·입력 수정/재사용·복구를 검사한다.
+6. 신규 공유 항목 추가 후 기존 명시 후보 집합 불변, 같은 Level 허용 후보 조합·타 Level 거절을 검사한다.
+   외모/상의 속옷/하의 속옷 P/N 독립 편집, 미적용 속옷은 P/N 모두 제외·Level 3 양쪽 제외를 확인한다.
+   Q-UNDER 적용표는 응답 뒤 검증한다. D06/D08 각 승인 조합대로 후보 고갈·삭제/참조·입력 수정/재사용·복구를 검사한다.
    결과 GET/연출 재실행·CG 전용 복귀가 stage/정산/추첨/submit 횟수를 증가시키지 않아야 한다.
 
 ## W07 콘텐츠·이미지 계약 초안 — 정책 승인 전 구현 금지
@@ -793,18 +803,18 @@ R07~R14의 최초 관계·책임을 정리한 **미승인 기술 초안**이다.
 
 | 제안 관계 | 최소 데이터/소유 | 미확정 또는 승인 뒤 명세화할 부분 |
 |---|---|---|
-| CharacterContent | 기존 CPU FK, 외모 P/N·기본 복장 P/N, 변경 revision | D07-b override 필드, revision 증가 범위. 규칙 성향 snapshot과 분리 |
+| CharacterContent | 기존 CPU FK, 외모/상의 속옷/하의 속옷 P/N, 변경 revision | D07-b override 필드, revision 증가 범위. 규칙 성향 snapshot과 분리 |
 | ContentLevel | 안정 ID/표시 label | D05-a의 Level 집합/대응. label을 stage/난이도 판정 키로 사용하지 않음 |
 | ClothingState / Situation / Pose | 안정 ID, Level FK, label, P/N, revision | D06-c 삭제/이동. 별도 entity 또는 공통 kind schema는 후속 기술 선택 |
 | SituationEventBinding | situation FK와 engine event_key 관계 | D05-c 편집 방향·D05-b 이미지 대상 목록. unknown event에 무조건 fallback 금지 |
 | SharedDialogue | 안정 ID, situation FK, label, 평문, revision | D10 변수·D06-c 상황 이동. 대사는 상황 소속 Level로 검증 |
-| CharacterLevelCandidates | CPU FK+Level FK+kind+공유 ID 관계 | D06-a allow/deny 중 승인된 하나. 양쪽을 중복 저장하지 않음. 타 Level·kind·상황 관계 검증 |
+| CharacterLevelCandidates | CPU FK+Level FK+kind+공유 ID 관계 | D06-a A 명시 후보 참조. 신규 자동 포함 없음. 타 Level·kind·상황 관계 검증 |
 | PresentationSelection | event identity, CPU/Level, 선택 ID·revision, 표시 문자열/이름·최종 P/N·설정 snapshot | 영속 범위 D08-b, 이미지 대상 D05-b, 빈 후보 D06-b/D10-b. 원문을 캐릭터마다 복제하는 것과 이벤트 snapshot은 다름 |
 | GenerationRequest / Artifact | selection 참조, 요청 ID, endpoint/client/prompt ID, 최종 입력 digest·seed, 상태, immutable media 참조 | D07 실제 workflow·D08-a 동일성·D09 수명/복구. 전역 latest key로 다른 CPU job를 덮지 않음 |
 
 후보 계산 순서는 event를 해석하고 오마케/노출 조건을 확인→CPU/Level 확인→허용 상황과
 캐릭터 상황 후보의 교집합→그 상황의 대사와 캐릭터 대사 후보 교집합이다. 이미지 대상이면
-해당 Level 복장 상태/포즈 후보도 별도 선택한다. D06-d B라면 상황별 제약을 추가 적용한다.
+해당 Level 복장 상태/포즈 후보도 별도 선택한다. D06-d A 확정으로 상황별 추가 제약 관계는 만들지 않는다.
 대사 없음과 이미지 없음은 별개이며, legacy fallback(D10-b)까지 답변받기 전 동작을 고정하지 않는다.
 P/N 결합 순서·구분자·모델 보정은 D07-a에 의존한다. 각 입력 원문·최종 결과를 혼동하지 않는다.
 
