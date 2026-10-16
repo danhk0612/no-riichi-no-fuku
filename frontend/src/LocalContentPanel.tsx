@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   getCharacterContent, listLocalCharacters, listContentPacks, patchCharacterContent,
-  rescanContentPacks,
+  rescanContentPacks, applyCharacterPack,
 } from './api'
 import type { CharacterContent, ContentPack } from './api'
 
@@ -24,10 +24,13 @@ export function LocalContentPanel({ accessToken, onClose }: { accessToken: strin
   const [scanEntries, setScanEntries] = useState<{ source: string; identity: unknown; status: string; issues: string[] }[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [selectedPack, setSelectedPack] = useState('')
+  const mutationInFlight = useRef(false)
   const [scanning, setScanning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const requestId = useRef(0)
   const scanInFlight = useRef(false)
+  const listingRequest = useRef(0)
 
   function updateListing(listing: { packs: ContentPack[]; scan_entries: typeof scanEntries }) {
     setPacks(listing.packs)
@@ -36,7 +39,7 @@ export function LocalContentPanel({ accessToken, onClose }: { accessToken: strin
 
   async function loadCharacter(id: number) {
     const request = ++requestId.current
-    setCpuId(id); setContent(null); setDirty({}); setLoading(true); setError(null)
+    setCpuId(id); setSelectedPack(''); setContent(null); setDirty({}); setLoading(true); setError(null)
     try {
       const next = await getCharacterContent(accessToken, id)
       if (request === requestId.current) setContent(next)
@@ -50,13 +53,14 @@ export function LocalContentPanel({ accessToken, onClose }: { accessToken: strin
   async function scanPacks() {
     if (scanInFlight.current) return
     scanInFlight.current = true
+    const request = ++listingRequest.current
     setScanning(true); setError(null)
     try {
       const result = await rescanContentPacks(accessToken)
-      updateListing(result.registry)
+      if (request === listingRequest.current) updateListing(result.registry)
     } catch (caught) {
-      setError(message(caught))
-      try { updateListing(await listContentPacks(accessToken)) } catch { /* retain last listing */ }
+      if (request === listingRequest.current) setError(message(caught))
+      try { const listing = await listContentPacks(accessToken); if (request === listingRequest.current) updateListing(listing) } catch { /* retain last listing */ }
     } finally { scanInFlight.current = false; setScanning(false) }
   }
 
@@ -65,10 +69,11 @@ export function LocalContentPanel({ accessToken, onClose }: { accessToken: strin
     void listLocalCharacters(accessToken).then((items) => {
       if (!active) return
       setCpus(items)
-      if (items.length) void loadCharacter(items[0].id)
-      else setLoading(false)
+      setLoading(false)
     }).catch((caught) => { if (active) { setError(message(caught)); setLoading(false) } })
-    return () => { active = false; requestId.current += 1 }
+    const listingId = ++listingRequest.current
+    void listContentPacks(accessToken).then((listing) => { if (active && listingId === listingRequest.current) updateListing(listing) }).catch((caught) => { if (active && listingId === listingRequest.current) setError(message(caught)) })
+    return () => { active = false; requestId.current += 1; listingRequest.current += 1 }
   }, [accessToken])
 
   useEffect(() => { if (tab === 'packs') void scanPacks() }, [tab, accessToken])
@@ -86,7 +91,7 @@ export function LocalContentPanel({ accessToken, onClose }: { accessToken: strin
   function valueFor(key: string, original: string) { return Object.hasOwn(dirty, key) ? dirty[key] : original }
 
   async function save() {
-    if (!content || cpuId === null || !Object.keys(dirty).length) return
+    if (mutationInFlight.current || !content || cpuId === null || !Object.keys(dirty).length) return
     const prompts: Record<string, { positive?: string; negative?: string }> = {}
     const framing: { level: number; kind: 'profile' | 'full_body' | 'cg'; positive?: string; negative?: string }[] = []
     const framingRows = new Map<string, typeof framing[number]>()
@@ -106,6 +111,7 @@ export function LocalContentPanel({ accessToken, onClose }: { accessToken: strin
     framing.push(...framingRows.values())
     const selectedId = cpuId
     const request = requestId.current
+    mutationInFlight.current = true
     setSaving(true); setError(null)
     try {
       const saved = await patchCharacterContent(accessToken, selectedId, {
@@ -116,7 +122,27 @@ export function LocalContentPanel({ accessToken, onClose }: { accessToken: strin
       if (request === requestId.current && selectedId === cpuId) { setContent(saved); setDirty({}) }
     } catch (caught) {
       if (request === requestId.current && selectedId === cpuId) setError(message(caught))
-    } finally { setSaving(false) }
+    } finally { mutationInFlight.current = false; setSaving(false) }
+  }
+
+  const linkedPack = packs.find((pack) => pack.id === content?.pack?.id)
+  const targetPack = content?.pack ? linkedPack : packs.find((pack) => pack.id === selectedPack)
+  const targetRevision = targetPack?.registered_revision
+  const canApply = !!targetPack && !!targetRevision && targetPack.kind === 'character'
+    && targetPack.status !== 'conflict' && targetPack.issues.every((issue) => ['source_missing', 'default_voice_pack_unresolved'].includes(issue))
+    && content?.pack_revision_id !== targetRevision.id
+
+  async function applyPack() {
+    if (mutationInFlight.current || !content || cpuId === null || !targetPack || !targetRevision || !canApply || Object.keys(dirty).length) return
+    const request = requestId.current, selectedId = cpuId
+    mutationInFlight.current = true; setSaving(true); setError(null)
+    try {
+      const next = await applyCharacterPack(accessToken, selectedId, {
+        expected_revision: content.revision, pack_id: targetPack.id, registered_revision_id: targetRevision.id,
+      })
+      if (request === requestId.current) { setContent(next); setSelectedPack('') }
+    } catch (caught) { if (request === requestId.current) setError(message(caught)) }
+    finally { mutationInFlight.current = false; setSaving(false) }
   }
 
   return <section className="sound-panel content-panel" aria-label="캐릭터 프롬프트와 팩 관리">
@@ -127,22 +153,38 @@ export function LocalContentPanel({ accessToken, onClose }: { accessToken: strin
     </div>
     {error && <p className="form-error" role="alert">{error}</p>}
     {tab === 'prompts' && <section className="sound-card content-editor">
-      <label>캐릭터<select value={cpuId ?? ''} disabled={!cpus.length} onChange={(event) => { const id = Number(event.target.value); if (Number.isInteger(id)) void loadCharacter(id) }}>
+      <label>캐릭터<select aria-label="캐릭터" value={cpuId ?? ''} disabled={!cpus.length} onChange={(event) => { const id = Number(event.target.value); if (Number.isInteger(id)) void loadCharacter(id) }}>
+        <option value="" disabled>캐릭터 선택</option>
         {cpus.map((cpu) => <option key={cpu.id} value={cpu.id}>{cpu.name} · {cpu.slug}</option>)}
       </select></label>
       {loading && <p className="muted" role="status">캐릭터 자료를 불러오는 중…</p>}
       {!loading && !cpus.length && <p className="muted">편집 가능한 캐릭터가 없습니다.</p>}
       {content && <>
+        <section aria-label="캐릭터팩 연결">
+          <h3>캐릭터팩 연결·갱신</h3>
+          {content.pack ? <p>연결된 팩: {content.pack.pack_id} · 적용 revision {content.pack.applied_revision} · 등록 revision {linkedPack?.registered_revision?.revision ?? '확인 중'}</p>
+            : <label>연결할 캐릭터팩<select aria-label="연결할 캐릭터팩" value={selectedPack} disabled={saving} onChange={(event) => setSelectedPack(event.target.value)}>
+              <option value="">팩 선택</option>
+              {packs.filter((pack) => pack.kind === 'character').map((pack) => <option key={pack.id} value={pack.id}>{pack.pack_id} · 등록 revision {pack.registered_revision?.revision ?? '없음'} · {statusLabel(pack.status)}</option>)}
+            </select></label>}
+          <p className="muted">직접 편집한 P/N은 빈 값도 유지하고 나머지만 팩 원본을 적용합니다. 재검색은 자동 적용하지 않습니다.</p>
+          <button type="button" disabled={saving || scanning} onClick={() => void scanPacks()}>{scanning ? '연결할 팩 검색 중…' : '연결할 팩 다시 검색'}</button>
+          <button type="button" disabled={saving || scanning || !canApply || !!Object.keys(dirty).length} onClick={() => void applyPack()}>{saving ? '처리 중…' : content.pack ? '같은 팩의 등록 revision 적용' : '선택한 팩 연결·적용'}</button>
+          {!!Object.keys(dirty).length && <p className="muted">편집 내용을 먼저 저장한 뒤 팩을 적용해 주세요.</p>}
+          {targetPack && !!targetPack.issues.length && <p className="diagnostic">팩 진단: {targetPack.issues.join(', ')}</p>}
+        </section>
         <p className="muted">변경한 항목만 저장합니다. 비워 둔 문자열도 명시 편집값으로 기록됩니다.</p>
         <h3>캐릭터 기본 프롬프트</h3>
-        {GROUPS.map(([key, label]) => <PromptFields disabled={saving} key={key} title={label} positive={valueFor(`p.${key}.positive`, content.prompts[key].positive)} negative={valueFor(`p.${key}.negative`, content.prompts[key].negative)} positiveEdited={content.prompts[key].overrides.positive || Object.hasOwn(dirty, `p.${key}.positive`)} negativeEdited={content.prompts[key].overrides.negative || Object.hasOwn(dirty, `p.${key}.negative`)} onPositive={(value) => editPrompt(key, 'positive', value)} onNegative={(value) => editPrompt(key, 'negative', value)} />)}
+        {GROUPS.map(([key, label]) => <PromptFields source={content.pack_source?.prompts[key]} disabled={saving} key={key} title={label} positive={valueFor(`p.${key}.positive`, content.prompts[key].positive)} negative={valueFor(`p.${key}.negative`, content.prompts[key].negative)} positiveEdited={content.prompts[key].overrides.positive || Object.hasOwn(dirty, `p.${key}.positive`)} negativeEdited={content.prompts[key].overrides.negative || Object.hasOwn(dirty, `p.${key}.negative`)} onPositive={(value) => editPrompt(key, 'positive', value)} onNegative={(value) => editPrompt(key, 'negative', value)} />)}
         <h3>단계별 이미지 구도 P/N</h3>
         {[0, 1, 2, 3].map((level) => <details className="framing-level" key={level} open={level === 0}>
           <summary>Level {level} · {LEVELS[level]}</summary>
           {KINDS.map(([kind, label]) => {
             const pair = content.levels[String(level)][kind]
             const posKey = `f.${level}.${kind}.positive`, negKey = `f.${level}.${kind}.negative`
-            return <PromptFields disabled={saving} key={kind} title={label} positive={valueFor(posKey, pair.positive)} negative={valueFor(negKey, pair.negative)} positiveEdited={pair.overrides.positive || Object.hasOwn(dirty, posKey)} negativeEdited={pair.overrides.negative || Object.hasOwn(dirty, negKey)} onPositive={(value) => editFraming(level, kind, 'positive', value)} onNegative={(value) => editFraming(level, kind, 'negative', value)} />
+            return <div key={kind}>
+              {pair.media && <p className="muted">{label} 이미지 · 적용 팩 revision {content.pack?.applied_revision} · 보관 ID {pair.media.media_id}</p>}
+              <PromptFields source={content.pack_source?.levels[String(level)].framing[kind]} disabled={saving} title={label} positive={valueFor(posKey, pair.positive)} negative={valueFor(negKey, pair.negative)} positiveEdited={pair.overrides.positive || Object.hasOwn(dirty, posKey)} negativeEdited={pair.overrides.negative || Object.hasOwn(dirty, negKey)} onPositive={(value) => editFraming(level, kind, 'positive', value)} onNegative={(value) => editFraming(level, kind, 'negative', value)} /></div>
           })}
         </details>)}
         <button className="primary-button" disabled={saving || !Object.keys(dirty).length} onClick={() => void save()} type="button">{saving ? '저장 중…' : `변경 필드 저장 (${Object.keys(dirty).length})`}</button>
@@ -159,13 +201,14 @@ export function LocalContentPanel({ accessToken, onClose }: { accessToken: strin
   </section>
 }
 
-function PromptFields({ disabled, title, positive, negative, positiveEdited, negativeEdited, onPositive, onNegative }: {
-  disabled: boolean; title: string; positive: string; negative: string; positiveEdited: boolean; negativeEdited: boolean
+function PromptFields({ source, disabled, title, positive, negative, positiveEdited, negativeEdited, onPositive, onNegative }: {
+  source?: { positive: string; negative: string }; disabled: boolean; title: string; positive: string; negative: string; positiveEdited: boolean; negativeEdited: boolean
   onPositive: (value: string) => void; onNegative: (value: string) => void
 }) {
   return <fieldset className="prompt-fields" disabled={disabled}><legend>{title}</legend>
     <label>Positive {positiveEdited && <small>편집 기록</small>}<textarea rows={2} value={positive} onChange={(event) => onPositive(event.target.value)} /></label>
     <label>Negative {negativeEdited && <small>편집 기록</small>}<textarea rows={2} value={negative} onChange={(event) => onNegative(event.target.value)} /></label>
+    {source && <details><summary>적용한 팩 원본 P/N</summary><p>Positive: {source.positive || '(빈 값)'}</p><p>Negative: {source.negative || '(빈 값)'}</p></details>}
   </fieldset>
 }
 

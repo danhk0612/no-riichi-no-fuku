@@ -16,7 +16,8 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B·C 최종 검토 통과(D11 실측 대기) | W05, D04 | A 고성능 Work → B/C 저성능 Work |
 | W07 | 콘텐츠·팩·이미지/음성/UI 계약 설계 | P1 / 정책 독립 계약 구체화·미응답 게이트 유지 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08-A | 팩 등록·revision·immutable 파일 기반 | P1 / 독립 구현·회귀·Windows CI/artifact 검증 완료 | W05, PR #75~#78, 사용자 독립 승인 | 저성능 Work |
-| W08-B | 기존 캐릭터 기본/구도 P/N 편집·로컬 편집 기록·팩 목록 UI | P1 / 구현·정확 SHA 회귀/Windows CI·artifact 검증·PR #81 제출 완료(미병합) | W08-A 병합, Q-PACK A | 저성능 Work |
+| W08-B | 기존 캐릭터 기본/구도 P/N 편집·로컬 편집 기록·팩 목록 UI | P1 / 완료(PR #81 병합) | W08-A 병합, Q-PACK A | 저성능 Work |
+| W08-C | 기존 CPU의 명시 캐릭터팩 연결·같은 팩 갱신 | P1 / 구현·로컬 회귀 완료, exact-head Windows 결과는 제출 PR 기준 | W08-A/B 병합, Q-PACK A | 저성능 Work |
 | W08 | 캐릭터·공유 후보·단계별 이미지 편집/적용 | P1 / 정책 의존 부분 대기 | W08-A, W07 관련 결정 | 저성능 Work |
 | W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / 새 후속 범위 | W07 팩/event 계약, W08 등록 기반 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
@@ -343,6 +344,21 @@ W05 종료/재시작·W06 pending/reset/사운드 회귀를 변경 영향대로 
   scan 후 로컬 편집 불변, W06 설정/명단/pending/파일·legacy replay 보존. 변경 영향에 맞춘 Windows exact-SHA CI/artifact.
 - 환경: 저성능 Work. 시스템 우선이며 구체 프롬프트 작성·콘텐츠 seed·생성/재생 기능은 추가하지 않는다.
 
+### W08-C — 기존 CPU와 캐릭터팩의 명시 연결·동일 팩 갱신
+
+- 준비 main `e2e38d1`, PR #79~#81 병합을 확인했다. W08-B 다음 독립 범위이며 W08 전체 완료가 아니다.
+- `task/w08-c-character-pack-application`에서 기존 content 서비스/API·편집 화면을 확장한다.
+- 최초 연결은 사용자 CPU/등록 캐릭터팩 선택 후 명시 적용. 기존 PK/slug/이름/성향/명단/진행은 불변.
+- CPU별 적용 revision FK와 기본/구도 문자열별 overrides를 재사용한다. 재검색은 등록 포인터만 갱신,
+  사용자가 같은 팩의 새 등록 revision을 적용하면 미편집 P/N만 반영한다. 빈 값/동일 값 편집도 보호한다.
+- immutable 이미지 참조는 적용 revision의 Level/kind별 media UUID로 조회한다. 과거 revision 조회는
+  고정 원본/파일만 반환하며 기존 게임 presentation snapshot은 수정하지 않는다.
+- content expected_revision 및 대상 registered revision을 writer 안에서 검사, commit 후 응답한다.
+  불완전 소스/충돌/잘못된 종류·교체/commit 실패는 기존 적용값·기록·파일을 보존한다.
+- 검증: 최초 연결·미연결 무자동연결·전 필드 P/N 병합·편집/갱신 경쟁·revision 충돌·commit rollback,
+  과거 media/source hash·재시작/reset 보존·늦은 UI 응답, backend/build/browser·Windows exact-head artifact.
+- 제외: 다른 팩 교체/해제·새 CPU·metadata/shared/event·생성·선택/결과 UI·음향 적용(W08-S).
+
 ### W08 — 캐릭터·공유 목록·후보 관리
 
 - 목적: 외모/복장 P/N, Level별 공유 항목 및 네 종류 후보 선택·제외 편집.
@@ -441,30 +457,14 @@ Release/tag/W07을 수행하지 않았다.
 W04 `38826559169`, W05 PR `38826559160`/push `38826553799` 모두 통과했다. artifact/source/ZIP
 검증 및 중간 실패 이력은 CURRENT_STATE를 따른다. 최종 검토를 통과했으며 병합 상태는 PR #70/Git으로 확인한다.
 
-## 다음 Work에 입력할 지시문 — W08-B 프롬프트 편집·팩 목록 UI
+## W08-C 인계·검토 범위
 
-권장 환경: **저성능 Work**. Q-PACK A와 편집/보존 계약은 위 및 ARCHITECTURE에 확정됐다.
-
-```text
-danhk0612/no-riichi-no-fuku의 W08-B만 수행해.
-최신 main·현재 branch·열린 PR·AGENTS와 루트 기준 문서를 확인하고 PR #79 병합을 확인해.
-TASKS의 W08-B와 ARCHITECTURE의 독립 편집 계약을 따라 task/w08-b-character-editor에서 구현해.
-
-기존 CPU의 외모/상의 속옷/하의 속옷 각각 P/N, Level 0~3의 profile/full_body/cg 구도 P/N을
-게임 내부 최소 관리 UI에서 편집·저장하게 해. 실제 프롬프트 작성은 검증에 필요한 최소만 하고
-문구/이미지/오디오/기본 팩을 생성·seed하지 마. 기존 CPU 이름/성향/명단/진행은 변경하지 마.
-필드별 명시 override와 빈 문자열을 보존하고 변경한 필드만 PATCH해. GET은 저장/seed하지 마.
-expected_revision 충돌·commit 뒤 응답·캐릭터 전환 후 늦은 응답 격리·입력 보존을 지켜.
-팩 목록/진단/명시 재검색 UI는 W08-A API를 재사용해. UI 목록 진입 rescan도 중복 호출하지 마.
-
-Q-PACK은 A(로컬 편집 유지·미편집 필드만 새 원본 반영)로 결정됐어. 이번에는 편집/기록까지이며
-팩 첫 연결·실제 적용/자동 갱신·새 CPU 생성·shared 관계/후보·metadata/모델 설정·이미지 파일 편집·
-생성/ComfyUI·음성/새 마작 이벤트·선택/결과 화면 개편은 하지 마.
-저장/재시작/진행 초기화·팩 재검색 후 내용/override 보존과 W06 명단/진행/사운드/pending/파일 및
-legacy fixture 불변을 검사해. 관련 backend/build/browser와 Windows exact-SHA CI/artifact를 검증해.
-CURRENT_STATE/TASKS/ARCHITECTURE/사용자 README를 실제 구현 범위로 갱신해.
-commit/push·PR 제출까지 진행하고 직접 병합·Release/tag·사용자 자료 수정/삭제는 하지 마.
-```
+현재 독립 범위는 위 W08-C와 ARCHITECTURE의 W08-C 계약이다. 구현 source와 정확한 head의
+W04/W05 Windows 결과·다운로드 artifact source/ZIP hash는 이 브랜치의 제출 PR에서 확인한다.
+새 Work는 최신 main·현재 branch·열린 PR·AGENTS 및 루트 기준 문서를 다시 확인한다.
+W08-C 검토 후에도 W08-S나 나머지 W08/생성/화면 Task는 별도 지시 없이 시작하지 않는다.
+다른 팩 교체/해제·새 CPU/metadata·음향 적용·공유 후보·event·생성·사용자 자료 변경은 제외한다.
+직접 병합·Release/tag는 이번 승인 범위가 아니다.
 
 ## W07 정책 조율·계약 확정 지시문 — 이전 작업 이력
 

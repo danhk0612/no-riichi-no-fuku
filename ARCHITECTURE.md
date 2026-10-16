@@ -649,6 +649,33 @@ source 폴더가 사라져도 immutable 복사본/등록이 유효하면 연결 
 Level 이동·상황 소속 변경과 신규 항목 자동 포함은 이번 삭제 계약으로 결정하지 않는다.
 실제 기본 자료는 D11 제공 뒤 등록하며 이번 문서로 임의 데이터/음성/이미지를 seed하지 않는다.
 
+### W08-C 기존 캐릭터팩 적용 계약
+
+W08-A/B 다음의 독립 구현이다. `character_content.pack_revision_id`가 CPU별 적용 revision이다.
+이 FK에서 팩 identity를 얻으므로 별도 연결 테이블/migration은 필요 없다. registry의
+registered_revision_id(마지막 성공 인식)와 구분하며 팩 전역 current_revision_id는 변경하지 않는다.
+같은 팩을 여러 기존 CPU에 명시 연결할 수 있으며 각각 독립 적용 revision/편집 기록을 갖는다.
+
+- POST `/api/local/characters/{cpu_id}/pack-application`:
+  `{expected_revision, pack_id: registry UUID, registered_revision_id: revision UUID}` 필수.
+  최초 연결과 동일 팩 갱신만 허용, 다른 팩 교체/해제는 미제공. 선택 CPU는 UI에서 빈 선택으로 시작한다.
+- 로컬 요청 writer 예약은 인증 읽기 전 BEGIN IMMEDIATE를 획득한다. 편집 PATCH와 적용 POST는 같은
+  content revision을 검사한다. stale content/등록 revision은 409, CPU/팩 누락 404, 비캐릭터 팩 422,
+  충돌/미해결 소스·공유 의존·보관 파일 오류 409. default voice 참조는 적용하지 않으며 누락도 이미지팩
+  적용을 막지 않는다(W08-S 경계). 원본 소스 없음만으로 정상 보관된 revision을 무효화하지 않는다.
+- 적용 시 기존 명시 override가 없는 기본 3쌍/Level 0..3 × 3종 구도의 P/N만 원본에서 복사한다.
+  문자열별 편집 목록은 그대로 유지하며 값 비교로 해제하지 않는다. content revision은 적용마다 증가,
+  구도 row revision도 증가한다. 이미 적용한 revision 재요청은 충돌 검사 후 no-op다.
+- GET content는 `pack`에 identity/적용·등록 revision/갱신 가능 여부를, 각 Level/kind `media`에
+  `{media_id,url,digest}` 또는 null을 추가한다. media는 적용 revision의 immutable 파일 참조이며
+  편집/재검색에서 파일을 이동·교체하지 않는다. 원본 P/N/과거 revision은 registry 조회로 확인한다.
+- GET `/api/local/characters/{cpu_id}/pack-revisions/{revision_id}`는 연결된 같은 팩의 특정 보관 revision을
+  원본 prompts/levels/media와 함께 반환한다. 로컬 편집을 과거 원본에 투영하지 않는다. 현재 content
+  응답은 현재 편집값이고 과거 게임 표시 snapshot과 다르다. game session/pending/ending은 전혀 갱신하지 않는다.
+- UI의 최초 연결은 CPU와 팩을 명시 선택 후 버튼으로 적용한다. 같은 팩 갱신은 별도 버튼이며 재검색은
+  자동 적용하지 않는다. 미저장 초안이 있으면 적용을 잠그고 실패 시 초안을 보존한다. 적용/저장 동안
+  입력 잠금, 캐릭터 전환·화면 이탈 후 늦은 응답은 request identity로 무시한다.
+
 ### 편집/저장 모델과 API envelope
 
 아래는 새 local 전용 경계이며 웹 admin/인증 경로를 대체하지 않는다.

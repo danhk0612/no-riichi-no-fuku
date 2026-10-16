@@ -7,7 +7,7 @@ function content(id) {
   const pair = () => ({ positive: '', negative: '', overrides: { positive: false, negative: false } })
   const prompts = Object.fromEntries(['appearance', 'upper_underwear', 'lower_underwear'].map((key) => [key, pair()]))
   prompts.appearance.positive = `test-only-${id}`
-  return { schema_version: 1, cpu_id: id, revision: 0, pack_revision_id: null, prompts, levels: Object.fromEntries([0, 1, 2, 3].map((level) => [level, Object.fromEntries(['profile', 'full_body', 'cg'].map((kind) => [kind, { ...pair(), revision: 0 }]))])) }
+  return { schema_version: 1, cpu_id: id, revision: 0, pack_revision_id: null, pack: null, prompts, levels: Object.fromEntries([0, 1, 2, 3].map((level) => [level, Object.fromEntries(['profile', 'full_body', 'cg'].map((kind) => [kind, { ...pair(), revision: 0 }]))])) }
 }
 try {
   const page = await browser.newPage(); page.setDefaultTimeout(8000)
@@ -15,11 +15,36 @@ try {
   await page.addInitScript(() => { window.nrnfDesktop = { isDesktop: true } })
   const saved = { 1: content(1), 2: content(2) }
   const cpus = [1, 2, 3].map((id) => ({ id, slug: `cpu-${id}`, name: `CPU ${id}`, defeat_stage: 0, style: 'balanced', short_description: 'test-only', profile_image_key: null }))
-  let saveMode = 'ok', saveGate, readGate, scanGate, scans = 0, lastPatch
+  let saveMode = 'ok', saveGate, readGate, scanGate, scans = 0, lastPatch, applyGate, applyMode = 'ok', lastApplication, applications = 0
   const listing = { schema_version: 1, packs: [], scan_entries: [] }
   await page.route('**/api/**', async (route) => {
     const request = route.request(), path = new URL(request.url()).pathname
     const character = path.match(/^\/api\/local\/characters\/(\d+)\/content$/)
+    const application = path.match(/^\/api\/local\/characters\/(\d+)\/pack-application$/)
+    if (application) {
+      applications++; lastApplication = request.postDataJSON()
+      if (applyMode !== 'ok') return route.fulfill({ status: applyMode === 'conflict' ? 409 : 500, json: { detail: { message: `test-apply-${applyMode}` } } })
+      const id = Number(application[1]), next = structuredClone(saved[id])
+      const target = listing.packs.find((p) => p.id === lastApplication.pack_id)
+      next.revision++; next.pack_revision_id = target.registered_revision.id
+      next.pack = { id: target.id, pack_id: target.pack_id, applied_revision_id: next.pack_revision_id, applied_revision: target.registered_revision.revision, registered_revision_id: next.pack_revision_id, update_available: false }
+      const sourcePair = () => ({ positive: `test-source-${next.pack.applied_revision}-P`, negative: `test-source-${next.pack.applied_revision}-N` })
+      next.pack_source = { prompts: {}, levels: {} }
+      for (const [group, pair] of Object.entries(next.prompts)) {
+        next.pack_source.prompts[group] = sourcePair()
+        for (const field of ['positive', 'negative']) if (!pair.overrides[field]) pair[field] = sourcePair()[field]
+      }
+      for (const [level, kinds] of Object.entries(next.levels)) {
+        next.pack_source.levels[level] = { framing: {} }
+        for (const [kind, pair] of Object.entries(kinds)) {
+          next.pack_source.levels[level].framing[kind] = sourcePair()
+          for (const field of ['positive', 'negative']) if (!pair.overrides[field]) pair[field] = sourcePair()[field]
+          pair.media = { media_id: `test-media-${next.pack.applied_revision}-${level}-${kind}`, url: '/unused-test-reference', digest: 'test-only' }
+        }
+      }
+      const held = applyGate; if (held) { held.seen(); await held.wait }; saved[id] = next
+      return route.fulfill({ json: next })
+    }
     if (character) {
       const id = Number(character[1])
       if (request.method() === 'GET') {
@@ -47,7 +72,9 @@ try {
   await page.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
   await page.getByRole('button', { name: '캐릭터 프롬프트·팩 설정' }).click()
   const panel = page.getByRole('region', { name: '캐릭터 프롬프트와 팩 관리' })
-  const select = panel.getByRole('combobox')
+  const select = panel.getByRole('combobox', { name: '캐릭터', exact: true })
+  assert.equal(await select.inputValue(), '')
+  await select.selectOption('1')
   const positive = panel.getByRole('group', { name: '외모', exact: true }).locator('textarea').first()
   const save = panel.locator('button.primary-button')
   await positive.waitFor()
@@ -94,6 +121,50 @@ try {
   assert.equal(scans, 1, 'pack tab re-entry submitted a duplicate in-flight scan')
   scanGate = undefined; await panel.getByRole('button', { name: '폴더 다시 검색' }).click()
   await panel.getByRole('button', { name: '폴더 다시 검색' }).waitFor(); assert.equal(scans, 2)
+  listing.packs = [{ id: 'test-pack-uuid', kind: 'character', namespace: '', pack_id: 'test-pack', identity: ['character', '', 'test-pack'], status: 'normal', issues: [], registered_revision: { id: 'test-rev-1', revision: 1 }, applied_revision_id: null, revisions: [] }]
+  await panel.getByRole('button', { name: '폴더 다시 검색' }).click()
+  await panel.getByRole('button', { name: '폴더 다시 검색' }).waitFor()
+  await panel.getByRole('tab', { name: '캐릭터 편집' }).click()
+  const packSelect = panel.getByRole('combobox', { name: '연결할 캐릭터팩', exact: true })
+  const apply = panel.getByRole('button', { name: '선택한 팩 연결·적용', exact: true })
+  assert.equal(await packSelect.inputValue(), '')
+  assert.equal(await apply.isEnabled(), false)
+  await packSelect.selectOption('test-pack-uuid')
+  await positive.fill('test-pending-draft')
+  assert.equal(await apply.isEnabled(), false, 'unsaved edits must block application')
+  await save.click(); await page.waitForFunction(() => !document.querySelector('.content-editor button.primary-button')?.textContent.includes('저장 중'))
+  for (const mode of ['fail', 'conflict']) {
+    applyMode = mode; await apply.click(); await panel.getByRole('alert').filter({ hasText: `test-apply-${mode}` }).waitFor()
+    assert.equal(await positive.inputValue(), 'test-pending-draft')
+    assert.equal(await packSelect.inputValue(), 'test-pack-uuid')
+  }
+  applyMode = 'ok'; applyGate = gate(); await apply.click(); await applyGate.entered
+  assert.equal(await positive.isEnabled(), false)
+  assert.equal(lastApplication.pack_id, 'test-pack-uuid'); assert.equal(lastApplication.registered_revision_id, 'test-rev-1')
+  readGate = undefined
+  await select.selectOption('2'); await page.waitForFunction(() => document.querySelector('.prompt-fields textarea')?.value === 'test-only-2')
+  applyGate.release(); await page.waitForFunction(() => !document.querySelector('.content-editor button.primary-button')?.textContent.includes('저장 중'))
+  assert.equal(await select.inputValue(), '2'); assert.equal(await positive.inputValue(), 'test-only-2')
+  applyGate = undefined
+  await select.selectOption('1'); await panel.getByText('연결된 팩: test-pack', { exact: false }).waitFor()
+  assert.equal(await positive.inputValue(), 'test-pending-draft')
+  const negative = panel.getByRole('group', { name: '외모', exact: true }).locator('textarea').nth(1)
+  assert.equal(await negative.inputValue(), 'test-source-1-N')
+  await negative.fill(''); await save.click()
+  await page.waitForFunction(() => !document.querySelector('.content-editor button.primary-button')?.textContent.includes('저장 중'))
+  listing.packs[0].registered_revision = { id: 'test-rev-2', revision: 2 }
+  await panel.getByRole('button', { name: '연결할 팩 다시 검색' }).click()
+  await panel.getByRole('button', { name: '연결할 팩 다시 검색' }).waitFor()
+  assert.equal(await negative.inputValue(), '', 'rescan must not change edited values')
+  const update = panel.getByRole('button', { name: '같은 팩의 등록 revision 적용', exact: true })
+  await update.click(); await panel.getByText('적용 revision 2', { exact: false }).first().waitFor()
+  assert.equal(await negative.inputValue(), ''); assert.equal(await positive.inputValue(), 'test-pending-draft')
+  assert.equal(await panel.getByRole('group', { name: '하의 속옷', exact: true }).locator('textarea').first().inputValue(), 'test-source-2-P')
+  assert.equal(await update.isEnabled(), false)
+  assert.equal(applications, 4)
+  await panel.getByRole('group', { name: '외모', exact: true }).getByText('적용한 팩 원본 P/N').click()
+  await panel.getByText('Positive: test-source-2-P', { exact: true }).first().waitFor()
+  if (process.env.TEST_SCREENSHOT) await page.screenshot({ path: process.env.TEST_SCREENSHOT, fullPage: true })
   assert.deepEqual(errors, [])
-  console.log('PASS: dirty-only/empty saves, failure/conflict drafts, pending save, stale selection/save, scan deduplication')
+  console.log('PASS: dirty-only/empty saves, failure/conflict drafts, pending save, stale selection/save, scan deduplication, explicit pack link/update, empty overrides, source distinction and late application isolation')
 } finally { await browser.close() }

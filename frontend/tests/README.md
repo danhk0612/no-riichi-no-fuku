@@ -59,7 +59,10 @@ content is generated.
 `local-content.browser.mjs` checks the desktop character editor using routed REST responses. It covers
 dirty-only and explicit empty saves, failure/conflict draft preservation, delayed save responses,
 late character loads/saves, and deduplicating an in-flight scan when returning to the pack tab.
-It generates no prompt content or media. W05 runs it with the existing Playwright/Vite setup.
+It also covers explicit CPU/pack selection, dirty draft blocking, apply failure/conflict, late application
+responses across character switches, applied vs registered revisions, empty override preservation and
+source P/N inspection. It uses test-only strings and references without generating media. W05 runs it
+with the existing Playwright/Vite setup.
 
 ## Real-server browser integration
 

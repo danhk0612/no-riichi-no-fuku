@@ -1,5 +1,34 @@
 # 현재 상태
 
+## W08-C — 기존 캐릭터팩 연결·동일 팩 갱신
+
+준비/시작 main `e2e38d1dc89503623463b8ad2fcd62369ceda751`을 확인했고 PR #79~#81은 병합됐다.
+열린 별도 PR은 Docker 문서 #35다. `task/w08-c-character-pack-application`에서 최초 명시 CPU/팩 연결,
+동일 팩 등록 revision 적용 API/UI를 구현했다. migration 없이 W08-B의 CPU별 적용 FK와 편집 기록을
+재사용한다. 기본 3쌍·Level 0..3 × 3종 구도 P/N 각각의 override를 유지하며 미편집 문자열만 갱신한다.
+빈 문자열과 원본과 같은 값의 편집도 유지한다. 재검색은 자동 연결/적용하지 않는다.
+
+content 응답은 등록·적용 revision, 현재 로컬 편집, 적용 원본 P/N, Level/kind별 immutable media UUID를
+구분한다. 연결된 같은 팩의 특정 과거 revision 원본/파일 참조 조회도 제공한다. registry 전역 적용
+포인터와 게임 presentation/pending snapshot은 변경하지 않는다. 기존 CPU PK/slug/이름/성향/진행/명단,
+팩 원본 및 과거 revision/media는 보존한다. 편집/적용은 같은 writer/content revision 계약을 사용하고
+등록 revision도 검사하며 commit 후에만 성공 응답한다. 충돌·불완전 소스·공유 의존·보관 파일 손상·
+commit 실패는 기존 적용을 보존한다. voice 기본 참조의 적용은 W08-S로 남기므로 누락 voice만으로
+이미지팩 적용을 막지 않는다. 보관 파일이 정상이면 원본 폴더 누락 자체는 적용을 막지 않는다.
+
+Linux Python 3.12.14/RiichiEnv 0.4.8에서 원본 unittest 119개(63.081초), 수정 후 123개(68.155초)가
+통과했다. 새 4개 통합 회귀는 전 기본/구도 P/N 병합·빈 값/동일 값 편집·미연결 CPU 유지·같은 팩의
+CPU별 독립 적용·등록/content revision 충돌·다른 팩/종류 거절·동시 편집/적용·동시 최초 연결·
+commit 실패·불완전/충돌 소스·immutable 파일 hash 오류·과거 media/원본·reset/restart 보존을 확인했다.
+프론트 build, 기존 종료 회귀 3개, content/sound/dialogue/connection/result-asset browser가 통과했다.
+content browser는 명시 선택·dirty 중 적용 잠금·적용 실패/충돌·지연 응답/캐릭터 전환·원본 표시와
+같은 팩 새 revision 적용을 추가 검사한다. W05의 기존 browser 단계에서 그대로 실행한다.
+정확한 최종 head의 Windows hosted CI 및 artifact source/ZIP hash는 제출 PR의 최신 검증 본문을
+기준으로 확인한다. 이전 SHA의 Windows 결과를 이번 변경의 성공으로 대체하지 않는다.
+개인 Windows PC·실제 이미지 decode/오디오 출력·전원 차단·ComfyUI는 미검증이다.
+새 CPU·다른 팩 교체/해제·metadata/shared/event·음향 적용·생성·선택/결과 화면 변경은 없다.
+W08 전체 완료/다음 Task 착수를 뜻하지 않는다.
+
 ## W08-B 최종 검토 보완 — 저장 중 입력·재검색 중복
 
 PR #81 원본 head `d80f6b9`를 검토했다. 원본 exact-head W04 `38869316783`/W05 `38869316709`
