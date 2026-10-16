@@ -472,7 +472,19 @@ async function smokeRun() {
     const nameInput = Array.from(document.querySelectorAll('.sound-panel label')).find(label => label.innerText.includes('표시 이름')).querySelector('input')
     setValue(nameInput, 'W06 mock repeat')
     setValue(audioLabel.querySelector('select'), assetId)
-    Array.from(document.querySelectorAll('.sound-panel button')).find(button => button.innerText === '배경음 등록').click()
+    window.__w05TrackRequests = []
+    const originalFetch = window.fetch.bind(window)
+    window.fetch = async (input, init) => {
+      const response = await originalFetch(input, init)
+      const url = new URL(typeof input === 'string' ? input : input.url, window.location.href)
+      if (url.pathname === '/api/local/background-tracks') {
+        window.__w05TrackRequests.push({ method: init?.method ?? 'GET', status: response.status })
+      }
+      return response
+    }
+    const registerButton = Array.from(document.querySelectorAll('.sound-panel button')).find(button => button.innerText === '배경음 등록')
+    window.__w05TrackButton = { found: Boolean(registerButton), disabled: registerButton?.disabled ?? null, text: registerButton?.innerText ?? null }
+    registerButton?.click()
   })()`)
   const readTrackSetup = () => window.webContents.executeJavaScript(`(async () => {
       const [trackResponse, mediaResponse] = await Promise.all([
@@ -488,6 +500,11 @@ async function smokeRun() {
           .find(label => label.innerText.includes('오디오 파일'))?.querySelector('select')?.options.length ?? 0,
         tracks, mediaCount: media.length,
         trackStatus: trackResponse.status, mediaStatus: mediaResponse.status,
+        trackRequests: window.__w05TrackRequests ?? [], trackButton: window.__w05TrackButton ?? null,
+        trackLabel: Array.from(document.querySelectorAll('.sound-panel label'))
+          .find(label => label.innerText.includes('표시 이름'))?.querySelector('input')?.value ?? null,
+        selectedAudioAsset: Array.from(document.querySelectorAll('.sound-panel label'))
+          .find(label => label.innerText.includes('오디오 파일'))?.querySelector('select')?.value ?? null,
       }
     })()`)
   let trackSetup
