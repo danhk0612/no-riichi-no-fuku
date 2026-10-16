@@ -582,6 +582,46 @@ Level 2는 누적 탈의이며 Level 1에서 브래지어를 제거하지 않는
 공유 항목 자체를 팩에 포함하는 배포 범위·후보 표현은 D06 응답 전 확정하지 않는다.
 팩 자체와 의존 해소 상태는 분리해서 목록에 표시한다.
 
+### W08-A 등록 구현 계약 — 적용과 분리
+
+이번 사용자 승인 범위는 4종 registry만이다. `schemas/local_content.py`는 v1의 필수 구조와
+엄격한 ID/종류/상대 경로를 검증한다. character의 `id=character_id=폴더명`, sfx/bgm의
+`id=폴더명`, voice의 `character_id=상위 폴더명`·`id=하위 폴더명`이 필수다.
+metadata는 `name`(비어 있지 않은 문자열)·`adult:true`만 필수로 검증하며 description/style은
+문자열로 보존한다. 미결정 Q-META의 추가 metadata는 JSON 그대로 보관하고 능력치/단위를 추측하지 않는다.
+slot은 v1 표의 sfx 3개, bgm 4개, voice 선언 6개·defeat_stage_1/2/3·match_first/last만 허용한다.
+승리 신규 slot은 D-WIN 결정 전 추가하지 않는다. null이 아닌 참조 파일은 모두 존재/형식/한도를 검증한다.
+
+migration 0007은 content_packs(kind/namespace/pack_id unique), content_pack_revisions
+(pack/revision 및 pack/content_digest unique), content_pack_files(revision/relative_path PK,
+media FK/digest), content_pack_scan_entries(source 상대 식별자/identity/status/issues)를 추가한다.
+`current_revision_id`는 **적용된** revision용 nullable FK로 예약하며 W08-A는 항상 null로 둔다.
+GET의 `registered_revision`은 가장 최근에 인식한 revision이고 `applied_revision_id`와 별개다.
+과거 content_digest 재인식은 unchanged이며 새 revision/적용을 만들지 않는다. 원본 manifest JSON과
+canonical manifest SHA256, 정렬된 `[상대경로,SHA256]` 목록을 함께 canonical JSON으로 해시한
+content_digest를 저장한다(UTF-8, ensure_ascii=false, sort_keys=true, separators=(',',':')).
+
+시작 scan과 POST rescan은 동일 service의 process lock으로 직렬화한다. 인증 조회 transaction은
+해제하고 source 검증/복사는 writer 밖에서 수행한다. 참조 파일과 manifest를 다시 읽어 digest/파일
+identity·size·mtime이 바뀌면 incomplete_copy로 보류한다. 정상 파일 전체의 UUID 복사가 끝난 뒤
+pack별 BEGIN IMMEDIATE/원자 commit한다. DB 실패 시 이번 시도 소유 복사본만 지운다.
+상시 watcher·완료 marker는 없으므로 두 읽기 사이 안정된 파일을 대상으로 하며 제작자가 유효한
+부분 팩으로 manifest까지 완성한 시점을 추측하지 않는다. 파일을 다 넣고 manifest를 마지막에 놓는다.
+symlink/junction/reparse point는 source 경로 각 구성요소에서 거절하며 Windows drive/UNC/ADS,
+예약 장치명·후행 공백/점·상위 이동·URL도 거절한다. 목록에는 절대 경로/예외 원문을 노출하지 않는다.
+
+GET `/api/local/packs?kind=character|sfx|bgm|voice`는 DB만 읽고
+`{schema_version:1,packs:[identity,registered_revision,applied_revision_id,status,issues,revisions],
+scan_entries:[source,identity,status,issues]}`를 반환한다. POST `/api/local/packs/rescan`은
+accepted/unchanged/conflicts/issues와 같은 목록 snapshot을 반환한다. 둘 다 local capability가 필요하다.
+목록 진입 시 rescan 호출은 후속 설정 UI가 담당하며 이번에는 UI를 추가하지 않는다.
+상태는 normal/unresolved/conflict. 잘못된/비지원 manifest·파일 누락은 scan_entries의 unresolved,
+충돌은 conflict다. 기존 정상 등록/revision은 진단 실패와 독립적으로 남는다. source_missing도
+원본 등록/복사본을 제거하지 않는다. 중복 claim은 모든 후보를 conflict로 보류한다.
+shared_dependencies는 현재 공유 registry가 없어 비어 있지 않으면 unresolved이며 등록 snapshot은 보관한다.
+미설치 default_voice_pack도 unresolved 진단만 남긴다. 캐릭터 CPU/voice 연결·기본 적용은 하지 않는다.
+팩 디렉터리가 없어도 시작 가능하고 새 콘텐츠 seed는 없다. 진행 초기화는 registry를 변경하지 않는다.
+
 ### 최신 기본값 해석·삭제 계약 — 2026-10-16 사용자 확정
 
 REQUIREMENTS의 D-DEFAULT/D06-b/삭제 정책을 적용한다. 목록 표시 순서와 기본값 식별은 분리한다.

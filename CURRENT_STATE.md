@@ -1,5 +1,30 @@
 # 현재 상태
 
+## W08-A — 팩 등록 기반 구현·검증
+
+기준 main `01da78461a8e58bebc8e05d583fac2c5a0a9b38c`, PR #75~#78 병합 및 열린 별도 Docker 문서 #35를 확인했다.
+`task/w08-a-pack-registry`에서 migration 0007, 4종 manifest v1 검증, startup/rescan·DB 목록 API,
+pack/revision·manifest/content digest·파일별 immutable UUID 복사를 구현했다. 같은 manifest의 파일 bytes
+변경은 새 revision, 동일 content 재검색/과거 버전 재인식은 unchanged다. 실패/누락/충돌 시 기존 등록·파일은 보존한다.
+적용 pointer는 null이며 기존 CPU/명단/로컬 편집/재생 설정에 연결하지 않는다. 원본과 과거 revision은 수정하지 않는다.
+외모·상의 속옷·하의 속옷 P/N 및 4 Level×3종 이미지/구도 P/N은 manifest snapshot으로 보존한다.
+실제 콘텐츠/CG/오디오·기본 팩을 생성·seed하지 않았다. W07 전체 미완료, W08 전체 구현 착수도 아니다.
+
+Linux Python 3.12.14/RiichiEnv 0.4.8에서 backend unittest 114개(신규 registry 14개 포함),
+대사 pytest 10개, frontend npm ci/build, Node 종료 회귀 3개를 검증한다. 신규 검사는 0006→0007
+업그레이드/반복 migration·startup scan·reset/restart·한글/공백 경로·W06 행/설정/파일 bytes 보존,
+중복/경로 이탈/link·불완전/비지원 manifest·변경 중인 파일·동시 scan·DB commit/파일 복사 실패를 포함한다.
+모든 자료는 소유 임시 signature fixture이며 실제 이미지 decode/오디오 출력 검증이 아니다.
+Windows W04는 PR head 직접 checkout·artifact 이름을 exact head로 맞췄고 기존 W05 packaged
+renderer/종료/restart와 함께 source SHA·artifact/ZIP hash를 확인할 예정이다. 아직 Windows 성공으로 기록하지 않는다.
+개인 Windows PC/전원 차단·실제 리소스 출력·ComfyUI는 미검증이다.
+
+Q-PACK은 새 revision 적용/로컬 편집 병합, Q-META는 편집/표시 필드, Q-LEGACY는 기존 대사 이전,
+Q-AUDIO는 W08-S 재생 전환, D-WIN/Q-OMAKE-VOICE는 새 음성 hook, D05-c/D06-c/D10-a는
+event/후보 이동/변수, D07~D09/Q-IMAGE/Q-FRAME은 생성/표시 계약을 막는다. 등록/보관은 독립 구현했다.
+공유 registry가 아직 없어 shared_dependencies는 unresolved로 보관하며 연결/적용하지 않는다.
+후속 설정 UI는 목록 진입 때 POST rescan을 호출해야 한다. W08-A에는 UI를 추가하지 않았다.
+
 ## W07 단계별 착의 상태 확정 — 문서 반영
 
 2026-10-16 KST main `73b79de`(PR #77 병합)와 열린 별도 Docker 문서 #35를 확인했다.
@@ -701,6 +726,6 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 
 W06-B PR #68과 W06-C PR #70은 main에 병합됐다. W07 정책 독립 기술 계약을 구체화했으며,
 다음은 REQUIREMENTS의 미응답 정책 조율과 조건부 계약 최종화다.
-W08~W11 구현은 아직 착수하지 않는다.
+후속 사용자 지시로 W08-A 등록 기반만 독립 구현했다. 나머지 W08~W11은 각 정책 게이트를 유지한다.
 개인 Windows 실기, 전원 차단 durability 및
 실제 ending CG/음악 재생은 해당 범위에서 증거를 별도로 확보한다.

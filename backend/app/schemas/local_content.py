@@ -1,0 +1,206 @@
+"""Pack manifest v1; data validation only, with no content defaults or application."""
+
+from __future__ import annotations
+
+import re
+from pathlib import PureWindowsPath
+from typing import Annotated, Literal
+
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictInt,
+    StrictStr,
+    field_validator,
+    model_validator,
+)
+
+PackKind = Literal["character", "sfx", "bgm", "voice"]
+EnglishId = Annotated[
+    StrictStr, Field(pattern=r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$", max_length=80)
+]
+Digest = Annotated[StrictStr, Field(pattern=r"^[0-9a-f]{64}$")]
+Text = Annotated[StrictStr, Field(min_length=1)]
+
+
+class PackValidationError(ValueError):
+    pass
+
+
+def relative_file(value: str) -> str:
+    parts = value.split("/")
+    if (
+        not value
+        or PureWindowsPath(value).drive
+        or "\\" in value
+        or ":" in value
+        or any(p in {"", ".", ".."} or p.endswith((" ", ".")) for p in parts)
+        or any(any(ord(c) < 32 or c in '<>"|?*' for c in p) for p in parts)
+        or any(
+            re.fullmatch(r"(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?", p, re.I)
+            for p in parts
+        )
+    ):
+        raise PackValidationError("invalid relative file reference")
+    return value
+
+
+class StrictModel(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+
+class PromptPair(StrictModel):
+    positive: StrictStr
+    negative: StrictStr
+
+
+class CharacterPrompts(StrictModel):
+    appearance: PromptPair
+    upper_underwear: PromptPair
+    lower_underwear: PromptPair
+
+
+class ImageReferences(StrictModel):
+    profile: StrictStr | None
+    full_body: StrictStr | None
+    cg: StrictStr | None
+
+    @field_validator("profile", "full_body", "cg")
+    @classmethod
+    def safe_reference(cls, value):
+        return relative_file(value) if value is not None else None
+
+
+class ImageFraming(StrictModel):
+    profile: PromptPair
+    full_body: PromptPair
+    cg: PromptPair
+
+
+class CharacterLevel(StrictModel):
+    images: ImageReferences
+    framing: ImageFraming
+
+
+class SharedDependency(StrictModel):
+    namespace: EnglishId
+    id: EnglishId
+    revision_digest: Digest
+
+
+class VoiceReference(StrictModel):
+    character_id: EnglishId
+    id: EnglishId
+
+
+class CharacterMetadata(BaseModel):
+    # Q-META has not settled optional measurements/AI overrides. Preserve opaque JSON.
+    model_config = ConfigDict(extra="allow", strict=True)
+    name: Text
+    adult: StrictBool
+    description: StrictStr | None = None
+    style: StrictStr | None = None
+
+    @field_validator("adult")
+    @classmethod
+    def adult_required(cls, value):
+        if value is not True:
+            raise ValueError("adult must be true")
+        return value
+
+
+class PackManifest(StrictModel):
+    schema_version: StrictInt
+    kind: PackKind
+    id: EnglishId
+    version: Text
+    label: Text
+    character_id: EnglishId | None = None
+    metadata: CharacterMetadata | None = None
+    prompts: CharacterPrompts | None = None
+    levels: dict[StrictStr, CharacterLevel] | None = None
+    shared_dependencies: list[SharedDependency] | None = None
+    default_voice_pack: VoiceReference | None = None
+    slots: dict[StrictStr, StrictStr] | None = None
+
+    @model_validator(mode="after")
+    def validate_kind(self):
+        if self.schema_version != 1:
+            raise ValueError("unsupported schema_version")
+        common = {"schema_version", "kind", "id", "version", "label"}
+        if self.kind == "character":
+            allowed = common | {
+                "character_id",
+                "metadata",
+                "prompts",
+                "levels",
+                "shared_dependencies",
+                "default_voice_pack",
+            }
+            if (
+                self.character_id != self.id
+                or self.metadata is None
+                or self.prompts is None
+                or self.levels is None
+                or set(self.levels) != {"0", "1", "2", "3"}
+                or self.shared_dependencies is None
+                or "default_voice_pack" not in self.model_fields_set
+            ):
+                raise ValueError(
+                    "character requires identity, metadata, prompts, four levels and dependency/default references"
+                )
+        else:
+            allowed = (
+                common
+                | {"slots"}
+                | ({"character_id"} if self.kind == "voice" else set())
+            )
+            if self.slots is None or (
+                self.kind == "voice" and self.character_id is None
+            ):
+                raise ValueError("audio requires slots and voice requires character_id")
+            allowed_slots = {
+                "sfx": {"tile_discard", "tile_shuffle", "riichi_stick"},
+                "bgm": {"title", "selection", "game", "result"},
+                "voice": {
+                    "chi",
+                    "pon",
+                    "kan",
+                    "riichi",
+                    "ron",
+                    "tsumo",
+                    "defeat_stage_1",
+                    "defeat_stage_2",
+                    "defeat_stage_3",
+                    "match_first",
+                    "match_last",
+                },
+            }[self.kind]
+            if set(self.slots) - allowed_slots:
+                raise ValueError("unsupported v1 slot")
+            for value in self.slots.values():
+                relative_file(value)
+        if self.model_fields_set - allowed:
+            raise ValueError("fields do not belong to pack kind")
+        if (
+            not self.label.strip()
+            or not self.version.strip()
+            or (self.metadata and not self.metadata.name.strip())
+        ):
+            raise ValueError("blank label/version/name")
+        return self
+
+    def references(self) -> dict[str, str]:
+        if self.kind == "character":
+            return {
+                path: "image"
+                for level in self.levels.values()
+                for path in level.images.model_dump().values()
+                if path is not None
+            }
+        return {path: "audio" for path in self.slots.values()}
+
+    def identity(self) -> tuple[str, str, str]:
+        return self.kind, self.character_id if self.kind == "voice" else "", self.id

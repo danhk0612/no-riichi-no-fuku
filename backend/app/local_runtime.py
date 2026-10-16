@@ -27,6 +27,8 @@ from app.api.dependencies import (
 from app.api.game import router as game_router
 from app.api.local_play import router as local_play_router
 from app.api.local_sound import router as local_sound_router
+from app.api.local_content import router as local_content_router
+from app.services.content_packs import ContentPackRegistry
 from app.api.profile import router as profile_router
 from app.core.config import Settings
 from app.core.security import hash_password
@@ -195,6 +197,7 @@ class LocalRuntime:
     registry: GameRegistry
     sockets: dict[object, tuple[int, str | None, object]]
     sockets_lock: object
+    content_packs: ContentPackRegistry
 
     def accepts_capability(self, candidate: object) -> bool:
         return isinstance(candidate, str) and candidate.isascii() and hmac.compare_digest(
@@ -275,6 +278,7 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
         app.include_router(game_router)
         app.include_router(local_play_router)
         app.include_router(local_sound_router)
+        app.include_router(local_content_router)
         app.include_router(profile_router)
         registry = GameRegistry()
         app.state.local_runtime = None  # assigned below after runtime construction
@@ -345,9 +349,10 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
         app.dependency_overrides[get_game_registry] = lambda: registry
         runtime = LocalRuntime(
             app, paths, capability, engine, session_factory, member_id, admin_id,
-            lock, registry, {}, RLock()
+            lock, registry, {}, RLock(), ContentPackRegistry(paths.root, paths.media, session_factory)
         )
         app.state.local_runtime = runtime
+        runtime.content_packs.scan()
         return runtime
     except Exception:
         if engine is not None:
@@ -362,7 +367,7 @@ def _session_dependency(session_factory: sessionmaker[Session]):
             try:
                 # Media bytes are streamed to an owned temporary file before the
                 # metadata writer transaction is reserved by the upload route.
-                defer_media_writer = request.method.upper() == "POST" and request.url.path == "/api/local/media"
+                defer_media_writer = request.method.upper() == "POST" and request.url.path in {"/api/local/media", "/api/local/packs/rescan"}
                 if request.method.upper() not in {"GET", "HEAD", "OPTIONS"} and not defer_media_writer:
                     mark_write_intent(session)
                 yield session

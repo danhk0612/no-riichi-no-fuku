@@ -15,7 +15,8 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows hosted 검증·최종 검토 통과(개인 실기 미검증) | W04 | 저성능 Work |
 | W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B·C 최종 검토 통과(D11 실측 대기) | W05, D04 | A 고성능 Work → B/C 저성능 Work |
 | W07 | 콘텐츠·팩·이미지/음성/UI 계약 설계 | P1 / 정책 독립 계약 구체화·미응답 게이트 유지 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
-| W08 | 캐릭터·공유 후보·단계별 3종 이미지/팩 등록 기반 | P1 / 계약 후 구현 대기 | W05, W07 | 저성능 Work |
+| W08-A | 팩 등록·revision·immutable 파일 기반 | P1 / 구현·Linux 검증 완료, Windows 검증 대기 | W05, W07 | 저성능 Work |
+| W08 | 캐릭터·공유 후보·단계별 이미지 편집/적용 | P1 / 정책 의존 부분 대기 | W08-A, W07 관련 결정 | 저성능 Work |
 | W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / 새 후속 범위 | W07 팩/event 계약, W08 등록 기반 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
 | W10 | 독립 ComfyUI·Anima adapter | P1 / 대기 | W03, W07 | 저성능 Work |
@@ -291,12 +292,29 @@ CPU/규칙/seed/action replay·legacy fixture 변경, 실콘텐츠 생성·사�
 W08→W08-S→W09는 공통 schema/API/UI 충돌 때문에 순차다. W10 독립 작업은 정책 확정과
 models/main/local_runtime/API/문서 소유 분리 후만 가능하며 이번에 병렬 agent를 실행하지 않는다.
 W11은 W09/W10 이후, W11-U 수용은 W11 이후다. W12는 이 여섯 Task와 D11 실제 콘텐츠/권리·
-Windows 실기 게이트를 기다린다. 현재 문서 PR만으로 어느 구현 Task도 자동 착수하지 않는다.
+Windows 실기 게이트를 기다린다. W08-A만 후속 사용자 지시로 독립 승인됐다. 나머지는 문서 PR만으로 자동 착수하지 않는다.
 
 모든 구현 Task는 관련 unittest와 별도 dialogue pytest·frontend build/browser·writer/정산 실패·
 W05 종료/재시작·W06 pending/reset/사운드 회귀를 변경 영향대로 실행한다.
 정확한 head SHA의 Windows hosted CI/artifact source/ZIP hash를 대조한다. 개인 PC·OS 인터넷 차단·
 전원 차단/실제 CG·오디오·ComfyUI는 실제 수행한 범위만 기록한다. 사용자 폴더 대신 소유 임시 자료로 검사한다.
+
+### W08-A — 팩 등록 기반 시스템 (독립 승인 범위)
+
+- 기준: main `01da784`, PR #75~#78 병합 확인. W07 전체 완료나 W08 전체 착수가 아니다.
+- 범위: character/sfx/bgm/voice 영문 identity·manifest v1 검증, 지정 폴더 startup scan/명시 rescan,
+  DB 목록·진단, pack/revision/content digest, immutable media 복사·과거 revision 보존, additive migration과 local API.
+- 구현 계약은 ARCHITECTURE의 W08-A 절을 따른다. 외모/상의 속옷/하의 속옷 P/N,
+  4 Level × 3종 이미지·구도 P/N을 원본 manifest snapshot으로 검증·보존한다. 실제 문구/자료 seed 없음.
+- 제외: 캐릭터/공유 후보 편집·삭제/재연결 UI, CPU 생성/기존 CPU 연결·팩 실제 적용,
+  음향 선택/재생 전환·event·생성·화면 개편. 기존 W06 설정/자료/pending/진행/엔딩은 그대로 유지.
+- Q-PACK은 revision 적용/로컬 편집 병합을 막으며 등록·보관은 막지 않는다. Q-META는 편집/표시,
+  Q-LEGACY는 기존 대사 이전, D06-c/D05-c/D10-a는 후보 이동/event/변수, Q-AUDIO는 W08-S 전환,
+  Q-OMAKE-VOICE/D-WIN은 신규 음성 hook, Q-IMAGE/Q-FRAME/D07~D09는 생성/표시 수명을 막는다.
+- 검증: ID·namespace/폴더 일치·중복/버전/불완전 복사·경로 이탈, 참조 bytes 변경 revision,
+  반복 migration/scan·실패 rollback·restart/reset·과거 파일/hash 보존·capability·기존 회귀.
+  Windows hosted CI/artifact는 정확한 source SHA로 확인하고 임시 signature fixture 검증과 실제 리소스 출력을 구분한다.
+- 제출: `task/w08-a-pack-registry` commit/push/PR. 직접 병합·Release/tag·사용자 자료 변경/삭제 금지.
 
 ### W08 — 캐릭터·공유 목록·후보 관리
 
