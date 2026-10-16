@@ -17,7 +17,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W07 | 콘텐츠·팩·이미지/음성/UI 계약 설계 | P1 / 정책 독립 계약 구체화·미응답 게이트 유지 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08-A | 팩 등록·revision·immutable 파일 기반 | P1 / 독립 구현·회귀·Windows CI/artifact 검증 완료 | W05, PR #75~#78, 사용자 독립 승인 | 저성능 Work |
 | W08-B | 기존 캐릭터 기본/구도 P/N 편집·로컬 편집 기록·팩 목록 UI | P1 / 완료(PR #81 병합) | W08-A 병합, Q-PACK A | 저성능 Work |
-| W08-C | 기존 CPU의 명시 캐릭터팩 연결·같은 팩 갱신 | P1 / 구현·로컬 회귀 완료, exact-head Windows 결과는 제출 PR 기준 | W08-A/B 병합, Q-PACK A | 저성능 Work |
+| W08-C | 기존 CPU의 명시 캐릭터팩 연결·같은 팩 갱신 | P1 / 구현·회귀·정확 SHA Windows CI/artifact 검증·PR #82 제출(미병합) | W08-A/B 병합, Q-PACK A | 저성능 Work |
 | W08 | 캐릭터·공유 후보·단계별 이미지 편집/적용 | P1 / 정책 의존 부분 대기 | W08-A, W07 관련 결정 | 저성능 Work |
 | W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / 새 후속 범위 | W07 팩/event 계약, W08 등록 기반 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
@@ -294,7 +294,7 @@ CPU/규칙/seed/action replay·legacy fixture 변경, 실콘텐츠 생성·사�
 W08→W08-S→W09는 공통 schema/API/UI 충돌 때문에 순차다. W10 독립 작업은 정책 확정과
 models/main/local_runtime/API/문서 소유 분리 후만 가능하며 이번에 병렬 agent를 실행하지 않는다.
 W11은 W09/W10 이후, W11-U 수용은 W11 이후다. W12는 이 여섯 Task와 D11 실제 콘텐츠/권리·
-Windows 실기 게이트를 기다린다. W08-A만 후속 사용자 지시로 독립 승인됐다. 나머지는 문서 PR만으로 자동 착수하지 않는다.
+Windows 실기 게이트를 기다린다. W08-A/B/C는 각각 사용자 지시로 독립 승인됐다. 나머지는 문서 PR만으로 자동 착수하지 않는다.
 
 모든 구현 Task는 관련 unittest와 별도 dialogue pytest·frontend build/browser·writer/정산 실패·
 W05 종료/재시작·W06 pending/reset/사운드 회귀를 변경 영향대로 실행한다.
@@ -346,6 +346,10 @@ W05 종료/재시작·W06 pending/reset/사운드 회귀를 변경 영향대로 
 
 ### W08-C — 기존 CPU와 캐릭터팩의 명시 연결·동일 팩 갱신
 
+- 결과: 제품 source `c41cd44`의 Linux/Windows unittest 123·대사 10, build/browser·종료 회귀,
+  Windows packaged renderer 22 checks·일반 종료/restart와 다운로드 artifact source/ZIP hash를 확인했다.
+  실제 서버/Vite의 108행동·재시작 browser도 통과했다. 자세한 검증은 CURRENT_STATE 및
+  [PR #82](https://github.com/danhk0612/no-riichi-no-fuku/pull/82)에 있다. 개인 PC/실제 리소스 출력은 미검증.
 - 준비 main `e2e38d1`, PR #79~#81 병합을 확인했다. W08-B 다음 독립 범위이며 W08 전체 완료가 아니다.
 - `task/w08-c-character-pack-application`에서 기존 content 서비스/API·편집 화면을 확장한다.
 - 최초 연결은 사용자 CPU/등록 캐릭터팩 선택 후 명시 적용. 기존 PK/slug/이름/성향/명단/진행은 불변.

@@ -23,8 +23,24 @@ commit 실패·불완전/충돌 소스·immutable 파일 hash 오류·과거 med
 프론트 build, 기존 종료 회귀 3개, content/sound/dialogue/connection/result-asset browser가 통과했다.
 content browser는 명시 선택·dirty 중 적용 잠금·적용 실패/충돌·지연 응답/캐릭터 전환·원본 표시와
 같은 팩 새 revision 적용을 추가 검사한다. W05의 기존 browser 단계에서 그대로 실행한다.
-정확한 최종 head의 Windows hosted CI 및 artifact source/ZIP hash는 제출 PR의 최신 검증 본문을
-기준으로 확인한다. 이전 SHA의 Windows 결과를 이번 변경의 성공으로 대체하지 않는다.
+대사 pytest 10개와 실제 FastAPI/Vite 대국 browser도 통과했다. 후자는 12행동 뒤 동일 턴 복구,
+총 108행동·완료 정산/결과 재시작 보존·다음 선택을 확인했다. 문서 로컬 링크 60개/fence/공백과
+legacy fixture 불변을 확인했다. 자동 PR 코드 리뷰는 제품 source에 지적 없이 완료됐다.
+
+제품 source `c41cd44a382e3bdd3d37737e2402762a20d4a81f`의 Windows Server 2022 x64
+[W04 38874451639](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38874451639)와
+[W05 38874451611](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38874451611)는 성공했다.
+다운로드한 W04 artifact `12034852426`의 source SHA와 archive SHA256
+`0bb308cc29a3dedb548ced25f9a4ff82fcf32e537237493f0304b2149d2ecd02`를 대조했고 Windows unittest
+123개·대사 10개 통과를 확인했다. W05 artifact `12034418677`의 source SHA와 archive SHA256
+`0519bab5650abc2adc3cf37102195a858b9145538ea3b331bdaa9e57d1947572`, 내부 ZIP SHA256
+`82a4223d6bd6b4b391ca8257ee55adf37dea2b625f63c6c27e3c19f2d6958abe`를 zip-sha256.json과
+대조했다. content/sound browser, packaged renderer 22 checks, 일반 모드 owned child/창/host 종료 및
+동일 data root 재시작도 artifact에서 확인했다. 로컬·원격 제품 tree
+`98de8f46da25fa844ed7317ebe877b951aa404d0`는 일치한다. CLI push 인증 부재로 동일 tree를
+GitHub API로 commit/branch 반영했다. 이후 검증 문서 commit의 정확한 head/CI/artifact는
+[PR #82](https://github.com/danhk0612/no-riichi-no-fuku/pull/82)의 최신 본문·check를 따른다.
+제품 source 이후 동작 변경은 없으며 직접 병합하지 않았다.
 개인 Windows PC·실제 이미지 decode/오디오 출력·전원 차단·ComfyUI는 미검증이다.
 새 CPU·다른 팩 교체/해제·metadata/shared/event·음향 적용·생성·선택/결과 화면 변경은 없다.
 W08 전체 완료/다음 Task 착수를 뜻하지 않는다.
