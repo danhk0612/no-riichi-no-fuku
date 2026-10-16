@@ -11,6 +11,8 @@ from app.db.models import (
     GameSessionRecord,
     LocalPlayRoster,
     LocalPlayState,
+    BackgroundTrack,
+    GameSetting,
     User,
     UserCpuProgress,
 )
@@ -195,11 +197,23 @@ def _create_ending_if_complete(session: Session, state: LocalPlayState) -> None:
         UserCpuProgress.cpu_character_id, UserCpuProgress.defeat_stage
     ).where(UserCpuProgress.user_id == state.user_id, UserCpuProgress.cpu_character_id.in_(ids))).all())
     if ids and all(stages.get(cpu_id) == 3 for cpu_id in ids):
+        from app.services.local_sound import ENDING_RESOURCES_KEY, DEFAULT_ENDING_RESOURCES
+        configured = session.get(GameSetting, ENDING_RESOURCES_KEY)
+        resource_values = configured.value if configured is not None and isinstance(configured.value, dict) else DEFAULT_ENDING_RESOURCES
+        music_track_id = resource_values.get("music_track_id")
+        track = session.get(BackgroundTrack, music_track_id) if isinstance(music_track_id, str) else None
+        # A pending payload snapshots only resources eligible for a new ending.
+        # Once already pending, resolve_ending intentionally reads the immutable asset
+        # reference without consulting the track's later active flag.
+        if track is not None and not track.active:
+            track = None
         state.phase = "ending_pending"
         state.ending_event_id = str(uuid4())
         state.ending_payload = {
-            "version": 1, "cg_asset_id": None, "music_asset_id": None,
-            "dialogue_text": None,
+            "version": 1,
+            "cg_asset_id": resource_values.get("cg_asset_id"),
+            "music_asset_id": track.media_asset_id if track is not None else None,
+            "dialogue_text": resource_values.get("dialogue_text"),
         }
 
 

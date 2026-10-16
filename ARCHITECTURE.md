@@ -338,7 +338,9 @@ writer 순서/수명은 다음을 지킨다.
 
 C migration은 B revision 다음으로 추가하며 기존 CPU CG 테이블/슬롯은 엔딩용으로 전용하지 않는다.
 B는 엔딩 설정이 없어도 null 필드의 version 1 payload를 만들 수 있게 구현한다. C는 그 생성 helper를
-실제 자료 resolve로 확장한다. B가 이미 만든 pending payload에 뒤늦은 등록 설정을 소급 주입하지 않는다.
+실제 자료 resolve로 확장한다. 새 완료 시점에 선택된 ending BGM이 여전히 active일 때만 그 track의
+audio asset을 pending payload에 snapshot하며, 비활성 track은 새 ending에서 누락/무음 처리한다.
+B가 이미 만든 pending payload에 뒤늦은 등록 설정을 소급 주입하지 않는다.
 공통 등록 수정은 다음 엔딩/새 재생에 반영된다. 초기화는 이 표의 공통 행·설정을 모두 보존한다.
 
 로컬 admin/capability 경계의 API는 다음과 같다. 목록 응답은 ID/label/active 및 참조 ID만 담고,
@@ -373,14 +375,18 @@ C는 공통 등록의 hard DELETE나 미사용 파일 청소를 제공하지 않
 - 기본 BGM은 선택 bgm_ids 순서로 순환 재생한다(첫 항목부터, RNG 없음). 목록 변경 시 현재 track이
   남아 있으면 유지하고 제거/비활성화면 중지 후 새 목록 첫 곡. 전부 없으면 무음. renderer 재시작은
   첫 곡부터이며 재생 위치 영속화는 하지 않는다. 엔딩 중에는 일반 BGM을 멈추고 엔딩 음악을
-  1회 재생, ack 뒤 일반 BGM을 다시 시작한다. 엔딩 음악은 일반 사용 BGM 목록과 독립 참조다.
+  1회 재생, ack 뒤 일반 BGM을 다시 시작한다. 선택 곡이 하나면 같은 Audio의 위치를 초기화해
+  반복한다. 목록 순서가 바뀌어도 현재 곡 ID를 유지하며 같은 ID의 media URL이 바뀌면 새 media로
+  다시 로드한다. 엔딩 음악은 일반 사용 BGM 목록과 독립 참조다.
 - SFX는 기존 기본 마작 event에서만 재생하며 대사 문장의 존재에 의존하지 않는다. B/C는 규칙 event와
   dialogue_event를 구분해 `{generation,session_id,action_version,event_index,event_key}` 식별을
   commit 성공 후 전달한다. 같은 renderer 연결의 중복 ID는 재생 안 함. snapshot replay는 과거 event를 버리는 현재
   계약 유지. 오마케도 이 기본 SFX 가능, 캐릭터 대사/콘텐츠 이벤트는 불가. 패 내려놓기/섞기/점수봉 등
   아직 노출되지 않은 새 SFX hook/캐릭터 voice 시스템은 C 범위가 아니다.
 - 오디오와 CG는 같은 origin의 인증된 요청으로 가져온 blob/object URL만 사용한다. 부하/재생 promise
-  실패는 표시하고 무음으로 계속한다. autoplay 거절이면 사용자 재생 버튼을 제공한다. 외부 URL,
+  실패는 표시하고 무음으로 계속한다. 파일/decode 실패는 다시 시도 안내를, autoplay 거절은 사용자
+  재생 버튼을 제공한다. 이전 Audio의 load/ended/play rejection callback은 현재 Audio와 화면 토큰을
+  확인해 폐기한다. 외부 URL,
   renderer 파일시스템 직접 접근, codec 변환·FFmpeg·추가 runtime은 필요하지 않다.
 - UI는 `play`→active 복구→pending 엔딩→현재 세대 recent 결과 또는 명단/상대 선택 순으로 진입한다.
   마지막 대국 직후에는 결과/단계 CG를 먼저 보고 '엔딩 보기'로 진입한다. 엔진 재시작 시 pending
@@ -391,8 +397,10 @@ C는 공통 등록의 hard DELETE나 미사용 파일 청소를 제공하지 않
   파일 누락/재생 오류/브라우저 종료로 자동 ack하지 않는다. 표시만 한 상태의 crash는 같은 pending
   엔딩을 다시 표시·음악 처음부터 재생할 수 있다. **DB 완료 전환은 exactly-once, 인간이 봄/들음의
   exactly-once는 보장하지 않는다.** ack 응답 유실 후 재접속은 omake여서 다시 엔딩을 재생하지 않는다.
-- 화면 이탈/초기화/설정 교체/종료에서 이전 audio 정지·object URL 해제, 늦은 load/ended callback은
-  generation+화면 토큰으로 차단한다. 소리 재생/파일 로딩은 action/정산 DB commit을 기다리게 하지 않는다.
+- 화면 이탈/초기화/종료에서 이전 SFX audio 정지·object URL 해제, 늦은 load/play callback은 generation+
+  화면 토큰으로 차단한다. `match_complete`는 이미 commit된 최종 SFX를 취소하지 않으며 결과 화면에서
+  재생이 끝날 수 있다. 다음 대국/화면 이탈·reset/새 generation은 남은 SFX를 무효화한다. 소리 재생/
+  파일 로딩은 action/정산 DB commit을 기다리게 하지 않는다.
 
 ### 구현 분리와 검증 예제
 
@@ -424,6 +432,20 @@ W06에 필요한 등록 슬롯/기본 마작 SFX/평문 엔딩만 독립시켰�
 실측·W12 배포 조건이며 B 저장 구현을 막지 않는다. 새 제품 정책 결정을 요구하는 차이가 발견되면
 그 지점만 보류/보고하고 이 계약을 임의 확대하지 않는다.
 
+### W06-C 구현 상태
+
+2026-10-16 구현은 B migration `20261015_0005` 뒤 `20261016_0006`에서 media UUID·상대 storage key,
+효과음 세트, BGM track 테이블을 추가했다. Windows local runtime에 `/api/local/media`,
+`/sound-effect-sets`, `/background-tracks`, `/sound-selection`, `/ending-resources`,
+`/play/ending`을 등록했다. 파일 원본은 LocalAppData media root 아래 immutable key로 저장하며
+교체/비활성화/초기화는 기존 파일을 삭제하지 않는다. 오디오 단일 byte-range 요청도 지원한다.
+
+`local_play_states.ending_payload`는 기존 B version 1 형식을 유지하며 완료 시점의 CG asset UUID,
+엔딩 track의 media UUID, 평문을 고정한다. 기본 마작 여섯 event SFX는 대사와 독립해 committed
+action snapshot에 generation/session/action/event identity와 함께 전달한다. frontend는 중복 identity,
+세대 지연 callback, 재생 객체 URL을 관리하고, 선택 BGM은 설정 배열 순서대로 순환한다. 실제 리소스
+미등록·파일 누락은 안내/무음 상태이며 재생이나 파일 로딩은 엔딩 ack를 호출하지 않는다.
+
 ## W06-B 구현·보완 상태 (2026-10-15)
 
 W06-A 계약을 local-only service/API 경로로 구현했다. migration `20261015_0005`는
@@ -447,8 +469,9 @@ renderer 재연결, 정상 local 대국 완료, active/completed 재기동 및 �
 artifact archive SHA256은 `dc65ae3918d35d28ce6e1e5bf076ea8ede188ac9b5b56d115dd7030375988e5d`.
 보조 Windows storage run [38778254269](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38778254269)도 성공했다. 자세한 pre/post 회귀와 run/artifact 근거는 CURRENT_STATE에 있다.
 
-사용자의 개인 Windows PC, 전원 차단 내구성 및 실제 ending CG/음악은 미검증이다. 실제 ending
-리소스/사운드 연결은 C 범위이며 이번 작업은 시작하지 않았다.
+사용자의 개인 Windows PC, 전원 차단 내구성 및 실제 ending CG/음악 출력은 미검증이다. W06-C
+등록/선택/엔딩 참조 구현과 exact-SHA mock/Windows 검증은 CURRENT_STATE의 “W06-C PR #70 보완”에
+기록한다. 열린 PR #70은 직접 병합하지 않는다.
 
 ## 콘텐츠 데이터 구조 권고 — 스키마 미확정
 
