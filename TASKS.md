@@ -16,6 +16,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B·C 최종 검토 통과(D11 실측 대기) | W05, D04 | A 고성능 Work → B/C 저성능 Work |
 | W07 | 콘텐츠·팩·이미지/음성/UI 계약 설계 | P1 / 정책 독립 계약 구체화·미응답 게이트 유지 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08-A | 팩 등록·revision·immutable 파일 기반 | P1 / 독립 구현·회귀·Windows CI/artifact 검증 완료 | W05, PR #75~#78, 사용자 독립 승인 | 저성능 Work |
+| W08-B | 기존 캐릭터 기본/구도 P/N 편집·로컬 편집 기록·팩 목록 UI | P1 / 다음 독립 구현 | W08-A 병합, Q-PACK A | 저성능 Work |
 | W08 | 캐릭터·공유 후보·단계별 이미지 편집/적용 | P1 / 정책 의존 부분 대기 | W08-A, W07 관련 결정 | 저성능 Work |
 | W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / 새 후속 범위 | W07 팩/event 계약, W08 등록 기반 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
@@ -247,8 +248,8 @@ C에 실제 제공 리소스가 없으면 mock/미등록 검사와 실제 CG·�
 main `eaaae74`에서 #72~#74 병합과 열린 Docker 문서 #35를 확인했다.
 ARCHITECTURE의 “W07 구체 기술 계약”에 팩 v1·ID/폴더/scan·immutable 파일,
 Level×kind·DTO·event ordinal·W06 보존과 조건부 생성/job 계약을 구체화했다.
-REQUIREMENTS의 기존 미응답 질문 및 D-WIN/Q-META/Q-IMAGE/Q-FRAME/Q-PACK/Q-AUDIO/Q-OMAKE-VOICE/Q-LEGACY는
-사용자 응답 대기다. 단 D-DEFAULT·D06-b A·D06-c 삭제 처리는 후속 사용자 응답으로 확정됐다.
+REQUIREMENTS의 기존 미응답 질문 및 D-WIN/Q-META/Q-IMAGE/Q-FRAME/Q-AUDIO/Q-OMAKE-VOICE/Q-LEGACY는
+사용자 응답 대기다. Q-PACK은 사용자 위임에 따라 A로 결정했으며 재질문하지 않는다. 단 D-DEFAULT·D06-b A·D06-c 삭제 처리는 후속 사용자 응답으로 확정됐다.
 D06-a A(신규 명시 연결)/D06-d A(같은 Level 허용 후보 조합)와 외모/상의 속옷/하의 속옷 P/N도 확정됐다.
 Q-UNDER도 확정됐다: 1 상의 겉옷 탈의·브래지어 노출/하의 겉옷 유지, 2 겉옷 없이 속옷 세트, 3 전체 탈의.
 Level 이동/소속 변경 및 다른 미응답 정책은 계속 대기한다.
@@ -317,13 +318,26 @@ W05 종료/재시작·W06 pending/reset/사운드 회귀를 변경 영향대로 
   4 Level × 3종 이미지·구도 P/N을 원본 manifest snapshot으로 검증·보존한다. 실제 문구/자료 seed 없음.
 - 제외: 캐릭터/공유 후보 편집·삭제/재연결 UI, CPU 생성/기존 CPU 연결·팩 실제 적용,
   음향 선택/재생 전환·event·생성·화면 개편. 기존 W06 설정/자료/pending/진행/엔딩은 그대로 유지.
-- Q-PACK은 revision 적용/로컬 편집 병합을 막으며 등록·보관은 막지 않는다. Q-META는 편집/표시,
+- Q-PACK은 A로 결정됐다. W08-A는 등록/보관만 구현한 이력이며 적용/병합은 후속 작업이다. Q-META는 편집/표시,
   Q-LEGACY는 기존 대사 이전, D06-c/D05-c/D10-a는 후보 이동/event/변수, Q-AUDIO는 W08-S 전환,
   Q-OMAKE-VOICE/D-WIN은 신규 음성 hook, Q-IMAGE/Q-FRAME/D07~D09는 생성/표시 수명을 막는다.
 - 검증: ID·namespace/폴더 일치·중복/버전/불완전 복사·경로 이탈, 참조 bytes 변경 revision,
   반복 migration/scan·실패 rollback·restart/reset·과거 파일/hash 보존·capability·기존 회귀.
   Windows hosted CI/artifact는 정확한 source SHA로 확인하고 임시 signature fixture 검증과 실제 리소스 출력을 구분한다.
 - 제출: `task/w08-a-pack-registry` commit/push/PR. 직접 병합·Release/tag·사용자 자료 변경/삭제 금지.
+
+### W08-B — 기존 캐릭터 프롬프트 편집·팩 목록 UI
+
+- W08-A 병합 후 독립 구현한다. ARCHITECTURE의 W08-B 계약을 따른다. 기존 CPU PK·명단·진행은 유지한다.
+- 외모/상의 속옷/하의 속옷 P/N과 4 Level×3종 구도 P/N 편집·저장, 필드별 명시 override,
+  팩 목록/진단/재검색 UI만 구현한다. 새 CPU/팩 실제 적용·이미지 업로드·공유 후보는 제외한다.
+- Q-PACK A를 위해 빈 문자열 포함 편집 기록을 남긴다. 현재 값 비교로 기록을 지우거나 전체 폼
+  저장으로 미편집 필드를 override로 만들지 않는다. 실제 팩 병합/적용은 후속 작업이다.
+- 최소 파일: models/exports·0007 다음 additive migration, services/character_content.py,
+  schemas/local_content.py·api/local_content.py·local_runtime 등록, frontend api/types/main 및 최소 편집 패널/스타일.
+- 검증: GET 무쓰기·빈 값/문자열별 격리·revision 충돌·commit 실패·권한·A→B 늦은 응답·저장/재시작/reset 보존,
+  scan 후 로컬 편집 불변, W06 설정/명단/pending/파일·legacy replay 보존. 변경 영향에 맞춘 Windows exact-SHA CI/artifact.
+- 환경: 저성능 Work. 시스템 우선이며 구체 프롬프트 작성·콘텐츠 seed·생성/재생 기능은 추가하지 않는다.
 
 ### W08 — 캐릭터·공유 목록·후보 관리
 
@@ -423,7 +437,32 @@ Release/tag/W07을 수행하지 않았다.
 W04 `38826559169`, W05 PR `38826559160`/push `38826553799` 모두 통과했다. artifact/source/ZIP
 검증 및 중간 실패 이력은 CURRENT_STATE를 따른다. 최종 검토를 통과했으며 병합 상태는 PR #70/Git으로 확인한다.
 
-## 다음 Work에 입력할 지시문 — W07 정책 조율·계약 확정
+## 다음 Work에 입력할 지시문 — W08-B 프롬프트 편집·팩 목록 UI
+
+권장 환경: **저성능 Work**. Q-PACK A와 편집/보존 계약은 위 및 ARCHITECTURE에 확정됐다.
+
+```text
+danhk0612/no-riichi-no-fuku의 W08-B만 수행해.
+최신 main·현재 branch·열린 PR·AGENTS와 루트 기준 문서를 확인하고 PR #79 병합을 확인해.
+TASKS의 W08-B와 ARCHITECTURE의 독립 편집 계약을 따라 task/w08-b-character-editor에서 구현해.
+
+기존 CPU의 외모/상의 속옷/하의 속옷 각각 P/N, Level 0~3의 profile/full_body/cg 구도 P/N을
+게임 내부 최소 관리 UI에서 편집·저장하게 해. 실제 프롬프트 작성은 검증에 필요한 최소만 하고
+문구/이미지/오디오/기본 팩을 생성·seed하지 마. 기존 CPU 이름/성향/명단/진행은 변경하지 마.
+필드별 명시 override와 빈 문자열을 보존하고 변경한 필드만 PATCH해. GET은 저장/seed하지 마.
+expected_revision 충돌·commit 뒤 응답·캐릭터 전환 후 늦은 응답 격리·입력 보존을 지켜.
+팩 목록/진단/명시 재검색 UI는 W08-A API를 재사용해. UI 목록 진입 rescan도 중복 호출하지 마.
+
+Q-PACK은 A(로컬 편집 유지·미편집 필드만 새 원본 반영)로 결정됐어. 이번에는 편집/기록까지이며
+팩 첫 연결·실제 적용/자동 갱신·새 CPU 생성·shared 관계/후보·metadata/모델 설정·이미지 파일 편집·
+생성/ComfyUI·음성/새 마작 이벤트·선택/결과 화면 개편은 하지 마.
+저장/재시작/진행 초기화·팩 재검색 후 내용/override 보존과 W06 명단/진행/사운드/pending/파일 및
+legacy fixture 불변을 검사해. 관련 backend/build/browser와 Windows exact-SHA CI/artifact를 검증해.
+CURRENT_STATE/TASKS/ARCHITECTURE/사용자 README를 실제 구현 범위로 갱신해.
+commit/push·PR 제출까지 진행하고 직접 병합·Release/tag·사용자 자료 수정/삭제는 하지 마.
+```
+
+## W07 정책 조율·계약 확정 지시문 — 이전 작업 이력
 
 권장 환경: 질문 답변 조율은 **고성능 Chat**, 복합 schema/API 계약 정리는 **고성능 Work**.
 W07 설계 준비와 2026-10-16 중간 요구 배분을 반영했다. 확정 내용은 다시 묻지 않으며, 남은 사용자 응답과 기술 계약을 정리한다. 아래 지시문은 답변 후 문서 계약을
