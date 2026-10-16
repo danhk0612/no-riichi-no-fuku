@@ -212,6 +212,7 @@ try {
   const lateEffect = { ...effect, action_version: 2, event_index: 1, event_key: 'tsumo', url: '/api/local/media/asset-sfx-late/file' }
   const delayedSfxLoad = page.waitForRequest((request) => request.url().includes('/asset-sfx-late/'))
   const delayedSfxResponse = page.waitForResponse((response) => response.url().includes('/asset-sfx-late/'))
+  void delayedSfxResponse.catch(() => {})
   socket.send(JSON.stringify(lateEffect))
   await delayedSfxLoad
   await page.waitForFunction((count) => window.__audioInstances.length === count + 1, beforeSfx)
@@ -235,6 +236,7 @@ try {
     event_index: 8, actor_seat: 2, event_key: 'win', asset_id: 'audio-voice-late', url: '/api/local/media/asset-voice-late/file' }
   const delayedVoiceLoad = page.waitForRequest((request) => request.url().includes('/asset-voice-late/'), { timeout: 8000 })
   const delayedVoiceResponse = page.waitForResponse((response) => response.url().includes('/asset-voice-late/'), { timeout: 15000 })
+  void delayedVoiceResponse.catch(() => {})
   socket.send(JSON.stringify(lateVoice))
   await delayedVoiceLoad
   const beforeComplete = await page.evaluate(() => window.__audioInstances.length)
