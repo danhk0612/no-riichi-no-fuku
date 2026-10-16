@@ -570,9 +570,31 @@ character `levels`는 정확히 0/1/2/3 네 키다. 각 값은
 `prompts`는 `appearance:{positive,negative}`, `base_clothing:{positive,negative}`를 가진다.
 각 이미지 구도 P/N도 편집 가능한 데이터이며 얼굴 정사각/전신/CG의 출력 크기는 생성 설정과 분리 검증한다.
 `shared_dependencies`는 `{namespace,id,revision_digest}` 목록으로 원본 공유 ID를 참조한다.
-부족한 의존성은 unresolved로 표시하며 다른 이름의 후보로 자동 대체하지 않는다.
+부족한 의존성은 unresolved로 표시한다. 출력 시 최신 기본값 계약에 따라 지정된 유효 기본만 확인하며 임의 다른 후보로 대체하지 않는다.
 공유 항목 자체를 팩에 포함하는 배포 범위·후보 표현은 D06 응답 전 확정하지 않는다.
 팩 자체와 의존 해소 상태는 분리해서 목록에 표시한다.
+
+### 최신 기본값 해석·삭제 계약 — 2026-10-16 사용자 확정
+
+REQUIREMENTS의 D-DEFAULT/D06-b/삭제 정책을 적용한다. 목록 표시 순서와 기본값 식별은 분리한다.
+배포 manifest의 stable identity를 로컬 pack UUID/공유 UUID로 resolve해 영역별 기본 참조로 보관한다.
+SFX/BGM의 기존 `default` identity, 캐릭터의 default_voice_pack 등 명시 기본 참조를 사용하며
+파일명순/DB 조회 첫 행을 기본으로 삼지 않는다. 공유 항목의 기본 참조도 kind/Level 및 대사는
+situation 등 기존 허용 관계를 만족해야 한다. 기본값 복귀로 타 Level·타 event 제약을 우회하지 않는다.
+
+미설정 또는 연결 대상이 없으면 지정 기본값을 확인한다. 유효 기본값까지 없으면 해당 출력 생략;
+규칙·정산·편집 저장은 계속한다. 명시 off/enabled=false는 자동 기본 연결과 구분해 보존한다.
+단일 팩 연결은 유지한다. voice는 팩 자체가 없을 때만 기본 팩으로 resolve하고, 유효한 팩의
+음성 슬롯만 없으면 그 슬롯은 무음이다. SFX/BGM의 파일 슬롯 fallback은 기존대로다.
+source 폴더가 사라져도 immutable 복사본/등록이 유효하면 연결 대상이 없어진 것으로 간주하지 않는다.
+
+삭제 UI는 연결된 대상과 변경될 기본 연결을 먼저 표시한다. 확인 요청은 삭제 대상과 영향받는
+참조 revision을 검증하며 영향 목록이 바뀌었으면 다시 확인한다. 확인 뒤 새 선택에서 제외하는
+논리 삭제·연결 해제·기본 재연결은 같은 writer transaction에서 commit한다. 삭제될 항목 자신을
+기본으로 재연결하지 않는다. 유효 기본이 없으면 null/빈 후보와 생략 상태로 남긴다.
+실패 시 모두 rollback하며 과거 selection/presentation과 immutable 파일은 변경/삭제하지 않는다.
+Level 이동·상황 소속 변경과 신규 항목 자동 포함은 이번 삭제 계약으로 결정하지 않는다.
+실제 기본 자료는 D11 제공 뒤 등록하며 이번 문서로 임의 데이터/음성/이미지를 seed하지 않는다.
 
 ### 편집/저장 모델과 API envelope
 
@@ -586,12 +608,12 @@ media_id nullable, framing P/N, revision)에 저장한다. 선택/진행과 콘�
 selection_mode `default|selected|off`, revision을 저장한다. default 갱신 적용 시점도 Q-PACK 대상이다.
 DB default_pack_id/selected_pack_id는 content_packs UUID FK다. 배포 manifest의 `{character_id,id}`를
 voice namespace에서 UUID로 resolve하며 같은 내부 pack_id만 비교하지 않는다. 캐릭터 이미지팩과
-음성팩의 character_id가 같아야 한다는 제한을 추가하지 않는다. 미설치 참조는 unresolved/무음이다.
+음성팩의 character_id가 같아야 한다는 제한을 추가하지 않는다. 미설치 선택 참조는 unresolved로 표시하고 캐릭터 지정 기본 팩을 확인한다. 기본 팩도 없으면 무음이다.
 선택 팩의 슬롯 누락 시 default로 돌아가지 않는다. `off`는 무음이며 미선택 기본 연결과 다르다.
 
 공유 원본은 stable UUID, kind, level, label, positive/negative, revision, active를 가진다.
 대사는 situation FK·text, event binding은 situation FK·event_key unique 관계다.
-후보 allow/deny 표현·삭제/이동 동작·조합 제약·변수 검증은 D05-c/D06/D10-a 응답에 따라 확정한다.
+빈 후보 생략·삭제 확인 후 기본 재연결은 최신 확정 계약을 따른다. 후보 allow/deny 표현·이동 동작·조합 제약·변수 검증은 D05-c/남은 D06/D10-a 응답에 따라 확정한다.
 미응답을 nullable 기본값이나 임시 seed로 우회하여 구현하지 않는다.
 
 응답은 `schema_version:1`, entity `revision`을 포함한다. PATCH/PUT은 `expected_revision` 필수,
@@ -606,7 +628,7 @@ voice namespace에서 UUID로 resolve하며 같은 내부 pack_id만 비교하�
 | GET/PATCH `/characters/{cpu_id}/content` | metadata, P/N, default voice 참조, expected_revision | W08; 치수·override·팩 편집 충돌은 응답 후 |
 | GET/PUT `/characters/{cpu_id}/levels/{level}/images/{kind}` | immutable media_id nullable, framing P/N, expected_revision | W08, 자동 생성은 없음 |
 | GET/PUT `/characters/{cpu_id}/candidates/{level}` | 네 kind의 stable ID 집합·revision | W08; D06 응답 후 정확한 포함 의미 명세 |
-| GET/POST `/content/{kind}` / PATCH/DELETE `/content/{kind}/{id}` | 원본 필드·참조 영향·revision; DELETE도 정책 확정 뒤 논리 제외 | W08; D05-c/D06/D10-a |
+| GET/POST `/content/{kind}` / PATCH/DELETE `/content/{kind}/{id}` | 원본 필드·참조 영향·revision; DELETE는 영향 확인 후 논리 제외·기본 재연결을 원자 commit | W08; D05-c/D06/D10-a |
 | GET/PUT `/audio-selection` | sfx_pack_id/bgm_pack_id nullable, enabled flags, revision | W08-S; legacy 전환 Q-AUDIO 승인 후 |
 | GET/PUT `/characters/{cpu_id}/voice-selection` | selection_mode, selected_pack_id, revision | W08-S; 기본 연결 Q-PACK 승인 후 |
 | GET `/characters/{cpu_id}/display?context=selection` | 아래 CharacterDisplay | W11-U 읽기, W08 asset 공급 |
@@ -637,7 +659,7 @@ SFX 후보는 사용자가 언급한 패 타격/섞기/리치봉 범위다. 실�
 미연결로 보고하고 규칙 코드를 확장하지 않는다. 임의 새 음향 슬롯/샘플을 추가하지 않는다.
 각 slot resolve는 enabled일 때 selected→동일 kind default→null이다. 선택 팩 파일이 누락/비활성/
 읽기 불가면 default를 확인하고 default도 실패하면 무음. voice는 selected/default 연결에서 정한
-**하나의 팩 안에서만** 찾으며 파일 실패도 무음이다. 실행 중 재생 실패는 대국 진행을 막지 않는다.
+**하나의 유효 팩 안에서만** 찾으며 파일 실패도 무음이다. 선택 팩 자체가 없으면 지정 기본 팩으로 resolve한 뒤 슬롯을 확인한다. 실행 중 재생 실패는 대국 진행을 막지 않는다.
 팩 전환 시 audio generation을 증가시켜 기존 pending play callback을 격리하고 현 BGM을 재평가한다.
 기본 선언 voice와 같은 파일을 공통 SFX로 중복 재생하지 않는다. W06 6개 구 슬롯 이전은 Q-AUDIO 대상이다.
 
@@ -727,7 +749,9 @@ ComfyUI endpoint/object_info·Anima workflow/node·encoder/VAE/LoRA 호환·outp
 1. stage 0→1/2→3에서 after Level 세 종류만 표시, 보충3/Tier0와 오마케3/Tier2는 이미지3 유지.
 2. 한 배치 `[bad,chi,pon]`의 source ordinal 1/2 유지; actor별 voice, 슬롯 누락은 무출력,
    공통 선언은 문장 후보가 없어도 표시. 재접속/replay 중 과거 voice/SFX는 재생하지 않음.
-3. SFX 선택 tile_discard 누락/default 존재→default, 양쪽 누락→무음; voice 누락은 다른 팩 무음.
+3. SFX 선택 tile_discard 누락/default 존재→default, 양쪽 누락→무음. voice 미설정/선택 팩 자체 없음→캐릭터 기본 팩; 유효 팩의 슬롯만 없음→무음. 명시 off 유지.
+   공유 후보 미설정/대상 누락→허용 관계 내 지정 기본값, 기본도 없음→출력만 생략.
+   연결 영향 표시→삭제 확인→해제/기본 연결 원자 commit; 영향 변경 재확인·commit 실패 rollback·자기 기본 재연결 금지·과거 파일 보존.
 4. 동일 content_digest 재scan no-op, JSON 불변·참조 음성/이미지 bytes 변경은 새 revision 후보.
    같은 내부 pack_id의 다른 voice namespace와 명시 교차 연결도 올바르게 resolve.
    충돌/잘못된 경로/불완전 파일로 기존 revision 불변. 복사 후 metadata 실패,
