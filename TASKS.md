@@ -14,7 +14,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 완료(PR #61 병합) | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows hosted 검증·최종 검토 통과(개인 실기 미검증) | W04 | 저성능 Work |
 | W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B·C 최종 검토 통과(D11 실측 대기) | W05, D04 | A 고성능 Work → B/C 저성능 Work |
-| W07 | 콘텐츠·팩·이미지/음성/UI 계약 설계 | P1 / 중간 요구 반영·일부 정책 확인/기술 계약 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
+| W07 | 콘텐츠·팩·이미지/음성/UI 계약 설계 | P1 / 정책 독립 계약 구체화·미응답 게이트 유지 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 후보·단계별 3종 이미지/팩 등록 기반 | P1 / 계약 후 구현 대기 | W05, W07 | 저성능 Work |
 | W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / 새 후속 범위 | W07 팩/event 계약, W08 등록 기반 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
@@ -241,29 +241,40 @@ C에 실제 제공 리소스가 없으면 mock/미등록 검사와 실제 CG·�
 - 금지: 실제 콘텐츠/CG 생성, 제품 구현, 규칙/CPU 정책 변경, 관리 부가 기능 추가.
 - 환경: 고성능 Work, 좁은 사용자 정책 조율은 고성능 Chat.
 
-### W07 설계 준비 결과와 승인 후 구현 경계
+### W07 정책 조율 결과와 후속 실행 지시
 
-main `1b548ae8ca901e97407cd02ccc45973a1539add7`에서 PR #70 병합과 열린 PR #35를 확인했다.
-#35는 기존 Docker 문서 작업이며 수정하지 않는다. 이번 결과는 소스 대조·관계/API/UI 초안·
-사용자 질문 준비다. **W07 전체 완료나 W08~W11 실행 승인이 아니다.**
-질문별 선택지·영향·권고는 REQUIREMENTS의 W07 절, 초안·검증 예제는 ARCHITECTURE의 W07 절을 따른다.
-D11 실제 콘텐츠/권리·개인 PC 실측 대기는 유지한다.
+main `eaaae74`에서 #72~#74 병합과 열린 Docker 문서 #35를 확인했다.
+ARCHITECTURE의 “W07 구체 기술 계약”에 팩 v1·ID/폴더/scan·immutable 파일,
+Level×kind·DTO·event ordinal·W06 보존과 조건부 생성/job 계약을 구체화했다.
+REQUIREMENTS의 기존 미응답 질문 및 D-WIN/Q-META/Q-IMAGE/Q-FRAME/Q-PACK/Q-AUDIO/Q-LEGACY는
+사용자 응답 대기다. **W07 전체 미완료, 아래 후속은 구현 지시 템플릿이며 실행 승인이 아니다.**
 
-| 후속 | 승인 후 예상 수정 범위(현재 구현 금지) | 먼저 필요한 결정·완료 게이트 |
-|---|---|---|
-| W07 계약 확정 | REQUIREMENTS/ARCHITECTURE/TASKS/CURRENT_STATE만 | D05~D10 질문별 응답, 상충 조합 확인. 실제 필드/제약·migration 이전 규칙·method/DTO/오류·event ordinal·생성 설정/seed/재시작 상태·파일 경로/제한을 임의 선택 없이 구현 가능하게 명세. 실제 모델/node 확인이 필요하면 기술 검증과 정책 결정을 분리 |
-| W08 | `db/models/`·0006 다음 migration·exports, 새 local 콘텐츠 services/schemas/API와 `local_runtime.py` 등록, `services/admin.py` 참조 보호, `bootstrap.py`는 D10-b 승인 범위만. `frontend/src/api.ts`·`main.tsx` 진입·새 캐릭터/공유 편집 컴포넌트·최소 style, 관련 tests | D05-a/c·D06 전체·D07-b 설정 범위·D10-a/b와 W07 schema/API 확정. 후보 Level/kind/situation FK·삭제·빈 목록·명단 보호·반복 upgrade/seed·초기화 보존. 생성/event 선택은 제외 |
-| W09 | `services/dialogue_service.py` 및 새 콘텐츠 resolver, `api/game.py`·`game_registry.py`의 표시 payload/결과 저장 경계, 승인 시 현재 selection 모델/migration, `frontend/src/game/types.ts`·`main.tsx`·`MahjongTable.tsx` 및 관련 tests | W08 검토/병합, D05·D06-b·D08-b·D10과 event identity/저장/변수 계약. 노출 정책·SFX·policy1/2·legacy replay 유지. ComfyUI submit 없음 |
-| W10 | 새 ComfyUI adapter/client/workflow/settings services·schemas/API·필요 모델, `local_runtime.py` 수명 연결, 게임 내부 최소 생성 설정 UI·`api.ts`·mock tests | W07 D07/D09·D08-a 입력 계약, W08과 공통 파일 소유 분리. 실제 endpoint/node/workflow 지원·job 소유권·응답 유실/재기동 계약 검토 후 구현. 실제 Anima 최소 출력은 D11 환경 제공 후 별도 실측 |
-| W11 | 새 selection/job/artifact 연동 services/API·승인 migration, W09 이벤트 연결·W10 adapter 호출, `frontend/src/main.tsx`·types·최소 이미지 표시/재시도·관련 통합 tests | W09/W10 검토·D05/D08 최종 계약. 중복/재렌더/늦은 결과·파일 보존·미연결 기본 대국, exact-SHA Windows CI/artifact와 실제 ComfyUI 결과 구분 |
+공통 시작 지시: 대상 저장소의 최신 main·현재 branch·열린 PR·AGENTS와 루트 기준 문서를 읽는다.
+해당 Task의 정책 응답이 REQUIREMENTS에 기록되고 ARCHITECTURE 조건부 필드가 최종 계약으로
+갱신됐는지 확인한다. 누락되면 그 의존 범위는 착수하지 말고 질문 ID를 보고한다.
+허용된 Task만 `task/<id>-<scope>`에서 구현하고 commit/push·PR까지 제출한다.
+CPU/규칙/seed/action replay·legacy fixture 변경, 실콘텐츠 생성·사용자 자료 삭제,
+직접 병합·Release/tag는 금지한다. 문서에 미검증을 완료로 쓰지 않는다. 권장 환경은 저성능 Work다.
 
-위 범위는 파일 분리 준비이며 신규 table/class/endpoint 이름을 확정하지 않는다. agents/rules/
-RiichiEnv 및 legacy fixture는 수정 대상이 아니다. `api/game.py`/`game_registry.py`는 콘텐츠 연결만
-허용하며 action/정산 의미를 바꿔야 하면 별도 검토한다. W08→W09는 schema/UI가 겹쳐 순차,
-W10은 W07 계약 확정 후 W08/W09와 공통 models/main.tsx/local_runtime/API/문서 담당이 분리된 경우만
-병렬 가능하다. W11은 W09/W10 통합 결과를 기다린다. 이번에 병렬 작업/agent를 실행하지 않았다.
-검증은 기존 unittest·별도 대사 pytest·build/browser·writer/정산 실패·policy1/2/legacy 회귀와
-각 Task의 위 검증을 사용한다. 구현 Task의 exact-head Windows CI/artifact 요구는 유지한다.
+| Task | 선행 정책·병합 게이트 | 허용 파일 범위·구체 구현 지시 | 완료 검증 |
+|---|---|---|---|
+| W08 | W05·W07 최종 계약, D05-c/D06 전체/D07-b/D10-a, Q-META/Q-PACK/Q-LEGACY | `db/models/`·exports·head 다음 additive migration, 새 `services/content_packs.py`/`character_content.py`·`schemas/local_content.py`·`api/local_content.py`, `local_runtime.py` 등록, `services/admin.py` 참조 보호. 기존 CpuSelection/main/api와 새 최소 캐릭터/공유 편집 UI. v1 scanner·stable ID·4단계 3종 참조/P/N·공유 관계·후보·메타데이터·voice 기본 참조 구현. bootstrap은 승인 legacy 대응만, 모델 override는 승인 범위만. generation/event resolver 구현 금지 | ID/중복/버전/의존 누락/경로·불완전 scan·metadata 실패·반복 upgrade/bootstrap; Level/kind/FK·후보/삭제 승인 사례·편집/재시작/reset 보존·기존 PK/파일 hash |
+| W08-S | W08 병합, Q-PACK/Q-AUDIO, D-WIN은 승리 슬롯 전 필수 | 위 registry의 sfx/bgm/voice 확장, `services/local_sound.py`/새 audio resolver·`schemas/local_sound.py`·`api/local_sound.py`, 최소 선택 UI `LocalSoundPanel.tsx`/api/main, `api/game.py` 승인 hook·game types. 각각 단일 팩·slot default fallback·voice 단일 연결·세대 격리 구현. SFX source 검증 뒤 연결. 공유 mapper는 W09가 중복 작성하지 않게 명시 소유. D-WIN 미응답이면 승리 신규 hook 보류, Task 전체 완료 표시 금지 | selected/default/양쪽누락·voice 무fallback·off·잘못된 actor·파일실패·전환 중 늦은 play·재시작/reset. W06 legacy/pending 보존과 중복 음성 없음. source 미확인은 미연결로 인계 |
+| W09 | W08/W08-S 병합, D05-b/c·D06-b/d·D08-b·D10-a, D-WIN/Q-LEGACY | `dialogue_service.py`와 새 content resolver, `api/game.py`/`game_registry.py` 표시/정산 저장 경계·필요 additive migration·types/main/MahjongTable. 원 pending ordinal 유지·공통 선언과 actor 음성, event/상황/캐릭터/Level 교집합·승리와 Level 패배 텍스트·변수 snapshot. W06 version2/오마케 억제·노출 policy 유지. ComfyUI submit 금지 | source index/ron-tsumo/reach_accepted·actor·승패/보충/omake·대사 고갈·변수·중복/재접속·commit 실패·policy1/2/legacy replay |
+| W10 | W07 D07-a/b·D08-a·D09-a, Q-FRAME, W08 입력 schema | 새 ComfyUI adapter/client/workflow/settings service/schema/API, `local_runtime.py` 수명·최소 설정 UI/api. 승인 endpoint 정책과 job 입력/snapshot/unknown 상태 구현. 실제 지원 workflow의 object_info/input/output·Anima/encoder/VAE/LoRA·한도/파일 decode를 기술 확인. 실환경 없으면 mock 범위만 제출하고 실출력 완료 금지. 게임 RNG/정산·모델 다운로드·전역 interrupt 금지 | mock submit/status/result·응답유실·재기동/자기 job·endpoint 미연결 기본 게임·종료 소유권. 실제 생성은 별도 사용자 승인/환경/D11 제공 때만 실측 |
+| W11 | W06·W09/W10 병합, D05-b·D06·D08 전체, Q-IMAGE/Q-FRAME | 새 selection/job/artifact 연동 services/API·필요 additive migration, W09 표시 hook·W10 adapter 호출, types/api/main 최소 표시/명시 retry. seed/cache/4단계3종 분리·재렌더 무추첨·writer 밖 submit·late result 격리·원본/이전 파일 보존 구현 | 입력/label/모델 revision별 cache·동시 동일 요청·submit unknown·DB 실패·A→B/새 대국/reset 후 완료·missing 파일·명시 retry·재시작 snapshot. 실제 ComfyUI와 mock 구분 |
+| W11-U | W08 표시 DTO·W09 result/voice·W11 이미지 API, Q-META/Q-IMAGE | `CpuSelection.tsx`·`MahjongTable.tsx`·main/types/api/style와 새 최소 상세/결과/뷰어 컴포넌트. 정사각 프로필 목록·상단 CG/전신·좌석 상세·stage_after 연출·CG 전용·줌/팬 구현. DTO 확정 후 mock UI 개발 가능하나 수용은 실제 W11 연결 후. 갤러리/새 스탯/자동 생성 hook 추가 금지 | hover/선택/좌석 identity·로딩/깨진 이미지·stale blob·CG 전용 복귀/줌팬·최종 결과→기존 엔딩 ack·재조회에 재정산/추첨/submit 없음. 보충/오마케 표시 |
+
+위 새 파일명은 책임 분리용 구현 경로이며 기존 서비스에 동일 책임이 있으면 최소 재사용한다.
+W08→W08-S→W09는 공통 schema/API/UI 충돌 때문에 순차다. W10 독립 작업은 정책 확정과
+models/main/local_runtime/API/문서 소유 분리 후만 가능하며 이번에 병렬 agent를 실행하지 않는다.
+W11은 W09/W10 이후, W11-U 수용은 W11 이후다. W12는 이 여섯 Task와 D11 실제 콘텐츠/권리·
+Windows 실기 게이트를 기다린다. 현재 문서 PR만으로 어느 구현 Task도 자동 착수하지 않는다.
+
+모든 구현 Task는 관련 unittest와 별도 dialogue pytest·frontend build/browser·writer/정산 실패·
+W05 종료/재시작·W06 pending/reset/사운드 회귀를 변경 영향대로 실행한다.
+정확한 head SHA의 Windows hosted CI/artifact source/ZIP hash를 대조한다. 개인 PC·OS 인터넷 차단·
+전원 차단/실제 CG·오디오·ComfyUI는 실제 수행한 범위만 기록한다. 사용자 폴더 대신 소유 임시 자료로 검사한다.
 
 ### W08 — 캐릭터·공유 목록·후보 관리
 
