@@ -50,7 +50,8 @@ try {
   let failAssetA2Once = true
   let socket
   await page.route('**/api/local/media/*/file', async (route) => {
-    if (route.request().url().includes('/asset-sfx-late/')) await new Promise((resolve) => setTimeout(resolve, 3000))
+    if (route.request().url().includes('/asset-sfx-late/')) await new Promise((resolve) => setTimeout(resolve, 2000))
+    else if (route.request().url().includes('/asset-voice-late/')) await new Promise((resolve) => setTimeout(resolve, 6000))
     else if (route.request().url().includes('/asset-sfx/')) await new Promise((resolve) => setTimeout(resolve, 250))
     if (route.request().url().includes('/asset-b/')) await new Promise((resolve) => setTimeout(resolve, 250))
     if (route.request().url().includes('/asset-a2/') && failAssetA2Once) {
@@ -213,16 +214,7 @@ try {
   const delayedSfxResponse = page.waitForResponse((response) => response.url().includes('/asset-sfx-late/'))
   socket.send(JSON.stringify(lateEffect))
   await delayedSfxLoad
-  completed = true
-  socket.send(JSON.stringify({
-    type: 'match_complete', generation: play.generation, session_id: 'sound-match',
-    result: { scores: [30000, 25000, 25000, 20000], ranks: [1, 2, 3, 4] },
-    settlement: { last_place_seat: 3, current_hp: null, cpu_character_id: null, defeat_stage: null, game_over: false, cpu_completed: false },
-    result_asset: null, result_dialogue: null, result_dialogues: [], ending_event_id: null,
-  }))
   await page.waitForFunction((count) => window.__audioInstances.length === count + 1, beforeSfx)
-  await page.waitForTimeout(100)
-  assert.equal(await page.evaluate(() => window.__audioInstances.length), beforeSfx + 1, 'committed SFX fetch should complete after match_complete')
   socket.send(JSON.stringify(effect))
   await page.waitForTimeout(100)
   assert.equal(await page.evaluate(() => window.__audioInstances.length), beforeSfx + 1, 'replayed SFX identity should stay silent')
@@ -240,12 +232,23 @@ try {
   await page.waitForTimeout(30)
   assert.equal(await page.evaluate(() => window.__audioInstances.length), beforeVoice + 2, 'queued actor voices should serialize without duplicates')
   const lateVoice = { type: 'voice_effect', generation: play.generation, session_id: 'sound-match', action_version: 3,
-    event_index: 8, actor_seat: 2, event_key: 'win', asset_id: 'audio-voice-late', url: '/api/local/media/asset-sfx-late/file' }
-  const delayedVoiceLoad = page.waitForRequest((request) => request.url().includes('/asset-sfx-late/'), { timeout: 8000 })
-  const delayedVoiceResponse = page.waitForResponse((response) => response.url().includes('/asset-sfx-late/'), { timeout: 8000 })
+    event_index: 8, actor_seat: 2, event_key: 'win', asset_id: 'audio-voice-late', url: '/api/local/media/asset-voice-late/file' }
+  const delayedVoiceLoad = page.waitForRequest((request) => request.url().includes('/asset-voice-late/'), { timeout: 8000 })
+  const delayedVoiceResponse = page.waitForResponse((response) => response.url().includes('/asset-voice-late/'), { timeout: 15000 })
   socket.send(JSON.stringify(lateVoice))
   await delayedVoiceLoad
+  const beforeComplete = await page.evaluate(() => window.__audioInstances.length)
+  completed = true
+  socket.send(JSON.stringify({
+    type: 'match_complete', generation: play.generation, session_id: 'sound-match',
+    result: { scores: [30000, 25000, 25000, 20000], ranks: [1, 2, 3, 4] },
+    settlement: { last_place_seat: 3, current_hp: null, cpu_character_id: null, defeat_stage: null, game_over: false, cpu_completed: false },
+    result_asset: null, result_dialogue: null, result_dialogues: [], ending_event_id: null,
+  }))
   assert.ok(await page.locator('.match-result').count())
+  await delayedSfxResponse
+  await page.waitForFunction((count) => window.__audioInstances.length === count + 1, beforeComplete)
+  assert.equal(await page.evaluate(() => window.__audioInstances.length), beforeComplete + 1, 'committed SFX fetch should complete after match_complete')
   await page.evaluate(() => { window.confirm = () => true })
   await page.getByRole('button', { name: '초기화' }).click()
   await page.locator('.selection-panel').waitFor()
@@ -253,7 +256,7 @@ try {
   await Promise.all([delayedSfxResponse, delayedVoiceResponse].map(async (response) => (await response).finished()))
   await page.waitForTimeout(50)
   assert.equal(await page.getByText('효과음을 재생할 수 없습니다.', { exact: true }).count(), 0, 'discarded SFX play rejection must not show an error after reset')
-  assert.equal(await page.evaluate(() => window.__audioInstances.length), beforeVoice + 2, 'late SFX and voice fetches after reset/new generation must not create audio')
+  assert.equal(await page.evaluate(() => window.__audioInstances.length), beforeComplete + 1, 'late voice fetch after reset/new generation must not create audio')
   assert.deepEqual(errors, [])
   assert.equal(disabledSetClearSaved, true)
   assert.equal(endingClearSaved, true)
