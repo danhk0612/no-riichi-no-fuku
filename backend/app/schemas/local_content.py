@@ -210,3 +210,34 @@ class PackManifest(StrictModel):
 
     def identity(self) -> tuple[str, str, str]:
         return self.kind, self.character_id if self.kind == "voice" else "", self.id
+
+
+class PromptEdit(StrictModel):
+    positive: StrictStr | None = None
+    negative: StrictStr | None = None
+
+    @model_validator(mode="after")
+    def require_a_field(self):
+        prompt_fields = self.model_fields_set & {"positive", "negative"}
+        if not prompt_fields:
+            raise ValueError("at least one prompt field is required")
+        if any(getattr(self, key) is None for key in prompt_fields):
+            raise ValueError("prompt fields must be strings; null is not an edit")
+        return self
+
+
+class FramingEdit(PromptEdit):
+    level: StrictInt = Field(ge=0, le=3)
+    kind: Literal["profile", "full_body", "cg"]
+
+
+class CharacterContentPatch(StrictModel):
+    expected_revision: StrictInt = Field(ge=0)
+    prompts: dict[Literal["appearance", "upper_underwear", "lower_underwear"], PromptEdit] = Field(default_factory=dict)
+    framing: list[FramingEdit] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def require_edits(self):
+        if not self.prompts and not self.framing:
+            raise ValueError("at least one explicit field edit is required")
+        return self

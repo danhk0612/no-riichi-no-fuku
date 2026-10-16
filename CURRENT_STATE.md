@@ -1,5 +1,54 @@
 # 현재 상태
 
+## W08-B 최종 검토 보완 — 저장 중 입력·재검색 중복
+
+PR #81 원본 head `d80f6b9`를 검토했다. 원본 exact-head W04 `38869316783`/W05 `38869316709`
+성공을 확인했고 Linux unittest 119개를 67.593초에 재현했다. 기존 packaged renderer 22개와
+사운드 browser 검사는 새 편집 UI의 지연 저장/전환을 검증하지 않아 전용 browser 검사를 추가했다.
+수정 전 저장 요청 대기 중 입력이 응답 뒤 사라짐, 팩 탭 재진입 시 검색 2회 중복을 각각 재현했다.
+저장 중 P/N 입력 잠금과 scan in-flight guard로 최소 보완했다. 캐릭터 선택은 계속 가능하며
+이전 캐릭터 저장 응답은 현 폼을 덮지 않는다. UI 안내를 사용자 표현으로 고치고 README를 보완했다.
+수정 후 프론트 build·새 content browser·기존 sound browser 통과. 새 검사는 dirty-only/빈 값·구도
+필드, 실패/충돌 초안, 지연 저장/캐릭터 GET/저장 응답과 재검색 중복 방지를 다룬다.
+W05 기존 Playwright/Vite 단계에서 새 검사를 실행하고 evidence에 기록하도록 연결했다.
+수정본의 최종 exact-head Windows CI/artifact 결과는 PR #81 최신 검사와 본문을 따른다.
+제품 source에 별도 콘텐츠/팩 적용·새 이벤트·생성·사용자 자료 변경을 추가하지 않았다.
+아래는 원본 구현/검증 이력이며 원본 성공을 수정본 성공으로 대체하지 않는다.
+
+## W08-B — 프롬프트 편집·팩 목록 UI 구현
+
+2026-10-16 KST 최신 `main`은 준비 SHA `469aa36`와 일치했고 PR #80이 병합됐다. 열린 PR은
+기존 Docker 문서 #35뿐이었다. `task/w08-b-character-editor`에서 0007 다음 additive migration 0008,
+기존 CPU PK별 기본 P/N 및 Level 0..3 × profile/full_body/cg 구도 P/N 저장, 문자열 필드별 override,
+revision 검사와 로컬 API를 추가했다. GET은 저장 전 빈 값을 revision 0으로 반환하며 행을 만들지 않는다.
+PATCH는 요청에 명시된 문자열만 기록하고 빈 문자열도 override로 보존한다. 캐릭터 팩과 로컬 편집을
+자동 연결·병합하지 않아 팩 재검색이 편집을 덮지 않는다. 기존 CPU PK 전체를 대상으로 하는
+로컬 관리자 CPU 목록에서 편집 대상을 선택한다.
+
+Electron 데스크톱 설정에 기본/구도 P/N 편집·필드별 편집 기록 UI와 팩 목록·정상/미해결/충돌 진단·
+명시 재검색 UI를 추가했다. 팩 탭 진입은 POST rescan, 목록 GET은 DB만 조회한다. 캐릭터 전환 stale
+응답은 현재 폼에 반영하지 않으며 저장 실패/충돌 시 초안은 보존한다. 실제 프롬프트·콘텐츠·이미지·
+사운드 seed, 이미지 파일 업로드/생성, CPU 연결 및 팩 적용은 추가하지 않았다.
+
+로컬 검증: Python 3.12.14/RiichiEnv 0.4.8의 backend unittest 119개, dialogue pytest 10개,
+frontend `npm run build`, Electron 종료 회귀 3개 통과. 신규 API 회귀는 GET 무쓰기, 빈 문자열/필드별
+override, 서로 다른 구도, stale revision, 권한, commit 실패 rollback, reset/restart 보존, 팩 재검색 후
+로컬 편집 불변을 확인한다.
+
+제품 commit `4b1d817e55c12f1cc2e97520b6eee21a727f8e38`의 Windows Server 2022 x64 검증은 통과했다.
+W04 run [38868373458](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38868373458)과
+W05 run [38868373403](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38868373403)은 둘 다
+정확한 head를 checkout했다. W04 artifact `12032177797`의 archive SHA-256은
+`a086fbaf3c822d289ff6cfe67ca552e02958a144172c6acea1d525de56d0e830`이며 source-sha.txt가 제품 SHA와
+일치한다. W04 evidence의 backend 119·dialogue 10 검사를 확인했다. W05 artifact `12031629509`의
+archive SHA-256은 `6904595e351f0ecbcee7eb21ffdcc342cb7f6360bdeaa5c3db8635e023241a06`이며 내부
+source-sha.txt도 같은 SHA다. 내부 Windows ZIP SHA-256은 `33fec22a58cabf814c12f3e94fcc731495e1a4f737c33856abed8c158dabaf71`로
+zip-sha256.json과 일치한다. Windows backend 119·dialogue 10·renderer smoke 22 checks 및 일반 모드
+종료/재시작 lifecycle evidence도 통과를 확인했다. PR #81은 열린 상태이며 직접 병합하지 않았다.
+개인 Windows PC·실제 이미지/오디오 출력·ComfyUI는 미검증이다.
+
+W08-B는 W08-A 기반 편집/목록 UI 범위만 다루며 W07 전체 완료나 W08 전체 구현 완료를 뜻하지 않는다.
+
 ## Q-PACK A 결정 및 W08-B 인계 — 문서 작업
 
 2026-10-16 KST main `0068eb6`에서 PR #79 병합을 확인했다. 별도 열린 PR은 Docker 문서 #35다.

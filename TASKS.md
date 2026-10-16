@@ -16,7 +16,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B·C 최종 검토 통과(D11 실측 대기) | W05, D04 | A 고성능 Work → B/C 저성능 Work |
 | W07 | 콘텐츠·팩·이미지/음성/UI 계약 설계 | P1 / 정책 독립 계약 구체화·미응답 게이트 유지 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08-A | 팩 등록·revision·immutable 파일 기반 | P1 / 독립 구현·회귀·Windows CI/artifact 검증 완료 | W05, PR #75~#78, 사용자 독립 승인 | 저성능 Work |
-| W08-B | 기존 캐릭터 기본/구도 P/N 편집·로컬 편집 기록·팩 목록 UI | P1 / 다음 독립 구현 | W08-A 병합, Q-PACK A | 저성능 Work |
+| W08-B | 기존 캐릭터 기본/구도 P/N 편집·로컬 편집 기록·팩 목록 UI | P1 / 구현·정확 SHA 회귀/Windows CI·artifact 검증·PR #81 제출 완료(미병합) | W08-A 병합, Q-PACK A | 저성능 Work |
 | W08 | 캐릭터·공유 후보·단계별 이미지 편집/적용 | P1 / 정책 의존 부분 대기 | W08-A, W07 관련 결정 | 저성능 Work |
 | W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / 새 후속 범위 | W07 팩/event 계약, W08 등록 기반 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
@@ -327,6 +327,10 @@ W05 종료/재시작·W06 pending/reset/사운드 회귀를 변경 영향대로 
 - 제출: `task/w08-a-pack-registry` commit/push/PR. 직접 병합·Release/tag·사용자 자료 변경/삭제 금지.
 
 ### W08-B — 기존 캐릭터 프롬프트 편집·팩 목록 UI
+
+- 최종 검토: 저장 대기 중 P/N 입력 소실·팩 탭 재진입 중복 검색을 각각 재현하고 입력 잠금/
+  in-flight guard로 보완했다. 전용 content browser 회귀를 W05에 연결했다. 원본과 수정본의
+  exact-head CI/artifact 및 병합 상태는 PR #81/CURRENT_STATE를 따른다.
 
 - W08-A 병합 후 독립 구현한다. ARCHITECTURE의 W08-B 계약을 따른다. 기존 CPU PK·명단·진행은 유지한다.
 - 외모/상의 속옷/하의 속옷 P/N과 4 Level×3종 구도 P/N 편집·저장, 필드별 명시 override,

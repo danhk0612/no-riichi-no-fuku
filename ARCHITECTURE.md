@@ -652,15 +652,20 @@ Level 이동·상황 소속 변경과 신규 항목 자동 포함은 이번 삭�
 ### 편집/저장 모델과 API envelope
 
 아래는 새 local 전용 경계이며 웹 admin/인증 경로를 대체하지 않는다.
-캐릭터 로컬 편집은 원본 팩 JSON을 수정하지 않고 `character_content`(cpu_id unique,
-pack_revision_id nullable, revision, appearance/upper_underwear/lower_underwear P/N)와
-`character_level_images`(cpu_id, level 0..3, kind profile/full_body/cg unique,
-media_id nullable, framing P/N, revision)에 저장한다. 선택/진행과 콘텐츠 revision은 별개다.
+캐릭터 로컬 편집은 원본 팩 JSON을 수정하지 않는다. 기본 외모/상의 속옷/하의 속옷 P/N은
+`character_content`(cpu_id unique, pack_revision_id nullable, revision, prompts JSON,
+문자열 필드별 overrides)에 저장한다. W08-B의 Level 0..3·profile/full_body/cg 구도 P/N은
+이미지 참조/업로드를 포함하지 않는 `character_level_framing`(cpu_id/level/kind unique,
+revision, positive/negative, 문자열 필드별 overrides)에 분리 저장한다. 선택/진행과 콘텐츠 revision은 별개다.
 Q-PACK A를 채택한다. P/N은 각 문자열 필드 단위의 로컬 편집 여부를 기록한다. 예를 들어
 appearance.positive 편집이 appearance.negative를 자동 override로 만들지 않는다. 빈 문자열도
 명시 편집값이면 보호한다. 새 원본과 값이 같다는 이유만으로 편집 기록을 지우지 않는다.
 원본/적용 revision과 로컬 편집을 분리해 미편집 필드만 새 원본에서 resolve한다.
 조회/재검색은 편집 표시를 만들지 않으며 과거 snapshot은 당시 값/revision 그대로다.
+W08-B GET은 저장 전에는 DB 쓰기 없이 빈 값을 반환한다. PATCH는 resource revision을 검사하고
+요청에 명시된 문자열만 기록한다. 빈 문자열도 override이며 null/생략은 편집과 구분한다.
+기본 쌍과 구도 중 어느 하나라도 수정하면 resource revision이 증가하며 구도 row revision도 증가한다.
+팩 목록 탭 진입은 POST rescan을 호출하고 일반 GET은 registry DB 조회만 한다.
 W08-B는 기존 CPU의 독립 편집/기록만 구현하고 팩 첫 연결·실제 적용·자동 갱신은 후속으로 분리한다.
 `character_voice_links`는 cpu_id unique, default_pack_id nullable, selected_pack_id nullable,
 selection_mode `default|selected|off`, revision을 저장한다. Q-PACK A에 따라 연결된 동일 팩 갱신 적용 때 default만 갱신하고 selected/off는 유지한다. W08-B는 이 연결/재생을 구현하지 않는다.
@@ -717,6 +722,9 @@ PATCH에 명시한 문자열은 override=true로 기록하고 다른 필드 기�
 등록된 팩 목록/상태/진단·명시 재검색만 제공한다. 팩 목록 진입 시 rescan 호출을 직렬화하고
 일반 목록 GET은 DB 조회만 한다. 캐릭터 전환 후 늦은 응답/저장 결과가 다른 캐릭터 폼을 덮지 않는다.
 저장 실패/충돌 시 입력을 보존하고 이미 저장된 값이라고 표시하지 않는다.
+저장 응답을 기다리는 동안 P/N 입력은 비활성화해 이후 입력을 응답으로 지우지 않는다.
+캐릭터 선택을 바꾸어도 이전 저장은 새 폼에 반영하지 않는다. 팩 scan 진행 ref로 탭 재진입과
+명시 재검색의 중복 요청을 차단한다. 전용 content browser 검사는 W05의 기존 Vite 단계에서 실행한다.
 
 재시작/진행 초기화 후 편집 내용과 override 기록을 보존한다. 팩 등록/재검색이 로컬 값을
 덮지 않아야 한다. 팩 CPU 생성/연결/적용, 공유 후보/대사/변수, 모델/LoRA, metadata 확장,
