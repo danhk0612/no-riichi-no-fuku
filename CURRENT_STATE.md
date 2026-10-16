@@ -1,5 +1,17 @@
 # 현재 상태
 
+## W08-A 최종 검토 보완 — Windows 팩 ID 이식성
+
+PR #79 원본 head `0742a9d`를 검토했다. W04 `38845782594`/W05 `38845782569`는
+원본 정확한 head에서 성공했고 artifact identity/digest도 대조했다. Linux 원본 unittest 114개를
+75.929초에 재현했다. 팩/캐릭터/voice namespace의 Windows 예약 장치명 허용을 추가 발견했다.
+수정 전 새 회귀 1개에서 110개 subcase 실패를 재현하고 기존 상대 파일 경로 검증을 EnglishId에도
+적용했다. 제품 보완 source `ad12e6f`의 registry 검사 15개는 9.723초에 통과했다.
+이후 변경은 검토 문서이며 수정본 정확한 head의 Windows 검사/최종 artifact는
+[PR #79](https://github.com/danhk0612/no-riichi-no-fuku/pull/79)의 최신 check run과 PR 본문을 따른다.
+기존 CI 증거를 수정본 증거로 대체하지 않는다. 실제 파일 decode/오디오·개인 Windows·전원 차단·
+ComfyUI는 계속 미검증이며 팩 실제 적용/새 이벤트/UI/콘텐츠는 추가하지 않았다.
+
 ## W08-A — 팩 등록 기반 구현·검증
 
 기준 main `01da78461a8e58bebc8e05d583fac2c5a0a9b38c`, PR #75~#78 병합 및 열린 별도 Docker 문서 #35를 확인했다.

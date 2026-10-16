@@ -301,6 +301,10 @@ W05 종료/재시작·W06 pending/reset/사운드 회귀를 변경 영향대로 
 
 ### W08-A — 팩 등록 기반 시스템 (독립 승인 범위)
 
+- 최종 검토 보완: 제품 source `ad12e6f`에서 Windows 예약 장치명을 팩/캐릭터/voice namespace ID에서도
+  거절한다. 수정 전 실패 재현과 registry 15개 통과를 확인했다. 원본 `0742a9d`의 Windows 성공과
+  수정본 검증은 구분하며 최종 head/CI/artifact/병합 상태는 PR #79를 따른다.
+
 - 결과: 제품 source `ca2c2ef`의 Linux/Windows unittest 114개·대사 10개, build/종료 및
   W05 packaged renderer 22개·일반 종료/restart 검증을 통과했다. artifact/source/ZIP hash는
   CURRENT_STATE에 기록했다. [PR #79](https://github.com/danhk0612/no-riichi-no-fuku/pull/79) 제출, 직접 병합 없음.
