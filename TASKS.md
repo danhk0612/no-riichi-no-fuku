@@ -14,7 +14,7 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W04 | 로컬 저장·복구 기반 전환 | P0 / 완료(PR #61 병합) | W03 | 저성능 Work (구조 설계 필요 시 고성능 Work) |
 | W05 | Windows shell·오프라인 게임 통합 | P0 / 구현·Windows hosted 검증·최종 검토 통과(개인 실기 미검증) | W04 | 저성능 Work |
 | W06 | 고정 참가 명단·진행/오마케·초기화·사운드 | P0 / A·B·C 최종 검토 통과(D11 실측 대기) | W05, D04 | A 고성능 Work → B/C 저성능 Work |
-| W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 결정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
+| W07 | 콘텐츠·이미지 이벤트 계약 설계 | P1 / 설계 준비 작성·D05~D10 응답/계약 확정 대기 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08 | 캐릭터·공유 목록·후보 관리 | P1 / 대기 | W05, W07 | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
 | W10 | 독립 ComfyUI·Anima adapter | P1 / 대기 | W03, W07 | 저성능 Work |
@@ -207,6 +207,30 @@ C에 실제 제공 리소스가 없으면 mock/미등록 검사와 실제 CG·�
 - 금지: 실제 콘텐츠/CG 생성, 제품 구현, 규칙/CPU 정책 변경, 관리 부가 기능 추가.
 - 환경: 고성능 Work, 좁은 사용자 정책 조율은 고성능 Chat.
 
+### W07 설계 준비 결과와 승인 후 구현 경계
+
+main `1b548ae8ca901e97407cd02ccc45973a1539add7`에서 PR #70 병합과 열린 PR #35를 확인했다.
+#35는 기존 Docker 문서 작업이며 수정하지 않는다. 이번 결과는 소스 대조·관계/API/UI 초안·
+사용자 질문 준비다. **W07 전체 완료나 W08~W11 실행 승인이 아니다.**
+질문별 선택지·영향·권고는 REQUIREMENTS의 W07 절, 초안·검증 예제는 ARCHITECTURE의 W07 절을 따른다.
+D11 실제 콘텐츠/권리·개인 PC 실측 대기는 유지한다.
+
+| 후속 | 승인 후 예상 수정 범위(현재 구현 금지) | 먼저 필요한 결정·완료 게이트 |
+|---|---|---|
+| W07 계약 확정 | REQUIREMENTS/ARCHITECTURE/TASKS/CURRENT_STATE만 | D05~D10 질문별 응답, 상충 조합 확인. 실제 필드/제약·migration 이전 규칙·method/DTO/오류·event ordinal·생성 설정/seed/재시작 상태·파일 경로/제한을 임의 선택 없이 구현 가능하게 명세. 실제 모델/node 확인이 필요하면 기술 검증과 정책 결정을 분리 |
+| W08 | `db/models/`·0006 다음 migration·exports, 새 local 콘텐츠 services/schemas/API와 `local_runtime.py` 등록, `services/admin.py` 참조 보호, `bootstrap.py`는 D10-b 승인 범위만. `frontend/src/api.ts`·`main.tsx` 진입·새 캐릭터/공유 편집 컴포넌트·최소 style, 관련 tests | D05-a/c·D06 전체·D07-b 설정 범위·D10-a/b와 W07 schema/API 확정. 후보 Level/kind/situation FK·삭제·빈 목록·명단 보호·반복 upgrade/seed·초기화 보존. 생성/event 선택은 제외 |
+| W09 | `services/dialogue_service.py` 및 새 콘텐츠 resolver, `api/game.py`·`game_registry.py`의 표시 payload/결과 저장 경계, 승인 시 현재 selection 모델/migration, `frontend/src/game/types.ts`·`main.tsx`·`MahjongTable.tsx` 및 관련 tests | W08 검토/병합, D05·D06-b·D08-b·D10과 event identity/저장/변수 계약. 노출 정책·SFX·policy1/2·legacy replay 유지. ComfyUI submit 없음 |
+| W10 | 새 ComfyUI adapter/client/workflow/settings services·schemas/API·필요 모델, `local_runtime.py` 수명 연결, 게임 내부 최소 생성 설정 UI·`api.ts`·mock tests | W07 D07/D09·D08-a 입력 계약, W08과 공통 파일 소유 분리. 실제 endpoint/node/workflow 지원·job 소유권·응답 유실/재기동 계약 검토 후 구현. 실제 Anima 최소 출력은 D11 환경 제공 후 별도 실측 |
+| W11 | 새 selection/job/artifact 연동 services/API·승인 migration, W09 이벤트 연결·W10 adapter 호출, `frontend/src/main.tsx`·types·최소 이미지 표시/재시도·관련 통합 tests | W09/W10 검토·D05/D08 최종 계약. 중복/재렌더/늦은 결과·파일 보존·미연결 기본 대국, exact-SHA Windows CI/artifact와 실제 ComfyUI 결과 구분 |
+
+위 범위는 파일 분리 준비이며 신규 table/class/endpoint 이름을 확정하지 않는다. agents/rules/
+RiichiEnv 및 legacy fixture는 수정 대상이 아니다. `api/game.py`/`game_registry.py`는 콘텐츠 연결만
+허용하며 action/정산 의미를 바꿔야 하면 별도 검토한다. W08→W09는 schema/UI가 겹쳐 순차,
+W10은 W07 계약 확정 후 W08/W09와 공통 models/main.tsx/local_runtime/API/문서 담당이 분리된 경우만
+병렬 가능하다. W11은 W09/W10 통합 결과를 기다린다. 이번에 병렬 작업/agent를 실행하지 않았다.
+검증은 기존 unittest·별도 대사 pytest·build/browser·writer/정산 실패·policy1/2/legacy 회귀와
+각 Task의 위 검증을 사용한다. 구현 Task의 exact-head Windows CI/artifact 요구는 유지한다.
+
 ### W08 — 캐릭터·공유 목록·후보 관리
 
 - 목적: 외모/복장 P/N, Level별 공유 항목 및 네 종류 후보 선택·제외 편집.
@@ -305,29 +329,31 @@ Release/tag/W07을 수행하지 않았다.
 W04 `38826559169`, W05 PR `38826559160`/push `38826553799` 모두 통과했다. artifact/source/ZIP
 검증 및 중간 실패 이력은 CURRENT_STATE를 따른다. 최종 검토를 통과했으며 병합 상태는 PR #70/Git으로 확인한다.
 
-## 다음 Work에 입력할 지시문 — W07 설계 준비
+## 다음 Work에 입력할 지시문 — W07 정책 조율·계약 확정
 
-권장 환경: **고성능 Work**. W06-C PR #70 병합을 확인한 뒤 시작한다. 제품 구현보다
-D05~D10 정책 조율이 선행한다. 아래는 기존 W07의 분석·설계 준비 범위다.
+권장 환경: 질문 답변 조율은 **고성능 Chat**, 복합 schema/API 계약 정리는 **고성능 Work**.
+W07 설계 준비는 문서로 작성했으며 다음은 사용자 응답이다. 아래 지시문은 답변 후 문서 계약을
+확정하는 범위이며 제품 구현 승인이 아니다. 응답이 없으면 질문을 유지하고 구현으로 넘어가지 않는다.
 
 ```text
-danhk0612/no-riichi-no-fuku의 W07 설계 준비만 수행해.
-최신 main·열린 PR·AGENTS.md와 루트 기준 문서를 확인하고 W06-C 검토/병합 상태를 먼저 확인해.
-task/w07-content-contract에서 R07~R14와 현재 CPU 대사/CG/event/replay 코드를 대조해.
+danhk0612/no-riichi-no-fuku의 W07 정책 조율·계약 확정만 수행해.
+최신 main·현재 브랜치·열린 PR·AGENTS.md와 루트 기준 문서를 확인하고,
+W07 설계 준비 문서 PR의 최신 상태/변경을 먼저 읽어. 미병합이면 최신 head를 기준으로
+현재 사용자 승인 범위와 충돌 여부를 확인한 뒤 기존 문서 브랜치에서 이어가. 다른 작업을 덮어쓰지 마.
+REQUIREMENTS의 W07 질문 D05-a~D10-b에 대한 사용자 응답을 질문 ID별로 정리해.
+확정 정책은 다시 묻지 말고, 응답하지 않은 항목·상충하는 조합은 선택지로 남겨.
+권고를 승인으로 간주하거나 D11 실제 콘텐츠/권리를 추측하지 마.
 
-기존 구현으로 재사용할 부분, 새 콘텐츠 관계와 API/UI 책임, migration/구 자료 호환,
-게임 RNG와 콘텐츠 선택 분리, event identity/늦은 생성 결과 차단을 문서로 정리해.
-D05 stage↔Level/표시 시점/event→상황, D06 후보 추가·빈 후보·삭제 참조,
-D07 P/N 결합·모델/LoRA, D08 재사용 식별·실패/대기·파일 보존,
-D09 ComfyUI 수명, D10 대사 변수·기존 대사 이전의 사용자 결정 항목을 추려.
-이미 확정된 정책은 다시 묻지 말고, 미확정 항목은 구체적 예시·선택지·영향·권고를 적어.
-미확정 정책에 의존하지 않는 계약 초안과 승인 후 W08~W11의 구현 경계를 준비해.
-
-미확정 제품 정책을 임의 확정하거나 완료로 표시하지 마.
-사용자 결정을 받아야 하는 부분은 정확한 질문/의존 작업으로 남겨 검토받아.
-REQUIREMENTS/ARCHITECTURE/TASKS/CURRENT_STATE를 각 문서 책임에 맞게 갱신해.
-문서 commit/push·PR 제출까지 진행하고, 제품 코드/migration/UI 구현·CPU/규칙 변경·
-콘텐츠/CG/오디오 생성·사용자 자료 수정/삭제·ComfyUI 실행·직접 병합·Release/tag는 하지 마.
+답변받은 범위에서 ARCHITECTURE의 관계/API/UI 초안을 구체 필드·제약·version·
+migration/기존 seed·legacy 호환·method/DTO/오류·event source ordinal·표시 snapshot/
+생성 입력·seed/cache 식별·재접속/job 수명·파일 보존·검증 예제로 확정해.
+정책 결정과 ComfyUI node/workflow 지원의 실제 기술 확인을 구분해.
+W08~W11이 임의 정책 선택 없이 구현할 수 있는지 확인하고 Task별 지시문을 작성해.
+미해결 의존 Task는 차단 상태로 유지하고 W07 전체 완료라고 표시하지 마.
+REQUIREMENTS/ARCHITECTURE/TASKS/CURRENT_STATE만 책임에 맞게 갱신해.
+문서 commit/push·PR 제출/갱신까지 진행해.
+제품 코드/migration/UI 구현·CPU/규칙 변경·콘텐츠/CG/오디오 생성·사용자 자료 수정/삭제·
+ComfyUI 실행·직접 병합·Release/tag는 하지 마.
 ```
 
 ## 최초 구현 지시문 — W06-C (과거 지시, 이력)
