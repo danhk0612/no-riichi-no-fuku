@@ -175,6 +175,25 @@ class PackRegistryTests(unittest.TestCase):
             with self.assertRaises(ValidationError):
                 PackManifest.model_validate(value)
 
+    def test_windows_reserved_pack_and_voice_namespace_ids(self):
+        reserved = ["con", "prn", "aux", "nul"] + [
+            f"{prefix}{number}"
+            for prefix in ("com", "lpt")
+            for number in range(1, 10)
+        ]
+        for name in reserved:
+            for kind in ("character", "sfx", "bgm", "voice"):
+                value = character() if kind == "character" else audio(kind)
+                value["id"] = name
+                if kind == "character":
+                    value["character_id"] = name
+                with self.subTest(name=name, kind=kind), self.assertRaises(ValidationError):
+                    PackManifest.model_validate(value)
+            with self.subTest(namespace=name), self.assertRaises(ValidationError):
+                PackManifest.model_validate(audio("voice", namespace=name))
+        for name in ("console", "aux-pack", "com10", "lpt10"):
+            self.assertEqual(PackManifest.model_validate(audio(name=name)).id, name)
+
     def test_bytes_revision_canonical_noop_revert_and_history(self):
         value = audio()
         value["slots"] = {"tile_discard": "효과 음.mp3"}

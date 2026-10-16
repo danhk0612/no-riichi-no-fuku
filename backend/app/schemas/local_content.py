@@ -7,6 +7,7 @@ from pathlib import PureWindowsPath
 from typing import Annotated, Literal
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
     ConfigDict,
     Field,
@@ -18,9 +19,6 @@ from pydantic import (
 )
 
 PackKind = Literal["character", "sfx", "bgm", "voice"]
-EnglishId = Annotated[
-    StrictStr, Field(pattern=r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$", max_length=80)
-]
 Digest = Annotated[StrictStr, Field(pattern=r"^[0-9a-f]{64}$")]
 Text = Annotated[StrictStr, Field(min_length=1)]
 
@@ -45,6 +43,14 @@ def relative_file(value: str) -> str:
     ):
         raise PackValidationError("invalid relative file reference")
     return value
+
+
+# IDs become directory components in distributable Windows packs.
+EnglishId = Annotated[
+    StrictStr,
+    Field(pattern=r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$", max_length=80),
+    AfterValidator(relative_file),
+]
 
 
 class StrictModel(BaseModel):
