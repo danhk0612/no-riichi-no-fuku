@@ -1,5 +1,32 @@
 # 현재 상태
 
+## W07 정책 조율·계약 구체화 — 부분 설계, 응답 대기
+
+2026-10-16 KST 시작 main은 준비 SHA `eaaae74`와 일치했다. #72~#74는 병합됐고
+열린 PR은 Docker 문서 #35뿐이었다. `task/w07-policy-contracts`에서 승인된 기준 문서
+4개만 갱신했다. AGENTS 및 루트 문서, 실제 CPU/media/sound schema·API·pending event/
+정산·replay 경계를 대조했다. 기존 W06 자료/제품 코드는 변경하지 않았다.
+
+- ARCHITECTURE: v1 영문 ID/팩 manifest·폴더·scan/중복/immutable 복사·참조/오류,
+  단계별 3종 P/N/asset, event source ordinal·선언/voice 분리, W06 additive 보존,
+  선택/좌석/결과 DTO·세대 격리, 정책 조건부 cache/job·기술 검증 경계를 구체화했다.
+- REQUIREMENTS: 이미 확정된 사항은 재질문하지 않았다. 기존 미응답 D05~D10과 함께
+  각 판 승리·치수/마작 표시·3종 최초 생성·구도 결합·팩 갱신·W06 오디오/대사 이전을
+  예시/선택지/권고/영향으로 정리했다. 답변받은 새 정책은 없다.
+- TASKS: W08/W08-S/W09/W10/W11/W11-U의 정책/병합 선행·파일 범위·구현 지시·
+  검사/금지를 구체화했다. 전체 W07 및 후속 구현은 차단 상태를 유지한다.
+- 검증 범위는 문서 diff·공백·로컬 링크·4개 파일 제한·legacy fixture byte 불변·최신 main/PR 재확인이다.
+  backend/build/browser/Windows CI·artifact·migration/ComfyUI는 실행하지 않았다.
+  새 제품 성공 증거는 없으며 기존 W06 exact-SHA 결과는 아래 이력 그대로다.
+- PR #75 검토에서 manifest JSON digest와 참조 파일을 포함한 content digest를 분리했다. JSON이
+  같아도 이미지/음성 bytes 변경은 새 revision 후보이며, 동일 content digest만 no-op다. 배포용
+  voice 참조는 namespace까지 포함한 `{character_id,id}`, DB는 pack UUID로 대응한다. 이미지팩과
+  선택 voice pack의 캐릭터 ID를 강제로 일치시키지 않는다. 오마케 기본 선언 voice 억제는
+  미승인 단정 대신 Q-OMAKE-VOICE로 분리했다. 문서/링크/범위를 재검증하며 제품 구현은 없다.
+- 다음: REQUIREMENTS 미응답 ID별 정책 조율 후 조건부 schema/API를 최종화하고 후속 착수 게이트를
+  재검토한다. D11 콘텐츠/권리·개인 Windows/전원 차단·실제 이미지/오디오/ComfyUI는 계속 미검증이다.
+  제품 구현·콘텐츠 생성·사용자 자료 변경·직접 병합·Release/tag 없음.
+
 ## 2026-10-16 중간 검토 반영 — 요구/작업 배분 완료, 제품 미구현
 
 기준 main `2000c5141e218700e256ff63ede76938c3bd6c34`(W07 준비 PR #72 병합)에서 사용자
@@ -636,8 +663,8 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 
 ## 다음
 
-W06-B PR #68과 W06-C PR #70은 main에 병합됐다. W07 설계 준비 문서는 작성했으며,
-다음은 REQUIREMENTS의 D05~D10 사용자 응답과 TASKS의 W07 정책 조율·계약 확정이다.
+W06-B PR #68과 W06-C PR #70은 main에 병합됐다. W07 정책 독립 기술 계약을 구체화했으며,
+다음은 REQUIREMENTS의 미응답 정책 조율과 조건부 계약 최종화다.
 W08~W11 구현은 아직 착수하지 않는다.
 개인 Windows 실기, 전원 차단 durability 및
 실제 ending CG/음악 재생은 해당 범위에서 증거를 별도로 확보한다.

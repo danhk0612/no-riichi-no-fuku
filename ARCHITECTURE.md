@@ -516,6 +516,226 @@ Level 변경 패배 대사와 기타 캐릭터 이벤트의 노출 정책은 기
 자료 미제공을 이유로 placeholder를 실제 콘텐츠 검증으로 간주하지 않는다. 결과 UI·pack 재시작 보존·
 한글 경로·stage3/omake 억제·4/3/2/1/0 NPC 경계는 각 후속 구현의 회귀 항목이다.
 
+## W07 구체 기술 계약 — 2026-10-16 정책 응답과 분리
+
+기준 main `eaaae74`. PR #72~#74 병합, 열린 #35는 Docker 문서로 이번 범위와 무관하다.
+이 절은 최신 기술 명세이며 아래 최초 초안과 충돌하면 이 절을 따른다. **제품 미구현·W07 부분 설계**다.
+정책 독립 필드는 구현용 계약으로 정리하되 `조건부`는 REQUIREMENTS 응답 뒤에만 채택한다.
+문서 PR 병합이나 예시 JSON은 미응답 정책 승인·후속 구현 착수 승인이 아니다.
+
+### 팩 identity·manifest v1·파일 소유
+
+- 배포 ID는 `[a-z][a-z0-9]*(?:-[a-z0-9]+)*`, 최대 80자, 소문자 ASCII다. 표시명은 Unicode다.
+  DB CPU 정수 PK와 배포 ID는 별개이며 `character_id`는 기존 CPU slug와 명시 대응한다.
+  slug를 새 규격에 맞춘다는 이유로 기존 PK/slug/명단을 변경하지 않는다. 대응 불가 구 자료는 legacy로 보존한다.
+- 사용자 데이터 루트 아래 `packs/characters/<character_id>/manifest.json`,
+  `packs/sfx/<pack_id>/manifest.json`, `packs/bgm/<pack_id>/manifest.json`,
+  `packs/voices/<character_id>/<pack_id>/manifest.json`을 검색한다. 음성 배포물 최상위도
+  `<character_id>`이며 내부 `<pack_id>`로 같은 캐릭터의 여러 음성팩을 구별한다.
+  이미지팩 ID는 character_id, 음성 identity는 `(voice, character_id, pack_id)`다.
+  SFX/BGM은 `(kind, pack_id)`. 같은 영문 문자열이 다른 종류에 있어도 충돌하지 않는다.
+- 공통 필수 manifest 필드: `schema_version:1`, `kind:character|sfx|bgm|voice`, `id`,
+  `version`(팩 작성자 버전 문자열), `label`. voice는 `character_id` 필수다.
+  `schema_version`은 parser 호환, `version`은 작성자 표시, `manifest_digest`는 정규화한 JSON 내용 식별, `content_digest`는 manifest와 참조 파일 bytes를 합친 revision 식별로 구분한다.
+  unknown schema_version은 비지원 상태로 등록하지 않으며 기존 유효 revision을 덮지 않는다.
+- DB `content_packs`의 UUID PK, kind/namespace/id unique, current_revision FK;
+  `content_pack_revisions`의 UUID, pack FK, manifest_digest/content_digest, manifest JSON, revision 정수와
+  파일별 digest/immutable media UUID 대응을 저장한다. 동일 content_digest 재인식만 no-op다. manifest JSON이 같아도 참조 파일 bytes가 바뀌면 새 revision 후보로 인식한다.
+  원본 폴더는 읽기만 하며 인식 시 참조 파일을 런타임 immutable UUID 미디어로 복사한다.
+  과거 snapshot은 revision/media UUID를 고정하므로 원본 폴더 교체가 과거 표시를 바꾸지 않는다.
+- 경로는 팩 루트 기준 `/` 상대 경로만 허용한다. 절대 경로·drive/UNC·`..`·URL·symlink/junction
+  밖 참조를 거절하고 resolve 후 루트 내부 여부를 확인한다. renderer에 로컬 경로/ComfyUI URL을 넘기지 않는다.
+  업로드와 팩 파일은 기존 JPEG/PNG/WebP 5 MiB, MP3/WAV/Ogg 32 MiB 한도를 사용한다.
+  생성 결과 한도는 아래 기술 검증 뒤 별도 확정한다. 파일명은 Unicode/공백 가능하다.
+- 시작 시 로컬 엔진이 한 번 scan하고 설정의 팩 목록 진입 시 scan한다. 상시 watcher는 만들지 않는다.
+  `POST /api/local/packs/rescan`은 같은 scan을 명시 호출한다. GET은 DB 목록만 읽는다.
+  중복 identity의 서로 다른 manifest가 한 scan에 있으면 둘 다 conflict, 기존 정상 등록은 유지한다.
+  같은 위치의 새 content_digest는 새 revision으로 등록하되 기존 파일을 삭제하지 않는다. 적용/로컬 편집 병합은 Q-PACK 응답을 따른다.
+  불완전 복사/오류 팩은 진단 목록에 남기고 대국 기동을 막지 않는다. 사라진 폴더도 기존 복사본/등록을 삭제하지 않는다.
+- scan은 파일 읽기·검증·복사를 writer 밖에서 수행하고 pack 단위 metadata를 한 transaction에 commit한다.
+  실패 시 기존 current revision과 설정은 불변. 이번 시도 소유 임시 파일만 정리하며 등록된 파일은 삭제하지 않는다.
+  content_digest는 canonical manifest와 경로 순으로 정렬한 참조 파일의 상대 경로·SHA256 목록으로 계산한다.
+  같은 scan 재시도는 pack별 unique content_digest로 중복 등록되지 않는다. 진행 초기화는 팩·revision·media·설정을 보존한다.
+
+| 종류 | v1 전용 필드/참조 | 의미 |
+|---|---|---|
+| character | `character_id`, `metadata`, `prompts`, `levels`, `shared_dependencies`, `default_voice_pack`(nullable `{character_id,id}`) | name/adult=true/기존 설명·style. voice 기본 참조는 배포용 복합 identity, 미설치 가능 |
+| sfx / bgm | `slots:{slot_key:relative_path}` | 누락 슬롯 허용. default 팩 identity는 각 종류의 `default`, 없으면 무음. 임의 첫 팩을 기본으로 삼지 않음 |
+| voice | `character_id`, `slots:{slot_key:relative_path}` | 이미지/CG 의존성 없음. character_id는 음성 배포 namespace이며 연결 대상 CPU를 제한하는 FK가 아님. 명시 선택은 독립 팩 identity로 수행 |
+
+character `levels`는 정확히 0/1/2/3 네 키다. 각 값은
+`images:{profile:null|path,full_body:null|path,cg:null|path}`,
+`framing:{profile:{positive,negative},full_body:{positive,negative},cg:{positive,negative}}`다.
+이미지 12개 슬롯은 모두 존재하되 아직 생성하지 않은 파일 참조는 null이다. kind/Level 대체 참조는 금지한다.
+`prompts`는 `appearance:{positive,negative}`, `base_clothing:{positive,negative}`를 가진다.
+각 이미지 구도 P/N도 편집 가능한 데이터이며 얼굴 정사각/전신/CG의 출력 크기는 생성 설정과 분리 검증한다.
+`shared_dependencies`는 `{namespace,id,revision_digest}` 목록으로 원본 공유 ID를 참조한다.
+부족한 의존성은 unresolved로 표시하며 다른 이름의 후보로 자동 대체하지 않는다.
+공유 항목 자체를 팩에 포함하는 배포 범위·후보 표현은 D06 응답 전 확정하지 않는다.
+팩 자체와 의존 해소 상태는 분리해서 목록에 표시한다.
+
+### 편집/저장 모델과 API envelope
+
+아래는 새 local 전용 경계이며 웹 admin/인증 경로를 대체하지 않는다.
+캐릭터 로컬 편집은 원본 팩 JSON을 수정하지 않고 `character_content`(cpu_id unique,
+pack_revision_id nullable, revision, appearance/base_clothing P/N)와
+`character_level_images`(cpu_id, level 0..3, kind profile/full_body/cg unique,
+media_id nullable, framing P/N, revision)에 저장한다. 선택/진행과 콘텐츠 revision은 별개다.
+새 팩 revision과 로컬 편집 충돌 시 덮어쓰기 여부는 Q-PACK 응답 전 보류한다.
+`character_voice_links`는 cpu_id unique, default_pack_id nullable, selected_pack_id nullable,
+selection_mode `default|selected|off`, revision을 저장한다. default 갱신 적용 시점도 Q-PACK 대상이다.
+DB default_pack_id/selected_pack_id는 content_packs UUID FK다. 배포 manifest의 `{character_id,id}`를
+voice namespace에서 UUID로 resolve하며 같은 내부 pack_id만 비교하지 않는다. 캐릭터 이미지팩과
+음성팩의 character_id가 같아야 한다는 제한을 추가하지 않는다. 미설치 참조는 unresolved/무음이다.
+선택 팩의 슬롯 누락 시 default로 돌아가지 않는다. `off`는 무음이며 미선택 기본 연결과 다르다.
+
+공유 원본은 stable UUID, kind, level, label, positive/negative, revision, active를 가진다.
+대사는 situation FK·text, event binding은 situation FK·event_key unique 관계다.
+후보 allow/deny 표현·삭제/이동 동작·조합 제약·변수 검증은 D05-c/D06/D10-a 응답에 따라 확정한다.
+미응답을 nullable 기본값이나 임시 seed로 우회하여 구현하지 않는다.
+
+응답은 `schema_version:1`, entity `revision`을 포함한다. PATCH/PUT은 `expected_revision` 필수,
+불일치 409 `revision_conflict`, 없는 ID 404, 필드/종류/단계/잘못된 참조 422,
+미해결 의존/중복 identity 409, 권한은 기존 local capability 401/403을 유지한다.
+변경 성공은 commit 뒤만 반환한다. 오류 body는 FastAPI `detail:{code,message,fields?}`;
+사용자 경로/비밀값 대신 필드명과 팩 ID를 반환한다. 파일은 기존 인증 blob/Range 읽기를 재사용한다.
+
+| method / local 경로 | 요청·응답 핵심 | 담당/게이트 |
+|---|---|---|
+| GET `/packs?kind=…` / POST `/packs/rescan` | pack identity/revision/status/issues; scan 결과 accepted/unchanged/conflicts/issues | W08 scanner, W08-S 음향 종류 확장 |
+| GET/PATCH `/characters/{cpu_id}/content` | metadata, P/N, default voice 참조, expected_revision | W08; 치수·override·팩 편집 충돌은 응답 후 |
+| GET/PUT `/characters/{cpu_id}/levels/{level}/images/{kind}` | immutable media_id nullable, framing P/N, expected_revision | W08, 자동 생성은 없음 |
+| GET/PUT `/characters/{cpu_id}/candidates/{level}` | 네 kind의 stable ID 집합·revision | W08; D06 응답 후 정확한 포함 의미 명세 |
+| GET/POST `/content/{kind}` / PATCH/DELETE `/content/{kind}/{id}` | 원본 필드·참조 영향·revision; DELETE도 정책 확정 뒤 논리 제외 | W08; D05-c/D06/D10-a |
+| GET/PUT `/audio-selection` | sfx_pack_id/bgm_pack_id nullable, enabled flags, revision | W08-S; legacy 전환 Q-AUDIO 승인 후 |
+| GET/PUT `/characters/{cpu_id}/voice-selection` | selection_mode, selected_pack_id, revision | W08-S; 기본 연결 Q-PACK 승인 후 |
+| GET `/characters/{cpu_id}/display?context=selection` | 아래 CharacterDisplay | W11-U 읽기, W08 asset 공급 |
+| GET `/presentations/{selection_id}` | snapshot·이미지 상태·artifact·재시도 허용 여부 | W11, D08 승인 후 |
+| POST `/presentations/{selection_id}/retry` | expected_generation/request_id, 명시 재시도만; 202 job 또는 기존 job | W11; D08-c 승인 후 |
+| GET/PUT `/generation-settings` | revision, endpoint/adapter/workflow/model 입력 | W10; D07/D09 응답·node 검증 후 필드 확정 |
+
+### 텍스트·음성·기본 음향 event 계약
+
+기본 선언 공통 텍스트는 chi=치, pon=퐁, kan=깡, riichi=리치, ron=론, tsumo=쯔모다.
+캐릭터별 문장 후보나 음성 유무와 무관하다. actor 좌석→저장 CPU mapping→선택 voice pack으로 resolve한다.
+사람 actor는 연결된 NPC 음성이 없으므로 NPC 음성을 대신 쓰지 않는다.
+기존 문장 확률/cooldown은 별도 상황 대사에만 보존한다. 공통 선언·voice를 문장 후보 존재에 묶지 않는다.
+오마케는 기본 공통 텍스트/SFX 유지, 상황·승패/CG 이벤트는 기존대로 억제한다.
+기본 선언 voice를 추가 캐릭터 이벤트로 취급해 억제할지는 Q-OMAKE-VOICE 응답 전 확정하지 않는다.
+기본 선언/음성 분리 확정만으로 오마케 음소거 정책을 추가하지 않는다.
+
+| domain | v1 slot / source | 처리 |
+|---|---|---|
+| voice | chi/pon/kan/riichi/ron/tsumo | 기존 event mapper의 reach→riichi, 세 깡→kan, hora target/actor→ron/tsumo. actor CPU의 팩만 |
+| character result | defeat_stage_1/2/3 | 증가 후 Level의 캐릭터별 텍스트 지정·같은 키 음성. 텍스트와 오디오 참조는 별도 |
+| completed support | match_first/match_last | W06 기존 보충 승패 대상만, stage=3 불변. D-WIN으로 일반 승리 범위를 자동 확대하지 않음 |
+| voice 승리 | D-WIN 응답 뒤 slot 결정 | ron/tsumo 선언과 승리 대사 중복 여부도 응답 전 hook 금지 |
+| SFX 후보 | tile_discard / tile_shuffle / riichi_stick | discard/reach_accepted/국 시작의 정확한 emission·한 국 1회 섞기 source 검증 후 W08-S 연결. hook 부재 시 임의 action 호출로 만들지 않음 |
+| BGM | title / selection / game / result | 해당 화면 진입 시 slot resolve, 같은 resolved media면 재시작하지 않음. ending은 W06 전용 음악/pending 계약 유지 |
+
+SFX 후보는 사용자가 언급한 패 타격/섞기/리치봉 범위다. 실제 event source 검증이 없으면
+미연결로 보고하고 규칙 코드를 확장하지 않는다. 임의 새 음향 슬롯/샘플을 추가하지 않는다.
+각 slot resolve는 enabled일 때 selected→동일 kind default→null이다. 선택 팩 파일이 누락/비활성/
+읽기 불가면 default를 확인하고 default도 실패하면 무음. voice는 selected/default 연결에서 정한
+**하나의 팩 안에서만** 찾으며 파일 실패도 무음이다. 실행 중 재생 실패는 대국 진행을 막지 않는다.
+팩 전환 시 audio generation을 증가시켜 기존 pending play callback을 격리하고 현 BGM을 재평가한다.
+기본 선언 voice와 같은 파일을 공통 SFX로 중복 재생하지 않는다. W06 6개 구 슬롯 이전은 Q-AUDIO 대상이다.
+
+source identity는 `(play_generation, session_id, action_version, source_kind, source_ordinal, actor_seat, event_key)`.
+`api/game.py`의 `pending_events()` 한 번 소비 직후 원본 tuple의 enumerate index를 붙이고,
+JSON parse/mapper/후보 필터/우선순위 정렬 이후에도 그 index를 유지한다. 잘못된 원소를 건너뛰어도
+뒤 index를 당기지 않는다. result는 source_kind=result, ordinal=좌석 0..3, stage 변경 키로 고정한다.
+`reach_accepted` 같은 비선언 source를 riichi voice로 재매핑하지 않는다.
+동일 배치 내 서로 다른 index를 내용 같다고 합치지 않으며 관측 중복은 실제 mapper 회귀로 확인한다.
+정확한 event source가 추가로 필요하면 엔진 변경 없이 수집 가능한지 별도 검토한다.
+W06 SFX identity·엔딩 UUID·action index·rules snapshot은 바꾸지 않는다.
+
+### W06 보존과 additive migration
+
+현행 Alembic head `20261016_0006` 다음에서 신규 관계만 추가한다. W08이 다음 revision을 소유하고
+W08-S/W09/W10/W11은 앞 PR 병합 뒤 실제 head에서 번호를 정한다. migration 실행은 이번 작업 금지다.
+CPU PK/명단/progress, seed/actions/policy1/2, 기존 completed presentation version 2와
+ending pending snapshot/ack는 재작성하지 않는다. 새 콘텐츠 DTO version과 progression_version은 별개다.
+신규 표시만 content_schema_version=1을 가지며 legacy는 기존 renderer adapter로 계속 읽는다.
+
+- 기존 `local_media_assets`, `sound_effect_sets`, `background_tracks`, `local_sound_selection`과
+  ending 설정·UUID 파일은 그대로 둔다. 새 audio-selection은 별도 키다. 없으면 legacy 재생 경로를 유지한다.
+  새 API가 구 선택을 빈 값으로 덮거나 한 BGM만 몰래 선택하지 않는다. Q-AUDIO 승인 후 일회 전환한다.
+- `cpu_dialogues`의 기본 선언 행은 보존하지만 새 local 공통 텍스트 fallback에는 쓰지 않는다.
+  기존 defeat_stage/보충 승패 행의 새 관계 이전 범위는 Q-LEGACY에 따른다. 원본을 shared로 강제 병합하지 않는다.
+  승인 시 `legacy_content_map(source_table,source_id,target_id)` unique로 재실행 중복을 막고 한 transaction에 이전한다.
+- 기존 CPU seed/대사 seed·CG 슬롯은 유지한다. 새 팩/프롬프트/치수/음성/이미지는 seed하지 않는다.
+  기존 자료에 팩 ID를 자동 할당하거나 엔딩 snapshot을 현 팩으로 다시 resolve하지 않는다.
+- reset은 새 등록/수정/voice 연결·음향 설정·파일도 보존하며 generation만 이전 표시와 job에서 격리한다.
+  재시작/반복 upgrade·bootstrap·reset 검사에서 기존 자료 byte hash와 PK/JSON 값이 같아야 한다.
+
+### 선택·좌석·결과 화면 DTO와 수명
+
+`CharacterDisplay={schema_version:1,cpu_id,character_id,name,level,content_revision,
+metadata,mahjong,images:{profile,full_body,cg}}`.
+image 항목은 `{kind,level,asset_id:null|UUID,url:null|string,status:ready|missing|failed,
+revision}`다. metadata 치수 필드는 Q-META 응답 후만 추가한다.
+mahjong은 기존 style/설명·성향 여섯 값 및 표시용 effective_tier를 읽으며 새 능력치를 계산하지 않는다.
+선택 화면 Level은 현재 진행, 대국 좌석 Level/Tier는 해당 대국 CPU snapshot,
+결과 Level은 committed stage_after다. 보충 stage3/Tier0의 이미지 Level을 0으로 낮추지 않는다.
+
+선택 목록은 프로필을 제공하고 hover/선택은 상단 이름·정보/CG/전신의 **조회만** 유발한다.
+최초 생성·재생성 시점은 Q-IMAGE 응답 전 hook을 두지 않는다. 대국 상세 클릭도 asset 조회만 한다.
+zoom/pan/CG 전용은 renderer 로컬 transform/visibility이며 DB 정산·추첨·생성을 호출하지 않는다.
+이미지 fetch 완료는 `(generation,context,cpu_id,level,kind,asset_id,view_token)` 일치 때만 반영하고
+화면 이탈/hover 변경은 이전 object URL을 해제한다. 오류는 이미지 칸 안내이며 진행 버튼은 유지한다.
+
+`StageResultDisplay={schema_version:1,selection_id,generation,session_id,cpu_id,stage_before,
+stage_after,stage_changed,character_snapshot,text_snapshot,voice_ref,images}`를 정산 transaction에 고정한다.
+stage_changed=true일 때 단계 애니메이션→after CG→after 전신, 하단 after profile/대화 순이다.
+완료 보충/오마케는 이 연출을 새로 만들지 않는다. 마지막 완료 결과의 순위/단계 표시 후 기존
+ending_pending으로 이어지고, 엔딩 계속하기만 기존 ack를 호출한다. 연출 완료/파일 실패는 ack가 아니다.
+연출 재시청·복구는 stage 증가를 반복하지 않으며 자동 voice replay는 하지 않는다.
+
+### 생성 입력·job 수명 — 정책 조건부 계약
+
+공통 `GenerationInput v1`은 cpu_id/character_id, level, image_kind, content revision,
+선택 후보 ID/revision, 구도 P/N, 최종 P/N, workflow_digest/adapter_version,
+model/encoder/VAE 참조+사용자 revision, 순서 있는 LoRA 참조/강도,
+width/height/steps/CFG/sampler/scheduler, 독립 seed를 가진다.
+구도와 기존 5요소의 정확한 결합 위치는 Q-FRAME/D07-a 응답 후 고정한다.
+D07-b 응답 전 캐릭터 override 필드를 구현하지 않는다. 모델 실파일은 복사/배포하지 않는다.
+
+cache는 canonical JSON(SHA256, UTF-8, key 정렬, 배열 순서 유지, 숫자 표현 고정)의
+최종 생성 입력으로 식별하고 이미지 kind/Level도 포함한다. label/화면 token은 제외한다.
+D08-a A면 seed 이전 입력 digest→최초 독립 seed/artifact 매핑을 unique로 보존,
+B면 event identity+독립 seed를 포함한다. 같은 이름의 모델 교체를 자동 감지했다고 주장하지 않고
+사용자 model revision을 입력에 포함한다. 실제 지원 node의 fingerprint 유무는 W10 기술 확인 항목이다.
+
+job은 `queued→submitting→running→succeeded|failed|unknown`과 owned request/client/prompt ID를 저장한다.
+외부 submit은 commit 뒤 writer/game lock 밖에서 수행한다. prompt ID 수신 전 연결 유실은 unknown이며
+자동 중복 submit하지 않는다. 재기동은 저장된 자기 prompt ID만 조회하고, 불명 상태는 명시 재시도
+전까지 보류한다. 재시도는 새 request UUID, 같은 selection/입력 snapshot을 사용한다.
+D09-a A 채택 시 게임 종료는 polling만 중지, 원격 프로세스/다른 job interrupt 금지다.
+초기화/새 대국 뒤 완료한 파일은 보존해도 현재 화면으로 연결하지 않는다.
+D08-b A는 현재 selection을 별도 writer transaction에 저장 성공 후 발행하고,
+B는 순간 표시를 재기동 복구하지 않는다. 행동 commit 뒤 selection 저장 전 crash는
+행동만 복구하고 과거 pending replay로 생성하지 않는다. 결과 snapshot은 정산과 원자 저장한다.
+
+ComfyUI endpoint/object_info·Anima workflow/node·encoder/VAE/LoRA 호환·output fetch 계약은
+실제 환경에서 확인하지 않았다. W10은 승인 정책과 별도로 지원 workflow 1개의 구체 input/output,
+출력 크기/형식/디코딩·소유 결과 경로 제한을 기술 검증한 뒤 adapter를 고정해야 한다.
+미검증 node명을 지어내거나 mock 통과를 실제 출력 성공으로 기록하지 않는다.
+
+### 후속 수용 사례 — 실행 결과 아님
+
+1. stage 0→1/2→3에서 after Level 세 종류만 표시, 보충3/Tier0와 오마케3/Tier2는 이미지3 유지.
+2. 한 배치 `[bad,chi,pon]`의 source ordinal 1/2 유지; actor별 voice, 슬롯 누락은 무출력,
+   공통 선언은 문장 후보가 없어도 표시. 재접속/replay 중 과거 voice/SFX는 재생하지 않음.
+3. SFX 선택 tile_discard 누락/default 존재→default, 양쪽 누락→무음; voice 누락은 다른 팩 무음.
+4. 동일 content_digest 재scan no-op, JSON 불변·참조 음성/이미지 bytes 변경은 새 revision 후보.
+   같은 내부 pack_id의 다른 voice namespace와 명시 교차 연결도 올바르게 resolve.
+   충돌/잘못된 경로/불완전 파일로 기존 revision 불변. 복사 후 metadata 실패,
+   수정/재시작/reset에도 기존 W06 UUID/선택/ending snapshot/파일 hash 유지.
+5. 빠른 A→B hover, 결과 표시 뒤 팩 교체, reset 후 늦은 job/play/load는 현 화면 불변.
+6. D06/D08 각 승인 조합대로 후보 고갈·삭제/참조·입력 수정/재사용·복구를 검사한다.
+   결과 GET/연출 재실행·CG 전용 복귀가 stage/정산/추첨/submit 횟수를 증가시키지 않아야 한다.
+
 ## W07 콘텐츠·이미지 계약 초안 — 정책 승인 전 구현 금지
 
 분석 기준 main `1b548ae8ca901e97407cd02ccc45973a1539add7`, PR #70 병합 확인(2026-10-16 KST).
