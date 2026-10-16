@@ -470,8 +470,9 @@ artifact archive SHA256은 `dc65ae3918d35d28ce6e1e5bf076ea8ede188ac9b5b56d115dd7
 보조 Windows storage run [38778254269](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38778254269)도 성공했다. 자세한 pre/post 회귀와 run/artifact 근거는 CURRENT_STATE에 있다.
 
 사용자의 개인 Windows PC, 전원 차단 내구성 및 실제 ending CG/음악 출력은 미검증이다. W06-C
-등록/선택/엔딩 참조 구현과 exact-SHA mock/Windows 검증은 CURRENT_STATE의 “W06-C PR #70 보완”에
-기록한다. 열린 PR #70은 직접 병합하지 않는다.
+등록/선택/엔딩 참조 구현과 exact-SHA mock/Windows 검증은 CURRENT_STATE의 “W06-C PR #70”에
+기록한다. PR #70은 main `1b548ae`에 병합됐다. 위 source/run은 당시 검증 이력이며
+최종 source `efd5a03`의 증거와 실제 미검증 범위는 CURRENT_STATE를 따른다.
 
 ## W07 콘텐츠·이미지 계약 초안 — 정책 승인 전 구현 금지
 
