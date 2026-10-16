@@ -22,6 +22,7 @@ node tests/dialogue.browser.mjs
 node tests/connection.browser.mjs
 node tests/result-asset.browser.mjs
 node tests/local-sound.browser.mjs
+node tests/local-content.browser.mjs
 ```
 
 For a different Vite address, set `TEST_BASE_URL`.
@@ -54,6 +55,11 @@ order changes, stale `ended` and media-load callbacks, media replacement for the
 recovery after file/autoplay failures, clearing inactive sound references, and a committed final SFX
 that resolves after `match_complete`. Duplicate/replayed event identities stay silent; no audio
 content is generated.
+
+`local-content.browser.mjs` checks the desktop character editor using routed REST responses. It covers
+dirty-only and explicit empty saves, failure/conflict draft preservation, delayed save responses,
+late character loads/saves, and deduplicating an in-flight scan when returning to the pack tab.
+It generates no prompt content or media. W05 runs it with the existing Playwright/Vite setup.
 
 ## Real-server browser integration
 

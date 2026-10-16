@@ -328,6 +328,10 @@ W05 종료/재시작·W06 pending/reset/사운드 회귀를 변경 영향대로 
 
 ### W08-B — 기존 캐릭터 프롬프트 편집·팩 목록 UI
 
+- 최종 검토: 저장 대기 중 P/N 입력 소실·팩 탭 재진입 중복 검색을 각각 재현하고 입력 잠금/
+  in-flight guard로 보완했다. 전용 content browser 회귀를 W05에 연결했다. 원본과 수정본의
+  exact-head CI/artifact 및 병합 상태는 PR #81/CURRENT_STATE를 따른다.
+
 - W08-A 병합 후 독립 구현한다. ARCHITECTURE의 W08-B 계약을 따른다. 기존 CPU PK·명단·진행은 유지한다.
 - 외모/상의 속옷/하의 속옷 P/N과 4 Level×3종 구도 P/N 편집·저장, 필드별 명시 override,
   팩 목록/진단/재검색 UI만 구현한다. 새 CPU/팩 실제 적용·이미지 업로드·공유 후보는 제외한다.

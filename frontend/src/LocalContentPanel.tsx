@@ -27,6 +27,7 @@ export function LocalContentPanel({ accessToken, onClose }: { accessToken: strin
   const [scanning, setScanning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const requestId = useRef(0)
+  const scanInFlight = useRef(false)
 
   function updateListing(listing: { packs: ContentPack[]; scan_entries: typeof scanEntries }) {
     setPacks(listing.packs)
@@ -47,6 +48,8 @@ export function LocalContentPanel({ accessToken, onClose }: { accessToken: strin
   }
 
   async function scanPacks() {
+    if (scanInFlight.current) return
+    scanInFlight.current = true
     setScanning(true); setError(null)
     try {
       const result = await rescanContentPacks(accessToken)
@@ -54,7 +57,7 @@ export function LocalContentPanel({ accessToken, onClose }: { accessToken: strin
     } catch (caught) {
       setError(message(caught))
       try { updateListing(await listContentPacks(accessToken)) } catch { /* retain last listing */ }
-    } finally { setScanning(false) }
+    } finally { scanInFlight.current = false; setScanning(false) }
   }
 
   useEffect(() => {
@@ -130,16 +133,16 @@ export function LocalContentPanel({ accessToken, onClose }: { accessToken: strin
       {loading && <p className="muted" role="status">캐릭터 자료를 불러오는 중…</p>}
       {!loading && !cpus.length && <p className="muted">편집 가능한 캐릭터가 없습니다.</p>}
       {content && <>
-        <p className="muted">저장 revision {content.revision} · 표시된 항목만 저장합니다. 비워 둔 문자열도 명시 편집값으로 기록됩니다.</p>
+        <p className="muted">변경한 항목만 저장합니다. 비워 둔 문자열도 명시 편집값으로 기록됩니다.</p>
         <h3>캐릭터 기본 프롬프트</h3>
-        {GROUPS.map(([key, label]) => <PromptFields key={key} title={label} positive={valueFor(`p.${key}.positive`, content.prompts[key].positive)} negative={valueFor(`p.${key}.negative`, content.prompts[key].negative)} positiveEdited={content.prompts[key].overrides.positive || Object.hasOwn(dirty, `p.${key}.positive`)} negativeEdited={content.prompts[key].overrides.negative || Object.hasOwn(dirty, `p.${key}.negative`)} onPositive={(value) => editPrompt(key, 'positive', value)} onNegative={(value) => editPrompt(key, 'negative', value)} />)}
+        {GROUPS.map(([key, label]) => <PromptFields disabled={saving} key={key} title={label} positive={valueFor(`p.${key}.positive`, content.prompts[key].positive)} negative={valueFor(`p.${key}.negative`, content.prompts[key].negative)} positiveEdited={content.prompts[key].overrides.positive || Object.hasOwn(dirty, `p.${key}.positive`)} negativeEdited={content.prompts[key].overrides.negative || Object.hasOwn(dirty, `p.${key}.negative`)} onPositive={(value) => editPrompt(key, 'positive', value)} onNegative={(value) => editPrompt(key, 'negative', value)} />)}
         <h3>단계별 이미지 구도 P/N</h3>
         {[0, 1, 2, 3].map((level) => <details className="framing-level" key={level} open={level === 0}>
           <summary>Level {level} · {LEVELS[level]}</summary>
           {KINDS.map(([kind, label]) => {
             const pair = content.levels[String(level)][kind]
             const posKey = `f.${level}.${kind}.positive`, negKey = `f.${level}.${kind}.negative`
-            return <PromptFields key={kind} title={label} positive={valueFor(posKey, pair.positive)} negative={valueFor(negKey, pair.negative)} positiveEdited={pair.overrides.positive || Object.hasOwn(dirty, posKey)} negativeEdited={pair.overrides.negative || Object.hasOwn(dirty, negKey)} onPositive={(value) => editFraming(level, kind, 'positive', value)} onNegative={(value) => editFraming(level, kind, 'negative', value)} />
+            return <PromptFields disabled={saving} key={kind} title={label} positive={valueFor(posKey, pair.positive)} negative={valueFor(negKey, pair.negative)} positiveEdited={pair.overrides.positive || Object.hasOwn(dirty, posKey)} negativeEdited={pair.overrides.negative || Object.hasOwn(dirty, negKey)} onPositive={(value) => editFraming(level, kind, 'positive', value)} onNegative={(value) => editFraming(level, kind, 'negative', value)} />
           })}
         </details>)}
         <button className="primary-button" disabled={saving || !Object.keys(dirty).length} onClick={() => void save()} type="button">{saving ? '저장 중…' : `변경 필드 저장 (${Object.keys(dirty).length})`}</button>
@@ -156,11 +159,11 @@ export function LocalContentPanel({ accessToken, onClose }: { accessToken: strin
   </section>
 }
 
-function PromptFields({ title, positive, negative, positiveEdited, negativeEdited, onPositive, onNegative }: {
-  title: string; positive: string; negative: string; positiveEdited: boolean; negativeEdited: boolean
+function PromptFields({ disabled, title, positive, negative, positiveEdited, negativeEdited, onPositive, onNegative }: {
+  disabled: boolean; title: string; positive: string; negative: string; positiveEdited: boolean; negativeEdited: boolean
   onPositive: (value: string) => void; onNegative: (value: string) => void
 }) {
-  return <fieldset className="prompt-fields"><legend>{title}</legend>
+  return <fieldset className="prompt-fields" disabled={disabled}><legend>{title}</legend>
     <label>Positive {positiveEdited && <small>편집 기록</small>}<textarea rows={2} value={positive} onChange={(event) => onPositive(event.target.value)} /></label>
     <label>Negative {negativeEdited && <small>편집 기록</small>}<textarea rows={2} value={negative} onChange={(event) => onNegative(event.target.value)} /></label>
   </fieldset>
