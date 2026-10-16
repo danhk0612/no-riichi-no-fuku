@@ -458,7 +458,8 @@ async function smokeRun() {
   })()`)
   await waitForRenderer(`(() => {
     const audioSelect = Array.from(document.querySelectorAll('.sound-panel label')).find(label => label.innerText.includes('오디오 파일'))?.querySelector('select')
-    return Boolean(audioSelect && audioSelect.options.length > 1)
+    const uploadInput = document.querySelector('.sound-panel input[type="file"]')
+    return Boolean(audioSelect && audioSelect.options.length > 1 && uploadInput && !uploadInput.disabled)
   })()`, 30000)
   await window.webContents.executeJavaScript(`(() => {
     const setValue = (element, value) => {
@@ -484,6 +485,7 @@ async function smokeRun() {
     }
     const registerButton = Array.from(document.querySelectorAll('.sound-panel button')).find(button => button.innerText === '배경음 등록')
     window.__w05TrackButton = { found: Boolean(registerButton), disabled: registerButton?.disabled ?? null, text: registerButton?.innerText ?? null }
+    if (registerButton?.disabled) throw new Error('BGM registration remained disabled after media upload refresh')
     registerButton?.click()
   })()`)
   const readTrackSetup = () => window.webContents.executeJavaScript(`(async () => {
@@ -509,19 +511,13 @@ async function smokeRun() {
     })()`)
   let trackSetup
   try {
-    trackSetup = await waitFor(async () => {
-      const state = await readTrackSetup()
-      return state.trackInputs > 0 || state.formError ? state : false
-    }, 30000)
+    await waitForRenderer(`document.querySelector('.track-order input')`, 30000)
   } catch (error) {
     trackSetup = await readTrackSetup()
     evidence.soundTrackSetup = trackSetup
     writeEvidence()
     throw new Error(`packaged BGM registration did not become selectable: ${error.message}; ${JSON.stringify(trackSetup)}`)
   }
-  evidence.soundTrackSetup = trackSetup
-  writeEvidence()
-  if (trackSetup.trackInputs === 0) throw new Error(`packaged BGM registration failed: ${JSON.stringify(trackSetup)}`)
   await window.webContents.executeJavaScript(`(() => {
     document.querySelector('.track-order input').click()
     Array.from(document.querySelectorAll('.sound-panel button')).find(button => button.innerText === '사운드 선택 저장').click()
