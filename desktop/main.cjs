@@ -179,6 +179,19 @@ async function spawnEngine(root, port = 0) {
   }
 }
 
+async function spawnEngineWithDynamicPortRetry(root, attempts = 3) {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await spawnEngine(root)
+    } catch (error) {
+      const addressConflict = /10048|address already in use/i.test(error.message)
+      if (!addressConflict || attempt === attempts) throw error
+      await delay(250 * attempt)
+    }
+  }
+  throw new Error('local engine could not acquire a dynamic loopback port')
+}
+
 async function verifyDuplicateEngineIsRejected(root) {
   const duplicate = spawn(enginePath(), ['--data', root, '--identity', randomUUID(), '--port', '0'], {
     cwd: root,
@@ -756,7 +769,7 @@ async function smokeRun() {
     window = undefined
     await delay(100)
     await stopEngine()
-    await spawnEngine(dataRoot)
+    await spawnEngineWithDynamicPortRetry(dataRoot)
     makeWindow(false)
     await loadApplication()
     await waitForRenderer("Boolean(document.querySelector('.human-controls'))")
@@ -779,7 +792,7 @@ async function smokeRun() {
   window = undefined
   await delay(100)
   await stopEngine()
-  await spawnEngine(dataRoot)
+  await spawnEngineWithDynamicPortRetry(dataRoot)
   makeWindow(false)
   await loadApplication()
   await waitForRenderer("Boolean(document.querySelector('.match-result h2'))", 90000)
@@ -850,7 +863,7 @@ else {
       mkdirSync(dataRoot, { recursive: true })
       if (smoke) await smokePreflight()
       if (lifecycleTest) await testPackagedTimeoutCleanup()
-      await spawnEngine(dataRoot)
+      await spawnEngineWithDynamicPortRetry(dataRoot)
       evidence.startup = 'engine ready'
       writeEvidence()
       configureRequestBoundary()

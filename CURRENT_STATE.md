@@ -2,23 +2,25 @@
 
 ## W08-S — 오디오팩·캐릭터 음성 연결
 
-PR #83은 열려 있고 현재 원격 head는 `3b3a4400f0f9b79743c87e469804f6337b9626e0`다. 기준 main은
+PR #83은 열려 있고 현재 원격 head는 `818d698f214d6b3ef98c3dfc859ea350cbb04bb2`다. 기준 main은
 PR #82 병합 `5d00c9e`다. SFX/BGM 단일 팩 선택과 slot fallback, CPU별 default/selected/off 음성 연결,
 선언·화료·최종 4위 단계 패배 voice routing, 최소 UI 및 legacy 자료 보존을 구현했다. Q-AUDIO A,
 오마케 기본 선언·화료·최종 4위 대사 재생, stage/Tier 및 추가 진행/CG 불변 규칙을 REQUIREMENTS/
 ARCHITECTURE/TASKS에 반영했다.
 
 로컬 backend unittest 127개와 frontend production build가 통과했다. 정확한 원격 head에서 Windows
-W04 run `38957539170`은 성공했고 artifact `12072145289`의 SHA-256은
-`924834dc78f8e6ed61b2034988a9b99f39d94e3e38e2ec1f14fe02a6d8772828`다. Windows W05 run
-`38957539009`는 browser 회귀에서 실패했고 artifact `12071745795`은 진단 자료만 포함해 패키징 단계는
-건너뛰었다. 미완료 response waiter rejection을 처리한 뒤 최초 실패가 드러났다. `match_complete` 직후
-React가 결과 화면을 반영하기 전에 `.match-result`를 동기 검사하고 있어 DOM 표시를 기다리도록 수정했다.
-이 수정의 W05 재실행은 대기 중이다.
+W04 run #88 (`38958010942`)은 성공했고 artifact `12071372620`의 SHA-256은
+`a6ae1d27273d2d60f55520dbf173ca6818080e47b7191819848fda1e798ed3d5`다. W05 #129
+(`38958010964`)에서 backend/local regressions, renderer build, browser/content 회귀와 Electron 패키지 생성은
+통과했다. packaged renderer smoke는 엔진을 즉시 재시작할 때 Windows 동적 포트가 `WinError 10048`로
+충돌해 실패했고, 이후 패키지 검증 및 ZIP 생성은 건너뛰었다. 진단 artifact `12071183236`은 정확한 source
+SHA `818d698f214d6b3ef98c3dfc859ea350cbb04bb2`를 가리킨다.
 
-현재 실행 환경에서 Playwright Chromium 다운로드가 0-byte ZIP으로 실패해 local browser 회귀는
-미실행이다. 재배치한 voice queue/reset fixture를 포함해 Windows W05를 통과시키고, 정확한 최종 source
-SHA 및 artifact 내부 source SHA를 확인해야 W08-S를 완료 처리할 수 있다.
+후속 수정은 자동 포트 모드의 바인드 충돌에 한해 최대 3회 엔진 시작을 재시도한다. 이 수정은 아직
+원격에 올리거나 Windows에서 검증하지 않았다. 최신 변경의 W04/W05 exact-SHA CI, packaged smoke,
+artifact 내부 source SHA와 성공한 W05 ZIP hash 확인 전에는 W08-S를 완료 처리하지 않는다. 현재 환경에서
+Playwright Chromium 다운로드가 0-byte ZIP으로 실패하여 local browser 회귀는 실행하지 못했지만, Windows
+W05 browser/content 회귀는 위 head에서 통과했다.
 
 ## W08-C — 기존 캐릭터팩 연결·동일 팩 갱신
 
