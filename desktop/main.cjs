@@ -179,19 +179,6 @@ async function spawnEngine(root, port = 0) {
   }
 }
 
-async function spawnEngineWithDynamicPortRetry(root, attempts = 3) {
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    try {
-      return await spawnEngine(root)
-    } catch (error) {
-      const addressConflict = /10048|address already in use/i.test(error.message)
-      if (!addressConflict || attempt === attempts) throw error
-      await delay(250 * attempt)
-    }
-  }
-  throw new Error('local engine could not acquire a dynamic loopback port')
-}
-
 async function verifyDuplicateEngineIsRejected(root) {
   const duplicate = spawn(enginePath(), ['--data', root, '--identity', randomUUID(), '--port', '0'], {
     cwd: root,
@@ -487,7 +474,37 @@ async function smokeRun() {
     setValue(audioLabel.querySelector('select'), assetId)
     Array.from(document.querySelectorAll('.sound-panel button')).find(button => button.innerText === '배경음 등록').click()
   })()`)
-  await waitForRenderer(`document.querySelector('.track-order input')`, 30000)
+  const readTrackSetup = () => window.webContents.executeJavaScript(`(async () => {
+      const [trackResponse, mediaResponse] = await Promise.all([
+        fetch('/api/local/background-tracks'), fetch('/api/local/media'),
+      ])
+      const [tracks, media] = await Promise.all([trackResponse.json(), mediaResponse.json()])
+      return {
+        trackInputs: document.querySelectorAll('.track-order input').length,
+        formError: document.querySelector('.sound-panel [role="alert"]')?.innerText ?? null,
+        registrationButtonDisabled: Array.from(document.querySelectorAll('.sound-panel button'))
+          .find(button => button.innerText === '배경음 등록')?.disabled ?? null,
+        audioOptions: Array.from(document.querySelectorAll('.sound-panel label'))
+          .find(label => label.innerText.includes('오디오 파일'))?.querySelector('select')?.options.length ?? 0,
+        tracks, mediaCount: media.length,
+        trackStatus: trackResponse.status, mediaStatus: mediaResponse.status,
+      }
+    })()`)
+  let trackSetup
+  try {
+    trackSetup = await waitFor(async () => {
+      const state = await readTrackSetup()
+      return state.trackInputs > 0 || state.formError ? state : false
+    }, 30000)
+  } catch (error) {
+    trackSetup = await readTrackSetup()
+    evidence.soundTrackSetup = trackSetup
+    writeEvidence()
+    throw new Error(`packaged BGM registration did not become selectable: ${error.message}; ${JSON.stringify(trackSetup)}`)
+  }
+  evidence.soundTrackSetup = trackSetup
+  writeEvidence()
+  if (trackSetup.trackInputs === 0) throw new Error(`packaged BGM registration failed: ${JSON.stringify(trackSetup)}`)
   await window.webContents.executeJavaScript(`(() => {
     document.querySelector('.track-order input').click()
     Array.from(document.querySelectorAll('.sound-panel button')).find(button => button.innerText === '사운드 선택 저장').click()
@@ -769,7 +786,7 @@ async function smokeRun() {
     window = undefined
     await delay(100)
     await stopEngine()
-    await spawnEngineWithDynamicPortRetry(dataRoot)
+    await spawnEngine(dataRoot)
     makeWindow(false)
     await loadApplication()
     await waitForRenderer("Boolean(document.querySelector('.human-controls'))")
@@ -792,7 +809,7 @@ async function smokeRun() {
   window = undefined
   await delay(100)
   await stopEngine()
-  await spawnEngineWithDynamicPortRetry(dataRoot)
+  await spawnEngine(dataRoot)
   makeWindow(false)
   await loadApplication()
   await waitForRenderer("Boolean(document.querySelector('.match-result h2'))", 90000)
@@ -863,7 +880,7 @@ else {
       mkdirSync(dataRoot, { recursive: true })
       if (smoke) await smokePreflight()
       if (lifecycleTest) await testPackagedTimeoutCleanup()
-      await spawnEngineWithDynamicPortRetry(dataRoot)
+      await spawnEngine(dataRoot)
       evidence.startup = 'engine ready'
       writeEvidence()
       configureRequestBoundary()

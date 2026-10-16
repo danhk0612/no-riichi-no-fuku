@@ -2,25 +2,25 @@
 
 ## W08-S — 오디오팩·캐릭터 음성 연결
 
-PR #83은 열려 있고 현재 원격 head는 `818d698f214d6b3ef98c3dfc859ea350cbb04bb2`다. 기준 main은
+PR #83은 열려 있고 원격 head `d1ac9587ca540fa0f5c4beb4b5d256fe8dd006a8`다. 기준 main은
 PR #82 병합 `5d00c9e`다. SFX/BGM 단일 팩 선택과 slot fallback, CPU별 default/selected/off 음성 연결,
 선언·화료·최종 4위 단계 패배 voice routing, 최소 UI 및 legacy 자료 보존을 구현했다. Q-AUDIO A,
 오마케 기본 선언·화료·최종 4위 대사 재생, stage/Tier 및 추가 진행/CG 불변 규칙을 REQUIREMENTS/
 ARCHITECTURE/TASKS에 반영했다.
 
-로컬 backend unittest 127개와 frontend production build가 통과했다. 정확한 원격 head에서 Windows
-W04 run #88 (`38958010942`)은 성공했고 artifact `12071372620`의 SHA-256은
-`a6ae1d27273d2d60f55520dbf173ca6818080e47b7191819848fda1e798ed3d5`다. W05 #129
-(`38958010964`)에서 backend/local regressions, renderer build, browser/content 회귀와 Electron 패키지 생성은
-통과했다. packaged renderer smoke는 엔진을 즉시 재시작할 때 Windows 동적 포트가 `WinError 10048`로
-충돌해 실패했고, 이후 패키지 검증 및 ZIP 생성은 건너뛰었다. 진단 artifact `12071183236`은 정확한 source
-SHA `818d698f214d6b3ef98c3dfc859ea350cbb04bb2`를 가리킨다.
+Backend unittest 127개, frontend production build, Windows W04 #89 (`38959101916`)가 통과했다.
+이 W04 artifact `12072232132`의 SHA-256은
+`c7d9344900701a7554a140ccccd04966fb1d349bd78e77e52507a454589f445f`다. W05 #130 (`38959101626`)에서
+backend/local regression, renderer build, browser/content 회귀와 Electron 패키지 생성은 통과했지만,
+packaged renderer smoke가 BGM 등록 후 `.track-order` input을 기다리다 timeout됐다. diagnostic artifact
+`12071553718`의 `source-sha.txt`는 `d1ac9587ca540fa0f5c4beb4b5d256fe8dd006a8`이다. artifact의
+`WinError 10048`은 의도된 occupied-port preflight 검사에서 발생한 로그로, packaged failure의 원인이
+아니다. 직전 동적 포트 retry는 추정에 근거한 변경이라 제거했다.
 
-후속 수정은 자동 포트 모드의 바인드 충돌에 한해 최대 3회 엔진 시작을 재시도한다. 이 수정은 아직
-원격에 올리거나 Windows에서 검증하지 않았다. 최신 변경의 W04/W05 exact-SHA CI, packaged smoke,
-artifact 내부 source SHA와 성공한 W05 ZIP hash 확인 전에는 W08-S를 완료 처리하지 않는다. 현재 환경에서
-Playwright Chromium 다운로드가 0-byte ZIP으로 실패하여 local browser 회귀는 실행하지 못했지만, Windows
-W05 browser/content 회귀는 위 head에서 통과했다.
+현재 수정은 packaged smoke 실패 때 media/background-track API 상태, UI 오류 및 선택 가능한 track 수를
+artifact에 기록해 재검증한다. 이 exact-SHA 실행과 artifact 내부 source SHA 및 성공한 W05 ZIP hash를
+확인하기 전에는 W08-S를 완료 처리하지 않는다. 로컬 Playwright Chromium 다운로드가 0-byte ZIP으로
+실패해 local browser 회귀는 실행하지 못했으나, Windows W05 browser/content 회귀는 #129/#130에서 통과했다.
 
 ## W08-C — 기존 캐릭터팩 연결·동일 팩 갱신
 
