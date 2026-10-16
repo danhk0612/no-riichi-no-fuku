@@ -1,5 +1,32 @@
 # 현재 상태
 
+## W07 설계 준비 — 문서 작성·정책 응답 대기
+
+- 확인일 2026-10-16(KST), 분석 main `1b548ae8ca901e97407cd02ccc45973a1539add7`.
+  Git main과 GitHub PR #70의 `merged=true`/merge commit을 대조했다. PR #70은 병합 완료이며
+  W06-C 최종 source `efd5a03`의 검증 기록은 아래에 보존한다. 열린 PR은 #35(기존 Docker 문서)이며
+  이번 분석 당시 W07 동일 브랜치/PR은 없었다. #35는 수정하지 않았다.
+- `task/w07-content-contract`에서 루트 기준 문서와 CPU 대사·CG·event·replay·local media/진행·
+  frontend 및 관련 tests를 읽고 R07~R14를 대조했다. 현재 CPU별 대사/단계 CG·W06 presentation은
+  재사용 가능하지만 공유 Level/후보/P/N/선택 저장·ComfyUI/cache는 없다.
+- REQUIREMENTS에 D05~D10 질문별 예시/선택지/영향/권고·막는 Task를 정리했다. 확정 정책은
+  재질문하지 않으며 모든 권고는 미승인이다. ARCHITECTURE에 새 관계/API/UI 책임·이전/seed 호환·
+  RNG 분리·event identity/지연 결과 격리·파일 보존·승인 뒤 검증 예제를 작성했다.
+  TASKS는 W07 준비와 전체 완료를 구분하고 W08~W11 구현 경계·착수 게이트·다음 문서 지시문을 남긴다.
+- 소스 대조에서 기존 “match_first/last 연결 없음”은 웹/초기 baseline 설명이며 현재 local 보충 CPU는
+  해당 승패 대사를 정산 presentation에 고정한다. 아래 구현 표를 웹 baseline로 명시해 혼동을 줄인다.
+  기존 CG slot은 교체 가능한 참조이며 W06 immutable media와 다르다. 생성 cache로 무조건 전용하지 않는다.
+- 이번 검증은 문서 diff/공백·로컬 링크 38개·질문 ID 15개/관계·기준 SHA와 변경 범위 확인이며
+  모두 통과했다. 기존 legacy replay fixture의 원본 byte 일치와 승인된 문서 4개만 변경됨도 확인했다.
+  제품 코드·의존성·migration·workflow 변경/실행 및 새 backend/browser/build/Windows CI·artifact
+  검증은 하지 않았다. 기존 W06 검증을 이번 W07 결과로 재분류하지 않는다.
+- 제품 구현·콘텐츠 생성·사용자 자료 작업·ComfyUI 실행·직접 병합·Release/tag 없음.
+  W07 전체는 미완료다. 사용자 응답 후 구체 schema/API/동시성·생성 입력/job 수명 계약 검토가 필요하다.
+  D11 실제 콘텐츠/권리, 개인 Windows PC·전원 차단 및 실제 CG/오디오/ComfyUI 출력은 계속 미검증이다.
+- PR #72의 설계 준비 문서를 검토했다. 변경은 기준 문서 4개뿐이며 제품 diff 없음·공백 검사·질문 ID와
+  참조 소스를 대조했다. 미승인 권고와 확정 정책의 구분을 유지하며 문서 준비 결과만 검토 통과다.
+  병합 상태/SHA는 PR #72/Git을 따른다. 일부 질문 응답이나 문서 병합은 나머지 권고의 승인이 아니다.
+
 ## W06-C PR #70 — 최종 검토 통과
 
 확인일 2026-10-16(KST), 최신 main `4b170f83545f338c66f2888a6d641f00ba908444`.
@@ -302,7 +329,9 @@ Actions artifact digest가 일치하고 unittest/pytest 로그를 확인했다. 
 검증 근거로는 위 push run을 기록한다. 이는 이전 code SHA의 검증 이력이다. 전원 차단
 durability 및 사용자 Windows UI/LocalAppData는 여전히 미검증이다.
 
-## 코드로 확인한 구현
+## 코드로 확인한 구현 — 웹/초기 baseline
+
+이 표는 W01 당시 웹 경로다. 현재 Windows local 진행/명단/사운드 구현은 앞의 W04~W06 절을 따른다.
 
 | 영역 | 상태/근거 |
 |---|---|
@@ -583,6 +612,8 @@ W01 당시 Actions workflow가 없었으므로 위 W01 결과에 CI 통과를 �
 
 ## 다음
 
-W06-B PR #68은 병합됐고 W06-C PR #70은 최종 검토를 통과했다. 병합을 확인한 뒤 TASKS의 W07 설계 준비 지시를 따른다.
+W06-B PR #68과 W06-C PR #70은 main에 병합됐다. W07 설계 준비 문서는 작성했으며,
+다음은 REQUIREMENTS의 D05~D10 사용자 응답과 TASKS의 W07 정책 조율·계약 확정이다.
+W08~W11 구현은 아직 착수하지 않는다.
 개인 Windows 실기, 전원 차단 durability 및
 실제 ending CG/음악 재생은 해당 범위에서 증거를 별도로 확보한다.

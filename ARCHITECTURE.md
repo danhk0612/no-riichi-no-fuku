@@ -470,30 +470,147 @@ artifact archive SHA256은 `dc65ae3918d35d28ce6e1e5bf076ea8ede188ac9b5b56d115dd7
 보조 Windows storage run [38778254269](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38778254269)도 성공했다. 자세한 pre/post 회귀와 run/artifact 근거는 CURRENT_STATE에 있다.
 
 사용자의 개인 Windows PC, 전원 차단 내구성 및 실제 ending CG/음악 출력은 미검증이다. W06-C
-등록/선택/엔딩 참조 구현과 exact-SHA mock/Windows 검증은 CURRENT_STATE의 “W06-C PR #70 보완”에
-기록한다. 열린 PR #70은 직접 병합하지 않는다.
+등록/선택/엔딩 참조 구현과 exact-SHA mock/Windows 검증은 CURRENT_STATE의 “W06-C PR #70”에
+기록한다. PR #70은 main `1b548ae`에 병합됐다. 위 source/run은 당시 검증 이력이며
+최종 source `efd5a03`의 증거와 실제 미검증 범위는 CURRENT_STATE를 따른다.
 
-## 콘텐츠 데이터 구조 권고 — 스키마 미확정
+## W07 콘텐츠·이미지 계약 초안 — 정책 승인 전 구현 금지
 
-| 개념 | 소유/관계 | 제안 책임 |
+분석 기준 main `1b548ae8ca901e97407cd02ccc45973a1539add7`, PR #70 병합 확인(2026-10-16 KST).
+R07~R14에 필요한 관계·책임을 정리한 **미승인 기술 초안**이다. 아래 이름/경로는 제안이며
+현재 table/API가 아니다. 사용자 질문/권고/선택의 원본은 [REQUIREMENTS.md](REQUIREMENTS.md)의
+“W07 사용자 질문”이다. D05~D10 답변 후 W07 계약 확정 검토를 거쳐야 W08~W11에 착수할 수 있다.
+
+### 현재 소스와 재사용 경계
+
+| 요구/영역 | 현재 코드에서 확인한 사실 | 재사용 및 필요한 차이 |
 |---|---|---|
-| CharacterAppearance / Outfit | character ID | 각 Positive/Negative, 규칙·진행도와 분리 |
-| SharedClothingState / Situation / Pose | 공통 ID, Level, label | 원본 하나, P/N, 편집 식별 |
-| SharedDialogue | situation ID, label, text | 상황별 여러 문장과 변수 |
-| CharacterLevelCandidates | character ID + Level + 항목 종류 + 항목 ID | 후보/제외 참조; 공유 원문 복제 금지 |
-| PresentationSelection | 표시 이벤트 ID + character/Level + 선택 ID/버전 | 재렌더링/늦은 생성 응답의 재선택·오염 방지 |
-| GenerationRequest / Artifact | 표시 선택 + 최종 P/N + 생성 설정 + 파일 key | ComfyUI job와 결과 파일 연결 |
+| R07/R14 캐릭터 | `db/models/cpu_character.py`, `services/admin.py`, `api/admin.py`: 성인 CPU ID/성향/설명·활성 상태, P/N 없음 | CPU PK/명단 보호·관리 권한 유지. P/N 편집·공유 관리 UI만 추가 대상으로 분리 |
+| R08/R09 공유·후보 | 공유 Level/상황/포즈/후보 관계 없음. 기존 `cpu_dialogues`는 CPU FK+event_key+text+active | 기존 대사 행을 공유 데이터로 간주하지 않음. 공통 원본과 캐릭터 참조 관계를 새로 설계 |
+| R12/R13 행동 대사 | `dialogue_service.py`: CPU 좌석만, active 대사 ID 순 최대 100개 중 choice. `reach→riichi`, 치/퐁, 세 깡→kan, hora의 target/actor로 ron/tsumo 구분 | event 해석·노출 정책을 보존하고 그 다음 상황/후보 교집합을 선택. 기존 100개 제한을 공유 후보 정책으로 자동 계승하지 않음 |
+| 기존 노출 수치 | ron/tsumo 확률 1·우선 60, riichi .9·50, kan .75·40, pon .45·30, chi .35·20. CPU/event cooldown은 kan 2/2, pon 2/3, chi 2/3, 나머지 0/0. 한 turn 한 발화 | 정책의 우선순위/확률/cooldown/빈 문장일 때 미소비 경계 유지. 이미지 유무가 대사 노출 확률·SFX를 바꾸면 안 됨 |
+| 이벤트 원본 | `mahjong/session.py`가 pending observation의 events를 누적·소비. `api/game.py`가 한 pending batch를 대사·SFX에 사용 | 현재 배열 index는 해당 batch 기준이며 엔진 전역 event ID가 아님. 관측 중복 정규화나 규칙 hook 변경을 W07 준비에서 수행하지 않음 |
+| R10 표시/복구 | `game_registry.py`는 seed·CPU snapshot·사람 index replay 뒤 `pending_events()`를 비움. 행동 대사 policy는 cache 객체, 영속적인 표시 selection 없음 | 과거 행동의 대사/이미지 생성 재발행 금지. 복구할 현재 표시의 별도 snapshot 여부는 D08-b |
+| 결과/완료 CPU | `_settle_local`은 stage 증가 뒤 defeat_stage_N 대사/CG, 완료 보충 CPU match_first/last 대사, version 2 presentation을 정산 transaction에 저장. 완료 GET은 저장 presentation 사용 | stage 3 결과와 보충 CPU는 구분. 새 공유 결과로의 대체는 승인 후. 오마케는 대사/CG/추가 이벤트 금지 유지 |
+| R11 생성 | prompt/model/LoRA/ComfyUI/cache 구현 없음 | 기존 엔진을 생성기로 오해하지 않음. 독립 adapter·콘텐츠 RNG·artifact 관계 필요 |
+| CG/파일 | `result_assets.py`: CPU/stage 1~3의 mutable 슬롯·해금 검사, 기존 교체/삭제 API. `local_media.py`: W06 immutable UUID 파일·서명/경로 검증 | W06 보존형 저장 패턴은 재사용 가능. 구 CG 슬롯 ID는 교체 때 가리키는 bytes가 달라질 수 있어 immutable 생성 artifact로 직접 전용 금지 |
+| UI | `main.tsx`: generation/request token/CG load version/인증 blob, `MahjongTable.tsx`: 말풍선·결과/엔딩 | 늦은 fetch/object URL 차단·평문 표시 패턴 재사용. 렌더는 ID를 표시하며 후보/프롬프트 선택을 하지 않음 |
+| 초기화/엔딩 | `local_play.py`, W06-C media/sound: 세대 교체, 등록 자료/파일 보존, pending 엔딩 고정 payload·명시 ack | 콘텐츠 편집을 명단/진행 초기화와 결합하지 않음. 엔딩은 공유 대사/이미지 이벤트로 전환하지 않음 |
 
-이름은 설명용이며 새 table/class 채택이 아니다. allow-list와 deny-list를 동시에 저장할지,
-자동 포함·빈 후보·삭제 참조·상황 변경·Level 이동 정책은 W07에서 결정한다.
-상황에서 허용된 대사와 캐릭터/Level 대사 후보의 교집합을 사용하도록 설계한다.
-마작 event→허용 상황 매핑과 노출 정책을 거친 뒤 콘텐츠 선택을 생성한다.
-CPU/규칙 RNG와 독립된 콘텐츠 선택을 유지한다. 재접속 시 표시를 재현할 범위,
-텍스트/항목 수정 후 기존 이미지 식별, 저장 snapshot 범위는 D08 결정 대상이다.
+### 정책에 독립적인 불변조건과 관계 초안
 
-캐시 키 권고는 선택 항목/버전, 최종 P/N, 실제 모델·LoRA/강도, workflow, 크기·steps·CFG·
-sampler·seed 정책을 반영하는 것이다. 라벨/파일명만으로 동일성을 판단하지 않는다.
-구체적인 key/seed/삭제 정책은 아직 미확정이다. 갤러리·일괄 생성 기능은 추가하지 않는다.
+정책과 무관하게 유지할 경계: 기존 CPU/진행 PK와 seed/action/policy replay, 공유 원본 참조,
+렌더별 재추첨 금지, 콘텐츠 선택/생성과 규칙 RNG 분리, 게임 transaction의 외부 생성 대기 금지,
+오마케 이벤트 억제, 파일 임의 삭제 금지, 같은 origin/capability·단일 writer 권한이다.
+테이블 수·새 version 번호·Level 범위·삭제 방식·후보 포함 의미는 이 절만으로 채택되지 않는다.
+
+| 제안 관계 | 최소 데이터/소유 | 미확정 또는 승인 뒤 명세화할 부분 |
+|---|---|---|
+| CharacterContent | 기존 CPU FK, 외모 P/N·기본 복장 P/N, 변경 revision | D07-b override 필드, revision 증가 범위. 규칙 성향 snapshot과 분리 |
+| ContentLevel | 안정 ID/표시 label | D05-a의 Level 집합/대응. label을 stage/난이도 판정 키로 사용하지 않음 |
+| ClothingState / Situation / Pose | 안정 ID, Level FK, label, P/N, revision | D06-c 삭제/이동. 별도 entity 또는 공통 kind schema는 후속 기술 선택 |
+| SituationEventBinding | situation FK와 engine event_key 관계 | D05-c 편집 방향·D05-b 이미지 대상 목록. unknown event에 무조건 fallback 금지 |
+| SharedDialogue | 안정 ID, situation FK, label, 평문, revision | D10 변수·D06-c 상황 이동. 대사는 상황 소속 Level로 검증 |
+| CharacterLevelCandidates | CPU FK+Level FK+kind+공유 ID 관계 | D06-a allow/deny 중 승인된 하나. 양쪽을 중복 저장하지 않음. 타 Level·kind·상황 관계 검증 |
+| PresentationSelection | event identity, CPU/Level, 선택 ID·revision, 표시 문자열/이름·최종 P/N·설정 snapshot | 영속 범위 D08-b, 이미지 대상 D05-b, 빈 후보 D06-b/D10-b. 원문을 캐릭터마다 복제하는 것과 이벤트 snapshot은 다름 |
+| GenerationRequest / Artifact | selection 참조, 요청 ID, endpoint/client/prompt ID, 최종 입력 digest·seed, 상태, immutable media 참조 | D07 실제 workflow·D08-a 동일성·D09 수명/복구. 전역 latest key로 다른 CPU job를 덮지 않음 |
+
+후보 계산 순서는 event를 해석하고 오마케/노출 조건을 확인→CPU/Level 확인→허용 상황과
+캐릭터 상황 후보의 교집합→그 상황의 대사와 캐릭터 대사 후보 교집합이다. 이미지 대상이면
+해당 Level 복장 상태/포즈 후보도 별도 선택한다. D06-d B라면 상황별 제약을 추가 적용한다.
+대사 없음과 이미지 없음은 별개이며, legacy fallback(D10-b)까지 답변받기 전 동작을 고정하지 않는다.
+P/N 결합 순서·구분자·모델 보정은 D07-a에 의존한다. 각 입력 원문·최종 결과를 혼동하지 않는다.
+
+### event identity·RNG·늦은 생성 결과
+
+- 규칙 원본은 기존 승인된 session/action 경계다. 콘텐츠 identity 초안은
+  `(generation, session_id, action_version, source_kind, source_ordinal, cpu_id, event_key)`이다.
+  행동은 **원본 pending batch index**를 정렬 전에 붙여 유지한다. 결과는 `source_kind=result`와
+  CPU/event로 안정 구분하며 마지막 증가 후 stage를 snapshot한다. 생성 job ID·cache digest·
+  엔딩 event UUID는 서로 다른 식별자다. 재접속할 때 새 UUID를 만들어 같은 표시를 새 이벤트로 만들지 않는다.
+- W06 SFX identity는 그대로 유지한다. 신규 콘텐츠 identity가 엔진/합법 행동 index나 SFX를 재정의하지 않는다.
+  관측 배열에서 같은 실세계 이벤트가 여러 번 관측되는지 별도 회귀로 확인하되 게임 규칙 이벤트 제거와
+  혼동하지 않는다. source ordinal 확정 알고리즘은 실제 emission 경계와 함께 W07 후속 명세에 적는다.
+- CPU RNG/engine seed/action log와 별도 콘텐츠 RNG를 쓴다. 기존 대사 policy RNG의 소비 횟수를
+  이미지 추첨으로 바꾸지 않는다. 이미지 seed도 독립이며 D08-a 승인 방식으로 snapshot한다.
+  UI 재렌더·GET·복구 replay는 새 추첨/submit의 원인이 아니다.
+- D08-b A일 때 현재 selection 저장 및 event unique 제약을 제안한다. 새 이미지 선택은 행동 commit 후
+  별도 짧은 writer transaction에서 고정하고 저장 성공 전 전송/submit하지 않는다. 콘텐츠 저장 실패는
+  이미 commit된 마작 행동을 rollback하거나 거짓 성공으로 덮지 않는다. 중간 crash 시 미표시로 남는
+  경계와 현재 표시 조회/재시도는 후속 계약에서 명시하며 미선택 과거 replay로 자동 복원하지 않는다.
+  결과의 선택 snapshot은 현재 정산 presentation transaction을 재사용하되 네트워크 생성은 commit 이후다.
+  D08-b B면 행동 표시의 영속 관계는 제외하고 완료 결과만 보존한다.
+- UI는 generation+session+selection ID+현재 화면 토큰을 대조하고, job 완료도 selection/request ID로 연결한다.
+  캐릭터 A 요청이 B 화면 뒤 완료, 새 대국/초기화 뒤 완료, 설정 수정 뒤 이전 job 완료 모두
+  새 화면을 덮지 못한다. 파일 보존 여부와 현재 화면 표시 허용 여부는 별개다.
+- adapter submit/status/result는 DB writer lock·registered game lock을 잡은 채 기다리지 않는다.
+  같은 요청의 중복 submit 차단과 submit 응답 유실은 분리한다. prompt ID를 받기 전 연결이 끊긴
+  요청을 무조건 재제출하면 중복 생성될 수 있으므로 자기 client/job 확인 후 명시 재시도하는 기술안을
+  W10 계약에 작성한다. 재시작 때 미확인 job를 성공으로 간주하거나 전역 interrupt하지 않는다.
+
+### 재사용 식별·파일 경계 초안
+
+D08-a A 권고 시 selection identity와 cache identity를 분리한다. 같은 최종 입력의 다른 이벤트가
+같은 artifact를 참조할 수 있다. 정규화한 versioned 입력에는 최종 P/N, 실제 모델·encoder/VAE,
+순서/강도를 포함한 LoRA, workflow/node revision, 크기·steps·CFG·sampler/scheduler와 seed 정책을 넣는다.
+최초 독립 seed/실제 요청 입력은 artifact metadata에 보관한다. B면 event 독립 seed도 입력 식별에 포함한다.
+라벨/원본 경로/파일명만으로 동일성을 판단하지 않으며, 모델 내용이 같은 이름으로 바뀔 수 있으므로
+파일 fingerprint를 얻을 수 없는 endpoint의 사용자 revision 처리도 W10에서 확정해야 한다.
+
+기존 immutable media 서비스의 relative key/root 검사·인증 읽기·임시 파일→rename→metadata commit을
+재사용할 수 있다. 생성 output 크기/형식과 실제 decode 검증·저장 subdirectory는 후속 기술 명세 대상이며
+W06 업로드 제한을 생성 결과에 무조건 적용하지 않는다. ComfyUI가 반환한 경로나 URL을 renderer에
+직접 전달하지 않는다. output fetch는 설정된 endpoint/자기 job 결과 범위로 제한하는 기술 계약을 준비한다.
+
+기존 CG slot 파일을 이동/덮어쓰지 않는다. 설정 수정은 새 입력 식별로 이어지며 기존 파일/과거 snapshot은
+자동 삭제하지 않는다. 외부 파일 누락은 metadata 성공만으로 정상 표시라 하지 않는다. D08-c 대기/실패
+안내와 기본 대국 계속을 분리한다. 파일 삭제/복원/백업·갤러리·일괄 생성 UI는 이 설계에서 승인되지 않는다.
+
+### API·UI 책임 초안과 migration/구 자료 호환
+
+| 담당 | 제안 경계 | 승인 의존 |
+|---|---|---|
+| W08 local admin | `/api/local/characters/{id}/content`, `/content/levels`, `/content/{kind}`, `/characters/{id}/candidates/{level}`의 읽기·편집. 실제 HTTP method/오류/DTO는 후속 계약에서 확정 | D05-a/c, D06 전체, D07-b, D10-a/b |
+| W08 UI | 게임 내부 캐릭터의 외모/복장 P/N·Level별 네 후보, 공유 원본 label/P/N·상황 대사 편집 | 후보/삭제/이동 정책 승인. 별도 Manager·기존 테이블 전체 재설계 없음 |
+| W09 local engine | event→상황/대사 resolve·변수 치환·버전 있는 표시 payload. 현재 `dialogue_event`/결과와 호환 adapter | D05, D06-b, D08-b, D10. 노출 policy/웹 legacy 유지 |
+| W10 local admin/adapter | `/api/local/generation-settings`, 모델 조회·연결 확인·submit/status/result의 내부 서비스 | D07/D09 및 D08-a 입력 형식. 실제 ComfyUI object_info/workflow 증거를 확보한 뒤 확정 |
+| W11 local member/UI | 소유 selection 읽기·이미지 조회·승인된 재시도. renderer는 안전 URL/표시 상태 사용, prompt/job 소유권은 engine | D05/D08. 구체 endpoint·pending/retry 오류·취소 경계는 후속 계약 대상 |
+
+현재 로컬 capability/member/admin·same-origin REST/WS·W04 단일 writer·응답 전 commit을 유지한다.
+새 관리 쓰기는 진행/명단/정산을 암묵 변경하지 않는다. 낙관 revision 등 동시 편집 방식도 후속
+DTO/오류 명세에 필요하지만 이번에 새 범용 편집 프레임워크를 채택하지 않는다.
+
+migration은 현행 head `20261016_0006` 다음의 additive 변경으로 계획한다. CPU PK/명단/progress,
+`game_sessions`의 seed·choices·actions·rules_snapshot·기존 presentation JSON과 W06 엔딩 payload를
+재작성하지 않는다. legacy active는 원 snapshot으로 재생, completed는 원 결과를 읽는다.
+새 콘텐츠 없는 기존 설치는 빈 등록으로 정상 대국 가능해야 하며 새 CG/대사/P/N seed를 만들지 않는다.
+기존 `bootstrap.py`는 CPU slug가 있으면 건너뛰고 CPU/event 대사가 하나라도 있으면 해당 pool seed를
+건너뛴다. 이를 새 공유 관계로 자동 변환/재삽입하는 것은 D10-b 승인 전 금지다.
+B 이전안을 택하면 기존 행 ID→새 공유 ID의 명시 대응·한 번만 실행·재실행 중복 없음·실패 rollback을
+설계하고 원본은 남긴다. 같은 문장이라는 이유만으로 다른 캐릭터의 대사를 무조건 병합하지 않는다.
+기존 CPU CG API의 교체/삭제 의미는 legacy 경로에 보존하며 생성 파일 보존형 정책으로 몰래 바꾸지 않는다.
+초기화는 새 등록/후보/생성 설정/파일을 보존하며 현재 표시/job의 이전 generation만 화면에서 격리한다.
+웹 DB/미디어 자동 이전·다중 프로필·사용자 파일 작업은 범위 밖이다.
+
+### 승인 뒤 필요한 검증 예제 — 아직 실행 결과 아님
+
+| 검증 | 기대값/승인 의존 |
+|---|---|
+| stage 0→1, 2→3, 보충 stage 3/Tier 0, omake/Tier 2 | D05-a 대응만 적용, Tier로 Level 결정 금지. 오마케 신규 콘텐츠 출력 없음 |
+| ron/tsumo, reach_accepted, 인간 actor, 결과/보충 승패 | 허용 event/상황 교집합·기존 policy 수치 유지. stage 증가와 보충 결과 구분 |
+| 상황은 허용되나 대사 후보 교집합 없음 | D06-b+D10-b 승인 조합대로 생략/legacy fallback, 무관 상황 문장 금지 |
+| 신규 항목·다른 Level ID·삭제/이동·후보 고갈 | D06의 포함/참조 정책, 파일 hash·과거 selection 불변 |
+| 동일 event 중복·재렌더·현재 화면 재접속/재기동 | 새 추첨/중복 submit 없음, D08-b 복구 범위와 과거 replay 비발행 |
+| 외모 P/N·LoRA 강도 변경, label만 변경, 같은 이름 모델 교체 | 최종 입력/정책별 식별 변화, label만으로 cache miss를 만들지 않음 |
+| A job 뒤 B 표시, reset/새 대국 후 완료, 오래된 blob callback | ID/세대/화면으로 격리, 새 진행/대사/이미지를 덮지 않음 |
+| ComfyUI 미연결·submit 응답 유실·출력 누락·저장 commit 실패 | D08-c 안내와 기본 대국 지속, 중복 submit/사용자 파일 삭제 없음 |
+| 변수 이름에 괄호·HTML, 미지정 변수, 한국어 조사 | 승인 문법만 평문 치환·재귀 해석/HTML 실행/임의 조사 없음 |
+| 0006 업그레이드/재부팅/반복 bootstrap·legacy active/completed | 원 데이터·CG·pending 엔딩 보존, policy 1/2 108행동 fixture 불변 |
+
+기존 `test_dialogue_service.py` 10개(별도 pytest), `test_game_websocket.py`의 replay/commit 실패,
+`test_local_play.py`의 reset/정산/omake, `test_result_assets.py`와 W06 사운드/browser 회귀를
+후속 구현에서 보존한다. Windows CI·artifact와 사용자 PC/실제 ComfyUI 출력 증거는 따로 수집한다.
+이번 문서 작업은 이 검사들의 통과를 새로 주장하지 않는다.
 
 ## 이미지 생성 경계와 Wayward 참고
 
