@@ -24,6 +24,7 @@ import {
 } from './api'
 import type { LocalPlayState, ResolvedEnding, SoundSelection } from './api'
 import { LocalSoundPanel } from './LocalSoundPanel'
+import { LocalContentPanel } from './LocalContentPanel'
 import { MahjongTable } from './game/MahjongTable'
 import type {
   CpuChoice,
@@ -61,6 +62,7 @@ function App() {
   const [profileBusy, setProfileBusy] = useState(false)
   const [soundSelection, setSoundSelection] = useState<SoundSelection | null>(null)
   const [soundSettingsOpen, setSoundSettingsOpen] = useState(false)
+  const [contentSettingsOpen, setContentSettingsOpen] = useState(false)
   const [soundError, setSoundError] = useState<string | null>(null)
   const socketRef = useRef<WebSocket | null>(null)
   const resultAssetUrlRef = useRef<string | null>(null)
@@ -585,8 +587,10 @@ function App() {
         <h1>No Riichi No Fuku</h1>
         <p>플레이어 1명과 CPU 3명이 진행하는 동풍전</p>
         {isDesktop && accessToken && <button className="text-button" type="button" onClick={() => setSoundSettingsOpen((open) => !open)}>사운드·자료 설정</button>}
+        {isDesktop && accessToken && <button className="text-button" type="button" onClick={() => setContentSettingsOpen((open) => !open)}>캐릭터 프롬프트·팩 설정</button>}
       </header>
       {isDesktop && accessToken && soundSettingsOpen && <LocalSoundPanel accessToken={accessToken} onClose={() => setSoundSettingsOpen(false)} onSelectionChanged={setSoundSelection} />}
+      {isDesktop && accessToken && contentSettingsOpen && <LocalContentPanel accessToken={accessToken} onClose={() => setContentSettingsOpen(false)} />}
       {isDesktop && soundError && <p className="form-error" role="status">{soundError}</p>}
       {!isDesktop && !accessToken && (
         <AuthPanel

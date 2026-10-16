@@ -15,7 +15,7 @@ from pydantic import ValidationError
 from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-from app.db.models import ContentPack, ContentPackRevision
+from app.db.models import CharacterContent, CharacterLevelFraming, ContentPack, ContentPackRevision
 from app.local_runtime import create_local_runtime
 from app.schemas.local_content import PackManifest, relative_file
 from app.services.content_packs import ContentPackRegistry, canonical, digest
@@ -193,6 +193,108 @@ class PackRegistryTests(unittest.TestCase):
                 PackManifest.model_validate(audio("voice", namespace=name))
         for name in ("console", "aux-pack", "com10", "lpt10"):
             self.assertEqual(PackManifest.model_validate(audio(name=name)).id, name)
+
+    def test_character_editor_reads_without_writes_and_tracks_fields_independently(self):
+        cpu_list = self.client.get("/api/admin/cpus", headers=self.headers)
+        self.assertEqual(cpu_list.status_code, 200, cpu_list.text)
+        self.assertTrue(any(cpu["id"] == 1 for cpu in cpu_list.json()))
+        before = self.client.get("/api/local/characters/1/content", headers=self.headers)
+        self.assertEqual(before.status_code, 200, before.text)
+        original = before.json()
+        self.assertEqual(original["revision"], 0)
+        self.assertEqual(original["prompts"]["appearance"], {
+            "positive": "", "negative": "", "overrides": {"positive": False, "negative": False}
+        })
+        self.assertEqual(len(original["levels"]), 4)
+        self.assertEqual(set(original["levels"]["0"]), {"profile", "full_body", "cg"})
+        with self.runtime.session_factory() as session:
+            self.assertEqual(session.query(CharacterContent).count(), 0)
+            self.assertEqual(session.query(CharacterLevelFraming).count(), 0)
+        response = self.client.patch(
+            "/api/local/characters/1/content", headers=self.headers,
+            json={"expected_revision": 0, "prompts": {"appearance": {"positive": ""}}},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        saved = response.json()
+        self.assertEqual(saved["revision"], 1)
+        self.assertTrue(saved["prompts"]["appearance"]["overrides"]["positive"])
+        self.assertFalse(saved["prompts"]["appearance"]["overrides"]["negative"])
+        response = self.client.patch(
+            "/api/local/characters/1/content", headers=self.headers,
+            json={"expected_revision": 1, "prompts": {"appearance": {"negative": "avoid test"}},
+                  "framing": [{"level": 2, "kind": "cg", "positive": "frame test"}]},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        saved = response.json()
+        self.assertEqual(saved["prompts"]["appearance"]["positive"], "")
+        self.assertEqual(saved["prompts"]["appearance"]["negative"], "avoid test")
+        self.assertTrue(saved["prompts"]["appearance"]["overrides"]["positive"])
+        self.assertTrue(saved["prompts"]["appearance"]["overrides"]["negative"])
+        self.assertEqual(saved["levels"]["2"]["cg"]["positive"], "frame test")
+        self.assertTrue(saved["levels"]["2"]["cg"]["overrides"]["positive"])
+        self.assertFalse(saved["levels"]["2"]["cg"]["overrides"]["negative"])
+
+    def test_character_editor_conflict_validation_auth_and_restart(self):
+        path = "/api/local/characters/1/content"
+        self.assertEqual(self.client.get(path).status_code, 401)
+        self.assertEqual(self.client.patch(path, json={"expected_revision": 0, "prompts": {"appearance": {"positive": "x"}}}).status_code, 401)
+        saved = self.client.patch(path, headers=self.headers, json={
+            "expected_revision": 0, "prompts": {"upper_underwear": {"positive": ""}},
+        })
+        self.assertEqual(saved.status_code, 200, saved.text)
+        conflict = self.client.patch(path, headers=self.headers, json={
+            "expected_revision": 0, "prompts": {"appearance": {"positive": "stale"}},
+        })
+        self.assertEqual(conflict.status_code, 409)
+        self.assertEqual(conflict.json()["detail"]["code"], "revision_conflict")
+        self.assertEqual(self.client.patch(path, headers=self.headers, json={
+            "expected_revision": 1, "prompts": {"appearance": {"positive": None}},
+        }).status_code, 422)
+        self.assertEqual(self.client.patch(path, headers=self.headers, json={
+            "expected_revision": 1, "framing": [
+                {"level": 0, "kind": "profile", "positive": "a"},
+                {"level": 0, "kind": "profile", "negative": "b"},
+            ],
+        }).status_code, 422)
+        play = self.client.get("/api/local/play", headers=self.headers).json()
+        reset = self.client.post("/api/local/play/reset", headers=self.headers, json={
+            "generation": play["generation"], "confirm": True,
+        })
+        self.assertEqual(reset.status_code, 200, reset.text)
+        self.restart()
+        after = self.client.get(path, headers=self.headers).json()
+        self.assertEqual(after["prompts"]["upper_underwear"]["positive"], "")
+        self.assertTrue(after["prompts"]["upper_underwear"]["overrides"]["positive"])
+        self.assertEqual(after["revision"], 1)
+
+    def test_character_editor_commit_failure_keeps_saved_snapshot(self):
+        path = "/api/local/characters/1/content"
+        first = self.client.patch(path, headers=self.headers, json={
+            "expected_revision": 0, "prompts": {"appearance": {"positive": "saved"}},
+        })
+        self.assertEqual(first.status_code, 200, first.text)
+        with TestClient(self.runtime.app, raise_server_exceptions=False) as failing_client:
+            with patch.object(Session, "commit", side_effect=SQLAlchemyError("injected commit failure")):
+                failed = failing_client.patch(path, headers=self.headers, json={
+                    "expected_revision": 1, "prompts": {"appearance": {"negative": "not committed"}},
+                })
+        self.assertEqual(failed.status_code, 500)
+        current = self.client.get(path, headers=self.headers).json()
+        self.assertEqual(current["revision"], 1)
+        self.assertEqual(current["prompts"]["appearance"]["positive"], "saved")
+        self.assertEqual(current["prompts"]["appearance"]["negative"], "")
+
+    def test_pack_rescan_does_not_replace_local_prompt_edits(self):
+        path = "/api/local/characters/1/content"
+        self.install(character())
+        self.assertEqual(self.scan()["accepted"], [["character", "", "test-character"]])
+        saved = self.client.patch(path, headers=self.headers, json={
+            "expected_revision": 0, "prompts": {"appearance": {"negative": "local test edit"}},
+        })
+        self.assertEqual(saved.status_code, 200, saved.text)
+        self.scan()
+        after = self.client.get(path, headers=self.headers).json()
+        self.assertEqual(after["prompts"]["appearance"]["negative"], "local test edit")
 
     def test_bytes_revision_canonical_noop_revert_and_history(self):
         value = audio()
@@ -426,7 +528,7 @@ class PackRegistryTests(unittest.TestCase):
             self.assertEqual(conn.execute(text("PRAGMA foreign_key_check")).all(), [])
             self.assertEqual(
                 conn.execute(text("select version_num from alembic_version")).scalar(),
-                "20261016_0007",
+                "20261016_0008",
             )
 
     def test_concurrent_scan_no_duplicates_and_reads_outside_writer(self):

@@ -35,6 +35,33 @@ export type ResolvedEnding = {
   music?: { asset_id: string | null; url: string | null; available: boolean };
   dialogue_text?: string | null;
 }
+export type PromptPair = {
+  positive: string
+  negative: string
+  overrides: { positive: boolean; negative: boolean }
+}
+export type CharacterContent = {
+  schema_version: 1
+  cpu_id: number
+  revision: number
+  pack_revision_id: string | null
+  prompts: Record<'appearance' | 'upper_underwear' | 'lower_underwear', PromptPair>
+  levels: Record<string, Record<'profile' | 'full_body' | 'cg', PromptPair & { revision: number }>>
+}
+export type LocalCharacterChoice = { id: number; slug: string; name: string }
+export type ContentPack = {
+  id: string
+  identity: [string, string, string]
+  kind: 'character' | 'sfx' | 'bgm' | 'voice'
+  namespace: string
+  pack_id: string
+  status: 'normal' | 'unresolved' | 'conflict'
+  issues: string[]
+  registered_revision: { revision: number; content_digest: string; manifest_digest: string } | null
+  applied_revision_id: string | null
+  revisions: { id: string; revision: number; content_digest: string; manifest_digest: string }[]
+}
+export type PackListing = { schema_version: 1; packs: ContentPack[]; scan_entries: { source: string; identity: unknown; status: string; issues: string[] }[] }
 
 async function apiRequest<T>(
   path: string,
@@ -48,8 +75,9 @@ async function apiRequest<T>(
   if (!response.ok) {
     let message = `요청에 실패했습니다. (${response.status})`
     try {
-      const body = await response.json() as { detail?: string }
+      const body = await response.json() as { detail?: string | { message?: string } }
       if (typeof body.detail === 'string') message = body.detail
+      else if (body.detail && typeof body.detail.message === 'string') message = body.detail.message
     } catch {
       // Keep the status-based message for non-JSON responses.
     }
@@ -143,6 +171,23 @@ export function putSoundSelection(accessToken: string, effectSetId: string | nul
   return apiRequest('/api/local/sound-selection', { method: 'PUT', body: JSON.stringify({ effect_set_id: effectSetId, bgm_ids: bgmIds }) }, accessToken)
 }
 export function getEndingResources(accessToken: string): Promise<EndingResources> { return apiRequest('/api/local/ending-resources', {}, accessToken) }
+export function getCharacterContent(accessToken: string, cpuId: number): Promise<CharacterContent> {
+  return apiRequest(`/api/local/characters/${cpuId}/content`, {}, accessToken)
+}
+export function listLocalCharacters(accessToken: string): Promise<LocalCharacterChoice[]> {
+  return apiRequest('/api/admin/cpus', {}, accessToken)
+}
+export function patchCharacterContent(accessToken: string, cpuId: number, changes: {
+  expected_revision: number
+  prompts?: Record<string, { positive?: string; negative?: string }>
+  framing?: { level: number; kind: 'profile' | 'full_body' | 'cg'; positive?: string; negative?: string }[]
+}): Promise<CharacterContent> {
+  return apiRequest(`/api/local/characters/${cpuId}/content`, { method: 'PATCH', body: JSON.stringify(changes) }, accessToken)
+}
+export function listContentPacks(accessToken: string): Promise<PackListing> { return apiRequest('/api/local/packs', {}, accessToken) }
+export function rescanContentPacks(accessToken: string): Promise<{ registry: PackListing }> {
+  return apiRequest('/api/local/packs/rescan', { method: 'POST' }, accessToken)
+}
 export function putEndingResources(accessToken: string, values: EndingResources): Promise<EndingResources> {
   return apiRequest('/api/local/ending-resources', { method: 'PUT', body: JSON.stringify(values) }, accessToken)
 }

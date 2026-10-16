@@ -1,5 +1,28 @@
 # 현재 상태
 
+## W08-B — 프롬프트 편집·팩 목록 UI 구현
+
+2026-10-16 KST 최신 `main`은 준비 SHA `469aa36`와 일치했고 PR #80이 병합됐다. 열린 PR은
+기존 Docker 문서 #35뿐이었다. `task/w08-b-character-editor`에서 0007 다음 additive migration 0008,
+기존 CPU PK별 기본 P/N 및 Level 0..3 × profile/full_body/cg 구도 P/N 저장, 문자열 필드별 override,
+revision 검사와 로컬 API를 추가했다. GET은 저장 전 빈 값을 revision 0으로 반환하며 행을 만들지 않는다.
+PATCH는 요청에 명시된 문자열만 기록하고 빈 문자열도 override로 보존한다. 캐릭터 팩과 로컬 편집을
+자동 연결·병합하지 않아 팩 재검색이 편집을 덮지 않는다. 기존 CPU PK 전체를 대상으로 하는
+로컬 관리자 CPU 목록에서 편집 대상을 선택한다.
+
+Electron 데스크톱 설정에 기본/구도 P/N 편집·필드별 편집 기록 UI와 팩 목록·정상/미해결/충돌 진단·
+명시 재검색 UI를 추가했다. 팩 탭 진입은 POST rescan, 목록 GET은 DB만 조회한다. 캐릭터 전환 stale
+응답은 현재 폼에 반영하지 않으며 저장 실패/충돌 시 초안은 보존한다. 실제 프롬프트·콘텐츠·이미지·
+사운드 seed, 이미지 파일 업로드/생성, CPU 연결 및 팩 적용은 추가하지 않았다.
+
+로컬 검증: Python 3.12.14/RiichiEnv 0.4.8의 backend unittest 119개, dialogue pytest 10개,
+frontend `npm run build`, Electron 종료 회귀 3개 통과. 신규 API 회귀는 GET 무쓰기, 빈 문자열/필드별
+override, 서로 다른 구도, stale revision, 권한, commit 실패 rollback, reset/restart 보존, 팩 재검색 후
+로컬 편집 불변을 확인한다. 이번 문서 갱신 시 정확한 최종 source SHA의 Windows hosted CI와 artifact는
+아직 대기 중이며 확인 후 이 절을 갱신한다. 개인 Windows PC·실제 이미지/오디오 출력·ComfyUI는 미검증이다.
+
+W08-B는 W08-A 기반 편집/목록 UI 범위만 다루며 W07 전체 완료나 W08 전체 구현 완료를 뜻하지 않는다.
+
 ## Q-PACK A 결정 및 W08-B 인계 — 문서 작업
 
 2026-10-16 KST main `0068eb6`에서 PR #79 병합을 확인했다. 별도 열린 PR은 Docker 문서 #35다.
