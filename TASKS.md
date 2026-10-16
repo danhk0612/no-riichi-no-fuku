@@ -17,9 +17,9 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W07 | 콘텐츠·팩·이미지/음성/UI 계약 설계 | P1 / 정책 독립 계약 구체화·미응답 게이트 유지 | W01, D05~D10 조율 | 고성능 Work + 정책 조율 Chat |
 | W08-A | 팩 등록·revision·immutable 파일 기반 | P1 / 독립 구현·회귀·Windows CI/artifact 검증 완료 | W05, PR #75~#78, 사용자 독립 승인 | 저성능 Work |
 | W08-B | 기존 캐릭터 기본/구도 P/N 편집·로컬 편집 기록·팩 목록 UI | P1 / 완료(PR #81 병합) | W08-A 병합, Q-PACK A | 저성능 Work |
-| W08-C | 기존 CPU의 명시 캐릭터팩 연결·같은 팩 갱신 | P1 / 구현·회귀·정확 SHA Windows CI/artifact 검증·PR #82 제출(미병합) | W08-A/B 병합, Q-PACK A | 저성능 Work |
+| W08-C | 기존 CPU의 명시 캐릭터팩 연결·같은 팩 갱신 | P1 / 완료(PR #82 병합) | W08-A/B 병합, Q-PACK A | 저성능 Work |
 | W08 | 캐릭터·공유 후보·단계별 이미지 편집/적용 | P1 / 정책 의존 부분 대기 | W08-A, W07 관련 결정 | 저성능 Work |
-| W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / 새 후속 범위 | W07 팩/event 계약, W08 등록 기반 | 저성능 Work |
+| W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / 정책 확정, 구현 중 | W07 팩/event 계약, W08-A/B/C 병합, Q-PACK/Q-AUDIO/D-WIN/Q-OMAKE-VOICE | 저성능 Work |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
 | W10 | 독립 ComfyUI·Anima adapter | P1 / 대기 | W03, W07 | 저성능 Work |
 | W11 | 이벤트 랜덤 조합·생성/파일 연동 | P1 / 대기 | W06, W09, W10 | 저성능 Work |
@@ -43,8 +43,8 @@ W05가 먼저 확정한다. W08/W09는 공유 schema·UI를 만지므로 순차 
 | 1 W07 | 영문 배포 ID·캐릭터/SFX/BGM/음성팩 manifest/폴더 구조·공유 의존성, Level/3종 asset·prompt/event/slot·텍스트/음성 분리·기존 W06 이전과 화면 API 계약 | 4단계 × 3종 매핑, 단일 선택/default fallback·voice 무fallback, 미제공 기본팩 무음, 판 승리 범위·필드/단위·생성 시점·수명/팩 교체를 문서로 명시. 미확정은 구현 게이트로 남김 |
 | W06-D 불필요 | 사용자 정정으로 기존 미완료 `<3` 유지. 미완료 3명 이상이면 완료 NPC 제외, 1~2명일 때 보충 허용 | 새 진행 코드/추가 migration 작업 없음. 기존 Tier0·stage 불변·전체 완료/omake 회귀는 후속 변경에서도 보존 |
 | 2 W08 | 캐릭터 영문 ID·이름/치수·마작 정보의 기존 성향/난이도 표시 관계, 단계별 profile/full_body/CG 참조·prompt CRUD, 공유 후보, 배포 가능한 캐릭터팩 데이터/폴더 등록 기반 | 중복 ID/참조·shared 의존·팩 재인식/재시작·초기화 보존. 실제 치수나 콘텐츠를 임의 seed하지 않음. voice pack 기본/선택 ID는 이미지팩과 독립 |
-| 3 W08-S | 기본 SFX/화면 BGM 각각 폴더 추가 자동 인식·단일 팩 설정, slot별 선택→기본→무음. 캐릭터 음성팩 폴더 인식·기본값/단일 연결 변경·누락 무출력. 패 타격/리치봉 등 승인된 event hook | W06 UUID media/선택·pending 보존 전환, 누락 default 포함 무음·파일별 fallback·팩 변경 중 늦은 play/재시작·등록/reset 보존. 기본 선언 음성을 SFX와 중복 재생하지 않음 |
-| 4 W09 | 치/퐁 등 간단한 공통 화면 텍스트, actor 캐릭터 선택팩 음성, 캐릭터별 Level 패배 텍스트·상황/변수 연결. 각 판 승리의 범위를 먼저 명세 | 공통 텍스트와 캐릭터 선택 voice pack 독립, 누락 음성에도 텍스트/대국 진행, 단계 변경 패배 대사의 CPU/Level 대응·중복 방지. 오마케 기존 캐릭터 이벤트 억제 유지 |
+| 3 W08-S | W08-A registry 재사용. SFX/BGM 각각 단일 pack 선택·지정 기본 pack·slot fallback. CPU별 기본/selected/off voice 연결과 새 character revision 기본 voice 적용. 기본 선언과 actor voice, 매 국 별도 `win`, 최종 4위 변경 후 단계별 defeat 음성 연결. Q-AUDIO A로 W06 legacy 자료/재생 보존 및 domain별 신규 선택 시 원자 전환, 최소 설정 UI에 `legacy`/`pack` 상태 표시 | 선택→기본→무음, voice 팩 자체 누락→기본 voice·유효 팩 슬롯 누락→무음·명시 off, 잘못된 actor·파일실패·동시 변경·늦은 play·중복/재접속 차단. 기존 자료·pending snapshot·reset/restart 보존, 오마케 기본 선언/화료/최종 4위 음성 유지·단계 불변. 승리 문장 목록/상황 관계는 W09 |
+| 4 W09 | 치/퐁 등 간단한 공통 화면 텍스트, actor 캐릭터 선택팩 음성, 캐릭터별 Level 패배 텍스트·상황/변수 연결. 각 판 승리의 범위를 먼저 명세 | 공통 텍스트와 캐릭터 선택 voice pack 독립, 누락 음성에도 텍스트/대국 진행, 단계 변경 패배 대사의 CPU/Level 대응·중복 방지. W08-S에서 확정·연결한 오마케 기본 선언/화료/최종4위 음성 규칙과 stage/Tier/추가 진행/CG 제한 보존 |
 | 5 W10→W11 | 편집 가능한 prompt 조합·독립 ComfyUI adapter, 4단계 × 3종 이미지 생성/파일/재사용/늦은 결과 연결. 결과 단계 증가 후 asset 선택 고정 | 종류·Level·CPU 식별과 캐시 분리, 기존 생성 독립 RNG/기본 게임 지속, 실제 자료/ComfyUI 출력과 mock 구분. 자동 생성 시점/seed는 미응답 정책 결정 후 |
 | 6 W11-U | 캐릭터 선택: 정사각 프로필 목록·hover/선택 시 상단 정보+CG/전신. 대국: 좌석 프로필·클릭 상세. 결과: 단계 변동 애니메이션→변경 CG→전신·하단 프로필/대화, CG만 보기·줌/팬 | 이미지 API 계약 뒤 mock으로 UI 개발 가능, 실제 수용 검증은 W11 연결 후. hover/클릭/줌이 재추첨·중복 생성/정산을 일으키지 않음. 빠른 hover/이전 단계 load·reset·CG 전용 복귀·좌석/정보 대응 검사 |
 | 7 W12 | 캐릭터/음향/음성팩 폴더 배포·추가 인식·이전과 Windows 통합. 사용자 제공 기본 오디오의 저장소 반영은 별도 리소스 PR | 사용자가 실제 업로드한 사운드의 파일/권리/고지·slot 대응 확인 뒤 반영. 콘텐츠 미제공 시 대기. 외부 제작 프로그램/API 통합·임의 생성/샘플 seed·미승인 Release 없음 |
@@ -183,8 +183,9 @@ REQUIREMENTS D04/R16~R19가 확정 정책이다. CPU HP는 별도 시스템이 �
 - 범위: 참가 명단 확정/고정 및 대국 상대 선택, 플레이어 HP 제거, 완료 CPU Tier 0 보충,
   모든 참가 CPU 완료 판정·엔딩/오마케 상태, 오마케 Tier 2/진행·추가 이벤트 없음,
   확정 초기화와 저장/기존 세션 호환. 엔딩/사운드 실제 재생 연결은 C 계약과 분리한다.
-- 완료: 미완료 인원 3/2/1/0, 참가 명단 밖 CPU 배제, 사람 4위 후 계속 플레이,
-  완료 전 보충 CPU 승패 무변동/대사와 오마케 이벤트 억제, 정확히 한 번의 완료 판정,
+- 완료(당시 계약): 미완료 인원 3/2/1/0, 참가 명단 밖 CPU 배제, 사람 4위 후 계속 플레이,
+  완료 전 보충 CPU 승패 무변동/대사와 오마케 추가 진행/CG 이벤트 억제, 정확히 한 번의 완료 판정.
+  2026-10-16 결정으로 오마케 기본 선언/화료/최종4위 대사는 재생한다.
   초기화 동시 요청·오래된 socket/지연 응답 차단·재기동 및 자료 보존 검사.
   기존 policy 1/2/legacy·local writer/정산 실패 회귀·정확한 SHA Windows CI/artifact 확인.
 - 실행 기록: 2026-10-15 기준 main `24ed576`; 구현은 `task/w06-b-progression` PR로 제출한다.
@@ -222,7 +223,7 @@ REQUIREMENTS D04/R16~R19가 확정 정책이다. CPU HP는 별도 시스템이 �
 
 | Task | 반드시 추가/보존할 검증 |
 |---|---|
-| B | 최소3·고정 명단/중복 확정·active 변경 참조 보호·명단 밖/추가 CPU 배제, 미완료 3/2/1/0·stage와 effective tier, 사람4위 HP 불변·보충CPU 1/4위 대사·오마케 대사/CG 억제 |
+| B | 당시 완료 검사: 최소3·고정 명단/중복 확정·active 변경 참조 보호·명단 밖/추가 CPU 배제, 미완료 3/2/1/0·stage와 effective tier, 사람4위 HP 불변·보충CPU 1/4위 대사·오마케 추가 진행/CG 억제. 2026-10-16 결정으로 승패 대사 억제 계약은 수정됨 |
 | B 저장 | 0004 파일 DB upgrade/반복 bootstrap/legacy active·completed/HP0·원 snapshot/policy1/2/108행동, 정산 commit 실패/rollback/evict/재시작, 두 start/두 reset/action·정산·reset 경쟁, stale WS/캐시/지연 응답 차단, cancelled/recent 필터, 초기화 자료 hash 보존 |
 | B 엔딩 | 전체 완료/명단 확정 시 이미 완료인 경우, pending event 1개, 표시 중 재시작/중복 ack/ack 응답 유실·다른 event 거절, 미등록 안내로 omake 진입 |
 | C | format/size/path/auth·한글/공백 파일명·업로드/metadata commit 실패 기존 파일 불변, 등록/설정 재시작·독립 변경/비활성 참조·빈 목록, B reset 후 등록/설정/파일 hash 보존 |
@@ -284,8 +285,8 @@ CPU/규칙/seed/action replay·legacy fixture 변경, 실콘텐츠 생성·사�
 | Task | 선행 정책·병합 게이트 | 허용 파일 범위·구체 구현 지시 | 완료 검증 |
 |---|---|---|---|
 | W08 | W05·W07 최종 계약, D05-c/D06 전체/D07-b/D10-a, Q-META/Q-PACK/Q-LEGACY | `db/models/`·exports·head 다음 additive migration, 새 `services/content_packs.py`/`character_content.py`·`schemas/local_content.py`·`api/local_content.py`, `local_runtime.py` 등록, `services/admin.py` 참조 보호. 기존 CpuSelection/main/api와 새 최소 캐릭터/공유 편집 UI. v1 scanner·stable ID·4단계 3종 참조/P/N·공유 관계·후보·메타데이터·voice 기본 참조 구현. bootstrap은 승인 legacy 대응만, 모델 override는 승인 범위만. generation/event resolver 구현 금지 | ID/중복/버전/의존 누락/경로·불완전 scan·metadata 실패·반복 upgrade/bootstrap; Level/kind/FK·후보/삭제 승인 사례·편집/재시작/reset 보존·기존 PK/파일 hash |
-| W08-S | W08 병합, Q-PACK/Q-AUDIO, Q-OMAKE-VOICE는 오마케 음성 경계 전, D-WIN은 승리 슬롯 전 필수 | W08-A의 4종 registry 재사용, 승인 후 적용/선택 연결과 `services/local_sound.py`/새 audio resolver·`schemas/local_sound.py`·`api/local_sound.py`, 최소 선택 UI `LocalSoundPanel.tsx`/api/main, `api/game.py` 승인 hook·game types. 각각 단일 팩·slot default fallback·voice 단일 연결·세대 격리 구현. SFX source 검증 뒤 연결. 공유 mapper는 W09가 중복 작성하지 않게 명시 소유. D-WIN 미응답이면 승리 신규 hook 보류, Task 전체 완료 표시 금지 | selected/default/양쪽누락·voice 팩 누락 기본 연결/슬롯 누락 무음·off·잘못된 actor·파일실패·전환 중 늦은 play·재시작/reset. W06 legacy/pending 보존과 중복 음성 없음. source 미확인은 미연결로 인계 |
-| W09 | W08/W08-S 병합, D05-b/c·D06-b/d·D08-b·D10-a, D-WIN/Q-OMAKE-VOICE/Q-LEGACY | `dialogue_service.py`와 새 content resolver, `api/game.py`/`game_registry.py` 표시/정산 저장 경계·필요 additive migration·types/main/MahjongTable. 원 pending ordinal 유지·공통 선언과 actor 음성, event/상황/캐릭터/Level 교집합·승리와 Level 패배 텍스트·변수 snapshot. W06 version2/오마케 억제·노출 policy 유지. ComfyUI submit 금지 | source index/ron-tsumo/reach_accepted·actor·승패/보충/omake·대사 고갈·변수·중복/재접속·commit 실패·policy1/2/legacy replay |
+| W08-S | W08-A/B/C 병합, Q-PACK/Q-AUDIO/D-WIN/Q-OMAKE-VOICE 확정, D-WIN의 화료음성 연결과 최종 1위 미추가 | W08-A registry·immutable media 참조 재사용. audio/voice selection API·최소 UI·재생 resolver와 승인 hook을 구현. 기본 선언 다음 `win`, final 4th는 변경 후 `defeat_stage_N`(오마케/stage3도 stage3), 기존 보충 CPU `match_first` 대사는 기존 계약만 유지하고 최종4위 `match_last` 대신 단계별 대사를 사용. 새 동풍전 최종 1위 대사는 추가하지 않음. 새 `win` voice slot 등록 검증을 허용하며 legacy W06 플레이어·자료는 보존. shared dialogue text/context list는 W09. CPU 판단/규칙/seed/replay 계약 변경 금지 | W06 selection/file/pending/reset/restart 호환·Q-AUDIO 원자 전환, per-domain single pack/default/mute, voice missing/off, simultaneous writes, event identity/order, stale callback, duplicate/reconnect suppression, omake. Backend/build/browser and exact-SHA Windows CI/artifact source/hash |
+| W09 | W08/W08-S 병합, D05-b/c·D06-b/d·D08-b·D10-a·Q-LEGACY | `dialogue_service.py`와 새 content resolver, `api/game.py`/`game_registry.py` 표시/정산 저장 경계·필요 additive migration·types/main/MahjongTable. 원 pending ordinal 유지·공통 선언과 actor 음성, event/상황/캐릭터/Level 교집합·`win` text/context relation 및 변수 snapshot. W06 version2/오마케의 확정 voice 유지/추가 진행·CG 억제·노출 policy 유지. ComfyUI submit 금지 | source index/ron-tsumo/win ordering·reach_accepted/actor·최종4위·보충/omake·대사 고갈·변수·중복/재접속·commit 실패·policy1/2/legacy replay |
 | W10 | W07 D07-a/b·D08-a·D09-a, Q-FRAME, W08 입력 schema | 새 ComfyUI adapter/client/workflow/settings service/schema/API, `local_runtime.py` 수명·최소 설정 UI/api. 승인 endpoint 정책과 job 입력/snapshot/unknown 상태 구현. 실제 지원 workflow의 object_info/input/output·Anima/encoder/VAE/LoRA·한도/파일 decode를 기술 확인. 실환경 없으면 mock 범위만 제출하고 실출력 완료 금지. 게임 RNG/정산·모델 다운로드·전역 interrupt 금지 | mock submit/status/result·응답유실·재기동/자기 job·endpoint 미연결 기본 게임·종료 소유권. 실제 생성은 별도 사용자 승인/환경/D11 제공 때만 실측 |
 | W11 | W06·W09/W10 병합, D05-b·D06·D08 전체, Q-IMAGE/Q-FRAME | 새 selection/job/artifact 연동 services/API·필요 additive migration, W09 표시 hook·W10 adapter 호출, types/api/main 최소 표시/명시 retry. seed/cache/4단계3종 분리·재렌더 무추첨·writer 밖 submit·late result 격리·원본/이전 파일 보존 구현 | 입력/label/모델 revision별 cache·동시 동일 요청·submit unknown·DB 실패·A→B/새 대국/reset 후 완료·missing 파일·명시 retry·재시작 snapshot. 실제 ComfyUI와 mock 구분 |
 | W11-U | W08 표시 DTO·W09 result/voice·W11 이미지 API, Q-META/Q-IMAGE | `CpuSelection.tsx`·`MahjongTable.tsx`·main/types/api/style와 새 최소 상세/결과/뷰어 컴포넌트. 정사각 프로필 목록·상단 CG/전신·좌석 상세·stage_after 연출·CG 전용·줌/팬 구현. DTO 확정 후 mock UI 개발 가능하나 수용은 실제 W11 연결 후. 갤러리/새 스탯/자동 생성 hook 추가 금지 | hover/선택/좌석 identity·로딩/깨진 이미지·stale blob·CG 전용 복귀/줌팬·최종 결과→기존 엔딩 ack·재조회에 재정산/추첨/submit 없음. 보충/오마케 표시 |
@@ -525,7 +526,8 @@ pending payload는 완료 시 한 번 고정하며 이후 설정 변경으로 �
 
 선택 BGM은 목록 순서 순환, 기본 마작 6개 SFX는 대사 존재와 독립시켜.
 commit 뒤 event identity로 중복/복구 과거 재생을 막고 오마케에서도 기본 SFX는 유지해.
-오마케 캐릭터 대사/CG/승패 이벤트는 계속 억제해. 캐릭터 voice/새 SFX hook은 추가하지 마.
+당시 설계는 오마케 캐릭터 대사/CG/승패 이벤트를 억제했으며 캐릭터 voice/새 SFX hook은 범위 밖이었다.
+2026-10-16 결정으로 기본 선언·화료·최종4위 대사는 재생하고, stage/Tier/추가 진행/CG 억제는 유지한다.
 엔딩은 일반 BGM 중지→등록 CG/음악 1회/평문 대사→명시 계속하기 ack→오마케 순서야.
 미등록/누락/비활성/재생 실패/autoplay 거절은 안내·무음으로 처리하고 대국/계속하기를 막지 마.
 음악 ended나 GET/파일 실패로 자동 ack하지 마. pending 재기동은 같은 엔딩,

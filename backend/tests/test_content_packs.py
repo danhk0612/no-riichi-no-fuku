@@ -707,7 +707,7 @@ class PackRegistryTests(unittest.TestCase):
             self.assertEqual(conn.execute(text("PRAGMA foreign_key_check")).all(), [])
             self.assertEqual(
                 conn.execute(text("select version_num from alembic_version")).scalar(),
-                "20261016_0008",
+                "20261016_0009",
             )
 
     def test_concurrent_scan_no_duplicates_and_reads_outside_writer(self):

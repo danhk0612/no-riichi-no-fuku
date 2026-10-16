@@ -40,7 +40,9 @@ try {
     { id: 'track-a', label: 'Track A', active: true, media_asset_id: 'asset-a', available: true, url: '/api/local/media/asset-a/file' },
     { id: 'track-b', label: 'Track B', active: true, media_asset_id: 'asset-b', available: true, url: '/api/local/media/asset-b/file' },
   ]
-  let selection = { effect_set_id: 'set-old', bgm_ids: ['track-a', 'track-b'], effect_sets: [{ id: 'set-old', label: 'Old set', active: false, clips: {} }], tracks, effect_set_available: false, bgm_available: [true, true] }
+  const audioPacks = { schema_version: 1, revision: 0, sfx_mode: 'legacy', sfx_pack_id: null, bgm_mode: 'legacy', bgm_pack_id: null, defaults: { sfx: null, bgm: null }, packs: [], bgm_slots: { title: null, selection: null, game: null, result: null } }
+  let selection = { effect_set_id: 'set-old', bgm_ids: ['track-a', 'track-b'], effect_sets: [{ id: 'set-old', label: 'Old set', active: false, clips: {} }], tracks, effect_set_available: false, bgm_available: [true, true], audio_packs: { ...audioPacks } }
+  const voices = new Map(cpus.map((cpu) => [cpu.id, { schema_version: 1, cpu_id: cpu.id, revision: 0, default_pack_id: null, selected_pack_id: null, selection_mode: 'default', packs: [] }]))
   let ending = { cg_asset_id: null, music_track_id: 'track-b', dialogue_text: null }
   let disabledSetClearSaved = false
   let endingClearSaved = false
@@ -68,6 +70,17 @@ try {
       return route.fulfill({ json: play })
     }
     if (path === '/api/local/play/roster-candidates') return route.fulfill({ json: cpus })
+    if (path === '/api/admin/cpus') return route.fulfill({ json: cpus })
+    if (/^\/api\/local\/characters\/\d+\/voice-selection$/.test(path) && request.method() === 'PUT') {
+      const cpuId = Number(path.split('/')[4]); const value = await request.postDataJSON()
+      const saved = { ...voices.get(cpuId), ...value, revision: voices.get(cpuId).revision + 1 }
+      voices.set(cpuId, saved); return route.fulfill({ json: saved })
+    }
+    if (/^\/api\/local\/characters\/\d+\/voice-selection$/.test(path)) return route.fulfill({ json: voices.get(Number(path.split('/')[4])) })
+    if (path === '/api/local/audio-pack-selection' && request.method() === 'PUT') {
+      const next = await request.postDataJSON(); selection.audio_packs = { ...selection.audio_packs, ...next, revision: selection.audio_packs.revision + 1 }
+      return route.fulfill({ json: selection.audio_packs })
+    }
     if (path === '/api/game/sessions' && request.method() === 'POST') return route.fulfill({ json: { session_id: 'sound-match', generation: play.generation, players: [
       { seat: 0, name: 'Tester', isHuman: true }, ...cpus.map((cpu, index) => ({ seat: index + 1, name: cpu.name, isHuman: false })),
     ] } })
@@ -117,6 +130,10 @@ try {
   await page.getByRole('button', { name: '사운드·자료 설정' }).click()
   await page.locator('.sound-panel').waitFor()
   assert.equal(await page.getByText('파일 등록', { exact: true }).count(), 1)
+  assert.equal(await page.getByLabel('SFX 재생 방식').count(), 1)
+  assert.equal(await page.getByLabel('BGM 재생 방식').count(), 1)
+  assert.equal(await page.getByRole('heading', { name: '캐릭터 음성팩 연결' }).count(), 1)
+  assert.equal(await page.getByLabel('음성팩').count(), 3)
   assert.equal(await page.getByRole('option', { name: 'Old set · 비활성' }).count(), 2)
   await page.getByLabel('효과음 세트').selectOption('')
   await page.getByRole('button', { name: '1번 배경음 아래로' }).click()
@@ -209,6 +226,19 @@ try {
   socket.send(JSON.stringify(effect))
   await page.waitForTimeout(100)
   assert.equal(await page.evaluate(() => window.__audioInstances.length), beforeSfx + 1, 'replayed SFX identity should stay silent')
+  const beforeVoice = await page.evaluate(() => window.__audioInstances.length)
+  const voice = { type: 'voice_effect', generation: play.generation, session_id: 'sound-match', action_version: 3,
+    event_index: 4, actor_seat: 2, event_key: 'ron', asset_id: 'audio-ron', url: '/api/local/media/asset-ron/file' }
+  socket.send(JSON.stringify(voice)); socket.send(JSON.stringify(voice))
+  socket.send(JSON.stringify({ ...voice, event_index: 4, event_key: 'win', asset_id: 'audio-win', url: '/api/local/media/asset-win/file' }))
+  await page.waitForFunction((count) => window.__audioInstances.length === count + 1, beforeVoice)
+  assert.equal(await page.evaluate(() => window.__audioInstances.at(-1).__playCount), 1, 'ron actor voice should start first')
+  await page.evaluate(() => window.__audioInstances.at(-1).dispatchEvent(new Event('ended')))
+  await page.waitForFunction((count) => window.__audioInstances.length === count + 2, beforeVoice)
+  assert.equal(await page.evaluate(() => window.__audioInstances.at(-1).__playCount), 1, 'separate win voice should follow ron and duplicate ron should stay silent')
+  await page.evaluate(() => window.__audioInstances.at(-1).dispatchEvent(new Event('ended')))
+  await page.waitForTimeout(30)
+  assert.equal(await page.evaluate(() => window.__audioInstances.length), beforeVoice + 2, 'queued actor voices should serialize without duplicates')
   assert.ok(await page.locator('.match-result').count())
   await page.evaluate(() => { window.confirm = () => true })
   await page.getByRole('button', { name: '초기화' }).click()
