@@ -1,5 +1,18 @@
 # 현재 상태
 
+## 현재 우선 인계 — W-DIFF-A
+
+2026-10-18 사용자 승인: 성향은 캐릭터 고유값, CG Level/stage 0~3과 실제 난이도를 분리하고
+캐릭터 단계+게임 설정으로 최종 난이도 1~10을 계산하는 방향을 채택했다. Q-META 신체 A도 승인됐다.
+현재 코드는 여전히 Tier 0/1/2이며 10레벨/게임 설정/신체 편집 UI는 아직 구현하지 않았다.
+설정 범위/공식/특수 모드 우선순위·적용 시점은 미확정이다. TASKS의 W-DIFF-A 지시문으로
+고성능 Work의 격리 검증·구체 계약·후속 구현 인계를 먼저 수행한다.
+
+준비 main `467c706`은 PR #83 병합이다. W08-S 최종 source `205a597`의 Linux/Windows unittest
+129개·대사 10개, build·sound/content/audio-pack browser, packaged renderer 22 checks와
+일반 종료/재기동 및 다운로드 ZIP/source/hash 대조를 확인했다. 정확한 CI/artifact는 PR #83에 있다.
+이번 추가 변경은 요구/아키텍처/Task·인계 문서만이며 제품 동작·사용자 자료 변경은 없다.
+
 ## W08-S — 오디오팩·캐릭터 음성 연결
 
 PR #83의 최초 구현 검증 source는 `a6912e6ac14f061d1eb6c74b099a40ddec81accd`이며 이후 기록 head는
