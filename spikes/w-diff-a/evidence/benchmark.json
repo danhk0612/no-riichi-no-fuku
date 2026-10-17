@@ -5,32 +5,32 @@
     {
       "level": 1,
       "decisions": 160,
-      "wall_mean_ms": 1.4071941,
-      "wall_p95_ms": 2.753913,
-      "wall_max_ms": 8.566917,
-      "cpu_mean_ms": 1.4057670625,
-      "cpu_p95_ms": 2.75246,
-      "cpu_max_ms": 8.564276
+      "wall_mean_ms": 2.9807475125,
+      "wall_p95_ms": 5.86517,
+      "wall_max_ms": 18.221335,
+      "cpu_mean_ms": 2.977428925,
+      "cpu_p95_ms": 5.862028,
+      "cpu_max_ms": 18.216877
     },
     {
       "level": 5,
       "decisions": 160,
-      "wall_mean_ms": 1.39943085,
-      "wall_p95_ms": 2.795861,
-      "wall_max_ms": 3.644499,
-      "cpu_mean_ms": 1.39774081875,
-      "cpu_p95_ms": 2.794821,
-      "cpu_max_ms": 3.642199
+      "wall_mean_ms": 4.420799725,
+      "wall_p95_ms": 16.001211,
+      "wall_max_ms": 43.362344,
+      "cpu_mean_ms": 4.40781573125,
+      "cpu_p95_ms": 15.99439,
+      "cpu_max_ms": 43.358227
     },
     {
       "level": 10,
       "decisions": 160,
-      "wall_mean_ms": 1.54962239375,
-      "wall_p95_ms": 2.832073,
-      "wall_max_ms": 20.13095,
-      "cpu_mean_ms": 1.54453445,
-      "cpu_p95_ms": 2.830287,
-      "cpu_max_ms": 20.120909
+      "wall_mean_ms": 3.70397770625,
+      "wall_p95_ms": 10.123745,
+      "wall_max_ms": 20.076118,
+      "cpu_mean_ms": 3.7005240375,
+      "cpu_p95_ms": 10.119901,
+      "cpu_max_ms": 20.070459
     }
   ],
   "repeated_full_match_traces": [

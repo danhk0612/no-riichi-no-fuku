@@ -980,7 +980,9 @@
           1
         ]
       },
-      "ignored_setting_level": 10
+      "ignored_setting_level": 10,
+      "saved_profile_wins": true,
+      "fresh_uses_changed_setting": true
     },
     {
       "level": 2,
@@ -999,7 +1001,9 @@
           4
         ]
       },
-      "ignored_setting_level": 9
+      "ignored_setting_level": 9,
+      "saved_profile_wins": true,
+      "fresh_uses_changed_setting": true
     },
     {
       "level": 3,
@@ -1018,7 +1022,9 @@
           4
         ]
       },
-      "ignored_setting_level": 8
+      "ignored_setting_level": 8,
+      "saved_profile_wins": true,
+      "fresh_uses_changed_setting": true
     },
     {
       "level": 4,
@@ -1037,7 +1043,9 @@
           4
         ]
       },
-      "ignored_setting_level": 7
+      "ignored_setting_level": 7,
+      "saved_profile_wins": true,
+      "fresh_uses_changed_setting": true
     },
     {
       "level": 5,
@@ -1056,7 +1064,9 @@
           3
         ]
       },
-      "ignored_setting_level": 6
+      "ignored_setting_level": 6,
+      "saved_profile_wins": true,
+      "fresh_uses_changed_setting": true
     },
     {
       "level": 6,
@@ -1075,7 +1085,9 @@
           2
         ]
       },
-      "ignored_setting_level": 5
+      "ignored_setting_level": 5,
+      "saved_profile_wins": true,
+      "fresh_uses_changed_setting": true
     },
     {
       "level": 7,
@@ -1094,7 +1106,9 @@
           1
         ]
       },
-      "ignored_setting_level": 4
+      "ignored_setting_level": 4,
+      "saved_profile_wins": true,
+      "fresh_uses_changed_setting": true
     },
     {
       "level": 8,
@@ -1113,7 +1127,9 @@
           3
         ]
       },
-      "ignored_setting_level": 3
+      "ignored_setting_level": 3,
+      "saved_profile_wins": true,
+      "fresh_uses_changed_setting": true
     },
     {
       "level": 9,
@@ -1132,7 +1148,9 @@
           1
         ]
       },
-      "ignored_setting_level": 2
+      "ignored_setting_level": 2,
+      "saved_profile_wins": true,
+      "fresh_uses_changed_setting": true
     },
     {
       "level": 10,
@@ -1151,7 +1169,9 @@
           2
         ]
       },
-      "ignored_setting_level": 1
+      "ignored_setting_level": 1,
+      "saved_profile_wins": true,
+      "fresh_uses_changed_setting": true
     }
   ],
   "unknown_profile_rejected": true

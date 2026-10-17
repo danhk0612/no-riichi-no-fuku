@@ -24,9 +24,9 @@ def corpus():
     agents = [Tier2Agent(seed=1170 + seat) for seat in range(4)]
     observations = []
     while not adapter.done:
-        observations.extend(adapter.pending_observations.values())
-        adapter.step({seat: agents[seat].choose_action(obs)
-                      for seat, obs in adapter.pending_observations.items()})
+        pending = adapter.pending_observations
+        observations.extend(pending[seat] for seat in sorted(pending))
+        adapter.step({seat: agents[seat].choose_action(pending[seat]) for seat in sorted(pending)})
     # Deterministic spread over early/late rounds and response/discard turns.
     return observations[::max(1, len(observations) // 160)][:160]
 
@@ -39,9 +39,9 @@ def choices():
                  for i in range(1, 4))
 
 
-def new_game(snapshot):
+def new_game(snapshot, *, current_setting=None, restoring=True):
     # This envelope is an isolated proof, NOT the product policy-3 loader.
-    profile = snapshot["profile"]
+    profile = snapshot["profile"] if restoring else asdict(current_setting)
     if profile not in [asdict(p) for p in PROFILES]:
         raise ValueError("unknown immutable profile")
     selected = PROFILES[profile["level"] - 1]
@@ -105,7 +105,7 @@ def verify():
     replay = []
     for profile in PROFILES:
         snapshot = dict(seed=211, choices=[asdict(c) for c in choices()], profile=asdict(profile))
-        game = new_game(snapshot)
+        game = new_game(snapshot, current_setting=profile, restoring=False)
         history = []
         for _ in range(12):
             assert not game.done
@@ -114,7 +114,10 @@ def verify():
         saved = json.loads(json.dumps(dict(snapshot=snapshot, human_action_indices=history)))
         # A later setting deliberately differs. Restoring uses only saved data.
         current_setting = PROFILES[10 - profile.level]
-        restored = new_game(saved["snapshot"])
+        restored = new_game(saved["snapshot"], current_setting=current_setting, restoring=True)
+        assert all(agent.profile == profile for agent in restored._cpu_agents.values())
+        fresh = new_game(saved["snapshot"], current_setting=current_setting, restoring=False)
+        assert all(agent.profile == current_setting for agent in fresh._cpu_agents.values())
         for action_index in saved["human_action_indices"]:
             restored.submit_human_action(action_index)
         compared = 0
@@ -125,10 +128,11 @@ def verify():
             compared += 1
         assert restored.done and game.result() == restored.result()
         replay.append(dict(level=profile.level, continuation_turns=compared,
-                           result=asdict(game.result()), ignored_setting_level=current_setting.level))
+                           result=asdict(game.result()), ignored_setting_level=current_setting.level,
+                           saved_profile_wins=True, fresh_uses_changed_setting=True))
     invalid = dict(snapshot["profile"], version="future-profile")
     try:
-        new_game(dict(snapshot, profile=invalid))
+        new_game(dict(snapshot, profile=invalid), current_setting=PROFILES[0], restoring=True)
     except ValueError:
         pass
     else:

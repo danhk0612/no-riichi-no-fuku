@@ -20,7 +20,7 @@ Q-META 신체 UI, W08/W09, CG/음향/콘텐츠 생성·사용자 자료 변경�
 | 공통 입력/성향 | 실제160관측×기존6성향+극단2종×10레벨=12,800케이스. 독립 agent쌍의 동일 seed 재현/합법성/성향6값 불변, L10 원 Tier2 동일. 균형 성향 최소샹텐 초과 선택은 L1 64/127→L10 0/127(안전성의 완전한 척도 아님) |
 | 신규 격리 replay | 각레벨 seed211, 12개 사람 action index 저장→JSON roundtrip→새 주입 factory/session 재생. 남은57~197턴 hash와 완료 결과 일치, unknown profile 거절. production policy3 loader/파일DB 구현 검증은 아님 |
 | 완전 재현 | L1/5/10 seed107·좌석2 전체 대국 각2회 trace/점수/순위/step 일치 |
-| 비용 | 8 worker 비교303.959초(다른 검사와 공유). 별도160입력의 L1/5/10 평균 CPU1.406/1.398/1.545ms, p95 2.752/2.795/2.830ms. 모든레벨 원 평가 비용 유지, Windows/전체 최악지연 아님 |
+| 비용 | 8 worker 비교303.959초(다른 검사와 공유). 최종 검토160입력 L1/5/10 평균 CPU2.977/4.408/3.701ms, p95 5.862/15.994/10.120ms(공유 부하). 모든레벨 원 평가 비용 유지, Windows/전체 최악지연 아님 |
 | 기존 회귀 | 원본 backend unittest129개225.327초·대사 pytest10개0.30초 통과. pre-versioned 매턴 fixture/policy2 재시작·local writer/정산 실패/reset/오마케/음향 검사 포함 |
 
 paired 분석은 독립 seed 블록32개(4좌석은 같은 블록), t 근사95%/다중 비교 보정 전이다.
@@ -32,6 +32,14 @@ frontend build/browser와 새 Windows CI/개인 PC 측정은 수행하지 않았
 합산 clamp·보충1/omake10 우선·다음 대국 적용/초기화 설정 보존은 **권고안**이며 승인되지 않았다.
 승인 및 profile 강도 보정 게이트가 남아 B는 미착수다. TASKS에 B의 파일 경계/호환/검증 지시문을
 작성했다. 직접 병합·Release/tag는 수행하지 않는다. 최종 제출 commit/PR은 Git/해당 PR을 따른다.
+
+최종 검토에서 자료의 스크립트 hash와 1,664행 통계/paired 분석, 추출 4대국 trace/결과를 재현했다.
+공통 관측의 비정렬 좌석 수집을 정렬로 고정하고 두 프로세스에서 corpus hash 일치를 확인했다.
+수정 후 12,800 입력·10개 profile 복구를 재검증했고, 변경 현재 설정을 복구 인터페이스로 전달해
+저장 profile 우선/새 대국 현재 설정 적용을 검사했다. 잘못된 변경 설정 적용 경로는 대조 검사에서
+검출된다. 새 verify/benchmark 자료와 script hash를 반영했으며 기존 대국 통계/후보 판단은 불변이다.
+제품 경로 변경이 없어 backend 전체/Windows CI는 재실행하지 않았다. 최종 source/tree는 PR #85의
+검토 기록을 따른다. 연구 기록 검토와 제품 10단계 강도 채택은 구분하며 B 착수 게이트는 유지한다.
 
 W08-S의 Windows 최종 source `205a597`과 artifact 검토는 PR #83에 있으며 이번 A 측정과 별개다.
 
