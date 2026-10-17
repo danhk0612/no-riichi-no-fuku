@@ -28,7 +28,7 @@ paired 분석은 독립 seed 블록32개(4좌석은 같은 블록), t 근사95%/
 frontend build/browser와 새 Windows CI/개인 PC 측정은 수행하지 않았다. 제품 경로 변경이 없는
 문서/spike Task라 W04/W05 path filter 대상이 아니며 과거 Windows 증거를 이번 head의 성공으로 쓰지 않는다.
 
-다음은 REQUIREMENTS DIFF-* 정책 결정과 profile 보정/검토다. 설정1~10/기본5·stage기본3/6/9·
+다음은 TASKS의 W-DIFF-A 후보 보정 지시문이다. REQUIREMENTS DIFF-* 정책 결정도 별도로 필요하다. 설정1~10/기본5·stage기본3/6/9·
 합산 clamp·보충1/omake10 우선·다음 대국 적용/초기화 설정 보존은 **권고안**이며 승인되지 않았다.
 승인 및 profile 강도 보정 게이트가 남아 B는 미착수다. TASKS에 B의 파일 경계/호환/검증 지시문을
 작성했다. 직접 병합·Release/tag는 수행하지 않는다. 최종 제출 commit/PR은 Git/해당 PR을 따른다.
