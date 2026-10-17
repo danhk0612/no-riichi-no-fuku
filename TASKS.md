@@ -20,8 +20,8 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W08-C | 기존 CPU의 명시 캐릭터팩 연결·같은 팩 갱신 | P1 / 완료(PR #82 병합) | W08-A/B 병합, Q-PACK A | 저성능 Work |
 | W08 | 캐릭터·공유 후보·단계별 이미지 편집/적용 | P1 / 정책 의존 부분 대기 | W08-A, W07 관련 결정 | 저성능 Work |
 | W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / 완료(PR #83 병합, 최종 검증은 PR 참조) | W07 팩/event 계약, W08-A/B/C 병합, Q-PACK/Q-AUDIO/D-WIN/Q-OMAKE-VOICE | 저성능 Work |
-| W-DIFF-A | 난이도 1~10 설계·격리 기술 검증·구현 인계 | P1 / 현재 우선 인계 | PR #83 병합, 2026-10-18 사용자 승인 | 고성능 Work |
-| W-DIFF-B | 단계+게임 설정의 최종 난이도·저장·설정 UI 적용 | P1 / A 결과·잔여 정책 확정 후 | W-DIFF-A | 저성능 Work(판단 구현 복잡 시 고성능 Work) |
+| W-DIFF-A | 난이도 1~10 설계·격리 기술 검증·구현 인계 | P1 / 설계·격리 검증 기록 검토 보완, 10개 인접 강도 보정 미완료 | PR #83/#84 병합, 2026-10-18 사용자 승인 | 고성능 Work |
+| W-DIFF-B | 단계+게임 설정의 최종 난이도·저장·설정 UI 적용 | P1 / DIFF-* 정책·profile 보정 승인 대기, 미착수 | W-DIFF-A 검토 | 저성능 Work(판단 구현 복잡 시 고성능 Work) |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
 | W10 | 독립 ComfyUI·Anima adapter | P1 / 대기 | W03, W07 | 저성능 Work |
 | W11 | 이벤트 랜덤 조합·생성/파일 연동 | P1 / 대기 | W06, W09, W10 | 저성능 Work |
@@ -66,7 +66,107 @@ W08-S와 W11-U는 기존 W08~W11을 작은 범위로 나눈 후속 구현 Task�
 - 기존 W08~W11의 최초 파일 범위 표는 아래에 보존하되, 새 중간 요구를 빠뜨린 지시로 사용하지 않는다.
   구현 시작 전에 W07 최종 계약과 Task별 파일 경계를 구체화해야 한다.
 
-## 다음 Work에 입력할 지시문 — W-DIFF-A 난이도 확장 설계·격리 검증
+## W-DIFF-A 결과와 다음 착수 조건
+
+기준 main `8fb9b80`에서 production/policy1/2/legacy fixture를 유지한 채
+`spikes/w-diff-a`의 profile·seeded 비교·합법성/재현/격리 replay 검사를 수행했다.
+명령/실측/한계는 해당 README와 CURRENT_STATE, 구체 저장/API 경계는 ARCHITECTURE를 따른다.
+기존 알고리즘만으로 10개의 **행동 설정**은 만들 수 있지만 모든 인접 구간의 실전 강도가
+구별된다고 입증하지 못했다. 이를 10단계 제품 구현 완료로 표시하지 않는다.
+
+현재 다음 단계는 REQUIREMENTS의 DIFF-* 사용자 결정과 profile 강도 보정 검토다.
+보정 자체가 새 판단 방식/범위 확대를 요구하면 먼저 별도 범위를 확정한다. B 구현 중 임의로
+profile을 튜닝하거나 설정 공식을 확정하지 않는다. W08/W09 및 신체 UI는 계속 별도 범위다.
+
+## 다음 Work에 입력할 지시문 — W-DIFF-A 보정
+
+권장 환경: **고성능 Work**. v1 연구 기록은 보존하고 제품에 채택하지 않은 채 같은 1~10 목표의
+후보 보정만 수행한다. DIFF-* 정책 선택과 독립적으로 진행 가능한 기술 검증 범위다.
+
+```text
+danhk0612/no-riichi-no-fuku의 W-DIFF-A 후보 보정만 수행해.
+최신 main·열린 PR·AGENTS.md와 루트 기준 문서, PR #85 최종 검토를 확인하고
+새 task/w-diff-a-profile-calibration에서 기존 spikes/w-diff-a 도구를 재사용해.
+
+v1은 낮은 레벨 포화·일부 역전·인접 구간 불확실성이 남아 제품 채택 불가야.
+기존 성향 6값은 보존하고, 과도한 균등 무작위 버림패가 성향 표현을 약화하는 문제를 줄여.
+허용된 공개 관측과 기존 판단을 재사용해 후보 실수율/후보 선택 범위를 검토하고
+profile version을 구분한 v2 후보를 만들어. 기존 v1 근거/원본 agent/policy1/2는 보존해.
+새 탐색 엔진·외부 AI·숨은 정보 사용·게임 규칙/제품 구현 확대는 하지 마.
+
+조절용 seed와 독립 검증 seed를 분리하고 기존 좌석 교대/seed-block 비교를 유지해.
+중립뿐 아니라 기존 성향과 여러 기존 상대 조합에서 합법성·같은 seed 재현·강도와 비용을 확인해.
+10개 레벨의 행동 차이와 실제 강도 차이를 구분하고 표본 내 결과에 맞춰 이름을 재정렬하지 마.
+인접 평균 차이/불확실성·실용 차이의 권고 기준과 한계를 기록해. 입증이 부족하면 그대로 보고해.
+예산/대국 수·seed 범위를 먼저 정해 기록하고 무제한 탐색/표본 늘리기를 하지 마.
+
+최종 도구로 근거 자료를 다시 계산하고 별도 프로세스 재현을 확인해.
+현재 설정을 실제 전달한 저장 profile 우선/새 대국 현재 설정 분기·전체 복구 검사를 보존해.
+게임 설정 기본값/단계별 기본/조합 공식/특수 모드/적용 시점은 여전히 권고이며 임의 확정하지 마.
+W-DIFF-B·UI/DB/정산/CG/음향/신체 정보 편집은 착수하지 마.
+
+관련 기준 문서·재현 명령/측정/미검증을 갱신하고 commit/push·PR 제출까지 진행해.
+직접 병합·Release/tag·W-DIFF-B 착수는 하지 마.
+```
+
+## 후속 Work 지시문 — W-DIFF-B (게이트 해제 후에만)
+
+권장 환경: **저성능 Work**. 성능/보정/복합 저장 판단이 해결되지 않으면 고성능 Work로 분리한다.
+아래 지시문은 구현 인계 초안이며 지금의 실행 승인이 아니다.
+
+```text
+danhk0612/no-riichi-no-fuku의 W-DIFF-B만 수행해.
+최신 main·현재 branch·열린 PR·AGENTS.md와 모든 루트 기준 문서를 확인해.
+W-DIFF-A PR의 최종 head/측정, REQUIREMENTS DIFF-* 실제 사용자 승인과 승인된 immutable
+profile 표/강도 검증 결과를 먼저 확인해. 후보나 권고만 있고 승인/강도 보정이 없으면 구현하지 말고
+남은 조건을 보고해. 이전 -1/0/+1, A의 3/6/9·기본5·실수율 표를 승인으로 간주하지 마.
+기존 브랜치/다른 PR 변경을 덮지 말고 task/w-diff-b-difficulty에서 작업해.
+
+ARCHITECTURE의 W-DIFF-A 계약을 따라 성향6값/CG stage0~3/게임 설정/최종1~10을 분리해.
+순수 난이도 resolver와 승인된 versioned profile agent를 신규 policy3 경로로 구현해.
+기존 Tier0/1/2와 policy1/2 RNG·종반 판정·seed*10+seat·legacy fixture·액션 순서를 고치지 마.
+기존 Tier2를 재사용한다면 내부 policy2를 전달하고 새 seed 소비 규칙을 별도로 고정해.
+10이 기존 Tier2보다 강하다고 표시하지 마. 승인된 보정표/정의와 실제 행동 차이를 확인해.
+
+CpuChoice에 nullable difficulty_snapshot만 추가하고 신규 local 대국만 policy3로 시작해.
+rules_snapshot version2와 effective_tier0/1/2는 기존 진행/호환 의미로 유지해.
+GameSetting key local_cpu_difficulty의 version/revision/setting, local GET/PUT /api/local/difficulty를
+구현해. 기존 JSON 열/key-value로 가능하면 새 schema migration/테이블은 만들지 마.
+현재 공식/프로필/설정 revision/reason/level/파라미터·성향·stage를 대국 시작 시 고정해.
+현재 대국/구 저장은 설정 변경 뒤에도 재계산하지 마. unknown/malformed 새 snapshot은 명시 오류로
+멈추고 최신/기본/legacy로 대체하거나 사용자 기록을 rewrite하지 마.
+
+writer에서 설정과 start를 직렬화하고 revision 검사→commit 후 응답을 지켜.
+GET은 읽기만, 저장 실패는 이전 설정/active game 보존, start 실패는 cache eviction/원본 복구.
+설정 변경이 기존 game/agent/socket/콘텐츠 RNG를 재생성하지 않게 해.
+완료 CPU 보충/omake 우선순위와 초기화 뒤 설정 보존은 승인된 DIFF-MODE/TIMING을 따라.
+정산/CG unlock/명단/HP 없음/엔딩·음향·voice 동작은 변경하지 마.
+
+선택 preview는 서버 resolve, 현재 대국 표시는 저장 snapshot에서 API/WS로 제공해.
+기존 화면에 최소 난이도1~10 선택·저장/다음 대국 안내와 최종 난이도 표시만 넣어.
+CG Level/성향/최종 난이도를 별도 명칭으로 표시해. legacy는 가짜 1~10으로 환산하지 마.
+기존 generation/load token으로 늦은 응답을 막고 표시 숫자 때문에 CPU/CG를 다시 선택하지 마.
+
+파일 범위: backend/app/mahjong의 새 profile agent, services/game_setup.py/local_play.py/
+game_registry.py 및 최소 difficulty service, schemas/game.py와 local 전용 schema/router,
+local_runtime.py의 router 연결, frontend/src/api.ts/game/types.ts/main.tsx/CpuSelection.tsx와
+최소 설정 component/style, 관련 backend/browser/Windows smoke와 기준 문서만 변경해.
+기존 agent/legacy fixture/정산·음향 알고리즘/신체 UI/팩·생성 기능 수정은 범위 밖이야.
+
+검증: 승인된 resolver 전 조합(stage0~3×설정1~10×progress/omake), 보충 자격·특수 모드,
+6성향 불변·최종난이도/CG 독립, 새 profile 전 레벨 합법성·동일 seed/action trace golden,
+설정 저장/start 경쟁·commit 실패/응답 유실·reset 보존, 12행동 후 변경/재시작과 완료 결과 동일,
+pre-versioned golden 매 턴·policy1/2 원본·unknown version 거절·완료/cancelled 보존을 확인해.
+기존 backend unittest/대사 pytest/frontend build·관련 browser 및 정확한 수정 SHA의 W04/W05
+Windows CI와 다운로드 artifact source/ZIP hash·packaged 설정/복구 smoke를 확인해.
+CI/Windows hosted/개인 PC·실전 강도 표본을 구분해. 부족한 검증을 완료로 기록하지 마.
+
+REQUIREMENTS/ARCHITECTURE/CURRENT_STATE/TASKS와 필요한 사용자 README를 실제 결과대로 갱신해.
+commit/push·PR 제출/관련 CI는 허용한다. 직접 병합·Release/tag·후속 Task 착수,
+실제/더미 CG·음향 생성·사용자 자료 수정/삭제·ComfyUI 실행은 하지 마.
+```
+
+## 이전 입력 지시문 — W-DIFF-A 난이도 확장 설계·격리 검증
 
 ```text
 danhk0612/no-riichi-no-fuku의 W-DIFF-A만 수행해.

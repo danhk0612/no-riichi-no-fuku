@@ -22,6 +22,108 @@ W-DIFF-B의 저장 계약은 기존 policy 1/2와 pre-versioned snapshot을 그�
 의미를 소급 변경하지 않는다. 실제 DTO/새 policy version/migration 필요성은 A에서 조사·명세한다.
 이번 인계 문서로 production API/DB/CPU/진행을 변경하지 않는다.
 
+## W-DIFF-A 설계·격리 검증 계약
+
+조사 기준 main `8fb9b80a471090b43ac648597051e788c0767186` (PR #84 병합), 제품 변경 없음.
+아래 신규 필드/API는 W-DIFF-B용 기술 설계이며 현재 구현으로 읽지 않는다.
+정책 상수는 REQUIREMENTS의 DIFF-* 권고안이 승인된 뒤에만 고정한다.
+
+### 실제 판단·정보·난수 경계
+
+| 현재 경로 | 실제 책임 / 보존할 내용 |
+|---|---|
+| `mahjong/tier0.py` | 화료 우선, 리치/울기, 최소 샹텐→최대 수용패수-4 후보, 안전 가중 추첨. aggression/value는 저장하지만 직접 판단에 쓰지 않음 |
+| `mahjong/tier1.py` | 기본 타점/위험·fold·성향 6값; 후보 점수 기반 가중 추첨 |
+| `mahjong/tier2.py` | 스지/벽 위험 추정, 타점·순위·종반·fold; 기존 가중 추첨. policy 1과 2의 종반 판정 차이는 고정 |
+| `services/game_setup.py` | `effective_tier`가 있으면 우선, 없으면 stage로 agent 선택. `policy_version` 누락 기본 1; 신규 선택은 2. agent seed=`match_seed*10+seat` |
+| `services/local_play.py` | 성향/진행 별도 조회. 보충 tier0·omake tier2로 선택하며 영속 stage를 덮지 않음 |
+| `services/game_registry.py` | CPU choice JSON + match seed + 사람 legal action index를 저장/재생. 등록 자료가 아니라 저장 choice로 agent를 재구성. 대사/음향은 별도 RNG/commit event |
+
+기존 샹텐/수용패수, 도라/역 추정, danger/EV, fold/리치/울기 판단을 그대로 재사용했다.
+spike는 `Observation.hand`, 공개 버림패/부로/도라/점수/리치/국 정보만 기존 agent에 전달한다.
+벽·타인 손패·미래 draw를 profile이 참조하지 않는다. `_estimate_yaku_bonus`의 suit 계산 등 기존
+휴리스틱의 정확성 개선은 이번에 하지 않으며, 휴리스틱 점수를 참 강도/기대 점수로 해석하지 않는다.
+
+`tier2-lapse-v1` 후보는 level L의 버림패 실수율 `(10-L)/10`을 사용한다. 먼저 기존 Tier2(policy2)
+판단을 매번 실행하고, 그 결과가 discard이고 복수 discard가 있을 때 별도 RNG 확률로 합법 discard를
+균등 선택한다(원 선택과 같을 수 있음). 화료/리치/울기/PASS는 기존 판단을 유지한다. 낮은 레벨의
+실수는 fold도 무효화할 수 있어 방어 정확도와 패효율 모두 낮춘다. 성향 가중치는 수정하지 않는다.
+L10은 RNG 추가 소비 없이 기존 Tier2와 동일하다. 별도 RNG seed는 agent seed XOR `0x574449464641`,
+진행 RNG·기존 agent RNG·콘텐츠 RNG에는 추가 draw를 넣지 않는다. 낮은 레벨도 평가 비용은 줄지 않는다.
+Tier0/1/2를 같은 상대/seed 조건의 대조군으로 측정했으며, 새 10레벨을 세 Tier에 이름만 재배치하지 않았다.
+인접 구간 역전/불확실성은 CURRENT_STATE에 기록한다. 이것은 보정 후보이지 제품 채택표가 아니다.
+
+### 상태·저장·policy 버전 축
+
+| 축 | 원본과 저장 위치 / 새 설계 |
+|---|---|
+| 캐릭터 성향 | `CpuCharacter`의 6값 → 대국별 `CpuChoice`의 기존 6값. 난이도 보정으로 덮지 않음 |
+| CG/진행 | `UserCpuProgress.defeat_stage` 0~3 → choice 시작 stage. 정산/CG는 이 값과 기존 rules mode만 사용 |
+| 전역 설정 | 기존 `GameSetting`에 새 key `local_cpu_difficulty`, JSON `{version:1,revision:0,setting:5}` 제안. 값 5는 승인 조건부 |
+| 조합 결과 | `CpuChoice.difficulty_snapshot` nullable object 추가 제안. `version:1`, `profile_version`, `level`, `discard_lapse_numerator`, `formula_version`, `setting`, `setting_revision`, `base_level`, `reason` |
+| 판단 policy | 신규 local choice만 `policy_version:3`. factory의 새 분기에서 profile을 검증하고 전용 agent 생성. 재사용 Tier2 내부에는 policy2 전달(기존 Tier2에 3을 전달하지 않음) |
+| 진행 rules | `{version:2,mode:progress/omake}` 유지. CPU 판단 확장을 이유로 rules version을 3으로 올리지 않음. 정산/음성의 `version==2` 분기 보존 |
+
+snapshot의 `reason`은 `stage_setting/completed_fill/omake` 중 하나, `base_level`은 일반 대국에만
+정수이고 특수 모드에서는 null. `formula_version:stage-offset-v1`도 승인 후 version으로 고정한다.
+원본 stage/성향은 choice의 기존 필드가 원본이며 중복 필드를 만들지 않는다. 예: stage1·설정5라면
+권고상 base6/최종6, candidate v1 실수율0.4. stage3·보충이면 최종1/reason completed_fill,
+stage3·omake면 최종10/reason omake. 숫자 snapshot이 CG Level을 대신하지 않는다.
+
+`effective_tier`는 기존 로컬 v2 저장 검증과 구 난이도 표시 호환을 위해 기존 값(일반 stage0/1/2,
+보충0, omake2)을 유지한다. policy3 agent 선택에는 사용하지 않는다. 이 필드를 최종 1~10 값으로
+덮으면 기존 복구 검증이 거절한다. 성향/CG/최종 난이도 API와 화면 명칭을 구분한다.
+
+기존 JSON 열과 key/value 설정으로 충분하므로 새 DB 열/테이블/Alembic migration은 필요 없다.
+설정 행이 없으면 승인된 기본/revision0을 읽되 GET으로 DB를 쓰지 않는다. 최초 PUT은 revision1로
+행을 만들고 이후 저장마다 1 증가시킨다. 알 수 없는 설정 version/손상 값은 기본으로 덮지 않고 명시 오류다.
+기존 row/snapshot/history를 rewrite하거나 policy를 일괄 3으로 변경하지 않는다.
+
+| 저장 입력 | 복구 동작 |
+|---|---|
+| pre-versioned, policy 누락 | 기존 CpuChoice 기본 policy1·stage 기반 Tier; 원 action index/turn hash/결과 그대로 |
+| 명시 policy1/2, difficulty 없음 | 기존 factory 경로; effective_tier·rules null/1/2 의미 보존 |
+| policy3 + 알려진 완전한 difficulty snapshot | 저장 profile/seed/6성향/행동 로그로 재생. 현재 설정·CPU 편집값·진행표 재조회로 재계산하지 않음 |
+| policy3 필드 누락/잘못된 level/파라미터, policy1/2에 신규 difficulty 혼합, unknown policy/profile/formula | 해당 대국 명시 복구 오류, 로그 보존. 최신 profile/legacy/기본값으로 대체하지 않음 |
+| completed/cancelled | 완료 결과는 기존 저장 JSON 사용, 재정산/agent 생성 금지. cancelled는 기존처럼 복구 거절 |
+
+기존 factory는 Tier0/1에서 unknown policy를 거절하지 않으므로 신규 snapshot decoder에서 명시 검증한다.
+기존 허용 legacy 입력은 그대로 읽고 신규 필드가 있는 경우만 엄격한 조합 검증을 적용한다.
+snapshot의 profile version·레벨·파라미터는 immutable 표의 정확한 조합과 일치해야 하며
+실수율은 정수 `discard_lapse_numerator`(0~9)/고정 분모10으로 저장한다. v1의 값은 `10-level`이고
+추첨 직전에 분자/10으로 계산한다. spike v1과 같은 확률 비교 의미를 고정하고 제품 version의 golden을 만든다.
+Python/RiichiEnv/선택 순서 변경도 replay 영향 검토가 필요하며 버전 식별만으로 미래 호환이 저절로 보장되지는 않는다.
+
+### 설정·선택·복구 화면과 transaction
+
+- local 전용 GET/PUT `/api/local/difficulty`: GET `{version:1,revision,setting,applies_to:"next_match"}`,
+  PUT `{expected_revision,setting}`. 엄격한 정수1~10(bool/float 거절), stale revision=409,
+  validation=422, 저장 실패=기존 local persistence 오류. 기존 capability/member 인증과 writer 사용.
+- writer 안에서 setting revision 검사→저장→commit 후 응답. 대국 start도 같은 writer 안에서
+  설정·phase·stage·성향을 읽고 순수 resolve→choice/profile snapshot 생성→기존 start 저장/commit.
+  설정 저장/start 경쟁 시 writer 순서대로 한 revision만 snapshot, 응답 실패 후 조회로 확인.
+- 전역 설정 변경은 현재 game/agent/cache/socket·RNG를 재생성하지 않는다. 진행 초기화는 기존대로
+  active 취소·stage/명단만 초기화, 새 설정과 등록 자료·음향은 유지(정책 승인 조건부).
+- 기존 선택 목록 API의 local 응답에 nullable `difficulty_preview`와 `difficulty_setting_revision` 추가.
+  preview는 서버가 현재 phase/stage/setting으로 계산한다. 클라이언트가 공식 복제하지 않는다.
+  최초 명단 화면은 실제 상대 선택 전이므로 preview를 생략해도 된다. start는 preview를 신뢰하지 않는다.
+- 생성 응답 및 local WS human_turn/match_complete에 nullable `cpu_difficulties` 배열을 추가 제안:
+  `{seat,cpu_character_id,level,profile_version,reason}`. 새 local policy3만 저장 snapshot에서 반환한다.
+  재접속/완료 화면도 그 snapshot을 사용한다. legacy는 null, UI는 `기존 Tier N`/`기존 저장`으로 표시해
+  1~10을 추정하지 않는다. 현재 관측/액션 목록·action index를 바꾸지 않는다.
+- 기존 게임 내부에 최소 1~10 선택+저장 및 `다음 대국부터 적용` 안내만 추가한다. 캐릭터 카드의
+  CG Level/성향과 `다음 대국 난이도 L/10`을 분리한다. 대국 중에는 `현재 대국 L/10`을 snapshot으로
+  표시한다. 저장 설정을 현재 대국 숫자에 즉시 반영하지 않는다. 기존 generation/load token으로
+  늦은 응답을 격리하고 실패 시 저장 성공 상태를 표시하지 않는다. 새 캐릭터 편집/신체 UI는 제외한다.
+
+### B 착수 전 강도 보정 게이트
+
+A의 실험은 후보/성향·replay 기술 검증이며 새 production loader/Windows 제품을 검증한 것이 아니다.
+DIFF-* 승인과 profile 보정 결과 검토 전 B를 시작하지 않는다. B는 승인받지 않은 인접 강도 차이를
+"검증 완료"로 표시할 수 없다. 보정은 동일 공개 정보·동일6성향/seed·4좌석 비교를 유지하고
+profile 후보를 바꿀 때 version을 올린다. 독립 seed 표본/인접 paired 차이·평균 순위·점수와 한계를
+함께 제시해 승인받는다. 표본 내 10개 수치의 순서만 맞추기 위해 seed를 제외하거나 순서를 재명명하지 않는다.
+
 ## 현재 실제 구조
 
 분석 기준 main `ba4fc43a89a39a328c7c308d6c90e145ab489d58`.

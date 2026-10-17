@@ -1,0 +1,269 @@
+{
+  "independent_seed_blocks": 32,
+  "rotations_per_block": 4,
+  "interval": "paired seed-block t approximation, df31, multiplier2.04; no multiplicity correction",
+  "level10_equals_tier2_all_128_traces": true,
+  "pairs": [
+    {
+      "low": 1,
+      "high": 2,
+      "scores": {
+        "mean_high_minus_low": -28.90625,
+        "se": 675.3994761157649,
+        "descriptive_95_interval": [
+          -1406.7211812761602,
+          1348.9086812761602
+        ]
+      },
+      "ranks": {
+        "mean_high_minus_low": 0.03125,
+        "se": 0.06711771976498912,
+        "descriptive_95_interval": [
+          -0.1056701483205778,
+          0.1681701483205778
+        ]
+      }
+    },
+    {
+      "low": 2,
+      "high": 3,
+      "scores": {
+        "mean_high_minus_low": 1640.625,
+        "se": 734.0368988346611,
+        "descriptive_95_interval": [
+          143.18972637729144,
+          3138.0602736227083
+        ]
+      },
+      "ranks": {
+        "mean_high_minus_low": -0.1328125,
+        "se": 0.05263277062198772,
+        "descriptive_95_interval": [
+          -0.24018335206885494,
+          -0.025441647931145048
+        ]
+      }
+    },
+    {
+      "low": 3,
+      "high": 4,
+      "scores": {
+        "mean_high_minus_low": 27.34375,
+        "se": 977.1703249539017,
+        "descriptive_95_interval": [
+          -1966.0837129059596,
+          2020.7712129059596
+        ]
+      },
+      "ranks": {
+        "mean_high_minus_low": -0.0234375,
+        "se": 0.06385563571605574,
+        "descriptive_95_interval": [
+          -0.1537029968607537,
+          0.1068279968607537
+        ]
+      }
+    },
+    {
+      "low": 4,
+      "high": 5,
+      "scores": {
+        "mean_high_minus_low": 498.4375,
+        "se": 1137.5437211887406,
+        "descriptive_95_interval": [
+          -1822.1516912250308,
+          2819.026691225031
+        ]
+      },
+      "ranks": {
+        "mean_high_minus_low": -0.0390625,
+        "se": 0.09331847932574425,
+        "descriptive_95_interval": [
+          -0.22943219782451826,
+          0.15130719782451826
+        ]
+      }
+    },
+    {
+      "low": 5,
+      "high": 6,
+      "scores": {
+        "mean_high_minus_low": 2779.6875,
+        "se": 1079.0226437852966,
+        "descriptive_95_interval": [
+          578.4813066779948,
+          4980.893693322005
+        ]
+      },
+      "ranks": {
+        "mean_high_minus_low": -0.2734375,
+        "se": 0.1210876526820817,
+        "descriptive_95_interval": [
+          -0.5204563114714467,
+          -0.026418688528553336
+        ]
+      }
+    },
+    {
+      "low": 6,
+      "high": 7,
+      "scores": {
+        "mean_high_minus_low": 1138.28125,
+        "se": 834.4084009073663,
+        "descriptive_95_interval": [
+          -563.9118878510274,
+          2840.474387851027
+        ]
+      },
+      "ranks": {
+        "mean_high_minus_low": -0.046875,
+        "se": 0.1019205073503286,
+        "descriptive_95_interval": [
+          -0.25479283499467037,
+          0.16104283499467037
+        ]
+      }
+    },
+    {
+      "low": 7,
+      "high": 8,
+      "scores": {
+        "mean_high_minus_low": 1729.6875,
+        "se": 1093.1331425834248,
+        "descriptive_95_interval": [
+          -500.30411087018683,
+          3959.679110870187
+        ]
+      },
+      "ranks": {
+        "mean_high_minus_low": -0.1328125,
+        "se": 0.1401973223300219,
+        "descriptive_95_interval": [
+          -0.41881503755324473,
+          0.15319003755324473
+        ]
+      }
+    },
+    {
+      "low": 8,
+      "high": 9,
+      "scores": {
+        "mean_high_minus_low": 3023.4375,
+        "se": 1130.6789557976522,
+        "descriptive_95_interval": [
+          716.8524301727894,
+          5330.022569827211
+        ]
+      },
+      "ranks": {
+        "mean_high_minus_low": -0.453125,
+        "se": 0.14481873924980573,
+        "descriptive_95_interval": [
+          -0.7485552280696037,
+          -0.15769477193039627
+        ]
+      }
+    },
+    {
+      "low": 9,
+      "high": 10,
+      "scores": {
+        "mean_high_minus_low": 1657.8125,
+        "se": 929.666491359267,
+        "descriptive_95_interval": [
+          -238.70714237290463,
+          3554.332142372905
+        ]
+      },
+      "ranks": {
+        "mean_high_minus_low": -0.1640625,
+        "se": 0.108607256499345,
+        "descriptive_95_interval": [
+          -0.3856213032586638,
+          0.05749630325866378
+        ]
+      }
+    },
+    {
+      "low": 1,
+      "high": 10,
+      "scores": {
+        "mean_high_minus_low": 12466.40625,
+        "se": 700.6365997275421,
+        "descriptive_95_interval": [
+          11037.107586555814,
+          13895.704913444186
+        ]
+      },
+      "ranks": {
+        "mean_high_minus_low": -1.234375,
+        "se": 0.040376098556911356,
+        "descriptive_95_interval": [
+          -1.3167422410560992,
+          -1.1520077589439008
+        ]
+      }
+    },
+    {
+      "low": 5,
+      "high": 10,
+      "scores": {
+        "mean_high_minus_low": 10328.90625,
+        "se": 782.4733239802334,
+        "descriptive_95_interval": [
+          8732.660669080324,
+          11925.151830919676
+        ]
+      },
+      "ranks": {
+        "mean_high_minus_low": -1.0703125,
+        "se": 0.06373218342907369,
+        "descriptive_95_interval": [
+          -1.2003261541953103,
+          -0.9402988458046897
+        ]
+      }
+    },
+    {
+      "low": "tier0",
+      "high": 10,
+      "scores": {
+        "mean_high_minus_low": -386.71875,
+        "se": 699.0506815040236,
+        "descriptive_95_interval": [
+          -1812.7821402682082,
+          1039.3446402682082
+        ]
+      },
+      "ranks": {
+        "mean_high_minus_low": -0.0546875,
+        "se": 0.07836404959643947,
+        "descriptive_95_interval": [
+          -0.21455016117673653,
+          0.10517516117673653
+        ]
+      }
+    },
+    {
+      "low": "tier1",
+      "high": 10,
+      "scores": {
+        "mean_high_minus_low": -543.75,
+        "se": 633.9977326457879,
+        "descriptive_95_interval": [
+          -1837.1053745974073,
+          749.6053745974073
+        ]
+      },
+      "ranks": {
+        "mean_high_minus_low": 0.015625,
+        "se": 0.08470291714803627,
+        "descriptive_95_interval": [
+          -0.157168950981994,
+          0.188418950981994
+        ]
+      }
+    }
+  ],
+  "target_decisions": 190583
+}
