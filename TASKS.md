@@ -19,7 +19,9 @@ Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결�
 | W08-B | 기존 캐릭터 기본/구도 P/N 편집·로컬 편집 기록·팩 목록 UI | P1 / 완료(PR #81 병합) | W08-A 병합, Q-PACK A | 저성능 Work |
 | W08-C | 기존 CPU의 명시 캐릭터팩 연결·같은 팩 갱신 | P1 / 완료(PR #82 병합) | W08-A/B 병합, Q-PACK A | 저성능 Work |
 | W08 | 캐릭터·공유 후보·단계별 이미지 편집/적용 | P1 / 정책 의존 부분 대기 | W08-A, W07 관련 결정 | 저성능 Work |
-| W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / PR #83 최종 검토 보완·정확 head Windows 검증은 PR 최신 기록 참조 | W07 팩/event 계약, W08-A/B/C 병합, Q-PACK/Q-AUDIO/D-WIN/Q-OMAKE-VOICE | 저성능 Work |
+| W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / 완료(PR #83 병합, 최종 검증은 PR 참조) | W07 팩/event 계약, W08-A/B/C 병합, Q-PACK/Q-AUDIO/D-WIN/Q-OMAKE-VOICE | 저성능 Work |
+| W-DIFF-A | 난이도 1~10 설계·격리 기술 검증·구현 인계 | P1 / 현재 우선 인계 | PR #83 병합, 2026-10-18 사용자 승인 | 고성능 Work |
+| W-DIFF-B | 단계+게임 설정의 최종 난이도·저장·설정 UI 적용 | P1 / A 결과·잔여 정책 확정 후 | W-DIFF-A | 저성능 Work(판단 구현 복잡 시 고성능 Work) |
 | W09 | 공유 상황·대사·변수 연결 | P1 / 대기 | W08 | 저성능 Work |
 | W10 | 독립 ComfyUI·Anima adapter | P1 / 대기 | W03, W07 | 저성능 Work |
 | W11 | 이벤트 랜덤 조합·생성/파일 연동 | P1 / 대기 | W06, W09, W10 | 저성능 Work |
@@ -63,6 +65,41 @@ W08-S와 W11-U는 기존 W08~W11을 작은 범위로 나눈 후속 구현 Task�
   필요한 최소 API/types/style·browser 검사. 새 신체 능력치 계산이나 마작 AI 튜닝은 하지 않는다.
 - 기존 W08~W11의 최초 파일 범위 표는 아래에 보존하되, 새 중간 요구를 빠뜨린 지시로 사용하지 않는다.
   구현 시작 전에 W07 최종 계약과 Task별 파일 경계를 구체화해야 한다.
+
+## 다음 Work에 입력할 지시문 — W-DIFF-A 난이도 확장 설계·격리 검증
+
+```text
+danhk0612/no-riichi-no-fuku의 W-DIFF-A만 수행해.
+준비 main은 PR #83 병합 467c706이다. 시작 시 최신 main·현재 브랜치·열린 PR을 확인해.
+AGENTS.md와 루트 기준 문서를 읽고 task/w-diff-a-difficulty-spike에서 작업해.
+
+확정 목표:
+- 성향 6값은 캐릭터 고유값. 캐릭터 stage/CG Level 0~3은 유지.
+- 최종 CPU 난이도는 캐릭터 단계의 기본 난이도와 게임 설정을 조합한 1~10.
+- 기존 Tier 0~2를 기반으로 판단 설정을 세분화하고 실질 차이를 검증.
+- 완료 보충의 매우 쉬움·엔딩 후 최고 난이도 정책은 임의 폐기하지 않음.
+- Q-META 신체 A는 별도 승인됐지만 이번 Task에서는 편집 UI/DB를 구현하지 않음.
+
+기존 알고리즘의 실제 성향/판단/난수 사용과 선택·복구 경계를 조사해.
+격리 spikes/w-diff-a에서 profile 후보와 seeded 비교 도구를 만들고
+레벨별 조절 지점·합법성·동일 입력 재현성·CPU 시간·표본 순위/점수를 검증해.
+기존 production agent/policy 1/2와 legacy fixture를 고치지 마.
+숫자만 10개로 분할하거나 기존 최고보다 강하다고 검증 없이 표시하지 마.
+
+게임 설정 범위/기본값·단계별 기본 레벨·조합 공식·특수 모드 우선순위·변경 적용 시점은
+구체 예시/권고와 사용자 결정 항목으로 제시해. 이전 -1/0/+1 제안은 승인되지 않았어.
+특히 진행 중 대국 snapshot, 구 저장 복구, 새 profile/policy version 경계와
+화면에 표시할 최종 난이도의 의미를 ARCHITECTURE에 구체화해.
+
+반복 대국 표본 수/seed/좌석 교대·비용·한계를 기록하고 핵심 기존 회귀를 확인해.
+제품 설정/DB/CG/정산/음향/콘텐츠 생성은 변경하지 마.
+REQUIREMENTS/ARCHITECTURE/CURRENT_STATE/TASKS를 정리하고
+잔여 결정 후 저성능 Work에서 독립 수행할 W-DIFF-B 구현 지시문을 작성해.
+commit/push·PR 제출까지 진행하되 직접 병합·Release/tag·W-DIFF-B 착수는 하지 마.
+```
+
+이 Task는 복합 CPU/저장 호환 설계가 필요하므로 고성능 Work를 사용한다. W08의 나머지
+metadata/공유 후보·W09·ComfyUI 작업을 이번 범위에 함께 넣지 않는다.
 
 ## Task 명세
 

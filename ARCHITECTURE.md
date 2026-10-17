@@ -1,5 +1,27 @@
 # 구조와 전환 검토
 
+## 난이도 확장 후속 계약 — 2026-10-18 목표
+
+현재는 `CpuChoice.defeat_stage/effective_tier/policy_version`으로 Tier 0/1/2 구현을 선택한다.
+Tier 0의 aggression/hand_value_preference는 보관되지만 판단에는 직접 사용되지 않으며 Tier 1/2는
+여섯 성향을 사용한다. 따라서 성향 수치와 승률/난이도 레벨을 같은 척도로 취급하지 않는다.
+
+새 최종 난이도 1~10은 별도의 versioned profile로 설계한다. 캐릭터 stage/CG Level, 캐릭터 성향,
+전역 난이도 설정, 계산된 레벨/profile identity를 분리하고 순수 계산→대국 시작 snapshot으로 연결한다.
+정확한 단계별 기본 레벨/전역 설정/조합 공식은 REQUIREMENTS의 미확정 항목이며 구현 기본값으로
+우회하지 않는다. 완료 보충/오마케의 기존 최저/최고 정책과의 우선순위도 명세한다.
+
+W-DIFF-A는 기존 알고리즘을 재사용하는 격리 검증으로 10개 레벨의 조절 가능 지점과 비용을 확인한다.
+성향은 같은 값으로 고정한 비교를 먼저 하고 별도로 여러 성향에서 극단값/합법성/편향을 확인한다.
+동일 seed·좌석 교대·여러 대국의 순위/점수·선택/시간 통계와 표본 수를 기록한다. 표본 부족이나 역전은
+숨기지 않으며 모든 인접 레벨의 엄격한 승률 단조 증가를 근거 없이 주장하지 않는다.
+
+W-DIFF-B의 저장 계약은 기존 policy 1/2와 pre-versioned snapshot을 그대로 복구해야 한다.
+새 대국에만 계산 레벨·profile version·원본 설정/stage/성향을 고정하고 재접속 때 현재 설정으로
+재계산하지 않는다. 신규 선택 판단은 별도 version 경계로 도입하며 기존 agent 분기/seed/action log
+의미를 소급 변경하지 않는다. 실제 DTO/새 policy version/migration 필요성은 A에서 조사·명세한다.
+이번 인계 문서로 production API/DB/CPU/진행을 변경하지 않는다.
+
 ## 현재 실제 구조
 
 분석 기준 main `ba4fc43a89a39a328c7c308d6c90e145ab489d58`.
