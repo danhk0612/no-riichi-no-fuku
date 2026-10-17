@@ -1,0 +1,10 @@
+{
+  "production_base": "8fb9b80a471090b43ac648597051e788c0767186",
+  "script_sha256": {
+    "benchmark.py": "b82db25f30f88645392f839eca874d67302644a460e31294187beefc9105365e",
+    "compare.py": "2ab77f423b6ef6dcf4dd25b5b9141b4a57b4f69890b95371dc3b6d6e8bb370ac",
+    "profiles.py": "15590252cf1c527bacedb2812c70d59241fb9984dd583b03b48ad73eb6da368e",
+    "verify.py": "d1149bb97ef21c97ffd7badb05e5c5972467f4010a6de208d88ff2a192c7758e",
+    "analyze.py": "f57b58098d09a9a8ff15ff22be433b38dcde2525ed3456db706e43232fc28678"
+  }
+}

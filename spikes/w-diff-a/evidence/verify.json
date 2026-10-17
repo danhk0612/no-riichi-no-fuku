@@ -1,0 +1,1158 @@
+{
+  "corpus_seed": 117,
+  "corpus_size": 160,
+  "agent_seed": 9001,
+  "personalities": [
+    {
+      "aggression": 1.0,
+      "defense": 1.0,
+      "call_preference": 1.0,
+      "riichi_preference": 1.0,
+      "hand_value_preference": 1.0,
+      "speed_preference": 1.0
+    },
+    {
+      "aggression": 0.8,
+      "defense": 1.25,
+      "call_preference": 0.85,
+      "riichi_preference": 0.95,
+      "hand_value_preference": 1.0,
+      "speed_preference": 0.9
+    },
+    {
+      "aggression": 1.25,
+      "defense": 0.8,
+      "call_preference": 1.05,
+      "riichi_preference": 1.1,
+      "hand_value_preference": 0.95,
+      "speed_preference": 1.1
+    },
+    {
+      "aggression": 1.0,
+      "defense": 1.0,
+      "call_preference": 0.7,
+      "riichi_preference": 1.3,
+      "hand_value_preference": 1.1,
+      "speed_preference": 0.9
+    },
+    {
+      "aggression": 1.05,
+      "defense": 0.9,
+      "call_preference": 1.3,
+      "riichi_preference": 0.8,
+      "hand_value_preference": 0.85,
+      "speed_preference": 1.3
+    },
+    {
+      "aggression": 0.95,
+      "defense": 1.0,
+      "call_preference": 0.75,
+      "riichi_preference": 1.05,
+      "hand_value_preference": 1.35,
+      "speed_preference": 0.8
+    },
+    {
+      "aggression": 0.1,
+      "defense": 0.1,
+      "call_preference": 0.1,
+      "riichi_preference": 0.1,
+      "hand_value_preference": 0.1,
+      "speed_preference": 0.1
+    },
+    {
+      "aggression": 2.0,
+      "defense": 2.0,
+      "call_preference": 2.0,
+      "riichi_preference": 2.0,
+      "hand_value_preference": 2.0,
+      "speed_preference": 2.0
+    }
+  ],
+  "common_input": [
+    {
+      "personality": 0,
+      "level": 1,
+      "decisions": 160,
+      "lapses": 111,
+      "changed": 98,
+      "discard_count": 127,
+      "shanten_excess_sum": 64,
+      "worse_than_min_shanten": 64,
+      "sequence_sha256": "ccd7c0b75b36114a54e7b0cf6c11c57378ddd8ccd554454fe3fd403746cff0ab"
+    },
+    {
+      "personality": 0,
+      "level": 2,
+      "decisions": 160,
+      "lapses": 97,
+      "changed": 84,
+      "discard_count": 127,
+      "shanten_excess_sum": 55,
+      "worse_than_min_shanten": 55,
+      "sequence_sha256": "6c91cad888508728ab9aae2064c14cf4bde636a63cce97d944b297717f9f0235"
+    },
+    {
+      "personality": 0,
+      "level": 3,
+      "decisions": 160,
+      "lapses": 83,
+      "changed": 73,
+      "discard_count": 127,
+      "shanten_excess_sum": 50,
+      "worse_than_min_shanten": 50,
+      "sequence_sha256": "dcdc3bd4ff8e380d849159deba11a6d7aa2b8b7ca04ec27e6545149c2c886294"
+    },
+    {
+      "personality": 0,
+      "level": 4,
+      "decisions": 160,
+      "lapses": 68,
+      "changed": 60,
+      "discard_count": 127,
+      "shanten_excess_sum": 38,
+      "worse_than_min_shanten": 38,
+      "sequence_sha256": "04c4e37465611c4582601f6a53b3d35eadc6ca60e0f928bc4b10709da84d5080"
+    },
+    {
+      "personality": 0,
+      "level": 5,
+      "decisions": 160,
+      "lapses": 63,
+      "changed": 57,
+      "discard_count": 127,
+      "shanten_excess_sum": 37,
+      "worse_than_min_shanten": 37,
+      "sequence_sha256": "c427b8456de05420db35e53e8135cbefea8425b5e7d918be5a6db8721c327c3d"
+    },
+    {
+      "personality": 0,
+      "level": 6,
+      "decisions": 160,
+      "lapses": 48,
+      "changed": 42,
+      "discard_count": 127,
+      "shanten_excess_sum": 28,
+      "worse_than_min_shanten": 28,
+      "sequence_sha256": "3ea3182c64175d8ec58872a28989c01857fdf4cd97e7fb112b04be844ca71f27"
+    },
+    {
+      "personality": 0,
+      "level": 7,
+      "decisions": 160,
+      "lapses": 31,
+      "changed": 29,
+      "discard_count": 127,
+      "shanten_excess_sum": 20,
+      "worse_than_min_shanten": 20,
+      "sequence_sha256": "1dcd6f61e39cbbeb278a33bf9f4743c69daf394443a581f96acad274724343a6"
+    },
+    {
+      "personality": 0,
+      "level": 8,
+      "decisions": 160,
+      "lapses": 24,
+      "changed": 22,
+      "discard_count": 127,
+      "shanten_excess_sum": 17,
+      "worse_than_min_shanten": 17,
+      "sequence_sha256": "3e76bd2f724116f04df72e2cb1f2e9cea3e7ec5c5c8f260f1a60d08b6bca3b58"
+    },
+    {
+      "personality": 0,
+      "level": 9,
+      "decisions": 160,
+      "lapses": 17,
+      "changed": 14,
+      "discard_count": 127,
+      "shanten_excess_sum": 10,
+      "worse_than_min_shanten": 10,
+      "sequence_sha256": "3f54923fadf58b319a77c33cb12bd6dc8e43a80cf19b4401850937f662a42c5b"
+    },
+    {
+      "personality": 0,
+      "level": 10,
+      "decisions": 160,
+      "lapses": 0,
+      "changed": 0,
+      "discard_count": 127,
+      "shanten_excess_sum": 0,
+      "worse_than_min_shanten": 0,
+      "sequence_sha256": "b39400dd9454ce34f76cc10c2b352c850bba9557ae567ab83cfea3055514fd67"
+    },
+    {
+      "personality": 1,
+      "level": 1,
+      "decisions": 160,
+      "lapses": 111,
+      "changed": 93,
+      "discard_count": 127,
+      "shanten_excess_sum": 64,
+      "worse_than_min_shanten": 64,
+      "sequence_sha256": "441241e45e5eadf59260925c474c7b535a37aff724c0d5682349663a043e4ed4"
+    },
+    {
+      "personality": 1,
+      "level": 2,
+      "decisions": 160,
+      "lapses": 97,
+      "changed": 86,
+      "discard_count": 127,
+      "shanten_excess_sum": 55,
+      "worse_than_min_shanten": 55,
+      "sequence_sha256": "88c066db8fa3f49ed15816691477c25e2cf8349880418bdd9b2646ccb625507b"
+    },
+    {
+      "personality": 1,
+      "level": 3,
+      "decisions": 160,
+      "lapses": 83,
+      "changed": 76,
+      "discard_count": 127,
+      "shanten_excess_sum": 50,
+      "worse_than_min_shanten": 50,
+      "sequence_sha256": "1acd4f93b1f3a72501de900837430166fc49772c75c11e325b57b46408ddae42"
+    },
+    {
+      "personality": 1,
+      "level": 4,
+      "decisions": 160,
+      "lapses": 68,
+      "changed": 61,
+      "discard_count": 127,
+      "shanten_excess_sum": 38,
+      "worse_than_min_shanten": 38,
+      "sequence_sha256": "66cee5119696225e2f5d67f90130127b3f1b2018af610db061c4cbbb6f83958a"
+    },
+    {
+      "personality": 1,
+      "level": 5,
+      "decisions": 160,
+      "lapses": 63,
+      "changed": 58,
+      "discard_count": 127,
+      "shanten_excess_sum": 37,
+      "worse_than_min_shanten": 37,
+      "sequence_sha256": "1bfebd2ce4df5609acab9721d4e9539320afe45f173a2bdd1a90ce26e1d1b1ed"
+    },
+    {
+      "personality": 1,
+      "level": 6,
+      "decisions": 160,
+      "lapses": 48,
+      "changed": 43,
+      "discard_count": 127,
+      "shanten_excess_sum": 28,
+      "worse_than_min_shanten": 28,
+      "sequence_sha256": "8026c58223cf4105a4c3e1e74a8cac934bcafc57a72d8b216a706ebe68b3cd5b"
+    },
+    {
+      "personality": 1,
+      "level": 7,
+      "decisions": 160,
+      "lapses": 31,
+      "changed": 30,
+      "discard_count": 127,
+      "shanten_excess_sum": 20,
+      "worse_than_min_shanten": 20,
+      "sequence_sha256": "5834da9df8d7d190cecbc763feab66e3d3956335fb71ed40f6679b6423f26864"
+    },
+    {
+      "personality": 1,
+      "level": 8,
+      "decisions": 160,
+      "lapses": 24,
+      "changed": 22,
+      "discard_count": 127,
+      "shanten_excess_sum": 17,
+      "worse_than_min_shanten": 17,
+      "sequence_sha256": "959436cec67a2e0d1fb860f9fcbfd64a0f9d03bf2bc0504d73aee7782d153263"
+    },
+    {
+      "personality": 1,
+      "level": 9,
+      "decisions": 160,
+      "lapses": 17,
+      "changed": 13,
+      "discard_count": 127,
+      "shanten_excess_sum": 10,
+      "worse_than_min_shanten": 10,
+      "sequence_sha256": "3a8b53681af42ac91d51664969a84e2d51d5bdff4230b558f512d81533afa0c9"
+    },
+    {
+      "personality": 1,
+      "level": 10,
+      "decisions": 160,
+      "lapses": 0,
+      "changed": 0,
+      "discard_count": 127,
+      "shanten_excess_sum": 0,
+      "worse_than_min_shanten": 0,
+      "sequence_sha256": "c16fe02b7b0888132caada707452daac0d350e700237575e21400fb73aa49931"
+    },
+    {
+      "personality": 2,
+      "level": 1,
+      "decisions": 160,
+      "lapses": 111,
+      "changed": 98,
+      "discard_count": 127,
+      "shanten_excess_sum": 64,
+      "worse_than_min_shanten": 64,
+      "sequence_sha256": "690a2f465b4dd1e5274e824b92d5df8c18773d08f8673b0306763594471a6392"
+    },
+    {
+      "personality": 2,
+      "level": 2,
+      "decisions": 160,
+      "lapses": 97,
+      "changed": 84,
+      "discard_count": 127,
+      "shanten_excess_sum": 55,
+      "worse_than_min_shanten": 55,
+      "sequence_sha256": "ca42dc64c5838ee974363528ca619ea0c3e5e5e16d0fb3cd9d8d63f07eae66e5"
+    },
+    {
+      "personality": 2,
+      "level": 3,
+      "decisions": 160,
+      "lapses": 83,
+      "changed": 73,
+      "discard_count": 127,
+      "shanten_excess_sum": 50,
+      "worse_than_min_shanten": 50,
+      "sequence_sha256": "28a037980d3f3501b4a07bdd79d3569dc9b8f6aee970d905c15ef87498968491"
+    },
+    {
+      "personality": 2,
+      "level": 4,
+      "decisions": 160,
+      "lapses": 68,
+      "changed": 59,
+      "discard_count": 127,
+      "shanten_excess_sum": 38,
+      "worse_than_min_shanten": 38,
+      "sequence_sha256": "f40ba569ace8f61b985750e400b5cdcf0423548a28d6e74810b7228d72c069ca"
+    },
+    {
+      "personality": 2,
+      "level": 5,
+      "decisions": 160,
+      "lapses": 63,
+      "changed": 57,
+      "discard_count": 127,
+      "shanten_excess_sum": 37,
+      "worse_than_min_shanten": 37,
+      "sequence_sha256": "74713503e12ed4f55ef3bdfd68c69ed0b9360491b4ef1f7346a947321d9c1c0d"
+    },
+    {
+      "personality": 2,
+      "level": 6,
+      "decisions": 160,
+      "lapses": 48,
+      "changed": 42,
+      "discard_count": 127,
+      "shanten_excess_sum": 28,
+      "worse_than_min_shanten": 28,
+      "sequence_sha256": "9ad94b8e3a89bc32f08ebe0c44b35278cd987464bb6ecf9ecfe0c8df55fb359d"
+    },
+    {
+      "personality": 2,
+      "level": 7,
+      "decisions": 160,
+      "lapses": 31,
+      "changed": 29,
+      "discard_count": 127,
+      "shanten_excess_sum": 20,
+      "worse_than_min_shanten": 20,
+      "sequence_sha256": "6dba0356421c0aa06903326db95d58f47f713110c6e927fd87107c8a7d52b9f3"
+    },
+    {
+      "personality": 2,
+      "level": 8,
+      "decisions": 160,
+      "lapses": 24,
+      "changed": 22,
+      "discard_count": 127,
+      "shanten_excess_sum": 17,
+      "worse_than_min_shanten": 17,
+      "sequence_sha256": "a4fb0cf443ffe9168c1282cca442469229d8919b80773d7b944ab45f48986a83"
+    },
+    {
+      "personality": 2,
+      "level": 9,
+      "decisions": 160,
+      "lapses": 17,
+      "changed": 13,
+      "discard_count": 127,
+      "shanten_excess_sum": 10,
+      "worse_than_min_shanten": 10,
+      "sequence_sha256": "c99e32896de1a71bf9acc02b9385c7b4af904c0168149793567e85a4549c154d"
+    },
+    {
+      "personality": 2,
+      "level": 10,
+      "decisions": 160,
+      "lapses": 0,
+      "changed": 0,
+      "discard_count": 127,
+      "shanten_excess_sum": 0,
+      "worse_than_min_shanten": 0,
+      "sequence_sha256": "64d045cabe359e15f7954f6f300061fff806e3d5f49f82e251fa3edd845dbab6"
+    },
+    {
+      "personality": 3,
+      "level": 1,
+      "decisions": 160,
+      "lapses": 111,
+      "changed": 98,
+      "discard_count": 127,
+      "shanten_excess_sum": 64,
+      "worse_than_min_shanten": 64,
+      "sequence_sha256": "d93611c0fe2a624bbc180a67016ca7c1160fb7b181a58d3edfdcf23eac69a525"
+    },
+    {
+      "personality": 3,
+      "level": 2,
+      "decisions": 160,
+      "lapses": 97,
+      "changed": 88,
+      "discard_count": 127,
+      "shanten_excess_sum": 55,
+      "worse_than_min_shanten": 55,
+      "sequence_sha256": "6ae3fabf9980591f86c5990c631220ed6e31fa66cc3964da2d4a6ebba52414bb"
+    },
+    {
+      "personality": 3,
+      "level": 3,
+      "decisions": 160,
+      "lapses": 83,
+      "changed": 74,
+      "discard_count": 127,
+      "shanten_excess_sum": 50,
+      "worse_than_min_shanten": 50,
+      "sequence_sha256": "ba34e195ed1555795d5f289460e6dd5777643538f7645b944b6d91adbff30d7f"
+    },
+    {
+      "personality": 3,
+      "level": 4,
+      "decisions": 160,
+      "lapses": 68,
+      "changed": 63,
+      "discard_count": 127,
+      "shanten_excess_sum": 38,
+      "worse_than_min_shanten": 38,
+      "sequence_sha256": "f8d202635d3e6f62697131f100fcb985f19863e6a6bb9e8dabaad7372b948368"
+    },
+    {
+      "personality": 3,
+      "level": 5,
+      "decisions": 160,
+      "lapses": 63,
+      "changed": 59,
+      "discard_count": 127,
+      "shanten_excess_sum": 37,
+      "worse_than_min_shanten": 37,
+      "sequence_sha256": "481fc1ea06e4d683041fcb99cbfcfc6ef57cb102e7cf02a67ca2704a0cab1e2a"
+    },
+    {
+      "personality": 3,
+      "level": 6,
+      "decisions": 160,
+      "lapses": 48,
+      "changed": 41,
+      "discard_count": 127,
+      "shanten_excess_sum": 28,
+      "worse_than_min_shanten": 28,
+      "sequence_sha256": "3b2fd28ebdb56b6b5b9930a3ee1740c98a13340c352f5ffa5104422949681c98"
+    },
+    {
+      "personality": 3,
+      "level": 7,
+      "decisions": 160,
+      "lapses": 31,
+      "changed": 27,
+      "discard_count": 127,
+      "shanten_excess_sum": 20,
+      "worse_than_min_shanten": 20,
+      "sequence_sha256": "11d7bb93d6e2abf6aba432c04fcf2d0c1432be6b947a54dd18ef434723e1e339"
+    },
+    {
+      "personality": 3,
+      "level": 8,
+      "decisions": 160,
+      "lapses": 24,
+      "changed": 23,
+      "discard_count": 127,
+      "shanten_excess_sum": 17,
+      "worse_than_min_shanten": 17,
+      "sequence_sha256": "637426b18f6a35f37a2d535304e2d0f9908f8610d0304d3c952feec277a9b8a3"
+    },
+    {
+      "personality": 3,
+      "level": 9,
+      "decisions": 160,
+      "lapses": 17,
+      "changed": 15,
+      "discard_count": 127,
+      "shanten_excess_sum": 10,
+      "worse_than_min_shanten": 10,
+      "sequence_sha256": "b91bdd1de80ea01d24bb4bfca422162510949ca176e83c7a5baf703f7e6a41e0"
+    },
+    {
+      "personality": 3,
+      "level": 10,
+      "decisions": 160,
+      "lapses": 0,
+      "changed": 0,
+      "discard_count": 127,
+      "shanten_excess_sum": 0,
+      "worse_than_min_shanten": 0,
+      "sequence_sha256": "d3d35124aee68915b862e5ad194b28229c6d9519fea722dc4045ac76df9a0b04"
+    },
+    {
+      "personality": 4,
+      "level": 1,
+      "decisions": 160,
+      "lapses": 111,
+      "changed": 98,
+      "discard_count": 127,
+      "shanten_excess_sum": 64,
+      "worse_than_min_shanten": 64,
+      "sequence_sha256": "690a2f465b4dd1e5274e824b92d5df8c18773d08f8673b0306763594471a6392"
+    },
+    {
+      "personality": 4,
+      "level": 2,
+      "decisions": 160,
+      "lapses": 97,
+      "changed": 84,
+      "discard_count": 127,
+      "shanten_excess_sum": 55,
+      "worse_than_min_shanten": 55,
+      "sequence_sha256": "ca42dc64c5838ee974363528ca619ea0c3e5e5e16d0fb3cd9d8d63f07eae66e5"
+    },
+    {
+      "personality": 4,
+      "level": 3,
+      "decisions": 160,
+      "lapses": 83,
+      "changed": 73,
+      "discard_count": 127,
+      "shanten_excess_sum": 50,
+      "worse_than_min_shanten": 50,
+      "sequence_sha256": "28a037980d3f3501b4a07bdd79d3569dc9b8f6aee970d905c15ef87498968491"
+    },
+    {
+      "personality": 4,
+      "level": 4,
+      "decisions": 160,
+      "lapses": 68,
+      "changed": 59,
+      "discard_count": 127,
+      "shanten_excess_sum": 38,
+      "worse_than_min_shanten": 38,
+      "sequence_sha256": "f40ba569ace8f61b985750e400b5cdcf0423548a28d6e74810b7228d72c069ca"
+    },
+    {
+      "personality": 4,
+      "level": 5,
+      "decisions": 160,
+      "lapses": 63,
+      "changed": 57,
+      "discard_count": 127,
+      "shanten_excess_sum": 37,
+      "worse_than_min_shanten": 37,
+      "sequence_sha256": "74713503e12ed4f55ef3bdfd68c69ed0b9360491b4ef1f7346a947321d9c1c0d"
+    },
+    {
+      "personality": 4,
+      "level": 6,
+      "decisions": 160,
+      "lapses": 48,
+      "changed": 42,
+      "discard_count": 127,
+      "shanten_excess_sum": 28,
+      "worse_than_min_shanten": 28,
+      "sequence_sha256": "9ad94b8e3a89bc32f08ebe0c44b35278cd987464bb6ecf9ecfe0c8df55fb359d"
+    },
+    {
+      "personality": 4,
+      "level": 7,
+      "decisions": 160,
+      "lapses": 31,
+      "changed": 29,
+      "discard_count": 127,
+      "shanten_excess_sum": 20,
+      "worse_than_min_shanten": 20,
+      "sequence_sha256": "6dba0356421c0aa06903326db95d58f47f713110c6e927fd87107c8a7d52b9f3"
+    },
+    {
+      "personality": 4,
+      "level": 8,
+      "decisions": 160,
+      "lapses": 24,
+      "changed": 22,
+      "discard_count": 127,
+      "shanten_excess_sum": 17,
+      "worse_than_min_shanten": 17,
+      "sequence_sha256": "a4fb0cf443ffe9168c1282cca442469229d8919b80773d7b944ab45f48986a83"
+    },
+    {
+      "personality": 4,
+      "level": 9,
+      "decisions": 160,
+      "lapses": 17,
+      "changed": 13,
+      "discard_count": 127,
+      "shanten_excess_sum": 10,
+      "worse_than_min_shanten": 10,
+      "sequence_sha256": "c99e32896de1a71bf9acc02b9385c7b4af904c0168149793567e85a4549c154d"
+    },
+    {
+      "personality": 4,
+      "level": 10,
+      "decisions": 160,
+      "lapses": 0,
+      "changed": 0,
+      "discard_count": 127,
+      "shanten_excess_sum": 0,
+      "worse_than_min_shanten": 0,
+      "sequence_sha256": "64d045cabe359e15f7954f6f300061fff806e3d5f49f82e251fa3edd845dbab6"
+    },
+    {
+      "personality": 5,
+      "level": 1,
+      "decisions": 160,
+      "lapses": 111,
+      "changed": 93,
+      "discard_count": 127,
+      "shanten_excess_sum": 64,
+      "worse_than_min_shanten": 64,
+      "sequence_sha256": "6a0ae7b517f283b32c72ffd6f023c3b926114c05181a37f04575f44f813e79ba"
+    },
+    {
+      "personality": 5,
+      "level": 2,
+      "decisions": 160,
+      "lapses": 97,
+      "changed": 85,
+      "discard_count": 127,
+      "shanten_excess_sum": 55,
+      "worse_than_min_shanten": 55,
+      "sequence_sha256": "083c9a66e7932b56dccdc4390021e4d5b365147ef487e068ef6f13f7df76d355"
+    },
+    {
+      "personality": 5,
+      "level": 3,
+      "decisions": 160,
+      "lapses": 83,
+      "changed": 76,
+      "discard_count": 127,
+      "shanten_excess_sum": 50,
+      "worse_than_min_shanten": 50,
+      "sequence_sha256": "46cfe5498a003a8ee07b724898707543cbbb6092dedbea43fc42833d43b815d8"
+    },
+    {
+      "personality": 5,
+      "level": 4,
+      "decisions": 160,
+      "lapses": 68,
+      "changed": 59,
+      "discard_count": 127,
+      "shanten_excess_sum": 38,
+      "worse_than_min_shanten": 38,
+      "sequence_sha256": "366c1578c7bbbdbde4239aee7c95a2d297560bc68d2152f40300107940072338"
+    },
+    {
+      "personality": 5,
+      "level": 5,
+      "decisions": 160,
+      "lapses": 63,
+      "changed": 59,
+      "discard_count": 127,
+      "shanten_excess_sum": 37,
+      "worse_than_min_shanten": 37,
+      "sequence_sha256": "698c86c34deb9e28a072448806eee94db327e5b1e72dff7cef203d0b2a9ca11d"
+    },
+    {
+      "personality": 5,
+      "level": 6,
+      "decisions": 160,
+      "lapses": 48,
+      "changed": 42,
+      "discard_count": 127,
+      "shanten_excess_sum": 28,
+      "worse_than_min_shanten": 28,
+      "sequence_sha256": "5b9f920c038aaef724d0dc1ae071c01ad48be16283913f8f6116f0e7b2925785"
+    },
+    {
+      "personality": 5,
+      "level": 7,
+      "decisions": 160,
+      "lapses": 31,
+      "changed": 29,
+      "discard_count": 127,
+      "shanten_excess_sum": 20,
+      "worse_than_min_shanten": 20,
+      "sequence_sha256": "936726181638fabeb22b01c518b8c35509e7ec4da09e2fe4efc1d16b6cdae6d1"
+    },
+    {
+      "personality": 5,
+      "level": 8,
+      "decisions": 160,
+      "lapses": 24,
+      "changed": 22,
+      "discard_count": 127,
+      "shanten_excess_sum": 17,
+      "worse_than_min_shanten": 17,
+      "sequence_sha256": "325017fe63668a28cb211117843011fcabb548a5470ab95211bb06bf45a752b4"
+    },
+    {
+      "personality": 5,
+      "level": 9,
+      "decisions": 160,
+      "lapses": 17,
+      "changed": 14,
+      "discard_count": 127,
+      "shanten_excess_sum": 10,
+      "worse_than_min_shanten": 10,
+      "sequence_sha256": "bf5ebef503a37516f5b1365056e7eeb92c5e117f609a9506ceebb379bbeea803"
+    },
+    {
+      "personality": 5,
+      "level": 10,
+      "decisions": 160,
+      "lapses": 0,
+      "changed": 0,
+      "discard_count": 127,
+      "shanten_excess_sum": 0,
+      "worse_than_min_shanten": 0,
+      "sequence_sha256": "f44bc1a1dc44b38348c0bdbfb86c6c5777d74d5fe7d4784a39532ae108d7817b"
+    },
+    {
+      "personality": 6,
+      "level": 1,
+      "decisions": 160,
+      "lapses": 111,
+      "changed": 97,
+      "discard_count": 127,
+      "shanten_excess_sum": 64,
+      "worse_than_min_shanten": 64,
+      "sequence_sha256": "11bf3c89b3dc6102cb2b0ef83dec6a8be8b12ae28efd8e01a8a8af89556daa55"
+    },
+    {
+      "personality": 6,
+      "level": 2,
+      "decisions": 160,
+      "lapses": 97,
+      "changed": 88,
+      "discard_count": 127,
+      "shanten_excess_sum": 55,
+      "worse_than_min_shanten": 55,
+      "sequence_sha256": "735e8b0d23b72b8d3275fe7617d261bacda6aad7c75db5aa675d969675a50bea"
+    },
+    {
+      "personality": 6,
+      "level": 3,
+      "decisions": 160,
+      "lapses": 83,
+      "changed": 75,
+      "discard_count": 127,
+      "shanten_excess_sum": 50,
+      "worse_than_min_shanten": 50,
+      "sequence_sha256": "a59a1bf31927fb0d385fab0db72dd85dc4c7f6560cdd7c1fcfe9bb60f8788d38"
+    },
+    {
+      "personality": 6,
+      "level": 4,
+      "decisions": 160,
+      "lapses": 68,
+      "changed": 61,
+      "discard_count": 127,
+      "shanten_excess_sum": 38,
+      "worse_than_min_shanten": 38,
+      "sequence_sha256": "4f8711095b3df39b2de8bb6b31f766a25380b301f762c7490cdc3114acb30b2b"
+    },
+    {
+      "personality": 6,
+      "level": 5,
+      "decisions": 160,
+      "lapses": 63,
+      "changed": 60,
+      "discard_count": 127,
+      "shanten_excess_sum": 37,
+      "worse_than_min_shanten": 37,
+      "sequence_sha256": "7a78cea6659b9d8fe8cb44463958396aa6fbcdda2b83eb42c6fcb444a90f1477"
+    },
+    {
+      "personality": 6,
+      "level": 6,
+      "decisions": 160,
+      "lapses": 48,
+      "changed": 41,
+      "discard_count": 127,
+      "shanten_excess_sum": 28,
+      "worse_than_min_shanten": 28,
+      "sequence_sha256": "a2938fbfbe6e8574e0a579387bdc893c0fd05e05f824e1b06e33f6b55e4bad3d"
+    },
+    {
+      "personality": 6,
+      "level": 7,
+      "decisions": 160,
+      "lapses": 31,
+      "changed": 27,
+      "discard_count": 127,
+      "shanten_excess_sum": 20,
+      "worse_than_min_shanten": 20,
+      "sequence_sha256": "f7d0b5ab4ca285b7287db645bdfd6503e1b0f8560bbc6a3aa9a75e9e011a4bd3"
+    },
+    {
+      "personality": 6,
+      "level": 8,
+      "decisions": 160,
+      "lapses": 24,
+      "changed": 22,
+      "discard_count": 127,
+      "shanten_excess_sum": 17,
+      "worse_than_min_shanten": 17,
+      "sequence_sha256": "62211c6a65f440c7fee05f22edb3c86c954fc28b6ac06f403f8b132d6bcf5c3c"
+    },
+    {
+      "personality": 6,
+      "level": 9,
+      "decisions": 160,
+      "lapses": 17,
+      "changed": 15,
+      "discard_count": 127,
+      "shanten_excess_sum": 10,
+      "worse_than_min_shanten": 10,
+      "sequence_sha256": "ae9bd5cd0f19b342d8cd554ec25a4f5088f2b5fb15b729f476a92bd0753d7479"
+    },
+    {
+      "personality": 6,
+      "level": 10,
+      "decisions": 160,
+      "lapses": 0,
+      "changed": 0,
+      "discard_count": 127,
+      "shanten_excess_sum": 0,
+      "worse_than_min_shanten": 0,
+      "sequence_sha256": "ae64b89e319aa8e8e441c4e0584c3855d7917fa7954d01c36e7d353eba58064b"
+    },
+    {
+      "personality": 7,
+      "level": 1,
+      "decisions": 160,
+      "lapses": 111,
+      "changed": 98,
+      "discard_count": 127,
+      "shanten_excess_sum": 64,
+      "worse_than_min_shanten": 64,
+      "sequence_sha256": "690a2f465b4dd1e5274e824b92d5df8c18773d08f8673b0306763594471a6392"
+    },
+    {
+      "personality": 7,
+      "level": 2,
+      "decisions": 160,
+      "lapses": 97,
+      "changed": 84,
+      "discard_count": 127,
+      "shanten_excess_sum": 55,
+      "worse_than_min_shanten": 55,
+      "sequence_sha256": "ca42dc64c5838ee974363528ca619ea0c3e5e5e16d0fb3cd9d8d63f07eae66e5"
+    },
+    {
+      "personality": 7,
+      "level": 3,
+      "decisions": 160,
+      "lapses": 83,
+      "changed": 73,
+      "discard_count": 127,
+      "shanten_excess_sum": 50,
+      "worse_than_min_shanten": 50,
+      "sequence_sha256": "28a037980d3f3501b4a07bdd79d3569dc9b8f6aee970d905c15ef87498968491"
+    },
+    {
+      "personality": 7,
+      "level": 4,
+      "decisions": 160,
+      "lapses": 68,
+      "changed": 59,
+      "discard_count": 127,
+      "shanten_excess_sum": 38,
+      "worse_than_min_shanten": 38,
+      "sequence_sha256": "f40ba569ace8f61b985750e400b5cdcf0423548a28d6e74810b7228d72c069ca"
+    },
+    {
+      "personality": 7,
+      "level": 5,
+      "decisions": 160,
+      "lapses": 63,
+      "changed": 57,
+      "discard_count": 127,
+      "shanten_excess_sum": 37,
+      "worse_than_min_shanten": 37,
+      "sequence_sha256": "74713503e12ed4f55ef3bdfd68c69ed0b9360491b4ef1f7346a947321d9c1c0d"
+    },
+    {
+      "personality": 7,
+      "level": 6,
+      "decisions": 160,
+      "lapses": 48,
+      "changed": 42,
+      "discard_count": 127,
+      "shanten_excess_sum": 28,
+      "worse_than_min_shanten": 28,
+      "sequence_sha256": "9ad94b8e3a89bc32f08ebe0c44b35278cd987464bb6ecf9ecfe0c8df55fb359d"
+    },
+    {
+      "personality": 7,
+      "level": 7,
+      "decisions": 160,
+      "lapses": 31,
+      "changed": 29,
+      "discard_count": 127,
+      "shanten_excess_sum": 20,
+      "worse_than_min_shanten": 20,
+      "sequence_sha256": "6dba0356421c0aa06903326db95d58f47f713110c6e927fd87107c8a7d52b9f3"
+    },
+    {
+      "personality": 7,
+      "level": 8,
+      "decisions": 160,
+      "lapses": 24,
+      "changed": 22,
+      "discard_count": 127,
+      "shanten_excess_sum": 17,
+      "worse_than_min_shanten": 17,
+      "sequence_sha256": "a4fb0cf443ffe9168c1282cca442469229d8919b80773d7b944ab45f48986a83"
+    },
+    {
+      "personality": 7,
+      "level": 9,
+      "decisions": 160,
+      "lapses": 17,
+      "changed": 13,
+      "discard_count": 127,
+      "shanten_excess_sum": 10,
+      "worse_than_min_shanten": 10,
+      "sequence_sha256": "c99e32896de1a71bf9acc02b9385c7b4af904c0168149793567e85a4549c154d"
+    },
+    {
+      "personality": 7,
+      "level": 10,
+      "decisions": 160,
+      "lapses": 0,
+      "changed": 0,
+      "discard_count": 127,
+      "shanten_excess_sum": 0,
+      "worse_than_min_shanten": 0,
+      "sequence_sha256": "64d045cabe359e15f7954f6f300061fff806e3d5f49f82e251fa3edd845dbab6"
+    }
+  ],
+  "balanced_adjacent_different_actions": [
+    81,
+    49,
+    91,
+    56,
+    64,
+    60,
+    25,
+    26,
+    14
+  ],
+  "replay_seed": 211,
+  "replay": [
+    {
+      "level": 1,
+      "continuation_turns": 187,
+      "result": {
+        "scores": [
+          21500,
+          24500,
+          25500,
+          28500
+        ],
+        "ranks": [
+          4,
+          3,
+          2,
+          1
+        ]
+      },
+      "ignored_setting_level": 10
+    },
+    {
+      "level": 2,
+      "continuation_turns": 169,
+      "result": {
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "ranks": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "ignored_setting_level": 9
+    },
+    {
+      "level": 3,
+      "continuation_turns": 165,
+      "result": {
+        "scores": [
+          27000,
+          23000,
+          27000,
+          23000
+        ],
+        "ranks": [
+          1,
+          3,
+          2,
+          4
+        ]
+      },
+      "ignored_setting_level": 8
+    },
+    {
+      "level": 4,
+      "continuation_turns": 171,
+      "result": {
+        "scores": [
+          26500,
+          26500,
+          23500,
+          23500
+        ],
+        "ranks": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "ignored_setting_level": 7
+    },
+    {
+      "level": 5,
+      "continuation_turns": 197,
+      "result": {
+        "scores": [
+          20200,
+          28500,
+          25800,
+          25500
+        ],
+        "ranks": [
+          4,
+          1,
+          2,
+          3
+        ]
+      },
+      "ignored_setting_level": 6
+    },
+    {
+      "level": 6,
+      "continuation_turns": 146,
+      "result": {
+        "scores": [
+          23500,
+          30500,
+          19500,
+          26500
+        ],
+        "ranks": [
+          3,
+          1,
+          4,
+          2
+        ]
+      },
+      "ignored_setting_level": 5
+    },
+    {
+      "level": 7,
+      "continuation_turns": 121,
+      "result": {
+        "scores": [
+          20000,
+          26000,
+          23000,
+          30000
+        ],
+        "ranks": [
+          4,
+          2,
+          3,
+          1
+        ]
+      },
+      "ignored_setting_level": 4
+    },
+    {
+      "level": 8,
+      "continuation_turns": 57,
+      "result": {
+        "scores": [
+          17500,
+          26500,
+          30300,
+          25700
+        ],
+        "ranks": [
+          4,
+          2,
+          1,
+          3
+        ]
+      },
+      "ignored_setting_level": 3
+    },
+    {
+      "level": 9,
+      "continuation_turns": 174,
+      "result": {
+        "scores": [
+          5300,
+          28000,
+          32500,
+          33200
+        ],
+        "ranks": [
+          4,
+          3,
+          2,
+          1
+        ]
+      },
+      "ignored_setting_level": 2
+    },
+    {
+      "level": 10,
+      "continuation_turns": 106,
+      "result": {
+        "scores": [
+          9500,
+          21000,
+          38400,
+          31100
+        ],
+        "ranks": [
+          4,
+          3,
+          1,
+          2
+        ]
+      },
+      "ignored_setting_level": 1
+    }
+  ],
+  "unknown_profile_rejected": true
+}

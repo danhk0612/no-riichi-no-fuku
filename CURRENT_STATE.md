@@ -1,17 +1,39 @@
 # 현재 상태
 
-## 현재 우선 인계 — W-DIFF-A
+## W-DIFF-A — 설계·격리 측정 제출, 제품 적용 대기
 
-2026-10-18 사용자 승인: 성향은 캐릭터 고유값, CG Level/stage 0~3과 실제 난이도를 분리하고
-캐릭터 단계+게임 설정으로 최종 난이도 1~10을 계산하는 방향을 채택했다. Q-META 신체 A도 승인됐다.
-현재 코드는 여전히 Tier 0/1/2이며 10레벨/게임 설정/신체 편집 UI는 아직 구현하지 않았다.
-설정 범위/공식/특수 모드 우선순위·적용 시점은 미확정이다. TASKS의 W-DIFF-A 지시문으로
-고성능 Work의 격리 검증·구체 계약·후속 구현 인계를 먼저 수행한다.
+준비/최신 main `8fb9b80a471090b43ac648597051e788c0767186` (PR #83/#84 병합)을 확인하고
+`task/w-diff-a-difficulty-spike`에서 수행했다. 시작 시 열린 별도 PR은 Docker 문서 #35였다.
+제품은 여전히 Tier0/1/2이며 10레벨 설정/UI/DB 변경은 없다. 성향·CG stage·최종 난이도의 분리,
+신규 policy3/고정 profile snapshot·기존 저장 복구·local API/최소 UI 계약과 B 지시문을 정리했다.
+Q-META 신체 UI, W08/W09, CG/음향/콘텐츠 생성·사용자 자료 변경은 수행하지 않았다.
 
-준비 main `467c706`은 PR #83 병합이다. W08-S 최종 source `205a597`의 Linux/Windows unittest
-129개·대사 10개, build·sound/content/audio-pack browser, packaged renderer 22 checks와
-일반 종료/재기동 및 다운로드 ZIP/source/hash 대조를 확인했다. 정확한 CI/artifact는 PR #83에 있다.
-이번 추가 변경은 요구/아키텍처/Task·인계 문서만이며 제품 동작·사용자 자료 변경은 없다.
+재현 명령·조건·전체 표·한계는 [spikes/w-diff-a/README.md](spikes/w-diff-a/README.md), 대국별
+결과/seed/좌석/trace·공통 입력/격리 replay·paired 분석·CPU 시간과 스크립트 SHA256은 같은 경로의
+`evidence/`에 보관했다. Python3.12.14/RiichiEnv0.4.8/Linux 환경의 실제 측정이다.
+
+| 검사 | 실제 결과 |
+|---|---|
+| 대국 비교 | Tier2 기반 실수율10후보+기존 Tier0/1/2 대조군 × seed100..131 ×4좌석 =1,664대국. 775,711 step 합법, 최대1,165 step. 표본 누락/제외 없음 |
+| 실전 강도 | L1 평균12,533.6점/3.7344위, L10 25,000점/2.5위. 큰 폭 차이는 관측했으나 1→2 역전 및 9개 인접 중6개 구간이 점수/순위 설명용 구간에0 포함. **10개 인접 강도 검증 미완료, v1 그대로 제품 채택 비권고** |
+| 기존 최고와 비교 | L10과 원 Tier2의128쌍 전체 trace/결과/step 일치. Tier0/1 대조군과 Tier2의 우열도 이번 표본에서 입증 못함 |
+| 공통 입력/성향 | 실제160관측×기존6성향+극단2종×10레벨=12,800케이스. 독립 agent쌍의 동일 seed 재현/합법성/성향6값 불변, L10 원 Tier2 동일. 균형 성향 최소샹텐 초과 선택은 L1 64/127→L10 0/127(안전성의 완전한 척도 아님) |
+| 신규 격리 replay | 각레벨 seed211, 12개 사람 action index 저장→JSON roundtrip→새 주입 factory/session 재생. 남은57~197턴 hash와 완료 결과 일치, unknown profile 거절. production policy3 loader/파일DB 구현 검증은 아님 |
+| 완전 재현 | L1/5/10 seed107·좌석2 전체 대국 각2회 trace/점수/순위/step 일치 |
+| 비용 | 8 worker 비교303.959초(다른 검사와 공유). 별도160입력의 L1/5/10 평균 CPU1.406/1.398/1.545ms, p95 2.752/2.795/2.830ms. 모든레벨 원 평가 비용 유지, Windows/전체 최악지연 아님 |
+| 기존 회귀 | 원본 backend unittest129개225.327초·대사 pytest10개0.30초 통과. pre-versioned 매턴 fixture/policy2 재시작·local writer/정산 실패/reset/오마케/음향 검사 포함 |
+
+paired 분석은 독립 seed 블록32개(4좌석은 같은 블록), t 근사95%/다중 비교 보정 전이다.
+중립 Tier2 3명 상대의 고정 표본이며 인간/다른 상대·성향별 장기 강도·holdout은 미검증이다.
+frontend build/browser와 새 Windows CI/개인 PC 측정은 수행하지 않았다. 제품 경로 변경이 없는
+문서/spike Task라 W04/W05 path filter 대상이 아니며 과거 Windows 증거를 이번 head의 성공으로 쓰지 않는다.
+
+다음은 REQUIREMENTS DIFF-* 정책 결정과 profile 보정/검토다. 설정1~10/기본5·stage기본3/6/9·
+합산 clamp·보충1/omake10 우선·다음 대국 적용/초기화 설정 보존은 **권고안**이며 승인되지 않았다.
+승인 및 profile 강도 보정 게이트가 남아 B는 미착수다. TASKS에 B의 파일 경계/호환/검증 지시문을
+작성했다. 직접 병합·Release/tag는 수행하지 않는다. 최종 제출 commit/PR은 Git/해당 PR을 따른다.
+
+W08-S의 Windows 최종 source `205a597`과 artifact 검토는 PR #83에 있으며 이번 A 측정과 별개다.
 
 ## W08-S — 오디오팩·캐릭터 음성 연결
 
