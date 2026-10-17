@@ -32,6 +32,10 @@ CPU와 이미지팩 연결 여부로 음성팩 배포 namespace를 제한하지 
 held media·queued voice 무효화, 재연결 후 새 voice 재생, 활성 voice 정지를 검사하며 W05 CI에 포함했다.
 음향/음성 commit 실패 시 기존 선택/revision 보존과 재기동도 별도 backend 회귀로 확인한다.
 
+추가 리뷰에서 title BGM slot에 도달할 수 없는 화면 판별도 재현했다. desktop 초기 로딩부터
+사운드 설정을 읽고 title→selection→game/result를 기존 화면 상태로 resolve한다. 새 시작 화면은
+추가하지 않았다. bootstrap 응답을 보류하는 browser 검사는 title 재생과 선택 진입 시 정지를 확인한다.
+
 최초 Linux unittest 127개(86.444s), 수정 후 unittest 129개와 대사 pytest 10개, frontend build,
 content/sound/audio-pack browser 및 quit 3개를 검증했다. Chromium 최신 번들 다운로드는 실패했으나
 CI와 같은 Playwright 1.55.0의 headless shell 1187을 설치해 브라우저 검사를 실행했다. 최종 수정 SHA의

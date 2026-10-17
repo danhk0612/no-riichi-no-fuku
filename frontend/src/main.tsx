@@ -75,13 +75,14 @@ function App() {
   const activeSoundEffectsRef = useRef(new Map<string, { audio: HTMLAudioElement; url: string }>())
   const voiceQueueRef = useRef<Promise<void>>(Promise.resolve())
   const isDesktop = window.nrnfDesktop?.isDesktop === true
+  const playbackAccessToken = accessToken ?? (isDesktop ? DESKTOP_SESSION : null)
 
   useEffect(() => {
-    if (!isDesktop || !accessToken) { setSoundSelection(null); return }
+    if (!isDesktop || !playbackAccessToken) { setSoundSelection(null); return }
     let current = true
-    void getSoundSelection(accessToken).then((selection) => { if (current) setSoundSelection(selection) }).catch(() => {})
+    void getSoundSelection(playbackAccessToken).then((selection) => { if (current) setSoundSelection(selection) }).catch(() => {})
     return () => { current = false }
-  }, [accessToken, isDesktop])
+  }, [playbackAccessToken, isDesktop])
 
   function stopGameAudio() {
     gameAudioTokenRef.current += 1
@@ -686,7 +687,7 @@ function App() {
           />}
         </>
       )}
-      {isDesktop && accessToken && <BackgroundMusic accessToken={accessToken} selection={soundSelection} screen={cpus ? 'selection' : gameState.status === 'complete' ? 'result' : 'game'} paused={gameState.status === 'ending'} />}
+      {isDesktop && <BackgroundMusic accessToken={accessToken ?? DESKTOP_SESSION} selection={soundSelection} screen={cpus ? 'selection' : gameState.status === 'complete' ? 'result' : players.length === 0 ? 'title' : 'game'} paused={gameState.status === 'ending'} />}
     </main>
   )
 }

@@ -65,7 +65,8 @@ responses across character switches, applied vs registered revisions, empty over
 source P/N inspection. It uses test-only strings and references without generating media. W05 runs it
 with the existing Playwright/Vite setup.
 
-`audio-packs.browser.mjs` holds media responses while saving voice-off or SFX pack settings.
+`audio-packs.browser.mjs` holds bootstrap to check title BGM and its transition to selection,
+then holds media responses while saving voice-off or SFX pack settings.
 It checks that successful settings changes discard old downloads and queued voices, stop active
 voices, and allow future voice playback after re-enabling. It uses routed APIs and mock Audio;
 W05 runs this regression alongside the sound/content checks without creating audio files.

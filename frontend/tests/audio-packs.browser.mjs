@@ -15,17 +15,22 @@ try {
   })
   const cpus = [1, 2, 3].map((id) => ({ id, name: `CPU ${id}`, defeat_stage: 3, style: 'balanced', short_description: 'test-only', profile_image_key: null }))
   const voices = new Map(cpus.map((cpu) => [cpu.id, { schema_version: 1, cpu_id: cpu.id, revision: 0, default_pack_id: null, selected_pack_id: null, selection_mode: 'default', packs: [] }]))
-  const audioPacks = { schema_version: 1, revision: 0, sfx_mode: 'legacy', sfx_pack_id: null, bgm_mode: 'legacy', bgm_pack_id: null, defaults: { sfx: null, bgm: null }, packs: [], bgm_slots: {} }
+  const audioPacks = { schema_version: 1, revision: 0, sfx_mode: 'legacy', sfx_pack_id: null, bgm_mode: 'pack', bgm_pack_id: null, defaults: { sfx: null, bgm: null }, packs: [], bgm_slots: { title: { asset_id: 'title-only', url: '/api/local/media/title-only/file' } } }
   const selection = { effect_set_id: null, bgm_ids: [], effect_sets: [], tracks: [], effect_set_available: false, bgm_available: [], audio_packs: audioPacks }
   const play = { generation: 'test-generation', phase: 'omake', roster: cpus.map((cpu) => ({ cpu_character_id: cpu.id, defeat_stage: 3 })), ending_event_id: null, ending_payload: null, active_session_id: null, recent_session_id: null, legacy_active: false }
   const heldFiles = new Map(); let socket
+  let finishBootstrap
+  const bootstrap = new Promise((resolve) => { finishBootstrap = resolve })
   await page.route('**/api/**', async (route) => {
     const request = route.request(), path = new URL(request.url()).pathname
     if (/^\/api\/local\/media\/[^/]+\/file$/.test(path)) {
       if (heldFiles.has(path)) await heldFiles.get(path)
       return route.fulfill({ contentType: 'audio/mpeg', body: Buffer.from('test-only') })
     }
-    if (path === '/api/profile/me') return route.fulfill({ json: { player_name: 'test', current_hp: null, max_hp: null } })
+    if (path === '/api/profile/me') {
+      await bootstrap
+      return route.fulfill({ json: { player_name: 'test', current_hp: null, max_hp: null } })
+    }
     if (path === '/api/local/play') return route.fulfill({ json: play })
     if (path === '/api/game/sessions/active') return route.fulfill({ json: null })
     if (path === '/api/admin/cpus' || path === '/api/local/play/roster-candidates') return route.fulfill({ json: cpus })
@@ -51,7 +56,11 @@ try {
       turn: { observation: { player_id: 0, hands: [[], [], [], []], melds: [[], [], [], []], discards: [[], [], [], []], dora_indicators: [], scores: [25000, 25000, 25000, 25000], riichi_declared: [false, false, false, false], honba: 0, riichi_sticks: 0, round_wind: 0, kyoku_index: 0, oya: 0 }, legal_actions: [] } })))
   })
   await page.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
+  await page.waitForFunction(() => window.__audios.length === 1 && !window.__audios[0].paused)
+  finishBootstrap()
   await page.locator('.selection-panel').waitFor()
+  await page.waitForFunction(() => window.__audios[0].paused)
+  await page.evaluate(() => { window.__audios = [] })
   for (const card of await page.locator('button.cpu-card:not([disabled])').all()) await card.click()
   await page.getByRole('button', { name: '동풍전 시작' }).click()
   await page.locator('.human-controls').waitFor()
@@ -88,5 +97,5 @@ try {
   await voiceRow.getByRole('button', { name: '저장', exact: true }).click()
   await page.waitForFunction(() => window.__audios[0].paused)
   assert.deepEqual(errors, [])
-  console.log('PASS: voice-off/SFX pack save discard held media and queued voices, future voice queue recovers, active voice stops')
+  console.log('PASS: startup title BGM/selection transition, voice-off/SFX pack save discard held media and queued voices, future voice queue recovers, active voice stops')
 } finally { await browser.close() }
