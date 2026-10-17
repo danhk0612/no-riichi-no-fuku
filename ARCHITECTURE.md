@@ -192,7 +192,7 @@ B/C는 이 설계 검토 후 순차 착수한다. 아래 필드/API 이름은 �
 | `game_setup.py`는 active/stage<3만 선택, HP>0 요구, `CpuChoice.defeat_stage`로 agent 선택 | B: local 명단/phase 검증, stage와 `effective_tier` 분리 |
 | `game_registry.py`는 `asdict(CpuChoice)`/seed/actions 저장, 완료 JSON 재사용 | B: 진행 규칙 snapshot/세대 검증 추가. 기존 snapshot decoder와 RNG 보존 |
 | `game_result.py`는 사람 HP 감소, stage 3 CPU 정산 거절 | B: 새 local 규칙만 별도 정산. 결과/진행/엔딩을 같은 commit |
-| `api/game.py`는 WS auth 뒤 cache 객체 유지, send 중 정산, 결과 대사/CG를 매번 조회 | B: 세대 확인/정산 후 응답, 저장된 결과 표시 payload, 오마케 대사 억제 |
+| `api/game.py`는 WS auth 뒤 cache 객체 유지, send 중 정산, 결과 대사/CG를 매번 조회 | B: 세대 확인/정산 후 응답, 저장된 결과 표시 payload, 당시 오마케 대사 억제(2026-10-16에 기본 선언·화료·최종4위 대사 유지로 수정) |
 | `local_runtime.py`의 recent는 사용자 전체에서 최신 record 조회 | B: 현재 세대만 조회. 초기화 뒤 옛 completed record 재진입 금지 |
 | `UserCpuProgress`는 user+cpu PK, stage 0~3; `GameSetting`은 key+JSON | B: stage 재사용, 현재 플레이만 별도 관계. C: 공통 설정 key 사용 |
 | `services/admin.py`의 CPU PATCH는 active 포함 자유 수정; CPU 삭제 API는 현재 없음 | B: 명단 참조 active 변경 차단. C/W08에도 같은 보호 규칙 적용 |
@@ -246,7 +246,7 @@ NULL generation 기록을 현재 generation에 연결하되 규칙 snapshot/기�
 | 마지막 미완료 CPU 4위 | stage 2→3·session completed·ending_pending/event/payload를 동일 commit. 사람 4위/완료 CPU 4위는 진행 불변 |
 | ending_pending | 새 대국 시작 불가, 결과 확인 후 엔딩. 표시 중 종료/재접속이면 같은 event와 payload 재표시 |
 | 엔딩 확인 완료 | 같은 generation/event의 명시 acknowledge commit 후 omake. stage 3 그대로, 모두 effective Tier 2 |
-| omake | 기본 마작 event/점수/순위는 유지. 진행/캐릭터 대사/결과 CG/승패 대사/새 엔딩 이벤트는 발생시키지 않음. 일반 마작 조작 SFX/BGM은 사용 가능 |
+| omake | 기본 마작 event/점수/순위는 유지. stage/Tier 진행, 추가 CG 및 새 엔딩 이벤트는 발생시키지 않음. 기본 선언·화료·최종4위 대사/음성은 출력한다. 일반 마작 조작 SFX/BGM은 사용 가능 |
 
 legacy active 정산은 legacy HP/stage 규칙을 보존하는 **기존 한 대국에만 한정한 호환 경로**다.
 새 version 2 대국은 HP를 읽거나 바꾸지 않는다. legacy 완료가 명단 없는 상태에서 전체 완료 엔딩을
@@ -281,12 +281,14 @@ local profile은 HP 없는 전용 응답 또는 optional legacy HP 필드를 사
 아니다. legacy 저장 JSON은 전용 decoder/응답 adapter로 읽어 UI의 새 타입에 맞추며 원본을 변경하지 않는다.
 
 `presentation`은 version 2 정산 때 선택한 결과 CG 참조와 대사 목록(문장 포함)을 JSON으로 저장한다.
-일반 stage 상승은 기존 `defeat_stage_N` 대사/CG를 재사용한다. 완료 전 보충 CPU 1위/4위는 기존
-`match_first`/`match_last` 대사 pool을 별도 콘텐츠 RNG로 선택해 저장하며 stage/CG unlock은 불변이다.
+일반 stage 상승과 최종4위는 기존 `defeat_stage_N` 대사/CG를 재사용한다(stage3 패배도 stage3).
+완료 전 보충 CPU 1위는 기존 `match_first` 대사 pool을 별도 콘텐츠 RNG로 선택해 저장하며
+stage/CG unlock은 불변이다. W08-S의 최신 결정에 따라 최종4위의 `match_last`는 사용하지 않는다.
 승자와 패자의 대사가 함께 필요할 수 있으므로 배열로 전달한다. pool 없으면 빈 배열로 표시하고
 새 문장 seed는 만들지 않는다. 재접속은 같은 저장 payload이며 새 선택/진행 이벤트를 만들지 않는다.
-오마케에서는 pending engine events를 소비하되 `extract_game_events`/대사 선택·CG 표시를 호출하지
-않는다. 리치/치/퐁/깡/론/쯔모의 기본 규칙 이벤트 자체는 버리지 않는다.
+당시 B 계약은 오마케에서 pending engine events를 소비하되 `extract_game_events`/대사 선택·CG 표시를
+호출하지 않는 것이었다. W08-S 최신 결정으로 기본 선언 text/voice와 화료·최종4위 대사/voice 출력은
+복구했으며 stage/Tier/추가 진행/CG는 만들지 않는다. 리치/치/퐁/깡/론/쯔모의 기본 규칙 이벤트는 유지한다.
 
 writer 순서/수명은 다음을 지킨다.
 
@@ -374,15 +376,15 @@ C는 공통 등록의 hard DELETE나 미사용 파일 청소를 제공하지 않
 
 - 기본 BGM은 선택 bgm_ids 순서로 순환 재생한다(첫 항목부터, RNG 없음). 목록 변경 시 현재 track이
   남아 있으면 유지하고 제거/비활성화면 중지 후 새 목록 첫 곡. 전부 없으면 무음. renderer 재시작은
-  첫 곡부터이며 재생 위치 영속화는 하지 않는다. 엔딩 중에는 일반 BGM을 멈추고 엔딩 음악을
+첫 곡부터이며 재생 위치 영속화는 하지 않는다. 엔딩 중에는 일반 BGM을 멈추고 엔딩 음악을
   1회 재생, ack 뒤 일반 BGM을 다시 시작한다. 선택 곡이 하나면 같은 Audio의 위치를 초기화해
   반복한다. 목록 순서가 바뀌어도 현재 곡 ID를 유지하며 같은 ID의 media URL이 바뀌면 새 media로
   다시 로드한다. 엔딩 음악은 일반 사용 BGM 목록과 독립 참조다.
 - SFX는 기존 기본 마작 event에서만 재생하며 대사 문장의 존재에 의존하지 않는다. B/C는 규칙 event와
   dialogue_event를 구분해 `{generation,session_id,action_version,event_index,event_key}` 식별을
   commit 성공 후 전달한다. 같은 renderer 연결의 중복 ID는 재생 안 함. snapshot replay는 과거 event를 버리는 현재
-  계약 유지. 오마케도 이 기본 SFX 가능, 캐릭터 대사/콘텐츠 이벤트는 불가. 패 내려놓기/섞기/점수봉 등
-  아직 노출되지 않은 새 SFX hook/캐릭터 voice 시스템은 C 범위가 아니다.
+  계약 유지. 오마케도 이 기본 SFX 가능. 당시 W06-C 범위에서는 캐릭터 대사/새 SFX hook/voice가 제외됐으나,
+  W08-S 결정에서 기본 선언·화료·최종4위 대사/voice와 SFX pack slot을 추가했다.
 - 오디오와 CG는 같은 origin의 인증된 요청으로 가져온 blob/object URL만 사용한다. 부하/재생 promise
   실패는 표시하고 무음으로 계속한다. 파일/decode 실패는 다시 시도 안내를, autoplay 거절은 사용자
   재생 버튼을 제공한다. 이전 Audio의 load/ended/play rejection callback은 현재 Audio와 화면 토큰을
@@ -410,7 +412,7 @@ B/C는 동일 main.tsx/models/API/문서를 수정하므로 병렬 구현하지 
 | 검사 | 필요한 기대값 |
 |---|---|
 | 명단 [0,1,2,3], [2,3,3], [3,3,3] | 순서대로 미완료 3만 가능 / 완료 Tier0 가능 / pending→ack 후 모두 Tier2 |
-| 사람4위 / 보충 CPU4위·1위 / omake | HP 변화 없음 / stage 불변·match_last/first 저장 / stage·CG·대사·엔딩 변화 없음 |
+| 사람4위 / 보충 CPU4위·1위 / omake (이전 검증표) | 당시 HP 변화 없음 / stage 불변·match_last/first 저장 / 오마케 stage·CG·대사·엔딩 변화 없음. W08-S 최신 결정으로 최종4위는 stage defeat 대사, 오마케 기본 선언·화료·최종4위 대사를 유지 |
 | 마지막 stage 증가 commit 실패·동시 재접속 | stage/result/pending 전부 rollback, 재시작 한 번 정산·한 event |
 | 마지막 행동 저장 후 reset과 정산 경쟁 | writer 순서에 따른 결과, reset 뒤 옛 요청/캐시/socket이 새 진행을 변경하지 못함 |
 | reset 성공 응답 유실·두 번 클릭·old fetch/media callback | 새 세대 1개, stale 거절, 옛 화면/오디오 재등장 없음 |
@@ -514,7 +516,7 @@ Level 변경 패배 대사와 기타 캐릭터 이벤트의 노출 정책은 기
 다음 기술 계약은 종류별 프로필/full body/CG 출력 크기·선택 수명·캐시와 재생 event/slot matrix,
 폴더/파일명/ID 충돌·default 의미·재인식·설정/이전·빠진 파일 처리를 구현 가능한 수준으로 명세해야 한다.
 자료 미제공을 이유로 placeholder를 실제 콘텐츠 검증으로 간주하지 않는다. 결과 UI·pack 재시작 보존·
-한글 경로·stage3/omake 억제·4/3/2/1/0 NPC 경계는 각 후속 구현의 회귀 항목이다.
+한글 경로·stage3/omake 추가 진행/CG 억제·4/3/2/1/0 NPC 경계는 각 후속 구현의 회귀 항목이다.
 
 ## W07 구체 기술 계약 — 2026-10-16 정책 응답과 분리
 
@@ -593,8 +595,8 @@ Level 2는 누적 탈의이며 Level 1에서 브래지어를 제거하지 않는
 `console`·`aux-pack`·`com10` 등 일반 이름까지 제외하지 않는다.
 metadata는 `name`(비어 있지 않은 문자열)·`adult:true`만 필수로 검증하며 description/style은
 문자열로 보존한다. 미결정 Q-META의 추가 metadata는 JSON 그대로 보관하고 능력치/단위를 추측하지 않는다.
-slot은 v1 표의 sfx 3개, bgm 4개, voice 선언 6개·defeat_stage_1/2/3·match_first/last만 허용한다.
-승리 신규 slot은 D-WIN 결정 전 추가하지 않는다. null이 아닌 참조 파일은 모두 존재/형식/한도를 검증한다.
+slot은 v1 표의 sfx 3개, bgm 4개, voice 선언 6개·`win`·defeat_stage_1/2/3·match_first/last를 허용한다.
+`win`은 2026-10-16 사용자 결정의 매 국 별도 화료 음성이다. null이 아닌 참조 파일은 모두 존재/형식/한도를 검증한다.
 
 migration 0007은 content_packs(kind/namespace/pack_id unique), content_pack_revisions
 (pack/revision 및 pack/content_digest unique), content_pack_files(revision/relative_path PK,
@@ -763,26 +765,43 @@ PATCH에 명시한 문자열은 override=true로 기록하고 다른 필드 기�
 캐릭터별 문장 후보나 음성 유무와 무관하다. actor 좌석→저장 CPU mapping→선택 voice pack으로 resolve한다.
 사람 actor는 연결된 NPC 음성이 없으므로 NPC 음성을 대신 쓰지 않는다.
 기존 문장 확률/cooldown은 별도 상황 대사에만 보존한다. 공통 선언·voice를 문장 후보 존재에 묶지 않는다.
-오마케는 기본 공통 텍스트/SFX 유지, 상황·승패/CG 이벤트는 기존대로 억제한다.
-기본 선언 voice를 추가 캐릭터 이벤트로 취급해 억제할지는 Q-OMAKE-VOICE 응답 전 확정하지 않는다.
-기본 선언/음성 분리 확정만으로 오마케 음소거 정책을 추가하지 않는다.
+2026-10-16 결정: 오마케에서도 기본 선언·매 국 화료·최종 4위 패배 대사/음성을 재생한다.
+오마케는 stage 불변·Tier 2이며 추가 진행/CG 이벤트가 없다. 기존의 오마케 승패 대사 일괄 억제는
+이 결정으로 대체한다.
 
 | domain | v1 slot / source | 처리 |
 |---|---|---|
-| voice | chi/pon/kan/riichi/ron/tsumo | 기존 event mapper의 reach→riichi, 세 깡→kan, hora target/actor→ron/tsumo. actor CPU의 팩만 |
-| character result | defeat_stage_1/2/3 | 증가 후 Level의 캐릭터별 텍스트 지정·같은 키 음성. 텍스트와 오디오 참조는 별도 |
-| completed support | match_first/match_last | W06 기존 보충 승패 대상만, stage=3 불변. D-WIN으로 일반 승리 범위를 자동 확대하지 않음 |
-| voice 승리 | D-WIN 응답 뒤 slot 결정 | ron/tsumo 선언과 승리 대사 중복 여부도 응답 전 hook 금지 |
-| SFX 후보 | tile_discard / tile_shuffle / riichi_stick | discard/reach_accepted/국 시작의 정확한 emission·한 국 1회 섞기 source 검증 후 W08-S 연결. hook 부재 시 임의 action 호출로 만들지 않음 |
+| voice | chi/pon/kan/riichi/ron/tsumo | 기본 선언 음성. 기존 mapper의 reach→riichi, 세 깡→kan, hora target/actor→ron/tsumo. actor CPU의 선택 pack만. 같은 pending batch에서 기본 공통 텍스트를 먼저 전송하고 이어 actor 선언 음성을 재생 |
+| hand win | win | 매 국 화료한 캐릭터의 별도 화료 음성. ron/tsumo 선언 음성 뒤 순서대로 재생하며 국별 문장 목록은 없음(W09에서 텍스트/상황 관계 처리) |
+| character result | defeat_stage_1/2/3 | 최종 4위 결과의 변경 후 stage 패배 음성. stage 3 패배도 stage 3 슬롯 재생. 오마케도 적용 |
+| completed support | match_first | 기존 완료 전 보충 CPU 1위 대사 대상만 유지. stage 3 불변. 최종4위는 `defeat_stage_3`; 신규 동풍전 최종 1위 대사는 추가하지 않음 |
+| SFX | tile_discard / tile_shuffle / riichi_stick | `dahai` / `start_kyoku` / `reach_accepted` pending event에 연결. 기존 기본 effect hook은 이 슬롯과 중복 재생하지 않음 |
 | BGM | title / selection / game / result | 해당 화면 진입 시 slot resolve, 같은 resolved media면 재시작하지 않음. ending은 W06 전용 음악/pending 계약 유지 |
 
-SFX 후보는 사용자가 언급한 패 타격/섞기/리치봉 범위다. 실제 event source 검증이 없으면
-미연결로 보고하고 규칙 코드를 확장하지 않는다. 임의 새 음향 슬롯/샘플을 추가하지 않는다.
+SFX는 사용자가 언급한 패 타격/섞기/리치봉 범위로 한정한다. action 결과 pending event 이름에만
+연결하고 규칙 코드를 확장하거나 임의 새 음향 슬롯/샘플을 추가하지 않는다.
 각 slot resolve는 enabled일 때 selected→동일 kind default→null이다. 선택 팩 파일이 누락/비활성/
 읽기 불가면 default를 확인하고 default도 실패하면 무음. voice는 selected/default 연결에서 정한
-**하나의 유효 팩 안에서만** 찾으며 파일 실패도 무음이다. 선택 팩 자체가 없으면 지정 기본 팩으로 resolve한 뒤 슬롯을 확인한다. 실행 중 재생 실패는 대국 진행을 막지 않는다.
+**하나의 유효 팩 안에서만** 찾는다. 선택 참조가 없거나 유효하지 않으면 캐릭터 기본팩으로 resolve하며,
+유효 팩의 슬롯 누락/파일 읽기 실패는 무음이다. 명시 `off`는 무음이며 fallback하지 않는다.
+매 국 화료 시 기본 ron/tsumo 선언 음성 다음 `win`을 직렬 재생한다. 패배 결과는 정산을 commit하고
+`match_complete`를 보낸 뒤 변경 후 stage의 `defeat_stage_N` 음성을 재생한다. 오마케 패배는 stage 3
+슬롯이며 stage/Tier 진행과 CG는 만들지 않는다. 실행 중 재생 실패는 대국 진행을 막지 않는다.
 팩 전환 시 audio generation을 증가시켜 기존 pending play callback을 격리하고 현 BGM을 재평가한다.
+음향팩/음성 연결 저장 또는 캐릭터팩 적용 성공 시 renderer는 game audio token을 증가시켜 이전
+파일 요청·대기 voice를 무효화하고 재생 중인 효과음/음성을 멈춘다. 새 voice queue는 이전 요청을
+기다리지 않는다. 설정 조회·실패한 저장은 재생 세대를 변경하지 않는다.
+로그인 없는 desktop 초기 로딩에서도 사운드 설정을 읽어 title BGM slot을 resolve한다. CPU 목록
+표시는 selection, 좌석이 확정된 대국은 game, 정산 화면은 result를 사용한다. 같은 media는 화면이
+바뀌어도 재시작하지 않으며 엔딩은 기존 전용 음악/pending 계약을 유지한다.
 기본 선언 voice와 같은 파일을 공통 SFX로 중복 재생하지 않는다. W06 6개 구 슬롯 이전은 Q-AUDIO 대상이다.
+
+Q-AUDIO A 전환 계약: W06 `local_sound_selection`과 UUID 음원·legacy 플레이어는 삭제/변환하지 않는다.
+새 SFX/BGM 팩이 해당 domain의 명시 기본/선택 설정으로 활성화되기 전에는 legacy 재생을 유지한다.
+새 팩 선택/기본값 설정을 저장하면 해당 domain을 새 resolver로 원자 전환하고 legacy와 동시 재생하지
+않는다. SFX와 BGM은 독립 전환된다. 최소 설정 UI는 domain별 `legacy`/`pack` 재생 상태를 표시한다.
+새 resolver는 slot별 선택 pack→명시 기본 pack→무음 순으로 찾는다. 기존 legacy 설정·파일과 새 팩
+연결/전환 모드·media는 진행 초기화와 재시작에도 보존한다.
 
 source identity는 `(play_generation, session_id, action_version, source_kind, source_ordinal, actor_seat, event_key)`.
 `api/game.py`의 `pending_events()` 한 번 소비 직후 원본 tuple의 enumerate index를 붙이고,
@@ -792,6 +811,11 @@ JSON parse/mapper/후보 필터/우선순위 정렬 이후에도 그 index를 �
 동일 배치 내 서로 다른 index를 내용 같다고 합치지 않으며 관측 중복은 실제 mapper 회귀로 확인한다.
 정확한 event source가 추가로 필요하면 엔진 변경 없이 수집 가능한지 별도 검토한다.
 W06 SFX identity·엔딩 UUID·action index·rules snapshot은 바꾸지 않는다.
+한 `hora` source에서는 actor의 ron/tsumo 선언 뒤 `win` 슬롯을 한 번 재생한다. target은 선언 판정에만
+쓰고 voice actor는 화료 CPU다. 최종 4위 result voice는 기존 settlement와 변경 후 stage를 사용해 한 번
+출력한다. 진행 phase에서 stage가 증가하면 `defeat_stage_N`, stage 3 불변/오마케에서는
+`defeat_stage_3`이다. replay/재접속은 과거 audio를 자동 재생하지 않는다. 기존 완료 전 보충 CPU의
+`match_first` 대사 표시만 유지하고 신규 일반 1위 결과 hook은 없다.
 
 ### W06 보존과 additive migration
 
@@ -901,7 +925,7 @@ R07~R14의 최초 관계·책임을 정리한 **미승인 기술 초안**이다.
 | 기존 노출 수치 | ron/tsumo 확률 1·우선 60, riichi .9·50, kan .75·40, pon .45·30, chi .35·20. CPU/event cooldown은 kan 2/2, pon 2/3, chi 2/3, 나머지 0/0. 한 turn 한 발화 | 정책의 우선순위/확률/cooldown/빈 문장일 때 미소비 경계 유지. 이미지 유무가 대사 노출 확률·SFX를 바꾸면 안 됨 |
 | 이벤트 원본 | `mahjong/session.py`가 pending observation의 events를 누적·소비. `api/game.py`가 한 pending batch를 대사·SFX에 사용 | 현재 배열 index는 해당 batch 기준이며 엔진 전역 event ID가 아님. 관측 중복 정규화나 규칙 hook 변경을 W07 준비에서 수행하지 않음 |
 | R10 표시/복구 | `game_registry.py`는 seed·CPU snapshot·사람 index replay 뒤 `pending_events()`를 비움. 행동 대사 policy는 cache 객체, 영속적인 표시 selection 없음 | 과거 행동의 대사/이미지 생성 재발행 금지. 복구할 현재 표시의 별도 snapshot 여부는 D08-b |
-| 결과/완료 CPU | `_settle_local`은 stage 증가 뒤 defeat_stage_N 대사/CG, 완료 보충 CPU match_first/last 대사, version 2 presentation을 정산 transaction에 저장. 완료 GET은 저장 presentation 사용 | stage 3 결과와 보충 CPU는 구분. 새 공유 결과로의 대체는 승인 후. 오마케는 대사/CG/추가 이벤트 금지 유지 |
+| 결과/완료 CPU | `_settle_local`은 최종4위 defeat_stage_N 대사/CG, 완료 보충 CPU match_first 대사, version 2 presentation을 정산 transaction에 저장. 완료 GET은 저장 presentation 사용 | stage 3 결과와 보충 CPU 1위는 구분. 새 공유 결과로의 대체는 승인 후. 오마케 stage/Tier/추가 진행/CG는 억제하고 기본 선언·화료·최종4위 대사는 유지 |
 | R11 생성 | prompt/model/LoRA/ComfyUI/cache 구현 없음 | 기존 엔진을 생성기로 오해하지 않음. 독립 adapter·콘텐츠 RNG·artifact 관계 필요 |
 | CG/파일 | `result_assets.py`: CPU/stage 1~3의 mutable 슬롯·해금 검사, 기존 교체/삭제 API. `local_media.py`: W06 immutable UUID 파일·서명/경로 검증 | W06 보존형 저장 패턴은 재사용 가능. 구 CG 슬롯 ID는 교체 때 가리키는 bytes가 달라질 수 있어 immutable 생성 artifact로 직접 전용 금지 |
 | UI | `main.tsx`: generation/request token/CG load version/인증 blob, `MahjongTable.tsx`: 말풍선·결과/엔딩 | 늦은 fetch/object URL 차단·평문 표시 패턴 재사용. 렌더는 ID를 표시하며 후보/프롬프트 선택을 하지 않음 |
@@ -911,7 +935,7 @@ R07~R14의 최초 관계·책임을 정리한 **미승인 기술 초안**이다.
 
 정책과 무관하게 유지할 경계: 기존 CPU/진행 PK와 seed/action/policy replay, 공유 원본 참조,
 렌더별 재추첨 금지, 콘텐츠 선택/생성과 규칙 RNG 분리, 게임 transaction의 외부 생성 대기 금지,
-오마케 이벤트 억제, 파일 임의 삭제 금지, 같은 origin/capability·단일 writer 권한이다.
+오마케 추가 진행/CG 이벤트 억제, 파일 임의 삭제 금지, 같은 origin/capability·단일 writer 권한이다.
 테이블 수·새 version 번호·Level 범위·삭제 방식·후보 포함 의미는 이 절만으로 채택되지 않는다.
 
 | 제안 관계 | 최소 데이터/소유 | 미확정 또는 승인 뒤 명세화할 부분 |

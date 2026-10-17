@@ -458,7 +458,8 @@ async function smokeRun() {
   })()`)
   await waitForRenderer(`(() => {
     const audioSelect = Array.from(document.querySelectorAll('.sound-panel label')).find(label => label.innerText.includes('오디오 파일'))?.querySelector('select')
-    return Boolean(audioSelect && audioSelect.options.length > 1)
+    const uploadInput = document.querySelector('.sound-panel input[type="file"]')
+    return Boolean(audioSelect && audioSelect.options.length > 1 && uploadInput && !uploadInput.disabled)
   })()`, 30000)
   await window.webContents.executeJavaScript(`(() => {
     const setValue = (element, value) => {
@@ -472,12 +473,62 @@ async function smokeRun() {
     const nameInput = Array.from(document.querySelectorAll('.sound-panel label')).find(label => label.innerText.includes('표시 이름')).querySelector('input')
     setValue(nameInput, 'W06 mock repeat')
     setValue(audioLabel.querySelector('select'), assetId)
-    Array.from(document.querySelectorAll('.sound-panel button')).find(button => button.innerText === '배경음 등록').click()
+    window.__w05TrackRequests = []
+    const originalFetch = window.fetch.bind(window)
+    window.fetch = async (input, init) => {
+      const response = await originalFetch(input, init)
+      const url = new URL(typeof input === 'string' ? input : input.url, window.location.href)
+      if (url.pathname === '/api/local/background-tracks') {
+        window.__w05TrackRequests.push({ method: init?.method ?? 'GET', status: response.status })
+      }
+      return response
+    }
+    const registerButton = Array.from(document.querySelectorAll('.sound-panel button')).find(button => button.innerText === '배경음 등록')
+    window.__w05TrackButton = { found: Boolean(registerButton), disabled: registerButton?.disabled ?? null, text: registerButton?.innerText ?? null }
+    if (registerButton?.disabled) throw new Error('BGM registration remained disabled after media upload refresh')
+    registerButton?.click()
   })()`)
-  await waitForRenderer(`document.querySelector('.track-order input')`, 30000)
+  const readTrackSetup = () => window.webContents.executeJavaScript(`(async () => {
+      const [trackResponse, mediaResponse] = await Promise.all([
+        fetch('/api/local/background-tracks'), fetch('/api/local/media'),
+      ])
+      const [tracks, media] = await Promise.all([trackResponse.json(), mediaResponse.json()])
+      return {
+        trackInputs: document.querySelectorAll('.track-order input').length,
+        formError: document.querySelector('.sound-panel [role="alert"]')?.innerText ?? null,
+        registrationButtonDisabled: Array.from(document.querySelectorAll('.sound-panel button'))
+          .find(button => button.innerText === '배경음 등록')?.disabled ?? null,
+        audioOptions: Array.from(document.querySelectorAll('.sound-panel label'))
+          .find(label => label.innerText.includes('오디오 파일'))?.querySelector('select')?.options.length ?? 0,
+        tracks, mediaCount: media.length,
+        trackStatus: trackResponse.status, mediaStatus: mediaResponse.status,
+        trackRequests: window.__w05TrackRequests ?? [], trackButton: window.__w05TrackButton ?? null,
+        trackLabel: Array.from(document.querySelectorAll('.sound-panel label'))
+          .find(label => label.innerText.includes('표시 이름'))?.querySelector('input')?.value ?? null,
+        selectedAudioAsset: Array.from(document.querySelectorAll('.sound-panel label'))
+          .find(label => label.innerText.includes('오디오 파일'))?.querySelector('select')?.value ?? null,
+      }
+    })()`)
+  let trackSetup
+  try {
+    await waitForRenderer(`document.querySelector('.track-order input')`, 30000)
+  } catch (error) {
+    trackSetup = await readTrackSetup()
+    evidence.soundTrackSetup = trackSetup
+    writeEvidence()
+    throw new Error(`packaged BGM registration did not become selectable: ${error.message}; ${JSON.stringify(trackSetup)}`)
+  }
   await window.webContents.executeJavaScript(`(() => {
     document.querySelector('.track-order input').click()
-    Array.from(document.querySelectorAll('.sound-panel button')).find(button => button.innerText === '사운드 선택 저장').click()
+  })()`)
+  await waitForRenderer(`(() => {
+    const saveButton = Array.from(document.querySelectorAll('.sound-panel button')).find(button => button.innerText === '사운드 선택 저장')
+    return Boolean(document.querySelector('.track-order input') && saveButton && !saveButton.disabled)
+  })()`, 30000)
+  await window.webContents.executeJavaScript(`(() => {
+    const saveButton = Array.from(document.querySelectorAll('.sound-panel button')).find(button => button.innerText === '사운드 선택 저장')
+    if (!saveButton || saveButton.disabled) throw new Error('sound selection save remained disabled after track refresh')
+    saveButton.click()
   })()`)
   await waitForRenderer(`window.__w06MockAudios?.length === 1 && window.__w06MockAudios[0].__w06PlayCount === 1`, 30000)
   await window.webContents.executeJavaScript(`window.__w06MockAudios[0].dispatchEvent(new Event('ended'))`)

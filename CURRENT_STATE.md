@@ -1,5 +1,47 @@
 # 현재 상태
 
+## W08-S — 오디오팩·캐릭터 음성 연결
+
+PR #83의 최초 구현 검증 source는 `a6912e6ac14f061d1eb6c74b099a40ddec81accd`이며 이후 기록 head는
+`4b8a101`이다. 최종 head/Windows 증거는 PR 최신 본문을 따른다. 기준 main은 PR #82 병합
+`5d00c9e`다. SFX/BGM 단일 팩 선택과 slot fallback, CPU별 default/selected/off 음성 연결, 선언·화료·최종
+4위 단계 패배 voice routing, 최소 UI 및 legacy 자료 보존을 구현했다. Q-AUDIO A, 오마케 기본 선언·화료·최종
+4위 대사 재생, stage/Tier 및 추가 진행/CG 불변 규칙을 REQUIREMENTS/ARCHITECTURE/TASKS에 반영했다.
+
+Backend unittest 127개와 frontend production build가 통과했다. exact head에서 Windows W04 #93
+(`38963035573`)과 W05 #134 (`38963035473`)가 모두 성공했다. W04 artifact `12072984879`의 SHA-256은
+`c07868360375701d095f3453f35fa30a33fd3c4215b3ee56a7edcbf8d7728d88`다. W05 artifact `12073183759`의
+SHA-256은 `67630c176bcf49999facb6e3b7e6f6c5692f8469ad7bb59d119225d878740555`이며, artifact metadata의
+`head_sha`와 내부 `source-sha.txt`가 모두 `a6912e6ac14f061d1eb6c74b099a40ddec81accd`다.
+
+W05 packaged renderer/match/restart smoke, general-mode close/quit/timeout cleanup, ZIP packaging 및 hash 단계가
+모두 통과했다. 내부 `No-Riichi-No-Fuku-W05-Windows.zip` SHA-256 기록과 직접 계산값은
+`0518ab259f339492610f0e40297f33e383807264d8ff16ab3dcb6557a6d839ac`로 일치한다. local browser 회귀는
+Playwright Chromium 다운로드가 0-byte ZIP으로 실패해 실행하지 못했으며, Windows W05 browser/content 회귀는
+통과했다. PR은 열려 있고 직접 병합하지 않았다.
+
+### W08-S 최종 검토 보완
+
+`4b8a101` 검토에서 배포 namespace가 다른 voice 기본/선택을 거절하는 문제를 재현했다.
+manifest의 복합 identity를 그대로 resolve하고 모든 voice namespace를 명시 선택 가능하게 수정했다.
+CPU와 이미지팩 연결 여부로 음성팩 배포 namespace를 제한하지 않는다. 기존 actor 좌석 매핑은 유지한다.
+
+또 음성 off 저장 후에도 이전 media 응답이 Audio를 생성하는 문제를 전용 browser에서 재현했다.
+음향팩/음성 설정 저장·캐릭터팩 적용 성공 시 재생 token과 voice queue를 갱신해 이전 요청/대기를
+무효화하고 재생 중인 효과음/voice를 정지한다. 실패/조회에서는 중단하지 않는다. 새 전용 browser는
+held media·queued voice 무효화, 재연결 후 새 voice 재생, 활성 voice 정지를 검사하며 W05 CI에 포함했다.
+음향/음성 commit 실패 시 기존 선택/revision 보존과 재기동도 별도 backend 회귀로 확인한다.
+
+추가 리뷰에서 title BGM slot에 도달할 수 없는 화면 판별도 재현했다. desktop 초기 로딩부터
+사운드 설정을 읽고 title→selection→game/result를 기존 화면 상태로 resolve한다. 새 시작 화면은
+추가하지 않았다. bootstrap 응답을 보류하는 browser 검사는 title 재생과 선택 진입 시 정지를 확인한다.
+
+최초 Linux unittest 127개(86.444s), 수정 후 unittest 129개와 대사 pytest 10개, frontend build,
+content/sound/audio-pack browser 및 quit 3개를 검증했다. Chromium 최신 번들 다운로드는 실패했으나
+CI와 같은 Playwright 1.55.0의 headless shell 1187을 설치해 브라우저 검사를 실행했다. 최종 수정 SHA의
+Windows W04/W05 및 다운로드 artifact 대조는 PR #83 최신 검토 기록을 따른다.
+개인 Windows PC·실제 오디오 decode/청취·전원 차단·ComfyUI는 미검증이다.
+
 ## W08-C — 기존 캐릭터팩 연결·동일 팩 갱신
 
 준비/시작 main `e2e38d1dc89503623463b8ad2fcd62369ceda751`을 확인했고 PR #79~#81은 병합됐다.

@@ -23,6 +23,7 @@ node tests/connection.browser.mjs
 node tests/result-asset.browser.mjs
 node tests/local-sound.browser.mjs
 node tests/local-content.browser.mjs
+node tests/audio-packs.browser.mjs
 ```
 
 For a different Vite address, set `TEST_BASE_URL`.
@@ -63,6 +64,12 @@ It also covers explicit CPU/pack selection, dirty draft blocking, apply failure/
 responses across character switches, applied vs registered revisions, empty override preservation and
 source P/N inspection. It uses test-only strings and references without generating media. W05 runs it
 with the existing Playwright/Vite setup.
+
+`audio-packs.browser.mjs` holds bootstrap to check title BGM and its transition to selection,
+then holds media responses while saving voice-off or SFX pack settings.
+It checks that successful settings changes discard old downloads and queued voices, stop active
+voices, and allow future voice playback after re-enabling. It uses routed APIs and mock Audio;
+W05 runs this regression alongside the sound/content checks without creating audio files.
 
 ## Real-server browser integration
 

@@ -143,5 +143,6 @@ export type GameServerMessage =
       session_id?: string
     }
   | { type: 'dialogue_event'; cpu_character_id: number; seat: number; event_key: string; text: string }
-  | { type: 'sound_effect'; generation: string; session_id: string; action_version: number; event_index: number; event_key: 'chi' | 'pon' | 'kan' | 'riichi' | 'ron' | 'tsumo'; asset_id: string; url: string }
+  | { type: 'sound_effect'; generation: string; session_id: string; action_version: number; event_index: number; event_key: string; asset_id: string; url: string }
+  | { type: 'voice_effect'; generation: string; session_id: string; action_version: number; event_index: number; actor_seat: number | null; event_key: string; source_kind?: 'action' | 'result'; asset_id: string; url: string }
   | { type: 'error'; code: string; message: string }

@@ -37,8 +37,10 @@ def sound_selection_response(session: Session, media_root: Path) -> dict[str, ob
     value = get_setting(session, SOUND_SELECTION_KEY, DEFAULT_SOUND_SELECTION)
     effect_sets = {row.id: row for row in session.scalars(select(SoundEffectSet)).all()}
     tracks = {row.id: row for row in session.scalars(select(BackgroundTrack)).all()}
+    from app.services.audio_packs import audio_pack_selection_response
     return {
         **value,
+        "audio_packs": audio_pack_selection_response(session, media_root),
         "effect_sets": [effect_set_payload(row) for row in sorted(effect_sets.values(), key=lambda item: item.label.casefold())],
         "tracks": [track_payload(session, row, media_root) for row in sorted(tracks.values(), key=lambda item: item.label.casefold())],
         "effect_set_available": _active(effect_sets.get(value.get("effect_set_id"))),
@@ -112,6 +114,9 @@ def resolve_ending(session: Session, payload: dict[str, object], media_root: Pat
 
 
 def selected_effect_clip(session: Session, event_key: str, media_root: Path) -> dict[str, object] | None:
+    from app.services.audio_packs import _audio_selection
+    if _audio_selection(session).get("sfx_mode") == "pack":
+        return None
     selection = get_setting(session, SOUND_SELECTION_KEY, DEFAULT_SOUND_SELECTION)
     set_id = selection.get("effect_set_id")
     effect_set = session.get(SoundEffectSet, set_id) if isinstance(set_id, str) else None

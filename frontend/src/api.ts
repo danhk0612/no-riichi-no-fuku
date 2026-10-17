@@ -27,6 +27,19 @@ export type BackgroundTrack = { id: string; label: string; active: boolean; medi
 export type SoundSelection = {
   effect_set_id: string | null; bgm_ids: string[]; effect_sets: SoundEffectSet[]; tracks: BackgroundTrack[];
   effect_set_available: boolean; bgm_available: boolean[]
+  audio_packs: AudioPackSelection
+}
+export type AudioPackSelection = {
+  schema_version: 1; revision: number; sfx_mode: 'legacy' | 'pack'; sfx_pack_id: string | null
+  bgm_mode: 'legacy' | 'pack'; bgm_pack_id: string | null
+  defaults: { sfx: string | null; bgm: string | null }
+  packs: { id: string; kind: 'sfx' | 'bgm'; pack_id: string; revision: string }[]
+  bgm_slots: Record<'title' | 'selection' | 'game' | 'result', { asset_id: string; url: string; pack_id: string; slot: string } | null>
+}
+export type CharacterVoiceSelection = {
+  schema_version: 1; cpu_id: number; revision: number; default_pack_id: string | null
+  selected_pack_id: string | null; selection_mode: 'default' | 'selected' | 'off'
+  packs: { id: string; namespace: string; pack_id: string; revision: string }[]
 }
 export type EndingResources = { cg_asset_id: string | null; music_track_id: string | null; dialogue_text: string | null }
 export type ResolvedEnding = {
@@ -171,6 +184,22 @@ export function saveBackgroundTrack(accessToken: string, values: { label: string
 export function getSoundSelection(accessToken: string): Promise<SoundSelection> { return apiRequest('/api/local/sound-selection', {}, accessToken) }
 export function putSoundSelection(accessToken: string, effectSetId: string | null, bgmIds: string[]): Promise<SoundSelection> {
   return apiRequest('/api/local/sound-selection', { method: 'PUT', body: JSON.stringify({ effect_set_id: effectSetId, bgm_ids: bgmIds }) }, accessToken)
+}
+export function putAudioPackSelection(accessToken: string, selection: AudioPackSelection): Promise<SoundSelection> {
+  return apiRequest('/api/local/audio-pack-selection', { method: 'PUT', body: JSON.stringify({
+    expected_revision: selection.revision,
+    sfx_mode: selection.sfx_mode, sfx_pack_id: selection.sfx_pack_id,
+    bgm_mode: selection.bgm_mode, bgm_pack_id: selection.bgm_pack_id,
+  }) }, accessToken).then(() => getSoundSelection(accessToken))
+}
+export function getCharacterVoiceSelection(accessToken: string, cpuId: number): Promise<CharacterVoiceSelection> {
+  return apiRequest(`/api/local/characters/${cpuId}/voice-selection`, {}, accessToken)
+}
+export function putCharacterVoiceSelection(accessToken: string, value: CharacterVoiceSelection): Promise<CharacterVoiceSelection> {
+  return apiRequest(`/api/local/characters/${value.cpu_id}/voice-selection`, { method: 'PUT', body: JSON.stringify({
+    expected_revision: value.revision, selection_mode: value.selection_mode,
+    selected_pack_id: value.selected_pack_id,
+  }) }, accessToken)
 }
 export function getEndingResources(accessToken: string): Promise<EndingResources> { return apiRequest('/api/local/ending-resources', {}, accessToken) }
 export function getCharacterContent(accessToken: string, cpuId: number): Promise<CharacterContent> {

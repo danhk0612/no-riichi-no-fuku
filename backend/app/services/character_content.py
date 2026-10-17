@@ -241,6 +241,8 @@ def apply_character_pack(
             for field in ("positive", "negative"):
                 setattr(item, field, pair[field] if pair["overrides"][field] else revision.manifest["levels"][str(level)]["framing"][kind][field])
             item.revision = pair["revision"] + 1
+    from app.services.audio_packs import sync_default_voice_pack
+    sync_default_voice_pack(session, cpu_id)
     session.flush()
     session.commit()
     return get_character_content(session, cpu_id)

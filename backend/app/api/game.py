@@ -54,6 +54,7 @@ from app.services.game_setup import (
 )
 from app.services.local_play import LocalPlayConflict
 from app.services.local_sound import selected_effect_clip
+from app.services.audio_packs import resolve_audio_pack_slot, resolve_voice_slot
 from app.services.result_assets import (
     get_unlocked_result_asset,
     get_unlocked_result_asset_by_id,
@@ -205,6 +206,7 @@ async def send_registered_game_state(
     """Build a snapshot under the registry lock, then perform network IO unlocked."""
     dialogue_messages: list[dict[str, object]] = []
     sound_messages: list[dict[str, object]] = []
+    result_voice_message: dict[str, object] | None = None
     with registered.lock:
         game = registered.game
         if game is not None:
@@ -218,22 +220,40 @@ async def send_registered_game_state(
                             continue
                         if not isinstance(event, dict):
                             continue
-                        event_key = _map_event_type_to_key(event.get("type"), event)
-                        if event_key not in {"chi", "pon", "kan", "riichi", "ron", "tsumo"}:
-                            continue
-                        clip = selected_effect_clip(session, event_key, local_runtime.paths.media)
-                        if clip is None:
-                            continue
-                        sound_messages.append({
-                            "type": "sound_effect",
-                            "generation": registered.play_generation,
-                            "session_id": registered.session_id,
-                            "action_version": registered.action_version,
-                            "event_index": event_index,
-                            "event_key": event_key,
-                            **clip,
-                        })
-            if pending.events and registered.rules_mode != "omake":
+                        event_type = event.get("type")
+                        actor = event.get("actor")
+                        event_key = _map_event_type_to_key(event_type, event)
+                        if isinstance(actor, int) and actor in game.cpu_character_by_seat and event_key in {"chi", "pon", "kan", "riichi", "ron", "tsumo"}:
+                            cpu_id = game.cpu_character_by_seat[actor]
+                            clip = resolve_voice_slot(session, cpu_id, event_key, local_runtime.paths.media)
+                            if clip:
+                                sound_messages.append({"type": "voice_effect", "generation": registered.play_generation,
+                                    "session_id": registered.session_id, "action_version": registered.action_version,
+                                    "event_index": event_index, "actor_seat": actor, "event_key": event_key, **clip})
+                            if event_key in {"ron", "tsumo"}:
+                                win_clip = resolve_voice_slot(session, cpu_id, "win", local_runtime.paths.media)
+                                if win_clip:
+                                    sound_messages.append({"type": "voice_effect", "generation": registered.play_generation,
+                                        "session_id": registered.session_id, "action_version": registered.action_version,
+                                        "event_index": event_index, "actor_seat": actor, "event_key": "win", **win_clip})
+                            dialogue_messages.append({"type": "dialogue_event", "cpu_character_id": cpu_id,
+                                "seat": actor, "event_key": event_key, "text": {
+                                    "chi": "치", "pon": "퐁", "kan": "깡", "riichi": "리치", "ron": "론", "tsumo": "쯔모",
+                                }[event_key], "generation": registered.play_generation, "session_id": registered.session_id})
+                        sfx_slot = {"dahai": "tile_discard", "reach_accepted": "riichi_stick", "start_kyoku": "tile_shuffle"}.get(event_type)
+                        if sfx_slot:
+                            clip = resolve_audio_pack_slot(session, kind="sfx", slot=sfx_slot, media_root=local_runtime.paths.media)
+                            if clip:
+                                sound_messages.append({"type": "sound_effect", "generation": registered.play_generation,
+                                    "session_id": registered.session_id, "action_version": registered.action_version,
+                                    "event_index": event_index, "event_key": sfx_slot, **clip})
+                        if event_key in {"chi", "pon", "kan", "riichi", "ron", "tsumo"}:
+                            legacy_clip = selected_effect_clip(session, event_key, local_runtime.paths.media)
+                            if legacy_clip:
+                                sound_messages.append({"type": "sound_effect", "generation": registered.play_generation,
+                                    "session_id": registered.session_id, "action_version": registered.action_version,
+                                    "event_index": event_index, "event_key": event_key, **legacy_clip})
+            if pending.events and local_runtime is None and registered.rules_mode != "omake":
                 with session_factory() as session:
                     events = extract_game_events(
                         events=pending.events,
@@ -273,6 +293,23 @@ async def send_registered_game_state(
                 registry.settle(session, registered)
                 session.commit()
                 registry.publish_completed(session, registered)
+                if local_runtime is not None and registered.play_generation is not None:
+                    presentation = registered.presentation or {}
+                    settlement = presentation.get("settlement", {})
+                    cpu_id = settlement.get("cpu_character_id")
+                    stage = settlement.get("defeat_stage")
+                    if registered.rules_mode == "omake":
+                        last_seat = settlement.get("last_place_seat")
+                        if isinstance(last_seat, int) and last_seat != 0:
+                            cpu_id = registered.game.cpu_character_by_seat.get(last_seat) if registered.game else None
+                            stage = 3
+                    if isinstance(cpu_id, int) and isinstance(stage, int):
+                        voice = resolve_voice_slot(session, cpu_id, f"defeat_stage_{stage}", local_runtime.paths.media)
+                        if voice:
+                            result_voice_message = {"type": "voice_effect", "generation": registered.play_generation,
+                                "session_id": registered.session_id, "action_version": registered.action_version,
+                                "event_index": 0, "actor_seat": presentation.get("settlement", {}).get("last_place_seat"),
+                                "event_key": f"defeat_stage_{stage}", "source_kind": "result", **voice}
             except Exception:
                 session.rollback()
                 registry.evict(registered.session_id)
@@ -336,6 +373,8 @@ async def send_registered_game_state(
     else:
         message = message
     await websocket.send_json(message)
+    if result_voice_message is not None:
+        await websocket.send_json(result_voice_message)
     return True
 
 

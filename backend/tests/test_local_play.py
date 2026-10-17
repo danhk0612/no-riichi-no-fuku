@@ -215,7 +215,7 @@ class LocalPlayTests(unittest.TestCase):
             play = client.get("/api/local/play", headers=headers).json()
             with runtime.session_factory.begin() as session:
                 session.get(UserCpuProgress, (runtime.member_id, 1)).defeat_stage = 3
-                session.add(CpuDialogue(cpu_character_id=1, event_key="match_last", text="완료 CPU 패배 대사"))
+                session.add(CpuDialogue(cpu_character_id=1, event_key="defeat_stage_3", text="완료 CPU 패배 대사"))
             confirmed = client.post("/api/local/play/roster", headers=headers, json={
                 "generation": play["generation"], "cpu_character_ids": [1, 2, 3],
             })
@@ -242,7 +242,46 @@ class LocalPlayTests(unittest.TestCase):
                 dialogues = registered.presentation["result_dialogues"]
                 self.assertEqual(len(dialogues), 1)
                 self.assertEqual(dialogues[0]["cpu_character_id"], 1)
-                self.assertEqual(dialogues[0]["event_key"], "match_last")
+                self.assertEqual(dialogues[0]["event_key"], "defeat_stage_3")
+        finally:
+            client.close()
+            runtime.close()
+            temporary.cleanup()
+
+    def test_omake_keeps_final_stage_defeat_dialogue_without_progress_or_cg(self):
+        temporary, runtime, client, headers = self._runtime("nrnf-omake-stage-dialogue-")
+        try:
+            play = client.get("/api/local/play", headers=headers).json()
+            with runtime.session_factory.begin() as session:
+                state = session.get(LocalPlayState, runtime.member_id)
+                state.phase = "omake"
+                session.add(CpuDialogue(cpu_character_id=3, event_key="defeat_stage_3", text="오마케 최종 단계 패배 대사"))
+            record = GameSessionRecord(
+                id="omake-stage-dialogue-session", user_id=runtime.member_id, match_seed=1,
+                cpu_choices=[
+                    {"id": 1, "defeat_stage": 3, "effective_tier": 2},
+                    {"id": 2, "defeat_stage": 3, "effective_tier": 2},
+                    {"id": 3, "defeat_stage": 3, "effective_tier": 2},
+                ], players=[], human_action_indices=[], status="active",
+                play_generation=play["generation"], rules_snapshot={"version": 2, "mode": "omake"},
+            )
+            registered = RegisteredGame(
+                session_id=record.id, user_id=runtime.member_id, players=(), action_version=0,
+                game=_FinishedGame((1, 2, 3, 4)), play_generation=play["generation"], rules_mode="omake",
+            )
+            with runtime.session_factory.begin() as session:
+                session.add(record)
+                session.flush()
+                settlement = GameRegistry()._settle_local(session, registered, record)
+                self.assertEqual(settlement.last_place_seat, 3)
+                self.assertFalse(settlement.cpu_completed)
+                self.assertEqual(registered.presentation["result_asset"], None)
+                self.assertFalse(registered.presentation["settlement"]["stage_changed"])
+                self.assertFalse(registered.presentation["settlement"]["cpu_completed"])
+                self.assertEqual(registered.presentation["result_dialogues"], [{
+                    "cpu_character_id": 3, "event_key": "defeat_stage_3", "text": "오마케 최종 단계 패배 대사",
+                }])
+                self.assertEqual(registered.presentation["settlement"]["defeat_stage"], None)
         finally:
             client.close()
             runtime.close()
