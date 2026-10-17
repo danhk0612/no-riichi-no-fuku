@@ -85,6 +85,7 @@ function App() {
 
   function stopGameAudio() {
     gameAudioTokenRef.current += 1
+    voiceQueueRef.current = Promise.resolve()
     for (const { audio, url } of activeSoundEffectsRef.current.values()) {
       audio.pause()
       audio.src = ''
@@ -632,8 +633,8 @@ function App() {
         {isDesktop && accessToken && <button className="text-button" type="button" onClick={() => setSoundSettingsOpen((open) => !open)}>사운드·자료 설정</button>}
         {isDesktop && accessToken && <button className="text-button" type="button" onClick={() => setContentSettingsOpen((open) => !open)}>캐릭터 프롬프트·팩 설정</button>}
       </header>
-      {isDesktop && accessToken && soundSettingsOpen && <LocalSoundPanel accessToken={accessToken} onClose={() => setSoundSettingsOpen(false)} onSelectionChanged={setSoundSelection} />}
-      {isDesktop && accessToken && contentSettingsOpen && <LocalContentPanel accessToken={accessToken} onClose={() => setContentSettingsOpen(false)} />}
+      {isDesktop && accessToken && soundSettingsOpen && <LocalSoundPanel accessToken={accessToken} onClose={() => setSoundSettingsOpen(false)} onSelectionChanged={setSoundSelection} onPlaybackChanged={stopGameAudio} />}
+      {isDesktop && accessToken && contentSettingsOpen && <LocalContentPanel accessToken={accessToken} onClose={() => setContentSettingsOpen(false)} onPackApplied={stopGameAudio} />}
       {isDesktop && soundError && <p className="form-error" role="status">{soundError}</p>}
       {!isDesktop && !accessToken && (
         <AuthPanel

@@ -1,11 +1,14 @@
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 from threading import Barrier
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from app.local_runtime import create_local_runtime
 from app.services.audio_packs import resolve_audio_pack_slot, resolve_voice_slot
@@ -114,9 +117,9 @@ class AudioPackTests(unittest.TestCase):
         self.assertEqual(applied.status_code, 200, applied.text)
         initial = self.client.get("/api/local/characters/1/voice-selection", headers=self.headers).json()
         self.assertEqual(initial["default_pack_id"], voice_a["id"])
-        self.assertEqual({pack["id"] for pack in initial["packs"]}, {voice_a["id"], voice_b["id"]})
+        self.assertEqual({pack["id"] for pack in initial["packs"]}, {voice_a["id"], voice_b["id"], wrong_actor["id"]})
         wrong = self.client.put("/api/local/characters/1/voice-selection", headers=self.headers, json={
-            "expected_revision": initial["revision"], "selection_mode": "selected", "selected_pack_id": wrong_actor["id"],
+            "expected_revision": initial["revision"], "selection_mode": "selected", "selected_pack_id": image_pack["id"],
         })
         self.assertEqual(wrong.status_code, 422)
         with self.runtime.session_factory() as session:
@@ -188,3 +191,51 @@ class AudioPackTests(unittest.TestCase):
         with ThreadPoolExecutor(2) as pool:
             voice_statuses = list(pool.map(save_voice, ("selected", "off")))
         self.assertEqual(sorted(voice_statuses), [200, 409])
+
+    def test_voice_namespace_is_distribution_identity_not_cpu_restriction(self):
+        for namespace in ('actor-one', 'voice-library'):
+            self.install(audio('voice', 'shared', {'chi': 'chi.mp3'}, namespace),
+                         {'chi.mp3': b'ID3' + namespace.encode()})
+        self.install(character({'character_id': 'voice-library', 'id': 'shared'}))
+        packs = self.scan()
+        image = self.by_id(packs, 'actor-one')
+        voices = {p['namespace']: p for p in packs if p['kind'] == 'voice'}
+        applied = self.client.post('/api/local/characters/1/pack-application', headers=self.headers, json={
+            'expected_revision': 0, 'pack_id': image['id'],
+            'registered_revision_id': image['registered_revision']['id'],
+        })
+        self.assertEqual(applied.status_code, 200, applied.text)
+        state = self.client.get('/api/local/characters/1/voice-selection', headers=self.headers).json()
+        self.assertEqual(state['default_pack_id'], voices['voice-library']['id'])
+        self.assertEqual({p['id'] for p in state['packs']}, {p['id'] for p in voices.values()})
+        with self.runtime.session_factory() as session:
+            self.assertEqual(resolve_voice_slot(session, 1, 'chi', self.runtime.paths.media)['pack_id'],
+                             voices['voice-library']['id'])
+        # A CPU without an image-pack link may explicitly choose any registered voice namespace.
+        selected = self.client.put('/api/local/characters/2/voice-selection', headers=self.headers, json={
+            'expected_revision': 0, 'selection_mode': 'selected',
+            'selected_pack_id': voices['voice-library']['id'],
+        })
+        self.assertEqual(selected.status_code, 200, selected.text)
+        with self.runtime.session_factory() as session:
+            self.assertEqual(resolve_voice_slot(session, 2, 'chi', self.runtime.paths.media)['pack_id'],
+                             voices['voice-library']['id'])
+
+    def test_audio_and_voice_commit_failure_preserve_saved_selection(self):
+        cases = [
+            ('/api/local/audio-pack-selection', {'expected_revision': 0, 'sfx_mode': 'pack',
+              'sfx_pack_id': None, 'bgm_mode': 'pack', 'bgm_pack_id': None}),
+            ('/api/local/characters/1/voice-selection', {'expected_revision': 0,
+              'selection_mode': 'off', 'selected_pack_id': None}),
+        ]
+        for path, body in cases:
+            with self.subTest(path=path):
+                before = self.client.get(path, headers=self.headers).json()
+                with TestClient(self.runtime.app, raise_server_exceptions=False) as failing:
+                    with patch.object(Session, 'commit', side_effect=SQLAlchemyError('injected')):
+                        response = failing.put(path, headers=self.headers, json=body)
+                self.assertEqual(response.status_code, 500)
+                self.assertEqual(self.client.get(path, headers=self.headers).json(), before)
+        self.restart()
+        self.assertEqual(self.client.get(cases[0][0], headers=self.headers).json()['revision'], 0)
+        self.assertEqual(self.client.get(cases[1][0], headers=self.headers).json()['revision'], 0)

@@ -14,7 +14,7 @@ const KINDS = [['profile', '프로필'], ['full_body', '전신'], ['cg', 'CG']] 
 const LEVELS = ['정상', '상의 겉옷 탈의', '속옷 세트', '전체 탈의']
 type Tab = 'prompts' | 'packs'
 
-export function LocalContentPanel({ accessToken, onClose }: { accessToken: string; onClose: () => void }) {
+export function LocalContentPanel({ accessToken, onClose, onPackApplied }: { accessToken: string; onClose: () => void; onPackApplied: () => void }) {
   const [tab, setTab] = useState<Tab>('prompts')
   const [cpus, setCpus] = useState<{ id: number; slug: string; name: string }[]>([])
   const [cpuId, setCpuId] = useState<number | null>(null)
@@ -140,6 +140,7 @@ export function LocalContentPanel({ accessToken, onClose }: { accessToken: strin
       const next = await applyCharacterPack(accessToken, selectedId, {
         expected_revision: content.revision, pack_id: targetPack.id, registered_revision_id: targetRevision.id,
       })
+      onPackApplied()
       if (request === requestId.current) { setContent(next); setSelectedPack('') }
     } catch (caught) { if (request === requestId.current) setError(message(caught)) }
     finally { mutationInFlight.current = false; setSaving(false) }

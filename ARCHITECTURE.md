@@ -788,6 +788,9 @@ SFX는 사용자가 언급한 패 타격/섞기/리치봉 범위로 한정한다
 `match_complete`를 보낸 뒤 변경 후 stage의 `defeat_stage_N` 음성을 재생한다. 오마케 패배는 stage 3
 슬롯이며 stage/Tier 진행과 CG는 만들지 않는다. 실행 중 재생 실패는 대국 진행을 막지 않는다.
 팩 전환 시 audio generation을 증가시켜 기존 pending play callback을 격리하고 현 BGM을 재평가한다.
+음향팩/음성 연결 저장 또는 캐릭터팩 적용 성공 시 renderer는 game audio token을 증가시켜 이전
+파일 요청·대기 voice를 무효화하고 재생 중인 효과음/음성을 멈춘다. 새 voice queue는 이전 요청을
+기다리지 않는다. 설정 조회·실패한 저장은 재생 세대를 변경하지 않는다.
 기본 선언 voice와 같은 파일을 공통 SFX로 중복 재생하지 않는다. W06 6개 구 슬롯 이전은 Q-AUDIO 대상이다.
 
 Q-AUDIO A 전환 계약: W06 `local_sound_selection`과 UUID 음원·legacy 플레이어는 삭제/변환하지 않는다.

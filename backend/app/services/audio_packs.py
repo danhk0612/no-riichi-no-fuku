@@ -85,25 +85,13 @@ def _voice_default_pack(session: Session, cpu_id: int) -> str | None:
     if revision is None:
         return None
     reference = revision.manifest.get("default_voice_pack")
-    character_id = revision.manifest.get("character_id")
-    if not isinstance(reference, dict) or reference.get("character_id") != character_id:
+    if not isinstance(reference, dict):
         return None
     return session.scalar(select(ContentPack.id).where(
         ContentPack.kind == "voice",
         ContentPack.namespace == reference.get("character_id"),
         ContentPack.pack_id == reference.get("id"),
     ))
-
-
-def _cpu_voice_namespace(session: Session, cpu_id: int) -> str | None:
-    content = session.get(CharacterContent, cpu_id)
-    if content is not None and content.pack_revision_id:
-        revision = session.get(ContentPackRevision, content.pack_revision_id)
-        character_id = revision.manifest.get("character_id") if revision is not None else None
-        if isinstance(character_id, str):
-            return character_id
-    cpu = session.get(CpuCharacter, cpu_id)
-    return cpu.slug if cpu is not None else None
 
 
 def sync_default_voice_pack(session: Session, cpu_id: int) -> None:
@@ -161,11 +149,10 @@ def character_voice_selection(session: Session, cpu_id: int) -> dict:
         raise HTTPException(404, detail={"code": "not_found", "message": "캐릭터를 찾을 수 없습니다."})
     row = session.get(CharacterVoiceLink, cpu_id)
     default_id = row.default_pack_id if row is not None and row.default_pack_id else _voice_default_pack(session, cpu_id)
-    namespace = _cpu_voice_namespace(session, cpu_id)
     packs = [{"id": pack.id, "namespace": pack.namespace, "pack_id": pack.pack_id,
               "revision": pack.registered_revision_id}
              for pack in session.scalars(select(ContentPack).where(
-                 ContentPack.kind == "voice", ContentPack.namespace == namespace,
+                 ContentPack.kind == "voice",
                  ContentPack.registered_revision_id.is_not(None)
              ).order_by(ContentPack.namespace, ContentPack.pack_id))]
     return {"schema_version": 1, "cpu_id": cpu_id, "revision": row.revision if row else 0,
@@ -182,8 +169,8 @@ def update_character_voice_selection(session: Session, cpu_id: int, change: Char
         raise HTTPException(409, detail={"code": "revision_conflict", "message": "음성팩 연결이 변경됐습니다. 다시 불러와 주세요."})
     if change.selection_mode == "selected":
         selected = _pack(session, change.selected_pack_id, "voice")
-        if selected is None or selected.namespace != _cpu_voice_namespace(session, cpu_id):
-            raise HTTPException(422, detail={"code": "invalid_pack", "message": "해당 캐릭터의 음성팩을 찾을 수 없습니다."})
+        if selected is None:
+            raise HTTPException(422, detail={"code": "invalid_pack", "message": "선택한 음성팩을 찾을 수 없습니다."})
     if row is None:
         row = CharacterVoiceLink(cpu_id=cpu_id, default_pack_id=_voice_default_pack(session, cpu_id),
                                  selected_pack_id=None, selection_mode="default", revision=0)
@@ -210,6 +197,6 @@ def resolve_voice_slot(session: Session, cpu_id: int, slot: str, media_root: Pat
         return None
     if mode == "selected":
         selected = _pack(session, selected_id, "voice")
-        if selected is not None and selected.namespace == _cpu_voice_namespace(session, cpu_id):
+        if selected is not None:
             return _clip_from_pack(session, selected, slot, media_root)
     return _clip_from_pack(session, _pack(session, default_id, "voice"), slot, media_root)
