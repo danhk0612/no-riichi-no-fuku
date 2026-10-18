@@ -1,0 +1,322 @@
+[
+  {
+    "label": "000",
+    "vs_neutral": [
+      {
+        "personality": 1,
+        "all_action_differences": 52,
+        "both_discard": 135,
+        "physical_discard_differences": 50,
+        "tile_kind_differences": 45
+      },
+      {
+        "personality": 2,
+        "all_action_differences": 33,
+        "both_discard": 135,
+        "physical_discard_differences": 30,
+        "tile_kind_differences": 27
+      },
+      {
+        "personality": 3,
+        "all_action_differences": 53,
+        "both_discard": 135,
+        "physical_discard_differences": 51,
+        "tile_kind_differences": 47
+      },
+      {
+        "personality": 4,
+        "all_action_differences": 33,
+        "both_discard": 135,
+        "physical_discard_differences": 30,
+        "tile_kind_differences": 27
+      },
+      {
+        "personality": 5,
+        "all_action_differences": 50,
+        "both_discard": 135,
+        "physical_discard_differences": 48,
+        "tile_kind_differences": 44
+      }
+    ]
+  },
+  {
+    "label": "001",
+    "vs_neutral": [
+      {
+        "personality": 1,
+        "all_action_differences": 3,
+        "both_discard": 135,
+        "physical_discard_differences": 1,
+        "tile_kind_differences": 1
+      },
+      {
+        "personality": 2,
+        "all_action_differences": 3,
+        "both_discard": 135,
+        "physical_discard_differences": 0,
+        "tile_kind_differences": 0
+      },
+      {
+        "personality": 3,
+        "all_action_differences": 3,
+        "both_discard": 135,
+        "physical_discard_differences": 1,
+        "tile_kind_differences": 1
+      },
+      {
+        "personality": 4,
+        "all_action_differences": 3,
+        "both_discard": 135,
+        "physical_discard_differences": 0,
+        "tile_kind_differences": 0
+      },
+      {
+        "personality": 5,
+        "all_action_differences": 3,
+        "both_discard": 135,
+        "physical_discard_differences": 1,
+        "tile_kind_differences": 1
+      }
+    ]
+  },
+  {
+    "label": "010",
+    "vs_neutral": [
+      {
+        "personality": 1,
+        "all_action_differences": 51,
+        "both_discard": 135,
+        "physical_discard_differences": 49,
+        "tile_kind_differences": 44
+      },
+      {
+        "personality": 2,
+        "all_action_differences": 32,
+        "both_discard": 135,
+        "physical_discard_differences": 29,
+        "tile_kind_differences": 26
+      },
+      {
+        "personality": 3,
+        "all_action_differences": 52,
+        "both_discard": 135,
+        "physical_discard_differences": 50,
+        "tile_kind_differences": 46
+      },
+      {
+        "personality": 4,
+        "all_action_differences": 32,
+        "both_discard": 135,
+        "physical_discard_differences": 29,
+        "tile_kind_differences": 26
+      },
+      {
+        "personality": 5,
+        "all_action_differences": 49,
+        "both_discard": 135,
+        "physical_discard_differences": 47,
+        "tile_kind_differences": 43
+      }
+    ]
+  },
+  {
+    "label": "011",
+    "vs_neutral": [
+      {
+        "personality": 1,
+        "all_action_differences": 3,
+        "both_discard": 135,
+        "physical_discard_differences": 1,
+        "tile_kind_differences": 1
+      },
+      {
+        "personality": 2,
+        "all_action_differences": 3,
+        "both_discard": 135,
+        "physical_discard_differences": 0,
+        "tile_kind_differences": 0
+      },
+      {
+        "personality": 3,
+        "all_action_differences": 3,
+        "both_discard": 135,
+        "physical_discard_differences": 1,
+        "tile_kind_differences": 1
+      },
+      {
+        "personality": 4,
+        "all_action_differences": 3,
+        "both_discard": 135,
+        "physical_discard_differences": 0,
+        "tile_kind_differences": 0
+      },
+      {
+        "personality": 5,
+        "all_action_differences": 3,
+        "both_discard": 135,
+        "physical_discard_differences": 1,
+        "tile_kind_differences": 1
+      }
+    ]
+  },
+  {
+    "label": "100",
+    "vs_neutral": [
+      {
+        "personality": 1,
+        "all_action_differences": 54,
+        "both_discard": 135,
+        "physical_discard_differences": 52,
+        "tile_kind_differences": 47
+      },
+      {
+        "personality": 2,
+        "all_action_differences": 35,
+        "both_discard": 135,
+        "physical_discard_differences": 32,
+        "tile_kind_differences": 29
+      },
+      {
+        "personality": 3,
+        "all_action_differences": 56,
+        "both_discard": 135,
+        "physical_discard_differences": 54,
+        "tile_kind_differences": 49
+      },
+      {
+        "personality": 4,
+        "all_action_differences": 35,
+        "both_discard": 135,
+        "physical_discard_differences": 32,
+        "tile_kind_differences": 29
+      },
+      {
+        "personality": 5,
+        "all_action_differences": 54,
+        "both_discard": 135,
+        "physical_discard_differences": 52,
+        "tile_kind_differences": 47
+      }
+    ]
+  },
+  {
+    "label": "101",
+    "vs_neutral": [
+      {
+        "personality": 1,
+        "all_action_differences": 2,
+        "both_discard": 135,
+        "physical_discard_differences": 0,
+        "tile_kind_differences": 0
+      },
+      {
+        "personality": 2,
+        "all_action_differences": 3,
+        "both_discard": 135,
+        "physical_discard_differences": 0,
+        "tile_kind_differences": 0
+      },
+      {
+        "personality": 3,
+        "all_action_differences": 2,
+        "both_discard": 135,
+        "physical_discard_differences": 0,
+        "tile_kind_differences": 0
+      },
+      {
+        "personality": 4,
+        "all_action_differences": 3,
+        "both_discard": 135,
+        "physical_discard_differences": 0,
+        "tile_kind_differences": 0
+      },
+      {
+        "personality": 5,
+        "all_action_differences": 2,
+        "both_discard": 135,
+        "physical_discard_differences": 0,
+        "tile_kind_differences": 0
+      }
+    ]
+  },
+  {
+    "label": "110",
+    "vs_neutral": [
+      {
+        "personality": 1,
+        "all_action_differences": 53,
+        "both_discard": 135,
+        "physical_discard_differences": 51,
+        "tile_kind_differences": 46
+      },
+      {
+        "personality": 2,
+        "all_action_differences": 35,
+        "both_discard": 135,
+        "physical_discard_differences": 32,
+        "tile_kind_differences": 29
+      },
+      {
+        "personality": 3,
+        "all_action_differences": 55,
+        "both_discard": 135,
+        "physical_discard_differences": 53,
+        "tile_kind_differences": 48
+      },
+      {
+        "personality": 4,
+        "all_action_differences": 35,
+        "both_discard": 135,
+        "physical_discard_differences": 32,
+        "tile_kind_differences": 29
+      },
+      {
+        "personality": 5,
+        "all_action_differences": 53,
+        "both_discard": 135,
+        "physical_discard_differences": 51,
+        "tile_kind_differences": 46
+      }
+    ]
+  },
+  {
+    "label": "111",
+    "vs_neutral": [
+      {
+        "personality": 1,
+        "all_action_differences": 2,
+        "both_discard": 135,
+        "physical_discard_differences": 0,
+        "tile_kind_differences": 0
+      },
+      {
+        "personality": 2,
+        "all_action_differences": 3,
+        "both_discard": 135,
+        "physical_discard_differences": 0,
+        "tile_kind_differences": 0
+      },
+      {
+        "personality": 3,
+        "all_action_differences": 2,
+        "both_discard": 135,
+        "physical_discard_differences": 0,
+        "tile_kind_differences": 0
+      },
+      {
+        "personality": 4,
+        "all_action_differences": 3,
+        "both_discard": 135,
+        "physical_discard_differences": 0,
+        "tile_kind_differences": 0
+      },
+      {
+        "personality": 5,
+        "all_action_differences": 2,
+        "both_discard": 135,
+        "physical_discard_differences": 0,
+        "tile_kind_differences": 0
+      }
+    ]
+  }
+]

@@ -1,0 +1,173 @@
+{
+  "replay": [
+    {
+      "label": "000",
+      "continuation_turns": 70,
+      "trace": "2e107cdf60932a428709609d7a5a1de39be35d85e64cc4c84c060673c55115ac",
+      "result": {
+        "scores": [
+          17600,
+          25900,
+          -24000,
+          80500
+        ],
+        "ranks": [
+          3,
+          2,
+          4,
+          1
+        ]
+      },
+      "saved_profile_wins": true,
+      "fresh_setting": "111"
+    },
+    {
+      "label": "001",
+      "continuation_turns": 35,
+      "trace": "2a893580939b62b6c76febad6803e99689ff68fadd9e9ceb761d0ac66e847d64",
+      "result": {
+        "scores": [
+          25000,
+          26900,
+          14600,
+          33500
+        ],
+        "ranks": [
+          3,
+          2,
+          4,
+          1
+        ]
+      },
+      "saved_profile_wins": true,
+      "fresh_setting": "110"
+    },
+    {
+      "label": "010",
+      "continuation_turns": 70,
+      "trace": "f7c5c766272a1f3dfa98f6e0bb7b1b965db2f23052bcf8e122c28485c0fff271",
+      "result": {
+        "scores": [
+          17600,
+          25900,
+          -24000,
+          80500
+        ],
+        "ranks": [
+          3,
+          2,
+          4,
+          1
+        ]
+      },
+      "saved_profile_wins": true,
+      "fresh_setting": "101"
+    },
+    {
+      "label": "011",
+      "continuation_turns": 35,
+      "trace": "2a893580939b62b6c76febad6803e99689ff68fadd9e9ceb761d0ac66e847d64",
+      "result": {
+        "scores": [
+          25000,
+          26900,
+          14600,
+          33500
+        ],
+        "ranks": [
+          3,
+          2,
+          4,
+          1
+        ]
+      },
+      "saved_profile_wins": true,
+      "fresh_setting": "100"
+    },
+    {
+      "label": "100",
+      "continuation_turns": 51,
+      "trace": "4de85f5054fab652040d0a5f7a6f1afea01a427dd21f37b9cd1441f9af2af1e4",
+      "result": {
+        "scores": [
+          21000,
+          25000,
+          22700,
+          31300
+        ],
+        "ranks": [
+          4,
+          2,
+          3,
+          1
+        ]
+      },
+      "saved_profile_wins": true,
+      "fresh_setting": "011"
+    },
+    {
+      "label": "101",
+      "continuation_turns": 42,
+      "trace": "db0cd54088261d1eab5a403187788560e9d82841d166a020f36592d4b7b03f28",
+      "result": {
+        "scores": [
+          21000,
+          23000,
+          21400,
+          34600
+        ],
+        "ranks": [
+          4,
+          2,
+          3,
+          1
+        ]
+      },
+      "saved_profile_wins": true,
+      "fresh_setting": "010"
+    },
+    {
+      "label": "110",
+      "continuation_turns": 51,
+      "trace": "4de85f5054fab652040d0a5f7a6f1afea01a427dd21f37b9cd1441f9af2af1e4",
+      "result": {
+        "scores": [
+          21000,
+          25000,
+          22700,
+          31300
+        ],
+        "ranks": [
+          4,
+          2,
+          3,
+          1
+        ]
+      },
+      "saved_profile_wins": true,
+      "fresh_setting": "001"
+    },
+    {
+      "label": "111",
+      "continuation_turns": 42,
+      "trace": "db0cd54088261d1eab5a403187788560e9d82841d166a020f36592d4b7b03f28",
+      "result": {
+        "scores": [
+          21000,
+          23000,
+          21400,
+          34600
+        ],
+        "ranks": [
+          4,
+          2,
+          3,
+          1
+        ]
+      },
+      "saved_profile_wins": true,
+      "fresh_setting": "000"
+    }
+  ],
+  "invalid_profiles_rejected": true
+}
