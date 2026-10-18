@@ -4,12 +4,24 @@
 W00은 초기 분석·기준 문서 준비(완료); 본 파일은 후속 개발 명세다.
 Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결정 후 갱신한다.
 
-## W08-M 구현 — PR #93 공개, Windows 최종 검증 완료
+## 현재 다음 단계 — 공유 콘텐츠 관리의 남은 정책·계약 확정
+
+W08-M PR #93은 main `f5623af`에 병합됐다. 최신 검토 source/검증은 CURRENT_STATE를 따른다.
+D05-b A(단계 변경 패배 CG), D06-c 이동/소속 변경의 영향 확인 후 기본 재연결,
+D10-a A(이름 변수만)는 REQUIREMENTS/ARCHITECTURE의 2026-10-18 결정대로 확정됐다.
+
+다음 W08 공유 관리 계약에서는 복장 상태·상황·포즈·대사 원본과 캐릭터별 명시 후보,
+Level/소속 변경·삭제 영향과 기본값 복귀, revision/commit·과거 snapshot 보존을 구체화한다.
+D05-c 상황/event 매핑의 편집 방향은 설명 확인 중이며 Q-LEGACY 기존 문구 이전도 미확정이다.
+미응답 권고 전체를 승인 처리하거나 공유 관리·변수·생성 제품 구현을 시작하지 않는다.
+생성 관련 D07/D08/D09/Q-IMAGE/Q-FRAME은 후속 W10/W11 계약에서 따로 확정한다.
+
+## W08-M 제출 이력 — PR #93 병합 완료
 
 W-DIFF-B는 PR #91로 병합됐다. W08-M은 준비 main `8e44eb1`에서 구현했으며,
 CharacterContent nullable 치수 JSON·기존 revision/override·팩 명시 적용·선택 카드·기존 편집 UI를
 계약에 맞춰 확장했다. Linux backend 143개, 대사 pytest 10개, frontend build 및 브라우저 4종을 통과했고
-PR #93을 제출했다. 최종 source `efbe2ce0247b45b8f521820ff36be6dfcdf40ecc`의 Windows Server 2022 x64 W04/W05가
+PR #93을 제출했고 현재 병합 완료다. 아래는 당시 checkpoint이며 최신 검토는 CURRENT_STATE를 따른다. 당시 source `efbe2ce0247b45b8f521820ff36be6dfcdf40ecc`의 Windows Server 2022 x64 W04/W05가
 통과했다. W05 artifact source SHA·ZIP SHA256 및 packaged 치수 저장/초기화/재시작 smoke 근거는 CURRENT_STATE에 기록했다.
 개인 Windows PC 실기는 미검증이다. 세부 범위와 보존 조건은 `docs/W08_M_METADATA_CONTRACT.md`를 따른다.
 공유 관리/변수/생성 정책과 W08-M을 분리한다.
@@ -62,7 +74,7 @@ commit/push·PR 제출까지 진행하되 직접 병합·Release/tag·후속 Tas
 | W08-B | 기존 캐릭터 기본/구도 P/N 편집·로컬 편집 기록·팩 목록 UI | P1 / 완료(PR #81 병합) | W08-A 병합, Q-PACK A | 저성능 Work |
 | W08-C | 기존 CPU의 명시 캐릭터팩 연결·같은 팩 갱신 | P1 / 완료(PR #82 병합) | W08-A/B 병합, Q-PACK A | 저성능 Work |
 | W08 | 캐릭터·공유 후보·단계별 이미지 편집/적용 | P1 / 정책 의존 부분 대기 | W08-A, W07 관련 결정 | 저성능 Work |
-| W08-M | 캐릭터 선택 신체 치수·편집·팩 원본/override | P1 / 구현·Linux 회귀·Windows hosted CI/artifact 완료(PR #93 공개, 미병합) | Q-META A, Q-PACK A, PR #91·#92 | 저성능 Work |
+| W08-M | 캐릭터 선택 신체 치수·편집·팩 원본/override | P1 / 완료(PR #93 병합, 최종 검증은 CURRENT_STATE) | Q-META A, Q-PACK A, PR #91·#92 | 저성능 Work |
 | W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / 완료(PR #83 병합, 최종 검증은 PR 참조) | W07 팩/event 계약, W08-A/B/C 병합, Q-PACK/Q-AUDIO/D-WIN/Q-OMAKE-VOICE | 저성능 Work |
 | W-DIFF-A | 난이도 1~10 설계·격리 기술 검증·구현 인계 | P1 / 공개1수 선읽기 격리검증 완료·강도 개선/10구간 미입증 | PR #83/#84 병합, 2026-10-18 사용자 승인 | 고성능 Work |
 | W-DIFF-B | 단계+게임 설정의 최종 난이도·저장·설정 UI 적용 | P1 / 정책·독립 재검증·구현·Linux 회귀 완료, 최종 Windows 근거는 제품 PR 참조 | W-DIFF-A 검토 | 저성능 Work(판단 구현 복잡 시 고성능 Work) |

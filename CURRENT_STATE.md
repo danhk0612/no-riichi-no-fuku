@@ -1,5 +1,18 @@
 # 현재 상태
 
+W08-M PR #93은 main `f5623af`에 병합됐다. 검토 source `f87b7ca`와 병합 tree가 같다.
+독립 재검증 backend143개(66.948초)·대사pytest10개·build·브라우저4종이 통과했다.
+W04 run39123739759/artifact12135755032, W05 run39123739719/artifact12135258593의 source를 확인했다.
+W04 outer SHA256 `f2db7d68b9084ab8d352ec191a3c2d8d5fe7b32cce8364dc8eca57fb77712c39`,
+W05 outer `98be0a8e6517598cdf8add57b5d1e77e12024e48514cdb65acea730077a4902e`,
+inner ZIP `1abd6ba30bd1faa0793a4c25f33d2f60d02eea038bd5ffe66e46c733927c61d5`를 대조했다.
+Windows renderer27검사·일반 종료/재시작 lifecycle 각각2검사도 확인했다. 개인 PC 실기는 미검증이다.
+
+후속 정책으로 단계 변경 패배에서만 이벤트 CG 표시, 공유 항목 이동/소속 변경의 영향 확인 후
+기본 재연결, 이름 변수 `{{character_name}}`를 확정했다(REQUIREMENTS 최신 절).
+이번 변경은 문서만이며 공유 관리/변수/생성 구현은 미착수다. D05-c 설명 확인·Q-LEGACY 및
+생성 관련 미응답은 남아 있다. 아래 W08-M 제출/검증 checkpoint는 병합 전 기록이다.
+
 W08-M은 준비 main `8e44eb1`(PR #92 병합)에서 독립 브랜치로 구현했다. nullable `CharacterContent.measurements_cm`,
 소수 한 자리 cm API/편집, 명시적 팩 적용 시 원본 metadata와 필드별 override 보존, 로스터 후보 카드 표시를 추가했다.
 기존 manifest/digest·대국 snapshot·초기화 보존 경계를 유지한다. Linux backend 143개, 대사 pytest 10개,
