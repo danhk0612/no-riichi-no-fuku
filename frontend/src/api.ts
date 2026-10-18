@@ -66,6 +66,17 @@ export type CharacterContent = {
   levels: Record<string, Record<'profile' | 'full_body' | 'cg', PromptPair & { revision: number; media: { media_id: string; url: string; digest: string } | null }>>
 }
 export type LocalCharacterChoice = { id: number; slug: string; name: string }
+export type SharedPromptKind = 'clothing_state' | 'pose'
+export type SharedPromptItem = { id: string; kind: SharedPromptKind; level: number; label: string; positive: string; negative: string; revision: number; active: boolean }
+export type SharedPromptCandidates = { cpu_id: number; level: number; kind: SharedPromptKind; revision: number; stored_item_ids: string[]; effective_items: SharedPromptItem[]; uses_default: boolean; default_revision: number; unregistered: boolean }
+export type SharedPromptDefault = { level: number; kind: SharedPromptKind; revision: number; item_id: string | null; valid: boolean; item: SharedPromptItem | null }
+export type SharedPromptImpact = {
+  item: { id: string; kind: SharedPromptKind; level: number; label: string; revision: number }
+  action: 'move' | 'delete'; target_level: number | null; preview_digest: string
+  candidate_changes: { cpu_id: number; cpu_name: string; cpu_slug: string; candidate_set_id: string; candidate_revision: number; stored_item_ids: string[]; after_item_ids: string[]; after_effective_item_ids: string[]; fallback_item_id: string | null; unregistered_after: boolean }[]
+  affected_cpus: { cpu_id: number; cpu_name: string; cpu_slug: string; reason: string; fallback_item_id: string | null; unregistered_after: boolean }[]
+  source_default: { item_id: string | null; revision: number; after_item_id: string | null; after_item_revision: number | null; will_clear: boolean }
+}
 export type ContentPack = {
   id: string
   identity: [string, string, string]
@@ -209,6 +220,34 @@ export function getCharacterContent(accessToken: string, cpuId: number): Promise
 }
 export function listLocalCharacters(accessToken: string): Promise<LocalCharacterChoice[]> {
   return apiRequest('/api/admin/cpus', {}, accessToken)
+}
+export function listSharedPrompts(accessToken: string, kind: SharedPromptKind, level: number): Promise<{ items: SharedPromptItem[] }> {
+  const query = new URLSearchParams({ kind, level: String(level) })
+  return apiRequest(`/api/local/shared-prompts?${query}`, {}, accessToken)
+}
+export function createSharedPrompt(accessToken: string, value: Omit<SharedPromptItem, 'id' | 'revision' | 'active'>): Promise<SharedPromptItem> {
+  return apiRequest('/api/local/shared-prompts', { method: 'POST', body: JSON.stringify(value) }, accessToken)
+}
+export function patchSharedPrompt(accessToken: string, id: string, expectedRevision: number, value: Partial<Pick<SharedPromptItem, 'label' | 'positive' | 'negative'>>): Promise<SharedPromptItem> {
+  return apiRequest(`/api/local/shared-prompts/${id}`, { method: 'PATCH', body: JSON.stringify({ expected_revision: expectedRevision, ...value }) }, accessToken)
+}
+export function getSharedPromptDefault(accessToken: string, level: number, kind: SharedPromptKind): Promise<SharedPromptDefault> {
+  return apiRequest(`/api/local/shared-prompt-defaults/${level}/${kind}`, {}, accessToken)
+}
+export function putSharedPromptDefault(accessToken: string, level: number, kind: SharedPromptKind, expectedRevision: number, itemId: string | null): Promise<SharedPromptDefault> {
+  return apiRequest(`/api/local/shared-prompt-defaults/${level}/${kind}`, { method: 'PUT', body: JSON.stringify({ expected_revision: expectedRevision, item_id: itemId }) }, accessToken)
+}
+export function getPromptCandidates(accessToken: string, cpuId: number, level: number, kind: SharedPromptKind): Promise<SharedPromptCandidates> {
+  return apiRequest(`/api/local/characters/${cpuId}/prompt-candidates/${level}/${kind}`, {}, accessToken)
+}
+export function putPromptCandidates(accessToken: string, cpuId: number, level: number, kind: SharedPromptKind, expectedRevision: number, itemIds: string[]): Promise<SharedPromptCandidates> {
+  return apiRequest(`/api/local/characters/${cpuId}/prompt-candidates/${level}/${kind}`, { method: 'PUT', body: JSON.stringify({ expected_revision: expectedRevision, item_ids: itemIds }) }, accessToken)
+}
+export function previewSharedPromptChange(accessToken: string, id: string, value: { expected_revision: number; action: 'move' | 'delete'; target_level?: number }): Promise<SharedPromptImpact> {
+  return apiRequest(`/api/local/shared-prompts/${id}/change-preview`, { method: 'POST', body: JSON.stringify(value) }, accessToken)
+}
+export function confirmSharedPromptChange(accessToken: string, id: string, value: { expected_revision: number; action: 'move' | 'delete'; target_level?: number; preview_digest: string }): Promise<unknown> {
+  return apiRequest(`/api/local/shared-prompts/${id}/change-confirmation`, { method: 'POST', body: JSON.stringify(value) }, accessToken)
 }
 export function patchCharacterContent(accessToken: string, cpuId: number, changes: {
   expected_revision: number

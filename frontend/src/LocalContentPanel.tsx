@@ -4,6 +4,7 @@ import {
   rescanContentPacks, applyCharacterPack,
 } from './api'
 import type { CharacterContent, ContentPack } from './api'
+import { SharedPromptManager } from './SharedPromptManager'
 
 const GROUPS = [
   ['appearance', '외모'],
@@ -13,7 +14,7 @@ const GROUPS = [
 const KINDS = [['profile', '프로필'], ['full_body', '전신'], ['cg', 'CG']] as const
 const LEVELS = ['정상', '상의 겉옷 탈의', '속옷 세트', '전체 탈의']
 const MEASUREMENTS = [['height', '키'], ['bust', '가슴(B)'], ['waist', '허리(W)'], ['hips', '엉덩이(H)']] as const
-type Tab = 'prompts' | 'packs'
+type Tab = 'prompts' | 'packs' | 'shared'
 
 export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasurementsUpdated }: {
   accessToken: string
@@ -22,6 +23,7 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
   onMeasurementsUpdated: (content: CharacterContent) => void
 }) {
   const [tab, setTab] = useState<Tab>('prompts')
+  const [sharedMounted, setSharedMounted] = useState(false)
   const [cpus, setCpus] = useState<{ id: number; slug: string; name: string }[]>([])
   const [cpuId, setCpuId] = useState<number | null>(null)
   const [content, setContent] = useState<CharacterContent | null>(null)
@@ -167,6 +169,7 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
     <div className="content-tabs" role="tablist" aria-label="콘텐츠 관리">
       <button role="tab" aria-selected={tab === 'prompts'} onClick={() => setTab('prompts')} type="button">캐릭터 편집</button>
       <button role="tab" aria-selected={tab === 'packs'} onClick={() => setTab('packs')} type="button">팩 목록·진단</button>
+      <button role="tab" aria-selected={tab === 'shared'} onClick={() => { setSharedMounted(true); setTab('shared') }} type="button">공유 복장·포즈</button>
     </div>
     {error && <p className="form-error" role="alert">{error}</p>}
     {tab === 'prompts' && <section className="sound-card content-editor">
@@ -229,6 +232,7 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
       </li>)}</ul> : <p className="muted">등록된 팩이 없습니다.</p>}
       {!!scanEntries.length && <><h3>최근 검색 진단</h3><ul className="sound-list pack-list">{scanEntries.map((entry, index) => <li key={`${entry.source}-${index}`}><span>{entry.source}<small>{entry.status}{entry.issues.length ? ` · ${entry.issues.join(', ')}` : ''}</small></span></li>)}</ul></>}
     </section>}
+    {sharedMounted && <div hidden={tab !== 'shared'}><SharedPromptManager accessToken={accessToken} cpus={cpus} /></div>}
   </section>
 }
 

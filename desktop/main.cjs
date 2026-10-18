@@ -443,6 +443,59 @@ async function smokeCharacterMeasurements() {
   return { cpuId, value: '170.1' }
 }
 
+// W08-D packaged smoke: exercise the visible shared-item/default/candidate editor.
+async function smokeSharedPrompts() {
+  const headers = { 'X-Local-Capability': capability }
+  const cpus = await fetch(`${origin}/api/admin/cpus`, { headers }).then(response => response.json())
+  const cpuId = cpus[0]?.id
+  if (!cpuId) throw new Error('packaged shared-prompt smoke found no character')
+  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('캐릭터 프롬프트'))?.click()")
+  await waitForRenderer("Boolean(document.querySelector('.content-panel select[aria-label=\"캐릭터\"]'))")
+  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.content-panel [role=tab]')).find(button => button.innerText.includes('공유 복장'))?.click()")
+  await waitForRenderer("Boolean(document.querySelector('.shared-prompt-manager input[aria-label=\"공유 항목 표시 이름\"]'))")
+  const label = 'W08-D packaged smoke'
+  const positive = 'temporary shared prompt for packaged persistence smoke'
+  await window.webContents.executeJavaScript(`(() => {
+    const set = (selector, value) => {
+      const input = document.querySelector(selector)
+      const proto = input instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
+      Object.getOwnPropertyDescriptor(proto, 'value').set.call(input, value)
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+    }
+    set('.shared-prompt-manager input[aria-label="공유 항목 표시 이름"]', '${label}')
+    set('.shared-prompt-manager textarea[aria-label="공유 항목 Positive"]', '${positive}')
+    set('.shared-prompt-manager textarea[aria-label="공유 항목 Negative"]', '')
+    Array.from(document.querySelectorAll('.shared-prompt-manager button')).find(button => button.innerText.includes('공유 항목 추가'))?.click()
+  })()`)
+  await waitForRenderer(`Array.from(document.querySelectorAll('.shared-prompt-list button')).some(button => button.innerText === '${label}')`, 30000)
+  const item = (await fetch(`${origin}/api/local/shared-prompts?kind=clothing_state&level=0`, { headers }).then(response => response.json())).items.find(row => row.label === label)
+  if (!item || item.positive !== positive || item.negative !== '') throw new Error('packaged renderer did not save shared prompt source text')
+  await window.webContents.executeJavaScript(`(() => {
+    const select = document.querySelector('.shared-prompt-manager select[aria-label="지정 기본 항목"]')
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(select, '${item.id}')
+    select.dispatchEvent(new Event('change', { bubbles: true }))
+    Array.from(document.querySelectorAll('.shared-prompt-configuration button')).find(button => button.innerText.includes('기본값 저장'))?.click()
+  })()`)
+  await waitFor(async () => {
+    const value = await fetch(`${origin}/api/local/shared-prompt-defaults/0/clothing_state`, { headers }).then(response => response.json())
+    return value.item_id === item.id ? value : false
+  }, 30000)
+  await window.webContents.executeJavaScript(`(() => {
+    const checkbox = Array.from(document.querySelectorAll('.shared-candidate-list label')).find(label => label.innerText.includes('${label}'))?.querySelector('input')
+    if (!checkbox) throw new Error('packaged shared candidate checkbox is missing')
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'checked').set.call(checkbox, true)
+    checkbox.dispatchEvent(new Event('change', { bubbles: true }))
+    Array.from(document.querySelectorAll('.shared-prompt-configuration button')).find(button => button.innerText.includes('캐릭터 후보 저장'))?.click()
+  })()`)
+  await waitFor(async () => {
+    const value = await fetch(`${origin}/api/local/characters/${cpuId}/prompt-candidates/0/clothing_state`, { headers }).then(response => response.json())
+    return value.stored_item_ids.includes(item.id) && !value.uses_default ? value : false
+  }, 30000)
+  await window.webContents.executeJavaScript("document.querySelector('.content-panel .sound-panel-heading .text-button')?.click()")
+  addCheck('packaged renderer saved shared prompt, default, and character candidate')
+  return { cpuId, itemId: item.id, label }
+}
+
 async function smokeRun() {
   evidence.phase = 'renderer smoke'
   writeEvidence()
@@ -471,6 +524,7 @@ async function smokeRun() {
   addCheck('renderer saved next-match difficulty from its settings panel')
   const measurementSmoke = await smokeCharacterMeasurements()
   addCheck('packaged renderer saved optional character measurement')
+  const sharedPromptSmoke = await smokeSharedPrompts()
 
   await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('사운드'))?.click()")
   await waitForRenderer("Boolean(document.querySelector('.sound-panel'))")
@@ -639,6 +693,15 @@ async function smokeRun() {
     }).then(response => response.json())
     if (afterResetMeasurements.measurements_cm?.height !== measurementSmoke.value) throw new Error('progress reset changed saved character measurements')
     addCheck('character measurement survived progress reset')
+    const afterResetShared = await Promise.all([
+      fetch(`${origin}/api/local/shared-prompts?kind=clothing_state&level=0`, { headers: { 'X-Local-Capability': capability } }).then(response => response.json()),
+      fetch(`${origin}/api/local/shared-prompt-defaults/0/clothing_state`, { headers: { 'X-Local-Capability': capability } }).then(response => response.json()),
+      fetch(`${origin}/api/local/characters/${sharedPromptSmoke.cpuId}/prompt-candidates/0/clothing_state`, { headers: { 'X-Local-Capability': capability } }).then(response => response.json()),
+    ])
+    if (!afterResetShared[0].items.some(item => item.id === sharedPromptSmoke.itemId && item.label === sharedPromptSmoke.label)
+      || afterResetShared[1].item_id !== sharedPromptSmoke.itemId
+      || !afterResetShared[2].stored_item_ids.includes(sharedPromptSmoke.itemId)) throw new Error('progress reset changed shared prompt resources')
+    addCheck('shared prompt, default, and character candidate survived progress reset')
 
     await window.webContents.executeJavaScript(`(() => {
       Array.from(document.querySelectorAll('button.cpu-card:not([disabled])')).slice(0, 3).forEach(button => button.click())
@@ -899,6 +962,20 @@ async function smokeRun() {
     }).then(response => response.json())
     if (afterRestartMeasurements.measurements_cm?.height !== measurementSmoke.value) throw new Error('engine restart changed saved character measurements')
     addCheck('character measurement survived packaged engine restart')
+    const afterRestartShared = await Promise.all([
+      fetch(`${origin}/api/local/shared-prompts?kind=clothing_state&level=0`, { headers: { 'X-Local-Capability': capability } }).then(response => response.json()),
+      fetch(`${origin}/api/local/shared-prompt-defaults/0/clothing_state`, { headers: { 'X-Local-Capability': capability } }).then(response => response.json()),
+      fetch(`${origin}/api/local/characters/${sharedPromptSmoke.cpuId}/prompt-candidates/0/clothing_state`, { headers: { 'X-Local-Capability': capability } }).then(response => response.json()),
+    ])
+    if (!afterRestartShared[0].items.some(item => item.id === sharedPromptSmoke.itemId && item.label === sharedPromptSmoke.label)
+      || afterRestartShared[1].item_id !== sharedPromptSmoke.itemId
+      || !afterRestartShared[2].stored_item_ids.includes(sharedPromptSmoke.itemId)) throw new Error('engine restart changed shared prompt resources')
+    await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('캐릭터 프롬프트'))?.click()")
+    await waitForRenderer("Boolean(document.querySelector('.content-panel [role=tab]'))")
+    await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.content-panel [role=tab]')).find(button => button.innerText.includes('공유 복장'))?.click()")
+    await waitForRenderer(`Array.from(document.querySelectorAll('.shared-prompt-list button')).some(button => button.innerText === '${sharedPromptSmoke.label}')`, 30000)
+    await window.webContents.executeJavaScript("document.querySelector('.content-panel .sound-panel-heading .text-button')?.click()")
+    addCheck('shared prompt, default, and character candidate survived packaged engine restart')
     let turns = 0
     while (!(await window.webContents.executeJavaScript("Boolean(document.querySelector('.match-result'))")) && turns < 600) {
       await clickHumanAction()
