@@ -490,7 +490,9 @@ async function smokeSharedPrompts() {
     if (!checkbox) throw new Error('packaged shared candidate checkbox is missing')
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'checked').set.call(checkbox, true)
     checkbox.dispatchEvent(new Event('change', { bubbles: true }))
-    Array.from(document.querySelectorAll('.shared-prompt-configuration button')).find(button => button.innerText.includes('캐릭터 후보 저장'))?.click()
+    const save = Array.from(document.querySelectorAll('.shared-prompt-configuration button')).find(button => button.innerText.includes('캐릭터 후보 저장'))
+    if (!save || save.disabled) throw new Error('packaged shared candidate save button is unavailable')
+    save.click()
   })()`)
   await waitFor(async () => {
     const value = await fetch(`${origin}/api/local/characters/${cpuId}/prompt-candidates/0/clothing_state`, { headers }).then(response => response.json())
