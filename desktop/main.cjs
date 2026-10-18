@@ -413,6 +413,7 @@ async function smokePreflight() {
   await new Promise(resolveClose => occupied.close(resolveClose))
 }
 
+// W08-M packaged smoke: save a measurement before reset/restart durability checks.
 async function smokeCharacterMeasurements() {
   const headers = { 'X-Local-Capability': capability }
   const cpus = await fetch(`${origin}/api/admin/cpus`, { headers }).then(response => response.json())

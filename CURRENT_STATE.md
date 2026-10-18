@@ -3,10 +3,15 @@
 W08-M은 준비 main `8e44eb1`(PR #92 병합)에서 독립 브랜치로 구현했다. nullable `CharacterContent.measurements_cm`,
 소수 한 자리 cm API/편집, 명시적 팩 적용 시 원본 metadata와 필드별 override 보존, 로스터 후보 카드 표시를 추가했다.
 기존 manifest/digest·대국 snapshot·초기화 보존 경계를 유지한다. Linux backend 143개, 대사 pytest 10개,
-frontend build 및 local-content/local-sound/audio-packs/difficulty browser 검사를 통과했다. PR #93은 열려 있고
-정확한 source `0395553`의 W04 Windows storage 회귀는 통과했다. W05 backend/browser/build/package는 통과했으나
-packaged editor smoke가 CPU 목록 로딩 중 선택 race로 멈춰 실패했다. smoke가 활성 선택지를 기다리고 React select
-setter를 사용하도록 수정했고, 수정된 head의 W04/W05 artifact 재검증이 진행 중이다. 직접 병합·Release/tag는 하지 않는다.
+frontend build 및 local-content/local-sound/audio-packs/difficulty browser 검사를 통과했다.
+
+PR #93 최종 검증 source `efbe2ce0247b45b8f521820ff36be6dfcdf40ecc`에서 Windows Server 2022 x64 W04/W05가 통과했다.
+W04 artifact `12133212090` / SHA256 `324ae3495cfe2ac98481919ae1d38648fb4235084e4eb66200662c97bc9ca773`.
+W05 artifact `12133482311` / outer ZIP SHA256 `98f5084a45d48f63ce2f25c1119b6801c9e8819dc05205beb2342d6cad075ee0`.
+다운로드 artifact의 `source-sha.txt`가 위 최종 source와 일치한다. 패키지 ZIP SHA256은
+`7A25A7BE7052FAF8D316D3BD0508D16FCF2BF6D118DE0E4F777C1AF461D03490`; packaged renderer smoke에서 치수 저장,
+진행 초기화 보존, engine 재시작 보존 세 검사가 통과했다. 개인 Windows PC 실기는 미검증이다.
+PR은 열려 있으며 직접 병합·Release/tag·후속 Task 착수는 하지 않았다.
 
 아래 절은 W08-M 이전의 시점별 이력으로 보존한다.
 
