@@ -45,10 +45,30 @@ export function SharedPromptManager({ accessToken, cpus }: { accessToken: string
         activeCpu === null ? Promise.resolve(null) : getPromptCandidates(accessToken, activeCpu, level, kind),
       ])
       if (current !== request.current) return
+      const validIds = new Set(listing.items.map((item) => item.id))
+      const defaultKey = `${level}:${kind}`
+      const hasDefaultDraft = Object.hasOwn(defaultDrafts, defaultKey)
+      const defaultDraft = hasDefaultDraft ? defaultDrafts[defaultKey] : fallback.item_id ?? ''
+      const validDefaultDraft = validIds.has(defaultDraft) ? defaultDraft : ''
+      const hasCandidateDraft = Object.hasOwn(candidateDrafts, scopeKey)
+      const candidateDraft = hasCandidateDraft ? candidateDrafts[scopeKey] : candidates?.stored_item_ids ?? []
+      const validCandidateDraft = candidateDraft.filter((id) => validIds.has(id))
       setItems(listing.items); setDefaultValue(fallback)
-      setDefaultChoice(Object.hasOwn(defaultDrafts, `${level}:${kind}`) ? defaultDrafts[`${level}:${kind}`] : fallback.item_id ?? '')
+      setDefaultChoice(validDefaultDraft)
+      if (hasDefaultDraft && validDefaultDraft !== defaultDraft) {
+        setDefaultDrafts((currentDrafts) => currentDrafts[defaultKey] === defaultDraft
+          ? { ...currentDrafts, [defaultKey]: validDefaultDraft }
+          : currentDrafts)
+      }
       setCandidate(candidates)
-      setCandidateIds(Object.hasOwn(candidateDrafts, scopeKey) ? candidateDrafts[scopeKey] : candidates?.stored_item_ids ?? [])
+      setCandidateIds(validCandidateDraft)
+      if (hasCandidateDraft && validCandidateDraft.length !== candidateDraft.length) {
+        setCandidateDrafts((currentDrafts) => {
+          const currentDraft = currentDrafts[scopeKey]
+          if (!currentDraft || currentDraft.every((id) => validIds.has(id))) return currentDrafts
+          return { ...currentDrafts, [scopeKey]: currentDraft.filter((id) => validIds.has(id)) }
+        })
+      }
       setSelectedId((previous) => listing.items.some((item) => item.id === previous) ? previous : listing.items[0]?.id ?? '')
     } catch (caught) { if (current === request.current) setError(message(caught)) }
     finally { if (current === request.current) setLoading(false) }
@@ -120,9 +140,25 @@ export function SharedPromptManager({ accessToken, cpus }: { accessToken: string
     if (busy || !selected || !impact) return
     setBusy(true); setError(null)
     try {
-      await confirmSharedPromptChange(accessToken, selected.id, {
-        expected_revision: selected.revision, action, ...(action === 'move' ? { target_level: targetLevel } : {}), preview_digest: impact.preview_digest,
+      const changedItem = selected
+      await confirmSharedPromptChange(accessToken, changedItem.id, {
+        expected_revision: changedItem.revision, action, ...(action === 'move' ? { target_level: targetLevel } : {}), preview_digest: impact.preview_digest,
       })
+      const sourceScope = `:${changedItem.level}:${changedItem.kind}`
+      const sourceDefaultKey = `${changedItem.level}:${changedItem.kind}`
+      setCandidateDrafts((currentDrafts) => {
+        let changed = false
+        const next = { ...currentDrafts }
+        for (const [key, ids] of Object.entries(currentDrafts)) {
+          if (!key.endsWith(sourceScope) || !ids.includes(changedItem.id)) continue
+          next[key] = ids.filter((id) => id !== changedItem.id)
+          changed = true
+        }
+        return changed ? next : currentDrafts
+      })
+      setDefaultDrafts((currentDrafts) => currentDrafts[sourceDefaultKey] === changedItem.id
+        ? { ...currentDrafts, [sourceDefaultKey]: '' }
+        : currentDrafts)
       setImpact(null); setSelectedId(''); await load()
     } catch (caught) { setImpact(null); setError(message(caught)) }
     finally { setBusy(false) }
