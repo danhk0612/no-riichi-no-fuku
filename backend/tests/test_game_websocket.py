@@ -277,8 +277,8 @@ class GameWebSocketApiTest(unittest.TestCase):
             self.assertEqual(error["code"], "stale_action")
             self.assertEqual(websocket.receive_json(), first_turn)
 
-    def test_legacy_tier2_snapshot_replays_every_original_turn(self) -> None:
-        fixture = json.loads((Path(__file__).parent / "fixtures/tier2_legacy_replay.json").read_text())
+    def test_tier2_snapshot_replays_every_suit_corrected_turn(self) -> None:
+        fixture = json.loads((Path(__file__).parent / "fixtures/tier2_suit_corrected_replay.json").read_text())
         created = self.create_game()
         with self.session_factory() as session:
             record = session.get(GameSessionRecord, created["session_id"])
@@ -288,14 +288,14 @@ class GameWebSocketApiTest(unittest.TestCase):
             user_id = record.user_id
         self.registry = GameRegistry()
         for index, action_index in enumerate(fixture["actions"]):
-            # Simulate a restart in the middle of a pre-versioned Tier2 game.
+            # The old snapshot format still loads, using the corrected evaluator.
             if index == 12:
                 self.registry = GameRegistry()
             with self.session_factory() as session:
                 registered = self.registry.get_owned(session, created["session_id"], user_id)
                 turn = registered.game.human_turn()
                 digest = hashlib.sha256(json.dumps(asdict(turn), sort_keys=True).encode()).hexdigest()
-                self.assertEqual(digest, fixture["turn_sha256"][index], f"legacy turn {index}")
+                self.assertEqual(digest, fixture["turn_sha256"][index], f"corrected turn {index}")
                 self.registry.submit_action(session, registered, action_index, index)
                 session.commit()
         with self.session_factory() as session:
