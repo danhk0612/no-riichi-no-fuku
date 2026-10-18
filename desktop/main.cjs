@@ -420,9 +420,11 @@ async function smokeCharacterMeasurements() {
   const cpuId = cpus[0].id
   await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('캐릭터 프롬프트'))?.click()")
   await waitForRenderer(`Boolean(document.querySelector('.content-panel select[aria-label="캐릭터"]'))`)
+  await waitForRenderer(`(() => { const select = document.querySelector('.content-panel select[aria-label="캐릭터"]'); return Boolean(select && !select.disabled && select.options.length > 1) })()`)
   await window.webContents.executeJavaScript(`(() => {
     const select = document.querySelector('.content-panel select[aria-label="캐릭터"]')
-    select.value = '${cpuId}'; select.dispatchEvent(new Event('change', { bubbles: true }))
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(select, '${cpuId}')
+    select.dispatchEvent(new Event('change', { bubbles: true }))
   })()`)
   await waitForRenderer(`Boolean(document.querySelector('.content-panel input[aria-label="키 (cm)"]'))`)
   await window.webContents.executeJavaScript(`(() => {

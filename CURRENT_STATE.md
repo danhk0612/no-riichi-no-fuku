@@ -4,8 +4,9 @@ W08-M은 준비 main `8e44eb1`(PR #92 병합)에서 독립 브랜치로 구현�
 소수 한 자리 cm API/편집, 명시적 팩 적용 시 원본 metadata와 필드별 override 보존, 로스터 후보 카드 표시를 추가했다.
 기존 manifest/digest·대국 snapshot·초기화 보존 경계를 유지한다. Linux backend 143개, 대사 pytest 10개,
 frontend build 및 local-content/local-sound/audio-packs/difficulty browser 검사를 통과했다. PR #93은 열려 있고
-정확한 source `bd9698d16ba3e11fce87d5e07ea946bf8161eb21`의 Windows W05 hosted job은 진행 중이다.
-완료 후 artifact SHA와 packaged smoke 증거를 기록한다. 직접 병합·Release/tag는 하지 않는다.
+정확한 source `0395553`의 W04 Windows storage 회귀는 통과했다. W05 backend/browser/build/package는 통과했으나
+packaged editor smoke가 CPU 목록 로딩 중 선택 race로 멈춰 실패했다. smoke가 활성 선택지를 기다리고 React select
+setter를 사용하도록 수정했고, 수정된 head의 W04/W05 artifact 재검증이 진행 중이다. 직접 병합·Release/tag는 하지 않는다.
 
 아래 절은 W08-M 이전의 시점별 이력으로 보존한다.
 
