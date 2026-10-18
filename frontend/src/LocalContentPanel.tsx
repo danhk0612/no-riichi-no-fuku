@@ -12,9 +12,15 @@ const GROUPS = [
 ] as const
 const KINDS = [['profile', '프로필'], ['full_body', '전신'], ['cg', 'CG']] as const
 const LEVELS = ['정상', '상의 겉옷 탈의', '속옷 세트', '전체 탈의']
+const MEASUREMENTS = [['height', '키'], ['bust', '가슴(B)'], ['waist', '허리(W)'], ['hips', '엉덩이(H)']] as const
 type Tab = 'prompts' | 'packs'
 
-export function LocalContentPanel({ accessToken, onClose, onPackApplied }: { accessToken: string; onClose: () => void; onPackApplied: () => void }) {
+export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasurementsUpdated }: {
+  accessToken: string
+  onClose: () => void
+  onPackApplied: () => void
+  onMeasurementsUpdated: (content: CharacterContent) => void
+}) {
   const [tab, setTab] = useState<Tab>('prompts')
   const [cpus, setCpus] = useState<{ id: number; slug: string; name: string }[]>([])
   const [cpuId, setCpuId] = useState<number | null>(null)
@@ -42,7 +48,7 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied }: { acc
     setCpuId(id); setSelectedPack(''); setContent(null); setDirty({}); setLoading(true); setError(null)
     try {
       const next = await getCharacterContent(accessToken, id)
-      if (request === requestId.current) setContent(next)
+      if (request === requestId.current) { onMeasurementsUpdated(next); setContent(next) }
     } catch (caught) {
       if (request === requestId.current) setError(message(caught))
     } finally {
@@ -94,12 +100,15 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied }: { acc
     if (mutationInFlight.current || !content || cpuId === null || !Object.keys(dirty).length) return
     const prompts: Record<string, { positive?: string; negative?: string }> = {}
     const framing: { level: number; kind: 'profile' | 'full_body' | 'cg'; positive?: string; negative?: string }[] = []
+    const measurements: Record<string, string | null> = {}
     const framingRows = new Map<string, typeof framing[number]>()
     for (const [key, value] of Object.entries(dirty)) {
       const parts = key.split('.')
       if (parts[0] === 'p') {
         const group = parts[1], field = parts[2] as 'positive' | 'negative'
         prompts[group] = { ...prompts[group], [field]: value }
+      } else if (parts[0] === 'm') {
+        measurements[parts[1]] = value === '' ? null : value
       } else {
         const level = Number(parts[1]), kind = parts[2] as 'profile' | 'full_body' | 'cg'
         const identity = `${level}.${kind}`
@@ -118,8 +127,12 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied }: { acc
         expected_revision: content.revision,
         ...(Object.keys(prompts).length ? { prompts } : {}),
         ...(framing.length ? { framing } : {}),
+        ...(Object.keys(measurements).length ? { measurements_cm: measurements } : {}),
       })
-      if (request === requestId.current && selectedId === cpuId) { setContent(saved); setDirty({}) }
+      onMeasurementsUpdated(saved)
+      if (request === requestId.current && selectedId === cpuId) {
+        setContent(saved); setDirty({})
+      }
     } catch (caught) {
       if (request === requestId.current && selectedId === cpuId) setError(message(caught))
     } finally { mutationInFlight.current = false; setSaving(false) }
@@ -140,8 +153,11 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied }: { acc
       const next = await applyCharacterPack(accessToken, selectedId, {
         expected_revision: content.revision, pack_id: targetPack.id, registered_revision_id: targetRevision.id,
       })
-      onPackApplied()
-      if (request === requestId.current) { setContent(next); setSelectedPack('') }
+      onMeasurementsUpdated(next)
+      if (request === requestId.current && selectedId === cpuId) {
+        setContent(next); setSelectedPack('')
+        onPackApplied()
+      }
     } catch (caught) { if (request === requestId.current) setError(message(caught)) }
     finally { mutationInFlight.current = false; setSaving(false) }
   }
@@ -174,7 +190,21 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied }: { acc
           {!!Object.keys(dirty).length && <p className="muted">편집 내용을 먼저 저장한 뒤 팩을 적용해 주세요.</p>}
           {targetPack && !!targetPack.issues.length && <p className="diagnostic">팩 진단: {targetPack.issues.join(', ')}</p>}
         </section>
-        <p className="muted">변경한 항목만 저장합니다. 비워 둔 문자열도 명시 편집값으로 기록됩니다.</p>
+        <h3>신체 정보</h3>
+        <p className="muted">단위 cm · 소수 첫째 자리까지 · 비워 두면 입력하지 않은 상태로 저장됩니다.</p>
+        <div className="measurement-fields">
+          {MEASUREMENTS.map(([key, label]) => {
+            const dirtyKey = `m.${key}`
+            const value = valueFor(dirtyKey, content.measurements_cm[key] ?? '')
+            const source = content.pack_source?.metadata?.measurements_cm
+            const sourceValue = source && typeof source === 'object' ? (source as Record<string, unknown>)[key] : undefined
+            return <label key={key}>{label} {content.measurement_overrides[key] || Object.hasOwn(dirty, dirtyKey) ? <small>편집 기록</small> : null}
+              <span><input aria-label={`${label} (cm)`} inputMode="decimal" value={value} disabled={saving} onChange={(event) => setDirty((current) => ({ ...current, [dirtyKey]: event.target.value }))} /><span>cm</span></span>
+              {sourceValue !== undefined && <small className="muted">팩 원본: {sourceValue === null ? '미입력' : String(sourceValue)}{sourceValue === null ? '' : ' cm'}</small>}
+            </label>
+          })}
+        </div>
+        <p className="muted">변경한 항목만 저장합니다. 비워 둔 프롬프트도 명시 편집값으로 기록됩니다.</p>
         <h3>캐릭터 기본 프롬프트</h3>
         {GROUPS.map(([key, label]) => <PromptFields source={content.pack_source?.prompts[key]} disabled={saving} key={key} title={label} positive={valueFor(`p.${key}.positive`, content.prompts[key].positive)} negative={valueFor(`p.${key}.negative`, content.prompts[key].negative)} positiveEdited={content.prompts[key].overrides.positive || Object.hasOwn(dirty, `p.${key}.positive`)} negativeEdited={content.prompts[key].overrides.negative || Object.hasOwn(dirty, `p.${key}.negative`)} onPositive={(value) => editPrompt(key, 'positive', value)} onNegative={(value) => editPrompt(key, 'negative', value)} />)}
         <h3>단계별 이미지 구도 P/N</h3>

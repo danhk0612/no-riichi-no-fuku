@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from decimal import Decimal, InvalidOperation
 from pathlib import PureWindowsPath
 from typing import Annotated, Literal
 
@@ -102,7 +103,7 @@ class VoiceReference(StrictModel):
 
 
 class CharacterMetadata(BaseModel):
-    # Q-META has not settled optional measurements/AI overrides. Preserve opaque JSON.
+    # Preserve all metadata fields; measurement interpretation belongs to explicit application.
     model_config = ConfigDict(extra="allow", strict=True)
     name: Text
     adult: StrictBool
@@ -232,14 +233,51 @@ class FramingEdit(PromptEdit):
     kind: Literal["profile", "full_body", "cg"]
 
 
+MEASUREMENT_KEYS = ("height", "bust", "waist", "hips")
+
+
+def normalize_measurement(value: str) -> str:
+    if not re.fullmatch(r"[0-9]+(?:\.[0-9]+)?", value):
+        raise ValueError("measurement must be a positive decimal string in cm")
+    try:
+        number = Decimal(value)
+    except InvalidOperation as error:
+        raise ValueError("measurement must be a positive decimal string in cm") from error
+    if not number.is_finite() or number <= 0 or number.as_tuple().exponent < -1:
+        raise ValueError("measurement must be positive with at most one decimal place")
+    canonical = format(number, "f")
+    return canonical if number.as_tuple().exponent == -1 else f"{canonical}.0"
+
+
+class MeasurementsPatch(StrictModel):
+    height: StrictStr | None = None
+    bust: StrictStr | None = None
+    waist: StrictStr | None = None
+    hips: StrictStr | None = None
+
+    @field_validator(*MEASUREMENT_KEYS)
+    @classmethod
+    def valid_measurement(cls, value):
+        return normalize_measurement(value) if value is not None else None
+
+    @model_validator(mode="after")
+    def require_a_measurement(self):
+        if not self.model_fields_set:
+            raise ValueError("at least one measurement field is required")
+        return self
+
+
 class CharacterContentPatch(StrictModel):
     expected_revision: StrictInt = Field(ge=0)
     prompts: dict[Literal["appearance", "upper_underwear", "lower_underwear"], PromptEdit] = Field(default_factory=dict)
     framing: list[FramingEdit] = Field(default_factory=list)
+    measurements_cm: MeasurementsPatch | None = None
 
     @model_validator(mode="after")
     def require_edits(self):
-        if not self.prompts and not self.framing:
+        if "measurements_cm" in self.model_fields_set and self.measurements_cm is None:
+            raise ValueError("measurements_cm must be an object")
+        if not self.prompts and not self.framing and self.measurements_cm is None:
             raise ValueError("at least one explicit field edit is required")
         return self
 

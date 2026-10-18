@@ -413,6 +413,36 @@ async function smokePreflight() {
   await new Promise(resolveClose => occupied.close(resolveClose))
 }
 
+// W08-M packaged smoke: save a measurement before reset/restart durability checks.
+async function smokeCharacterMeasurements() {
+  const headers = { 'X-Local-Capability': capability }
+  const cpus = await fetch(`${origin}/api/admin/cpus`, { headers }).then(response => response.json())
+  if (!cpus.length) throw new Error('packaged measurement smoke found no character to edit')
+  const cpuId = cpus[0].id
+  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('캐릭터 프롬프트'))?.click()")
+  await waitForRenderer(`Boolean(document.querySelector('.content-panel select[aria-label="캐릭터"]'))`)
+  await waitForRenderer(`(() => { const select = document.querySelector('.content-panel select[aria-label="캐릭터"]'); return Boolean(select && !select.disabled && select.options.length > 1) })()`)
+  await window.webContents.executeJavaScript(`(() => {
+    const select = document.querySelector('.content-panel select[aria-label="캐릭터"]')
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(select, '${cpuId}')
+    select.dispatchEvent(new Event('change', { bubbles: true }))
+  })()`)
+  await waitForRenderer(`Boolean(document.querySelector('.content-panel input[aria-label="키 (cm)"]'))`)
+  await window.webContents.executeJavaScript(`(() => {
+    const input = document.querySelector('.content-panel input[aria-label="키 (cm)"]')
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, '170.1')
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  })()`)
+  await window.webContents.executeJavaScript("document.querySelector('.content-editor button.primary-button:not([disabled])')?.click()")
+  await waitForRenderer(`document.querySelector('.content-editor button.primary-button[disabled]')?.innerText.includes('변경 필드 저장') && document.querySelector('.content-panel input[aria-label="키 (cm)"]')?.value === '170.1'`, 30000)
+  const content = await fetch(`${origin}/api/local/characters/${cpuId}/content`, { headers }).then(response => response.json())
+  if (content.measurements_cm?.height !== '170.1' || content.measurement_overrides?.height !== true) {
+    throw new Error('packaged renderer did not persist a character measurement')
+  }
+  await window.webContents.executeJavaScript("document.querySelector('.content-panel .sound-panel-heading .text-button')?.click()")
+  return { cpuId, value: '170.1' }
+}
+
 async function smokeRun() {
   evidence.phase = 'renderer smoke'
   writeEvidence()
@@ -439,6 +469,8 @@ async function smokeRun() {
   if (savedDifficulty.setting !== 6 || savedDifficulty.revision !== 1) throw new Error('renderer difficulty did not persist')
   await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.difficulty-panel button')).find(button => button.innerText === '닫기')?.click()")
   addCheck('renderer saved next-match difficulty from its settings panel')
+  const measurementSmoke = await smokeCharacterMeasurements()
+  addCheck('packaged renderer saved optional character measurement')
 
   await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('사운드'))?.click()")
   await waitForRenderer("Boolean(document.querySelector('.sound-panel'))")
@@ -602,6 +634,11 @@ async function smokeRun() {
     }, 30000)
     await waitForRenderer("document.querySelector('.selection-panel h2')?.innerText.includes('참가 CPU') && document.querySelectorAll('button.cpu-card:not([disabled])').length >= 3", 30000)
     addCheck('renderer recovered roster selection after committed reset response loss')
+    const afterResetMeasurements = await fetch(`${origin}/api/local/characters/${measurementSmoke.cpuId}/content`, {
+      headers: { 'X-Local-Capability': capability },
+    }).then(response => response.json())
+    if (afterResetMeasurements.measurements_cm?.height !== measurementSmoke.value) throw new Error('progress reset changed saved character measurements')
+    addCheck('character measurement survived progress reset')
 
     await window.webContents.executeJavaScript(`(() => {
       Array.from(document.querySelectorAll('button.cpu-card:not([disabled])')).slice(0, 3).forEach(button => button.click())
@@ -857,6 +894,11 @@ async function smokeRun() {
       throw new Error('restart recomputed the saved difficulty or lost the future setting')
     }
     addCheck('active difficulty snapshot survived setting change and engine restart')
+    const afterRestartMeasurements = await fetch(`${origin}/api/local/characters/${measurementSmoke.cpuId}/content`, {
+      headers: { 'X-Local-Capability': capability },
+    }).then(response => response.json())
+    if (afterRestartMeasurements.measurements_cm?.height !== measurementSmoke.value) throw new Error('engine restart changed saved character measurements')
+    addCheck('character measurement survived packaged engine restart')
     let turns = 0
     while (!(await window.webContents.executeJavaScript("Boolean(document.querySelector('.match-result'))")) && turns < 600) {
       await clickHumanAction()

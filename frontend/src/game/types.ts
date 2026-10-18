@@ -57,6 +57,8 @@ export type CpuChoice = {
   long_description: string | null
   profile_image_key: string | null
   defeat_stage: number
+  content_revision?: number
+  measurements_cm?: { height: string | null; bust: string | null; waist: string | null; hips: string | null }
   difficulty_preview?: { level: number; profile_version: string; reason: string } | null
   difficulty_setting_revision?: number | null
 }

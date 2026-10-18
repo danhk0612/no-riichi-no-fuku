@@ -70,6 +70,7 @@ export function CpuSelection({
               </span>
               <span className="cpu-stage">{defeatStageLabel(cpu.defeat_stage)}</span>
               {!rosterMode && cpu.difficulty_preview && <span>다음 대국 난이도 {cpu.difficulty_preview.level}/10</span>}
+              {cpu.measurements_cm && Object.entries({ height: '키', bust: '가슴(B)', waist: '허리(W)', hips: '엉덩이(H)' }).filter(([key]) => cpu.measurements_cm?.[key as keyof typeof cpu.measurements_cm]).map(([key, label]) => <span key={key}>{label} {cpu.measurements_cm?.[key as keyof typeof cpu.measurements_cm]} cm</span>)}
               <span>{cpu.style}</span>
               <p>{cpu.short_description}</p>
               {unavailable && <small>최종 완료 · 현재 대국 선택 불가</small>}

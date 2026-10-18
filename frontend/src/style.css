@@ -300,6 +300,31 @@ button {
   font-weight: 800;
 }
 
+.measurement-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 560px;
+}
+
+.measurement-fields label > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.measurement-fields input {
+  min-width: 0;
+  width: 100%;
+  color: #e6eee9;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.measurement-fields label > small {
+  display: block;
+  margin-top: 4px;
+}
+
 .cpu-card p {
   margin: 4px 0;
   color: #a9bbb3;

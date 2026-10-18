@@ -1,8 +1,23 @@
 # 현재 상태
 
-W-DIFF-B는 PR #91로 병합됐다(main `7bcec42`). 최종 source `fd7e2d7`의 Windows W04/W05·artifact
-검증은 PR #91에 기록했다. 다음 W08-M의 독립 저장/팩/표시 계약과 Work 지시문을 정리했다.
-**W08-M 제품 코드/DB/UI는 아직 구현하지 않았다.** `docs/W08_M_METADATA_CONTRACT.md`와 TASKS를 따른다.
+W08-M은 준비 main `8e44eb1`(PR #92 병합)에서 독립 브랜치로 구현했다. nullable `CharacterContent.measurements_cm`,
+소수 한 자리 cm API/편집, 명시적 팩 적용 시 원본 metadata와 필드별 override 보존, 로스터 후보 카드 표시를 추가했다.
+기존 manifest/digest·대국 snapshot·초기화 보존 경계를 유지한다. Linux backend 143개, 대사 pytest 10개,
+frontend build 및 local-content/local-sound/audio-packs/difficulty browser 검사를 통과했다.
+
+PR #93 후속 보완으로 roster-candidates가 캐릭터별 `content_revision`을 반환하고, 목록 재조회 때 서버와
+revision cache를 비교해 최신 치수를 사용한다. 저장/팩 적용 응답 유실 뒤 reset·목록 재조회로 복구하는
+브라우저 회귀와 API revision 검사를 추가했다. 최신 SHA와 Windows artifact 검증 근거는 PR #93 설명에 기록한다.
+
+이전 W08-M 검증 checkpoint source `efbe2ce0247b45b8f521820ff36be6dfcdf40ecc`에서는 Windows Server 2022 x64 W04/W05가 통과했다.
+W04 artifact `12133212090` / SHA256 `324ae3495cfe2ac98481919ae1d38648fb4235084e4eb66200662c97bc9ca773`.
+W05 artifact `12133482311` / outer ZIP SHA256 `98f5084a45d48f63ce2f25c1119b6801c9e8819dc05205beb2342d6cad075ee0`.
+다운로드 artifact의 `source-sha.txt`가 위 최종 source와 일치한다. 패키지 ZIP SHA256은
+`7A25A7BE7052FAF8D316D3BD0508D16FCF2BF6D118DE0E4F777C1AF461D03490`; packaged renderer smoke에서 치수 저장,
+진행 초기화 보존, engine 재시작 보존 세 검사가 통과했다. 개인 Windows PC 실기는 미검증이다.
+PR은 열려 있으며 직접 병합·Release/tag·후속 Task 착수는 하지 않았다.
+
+아래 절은 W08-M 이전의 시점별 이력으로 보존한다.
 
 ## W-DIFF-B — 10단계 로컬 난이도 구현·회귀, 최종 Windows 증거는 PR 참조
 

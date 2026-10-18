@@ -16,6 +16,7 @@ class CharacterContent(TimestampMixin, Base):
     revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     prompts: Mapped[dict] = mapped_column(JSON, nullable=False)
     overrides: Mapped[list] = mapped_column(JSON, nullable=False)
+    measurements_cm: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
 
 class CharacterLevelFraming(TimestampMixin, Base):
