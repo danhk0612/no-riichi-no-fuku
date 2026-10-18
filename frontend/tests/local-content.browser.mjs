@@ -7,14 +7,14 @@ function content(id) {
   const pair = () => ({ positive: '', negative: '', overrides: { positive: false, negative: false } })
   const prompts = Object.fromEntries(['appearance', 'upper_underwear', 'lower_underwear'].map((key) => [key, pair()]))
   prompts.appearance.positive = `test-only-${id}`
-  return { schema_version: 1, cpu_id: id, revision: 0, pack_revision_id: null, pack: null, prompts, levels: Object.fromEntries([0, 1, 2, 3].map((level) => [level, Object.fromEntries(['profile', 'full_body', 'cg'].map((kind) => [kind, { ...pair(), revision: 0 }]))])) }
+  return { schema_version: 1, cpu_id: id, revision: 0, pack_revision_id: null, pack: null, pack_source: null, measurements_cm: { height: null, bust: null, waist: null, hips: null }, measurement_overrides: { height: false, bust: false, waist: false, hips: false }, prompts, levels: Object.fromEntries([0, 1, 2, 3].map((level) => [level, Object.fromEntries(['profile', 'full_body', 'cg'].map((kind) => [kind, { ...pair(), revision: 0 }]))])) }
 }
 try {
   const page = await browser.newPage(); page.setDefaultTimeout(8000)
   const errors = []; page.on('pageerror', (e) => errors.push(e.message))
   await page.addInitScript(() => { window.nrnfDesktop = { isDesktop: true } })
   const saved = { 1: content(1), 2: content(2) }
-  const cpus = [1, 2, 3].map((id) => ({ id, slug: `cpu-${id}`, name: `CPU ${id}`, defeat_stage: 0, style: 'balanced', short_description: 'test-only', profile_image_key: null }))
+  const cpus = [1, 2, 3].map((id) => ({ id, slug: `cpu-${id}`, name: `CPU ${id}`, defeat_stage: 0, style: 'balanced', short_description: 'test-only', profile_image_key: null, measurements_cm: id === 1 ? { height: '170.0', bust: null, waist: '62.5', hips: null } : { height: null, bust: null, waist: null, hips: null } }))
   let saveMode = 'ok', saveGate, readGate, scanGate, scans = 0, lastPatch, applyGate, applyMode = 'ok', lastApplication, applications = 0
   const listing = { schema_version: 1, packs: [], scan_entries: [] }
   await page.route('**/api/**', async (route) => {
@@ -29,7 +29,8 @@ try {
       next.revision++; next.pack_revision_id = target.registered_revision.id
       next.pack = { id: target.id, pack_id: target.pack_id, applied_revision_id: next.pack_revision_id, applied_revision: target.registered_revision.revision, registered_revision_id: next.pack_revision_id, update_available: false }
       const sourcePair = () => ({ positive: `test-source-${next.pack.applied_revision}-P`, negative: `test-source-${next.pack.applied_revision}-N` })
-      next.pack_source = { prompts: {}, levels: {} }
+      next.pack_source = { prompts: {}, levels: {}, metadata: { name: 'test-only', adult: true, measurements_cm: { height: '171', bust: '88.5', waist: '65', hips: '94.2' } } }
+      for (const key of ['height', 'bust', 'waist', 'hips']) if (!next.measurement_overrides[key]) next.measurements_cm[key] = ({ height: '171.0', bust: '88.5', waist: '65.0', hips: '94.2' })[key]
       for (const [group, pair] of Object.entries(next.prompts)) {
         next.pack_source.prompts[group] = sourcePair()
         for (const field of ['positive', 'negative']) if (!pair.overrides[field]) pair[field] = sourcePair()[field]
@@ -57,6 +58,7 @@ try {
       const next = structuredClone(saved[id]); next.revision++
       for (const [group, edits] of Object.entries(lastPatch.prompts || {})) for (const [field, value] of Object.entries(edits)) { next.prompts[group][field] = value; next.prompts[group].overrides[field] = true }
       for (const edit of lastPatch.framing || []) for (const field of ['positive', 'negative']) if (Object.hasOwn(edit, field)) { const pair = next.levels[edit.level][edit.kind]; pair[field] = edit[field]; pair.overrides[field] = true }
+      for (const [key, value] of Object.entries(lastPatch.measurements_cm || {})) { next.measurements_cm[key] = value; next.measurement_overrides[key] = true }
       const held = saveGate; if (held) { held.seen(); await held.wait }; saved[id] = next
       return route.fulfill({ json: next })
     }
@@ -70,6 +72,8 @@ try {
     throw new Error(`Unexpected API: ${path}`)
   })
   await page.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
+  await page.getByText('키 170.0 cm', { exact: true }).waitFor()
+  assert.equal(await page.getByText('가슴(B)', { exact: true }).count(), 0, 'selection card must omit unset measurement rows')
   await page.getByRole('button', { name: '캐릭터 프롬프트·팩 설정' }).click()
   const panel = page.getByRole('region', { name: '캐릭터 프롬프트와 팩 관리' })
   const select = panel.getByRole('combobox', { name: '캐릭터', exact: true })
@@ -112,6 +116,12 @@ try {
     await page.waitForFunction(() => !document.querySelector('.content-editor button.primary-button')?.textContent.includes('저장 중'))
     assert.deepEqual(lastPatch, { expected_revision: 2, framing: [{ level: 2, kind: 'cg', negative: 'test-only-framing' }] })
     assert.equal(await framing.inputValue(), 'test-only-framing')
+    await panel.locator('input[aria-label="키 (cm)"]').fill('172.4')
+    const measurementResponse = page.waitForResponse((r) => r.url().endsWith('/characters/1/content') && r.request().method() === 'PATCH')
+    await save.click(); await measurementResponse
+    await page.waitForFunction(() => !document.querySelector('.content-editor button.primary-button')?.textContent.includes('저장 중'))
+    assert.deepEqual(lastPatch, { expected_revision: 3, measurements_cm: { height: '172.4' } })
+    assert.equal(await panel.locator('input[aria-label^="키"]').inputValue(), '172.4')
   }
   // Rapid tab re-entry reuses the in-flight scan.
   scanGate = gate(); await panel.getByRole('tab', { name: '팩 목록·진단' }).click(); await scanGate.entered
@@ -148,6 +158,7 @@ try {
   applyGate = undefined
   await select.selectOption('1'); await panel.getByText('연결된 팩: test-pack', { exact: false }).waitFor()
   assert.equal(await positive.inputValue(), 'test-pending-draft')
+  assert.equal(await panel.locator('input[aria-label^="키"]').inputValue(), '172.4', 'direct measurement edit must survive first pack application')
   const negative = panel.getByRole('group', { name: '외모', exact: true }).locator('textarea').nth(1)
   assert.equal(await negative.inputValue(), 'test-source-1-N')
   await negative.fill(''); await save.click()
@@ -159,6 +170,8 @@ try {
   const update = panel.getByRole('button', { name: '같은 팩의 등록 revision 적용', exact: true })
   await update.click(); await panel.getByText('적용 revision 2', { exact: false }).first().waitFor()
   assert.equal(await negative.inputValue(), ''); assert.equal(await positive.inputValue(), 'test-pending-draft')
+  assert.equal(await panel.locator('input[aria-label^="키"]').inputValue(), '172.4', 'direct measurement edit must survive pack revision update')
+  assert.equal(await panel.locator('input[aria-label^="가슴(B)"]').inputValue(), '88.5')
   assert.equal(await panel.getByRole('group', { name: '하의 속옷', exact: true }).locator('textarea').first().inputValue(), 'test-source-2-P')
   assert.equal(await update.isEnabled(), false)
   assert.equal(applications, 4)

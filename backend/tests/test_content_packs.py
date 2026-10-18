@@ -10,6 +10,8 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from unittest.mock import patch
+from alembic import command
+from alembic.config import Config
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 from sqlalchemy import select, text
@@ -234,6 +236,71 @@ class PackRegistryTests(unittest.TestCase):
         self.assertTrue(saved["levels"]["2"]["cg"]["overrides"]["positive"])
         self.assertFalse(saved["levels"]["2"]["cg"]["overrides"]["negative"])
 
+    def test_measurements_decimal_partial_null_revision_and_roster_display(self):
+        path = "/api/local/characters/1/content"
+        initial = self.client.get(path, headers=self.headers).json()
+        self.assertEqual(initial["measurements_cm"], {key: None for key in ("height", "bust", "waist", "hips")})
+        self.assertEqual(initial["measurement_overrides"], {key: False for key in ("height", "bust", "waist", "hips")})
+        with self.runtime.session_factory() as session:
+            self.assertEqual(session.query(CharacterContent).count(), 0)
+
+        saved = self.client.patch(path, headers=self.headers, json={
+            "expected_revision": 0,
+            "measurements_cm": {"height": "170", "bust": "88.5", "waist": None},
+        })
+        self.assertEqual(saved.status_code, 200, saved.text)
+        value = saved.json()
+        self.assertEqual(value["revision"], 1)
+        self.assertEqual(value["measurements_cm"], {"height": "170.0", "bust": "88.5", "waist": None, "hips": None})
+        self.assertEqual(value["measurement_overrides"], {"height": True, "bust": True, "waist": True, "hips": False})
+        candidate = self.client.get("/api/local/play/roster-candidates", headers=self.headers).json()
+        cpu = next(item for item in candidate if item["id"] == 1)
+        self.assertEqual(cpu["measurements_cm"], value["measurements_cm"])
+
+        saved = self.client.patch(path, headers=self.headers, json={
+            "expected_revision": 1, "measurements_cm": {"height": None, "hips": "96"},
+        })
+        self.assertEqual(saved.status_code, 200, saved.text)
+        self.assertEqual(saved.json()["revision"], 2)
+        self.assertEqual(saved.json()["measurements_cm"], {"height": None, "bust": "88.5", "waist": None, "hips": "96.0"})
+        for key, invalid in (("height", "0"), ("bust", "-1"), ("waist", "70.25"), ("hips", "NaN"), ("height", "172 cm"), ("bust", 88)):
+            response = self.client.patch(path, headers=self.headers, json={
+                "expected_revision": 2, "measurements_cm": {key: invalid},
+            })
+            self.assertEqual(response.status_code, 422, (key, invalid, response.text))
+        self.assertEqual(self.client.get(path, headers=self.headers).json()["revision"], 2)
+
+        state = self.client.get("/api/local/play", headers=self.headers).json()
+        reset = self.client.post("/api/local/play/reset", headers=self.headers, json={
+            "generation": state["generation"], "confirm": True,
+        })
+        self.assertEqual(reset.status_code, 200, reset.text)
+        self.restart()
+        self.assertEqual(self.content()["measurements_cm"], {"height": None, "bust": "88.5", "waist": None, "hips": "96.0"})
+        self.assertEqual(self.content()["revision"], 2)
+
+    def test_upgrade_existing_character_content_row_as_unmeasured(self):
+        path = "/api/local/characters/1/content"
+        saved = self.client.patch(path, headers=self.headers, json={
+            "expected_revision": 0, "prompts": {"appearance": {"positive": "preserved-existing"}},
+        })
+        self.assertEqual(saved.status_code, 200, saved.text)
+        before = saved.json()
+        backend_dir = Path(__file__).resolve().parents[1]
+        cfg = Config(str(backend_dir / "alembic.ini"))
+        cfg.set_main_option("script_location", str(backend_dir / "alembic"))
+        with self.runtime.engine.connect() as connection:
+            cfg.attributes["connection"] = connection
+            command.downgrade(cfg, "20261016_0009")
+        self.runtime.close()
+        self.runtime = create_local_runtime(self.root)
+        self.open_client()
+        after = self.client.get(path, headers=self.headers).json()
+        self.assertEqual(after["revision"], before["revision"])
+        self.assertEqual(after["prompts"], before["prompts"])
+        self.assertEqual(after["measurements_cm"], {key: None for key in ("height", "bust", "waist", "hips")})
+        self.assertEqual(after["measurement_overrides"], {key: False for key in ("height", "bust", "waist", "hips")})
+
     def test_character_editor_conflict_validation_auth_and_restart(self):
         path = "/api/local/characters/1/content"
         self.assertEqual(self.client.get(path).status_code, 401)
@@ -313,6 +380,61 @@ class PackRegistryTests(unittest.TestCase):
             for kind, pair in data["framing"].items():
                 pair.update(positive=f"test-{label}-{level}-{kind}-P", negative=f"test-{label}-{level}-{kind}-N")
         return value
+
+    def test_measurement_metadata_applies_atomically_and_preserves_overrides(self):
+        value = character()
+        value["metadata"].update({"style": "opaque-test-style", "measurements_cm": {
+            "height": "171", "bust": "88.5", "waist": "65", "hips": "94.2",
+        }})
+        self.install(value)
+        first = self.scan()["registry"]["packs"][0]
+        original_manifest = copy.deepcopy(first["registered_revision"]["manifest"])
+        applied = self.application(first)
+        self.assertEqual(applied.status_code, 200, applied.text)
+        data = applied.json()
+        self.assertEqual(data["measurements_cm"], {"height": "171.0", "bust": "88.5", "waist": "65.0", "hips": "94.2"})
+        self.assertEqual(data["pack_source"]["metadata"], original_manifest["metadata"])
+
+        edited = self.client.patch("/api/local/characters/1/content", headers=self.headers, json={
+            "expected_revision": data["revision"], "measurements_cm": {"height": None, "bust": "88.5"},
+        })
+        self.assertEqual(edited.status_code, 200, edited.text)
+        self.assertEqual(edited.json()["measurement_overrides"], {"height": True, "bust": True, "waist": False, "hips": False})
+
+        updated = copy.deepcopy(value)
+        updated["metadata"]["measurements_cm"] = {"height": "180.1", "bust": "90", "waist": "70.1"}
+        self.install(updated)
+        second = self.scan()["registry"]["packs"][0]
+        refreshed = self.application(second, expected=edited.json()["revision"])
+        self.assertEqual(refreshed.status_code, 200, refreshed.text)
+        refreshed_data = refreshed.json()
+        self.assertEqual(refreshed_data["measurements_cm"], {"height": None, "bust": "88.5", "waist": "70.1", "hips": None})
+        self.assertEqual(refreshed_data["pack_source"]["metadata"], updated["metadata"])
+        with self.runtime.session_factory() as session:
+            stored_first = session.get(ContentPackRevision, first["registered_revision"]["id"])
+            self.assertEqual(stored_first.manifest, original_manifest)
+            self.assertEqual(stored_first.manifest_digest, first["registered_revision"]["manifest_digest"])
+            self.assertEqual(stored_first.content_digest, first["registered_revision"]["content_digest"])
+
+        invalid = copy.deepcopy(updated)
+        invalid["metadata"]["measurements_cm"] = {"height": "181", "unsupported": "bad"}
+        self.install(invalid)
+        bad = self.scan()["registry"]["packs"][0]
+        before = self.content()
+        stable_before = {key: before[key] for key in ("revision", "pack_revision_id", "prompts", "measurements_cm", "measurement_overrides", "pack_source", "levels")}
+        rejected = self.application(bad, expected=before["revision"])
+        self.assertEqual(rejected.status_code, 409, rejected.text)
+        self.assertEqual(rejected.json()["detail"]["code"], "pack_metadata_invalid")
+        after = self.content()
+        self.assertEqual({key: after[key] for key in stable_before}, stable_before)
+
+        malformed = copy.deepcopy(updated)
+        malformed["metadata"]["measurements_cm"] = {"height": 181}
+        self.install(malformed)
+        bad = self.scan()["registry"]["packs"][0]
+        self.assertEqual(self.application(bad, expected=before["revision"]).status_code, 409)
+        after = self.content()
+        self.assertEqual({key: after[key] for key in stable_before}, stable_before)
 
     def test_character_pack_link_update_field_history_and_immutable_media(self):
         with self.runtime.session_factory() as session:
@@ -707,8 +829,11 @@ class PackRegistryTests(unittest.TestCase):
             self.assertEqual(conn.execute(text("PRAGMA foreign_key_check")).all(), [])
             self.assertEqual(
                 conn.execute(text("select version_num from alembic_version")).scalar(),
-                "20261016_0009",
+                "20261018_0010",
             )
+            self.assertIn("measurements_cm", {
+                row[1] for row in conn.execute(text("PRAGMA table_info(character_content)"))
+            })
 
     def test_concurrent_scan_no_duplicates_and_reads_outside_writer(self):
         value = audio()

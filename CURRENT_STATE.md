@@ -1,8 +1,12 @@
 # 현재 상태
 
-W-DIFF-B는 PR #91로 병합됐다(main `7bcec42`). 최종 source `fd7e2d7`의 Windows W04/W05·artifact
-검증은 PR #91에 기록했다. 다음 W08-M의 독립 저장/팩/표시 계약과 Work 지시문을 정리했다.
-**W08-M 제품 코드/DB/UI는 아직 구현하지 않았다.** `docs/W08_M_METADATA_CONTRACT.md`와 TASKS를 따른다.
+W08-M은 준비 main `8e44eb1`(PR #92 병합)에서 독립 브랜치로 구현했다. nullable `CharacterContent.measurements_cm`,
+소수 한 자리 cm API/편집, 명시적 팩 적용 시 원본 metadata와 필드별 override 보존, 로스터 후보 카드 표시를 추가했다.
+기존 manifest/digest·대국 snapshot·초기화 보존 경계를 유지한다. Linux backend 142개, 대사 pytest 10개,
+frontend build 및 관련 브라우저 검사까지 통과했다. Windows W05 hosted artifact 검사와 PR 제출은 진행 중이며
+해당 최종 source SHA와 증거는 완료 후 이 문서 및 TASKS에 기록한다. 직접 병합·Release/tag는 하지 않는다.
+
+아래 절은 W08-M 이전의 시점별 이력으로 보존한다.
 
 ## W-DIFF-B — 10단계 로컬 난이도 구현·회귀, 최종 Windows 증거는 PR 참조
 

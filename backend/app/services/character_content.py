@@ -11,12 +11,37 @@ from app.db.models import (
     CharacterContent, CharacterLevelFraming, CpuCharacter, ContentPack,
     ContentPackRevision, ContentPackFile, ContentPackScanEntry, LocalMediaAsset,
 )
-from app.schemas.local_content import CharacterContentPatch, CharacterPackApplication, PackManifest
+from app.schemas.local_content import (
+    CharacterContentPatch, CharacterPackApplication, PackManifest,
+    MEASUREMENT_KEYS, normalize_measurement,
+)
 from app.services.local_media import media_url, media_path, MAX_IMAGE_BYTES
 from app.services.content_packs import read_file, digest, ScanIssue
 
 PROMPT_GROUPS = ("appearance", "upper_underwear", "lower_underwear")
 IMAGE_KINDS = ("profile", "full_body", "cg")
+
+
+def _empty_measurements() -> dict[str, str | None]:
+    return {key: None for key in MEASUREMENT_KEYS}
+
+
+def _pack_measurements(manifest: dict) -> dict[str, str | None]:
+    metadata = manifest.get("metadata") or {}
+    if not isinstance(metadata, dict):
+        raise ValueError("metadata must be an object")
+    if "measurements_cm" not in metadata:
+        return _empty_measurements()
+    source = metadata["measurements_cm"]
+    if not isinstance(source, dict) or set(source) - set(MEASUREMENT_KEYS):
+        raise ValueError("unsupported measurements_cm shape")
+    result = _empty_measurements()
+    for key, value in source.items():
+        if value is not None:
+            if not isinstance(value, str):
+                raise ValueError("measurement values must be strings or null")
+            result[key] = normalize_measurement(value)
+    return result
 
 
 def _empty_pair() -> dict:
@@ -29,6 +54,9 @@ def get_character_content(session: Session, cpu_id: int) -> dict:
     record = session.get(CharacterContent, cpu_id)
     prompts = record.prompts if record else {key: _empty_pair() for key in PROMPT_GROUPS}
     overrides = set(record.overrides or []) if record else set()
+    measurements = _empty_measurements()
+    if record and isinstance(record.measurements_cm, dict):
+        measurements.update({key: record.measurements_cm.get(key) for key in MEASUREMENT_KEYS})
     level_records = session.scalars(
         select(CharacterLevelFraming).where(CharacterLevelFraming.cpu_id == cpu_id)
     ).all()
@@ -54,7 +82,11 @@ def get_character_content(session: Session, cpu_id: int) -> dict:
         for kind, pair in kinds.items():
             pair["media"] = images.get(level, {}).get(kind)
     return {
-        "pack_source": {"prompts": applied.manifest["prompts"], "levels": applied.manifest["levels"]} if applied else None,
+        "pack_source": {
+            "prompts": applied.manifest["prompts"],
+            "levels": applied.manifest["levels"],
+            "metadata": applied.manifest.get("metadata"),
+        } if applied else None,
         "pack": {
             "id": pack.id, "pack_id": pack.pack_id,
             "applied_revision_id": applied.id, "applied_revision": applied.revision,
@@ -75,6 +107,10 @@ def get_character_content(session: Session, cpu_id: int) -> dict:
                 },
             }
             for key in PROMPT_GROUPS
+        },
+        "measurements_cm": measurements,
+        "measurement_overrides": {
+            key: f"measurements_cm.{key}" in overrides for key in MEASUREMENT_KEYS
         },
         "levels": levels,
     }
@@ -101,13 +137,21 @@ def patch_character_content(
         for field in edit.model_fields_set:
             prompts[group][field] = getattr(edit, field)
             overrides.add(f"{group}.{field}")
+    measurements = _empty_measurements()
+    if record and isinstance(record.measurements_cm, dict):
+        measurements.update({key: record.measurements_cm.get(key) for key in MEASUREMENT_KEYS})
+    if change.measurements_cm is not None:
+        for key in change.measurements_cm.model_fields_set:
+            measurements[key] = getattr(change.measurements_cm, key)
+            overrides.add(f"measurements_cm.{key}")
     if record is None:
         record = CharacterContent(
             cpu_id=cpu_id, pack_revision_id=None, revision=0,
-            prompts=prompts, overrides=sorted(overrides),
+            prompts=prompts, overrides=sorted(overrides), measurements_cm=measurements,
         )
         session.add(record)
     record.prompts = prompts
+    record.measurements_cm = measurements
     record.overrides = sorted(overrides)
     record.revision = revision + 1
 
@@ -214,6 +258,10 @@ def apply_character_pack(
         raise HTTPException(409, detail={"code": "pack_media_unavailable", "message": "보관된 팩 이미지 파일을 확인할 수 없습니다."}) from None
     if current["pack_revision_id"] == revision.id:
         return current
+    try:
+        source_measurements = _pack_measurements(revision.manifest)
+    except (TypeError, ValueError):
+        raise HTTPException(409, detail={"code": "pack_metadata_invalid", "message": "캐릭터팩 신체 metadata 형식을 확인할 수 없습니다."}) from None
     record = session.get(CharacterContent, cpu_id)
     prompts = {}
     for group in PROMPT_GROUPS:
@@ -228,6 +276,13 @@ def apply_character_pack(
     record.prompts = prompts
     record.pack_revision_id = revision.id
     record.revision = current["revision"] + 1
+    measurement_overrides = set(record.overrides or []) if record else set()
+    effective_measurements = dict(current["measurements_cm"])
+    for key in MEASUREMENT_KEYS:
+        if f"measurements_cm.{key}" not in measurement_overrides:
+            effective_measurements[key] = source_measurements[key]
+    record.measurements_cm = effective_measurements
+    record.overrides = sorted(measurement_overrides)
     for level in range(4):
         for kind in IMAGE_KINDS:
             pair = current["levels"][str(level)][kind]
