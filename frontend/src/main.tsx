@@ -22,7 +22,7 @@ import {
   getResolvedEnding,
   getSoundSelection,
 } from './api'
-import type { LocalPlayState, ResolvedEnding, SoundSelection } from './api'
+import type { CharacterContent, LocalPlayState, ResolvedEnding, SoundSelection } from './api'
 import { LocalSoundPanel } from './LocalSoundPanel'
 import { LocalContentPanel } from './LocalContentPanel'
 import { LocalDifficultyPanel } from './LocalDifficultyPanel'
@@ -76,6 +76,7 @@ function App() {
   const gameAudioTokenRef = useRef(0)
   const activeSoundEffectsRef = useRef(new Map<string, { audio: HTMLAudioElement; url: string }>())
   const voiceQueueRef = useRef<Promise<void>>(Promise.resolve())
+  const characterContentRef = useRef(new Map<number, Pick<CharacterContent, 'revision' | 'measurements_cm'>>())
   const isDesktop = window.nrnfDesktop?.isDesktop === true
   const difficultyPreviewToken = localRequestTokenRef.current
   const playbackAccessToken = accessToken ?? (isDesktop ? DESKTOP_SESSION : null)
@@ -106,6 +107,25 @@ function App() {
   function isCurrentLocalRequest(requestToken: number, generation?: string): boolean {
     return requestToken === localRequestTokenRef.current
       && (generation === undefined || localGenerationRef.current === generation)
+  }
+
+  function withLatestCharacterMeasurements(choices: CpuChoice[]): CpuChoice[] {
+    return choices.map((cpu) => {
+      const latest = characterContentRef.current.get(cpu.id)
+      return latest ? { ...cpu, measurements_cm: latest.measurements_cm } : cpu
+    })
+  }
+
+  function updateCharacterContent(content: CharacterContent) {
+    const latest = characterContentRef.current.get(content.cpu_id)
+    if (latest && content.revision < latest.revision) return
+    characterContentRef.current.set(content.cpu_id, {
+      revision: content.revision,
+      measurements_cm: content.measurements_cm,
+    })
+    setCpus((current) => current?.map((cpu) => cpu.id === content.cpu_id
+      ? { ...cpu, measurements_cm: content.measurements_cm }
+      : cpu) ?? current)
   }
 
   function storeLocalPlay(play: LocalPlayState, requestToken?: number): boolean {
@@ -140,7 +160,8 @@ function App() {
     const choices = await getRosterCandidates(token)
     if (!isCurrentLocalRequest(requestToken, expectedGeneration)) return
     const rosterIds = new Set(play.roster.map((item) => item.cpu_character_id))
-    const shown = play.phase === 'roster_required' ? choices : choices.filter((cpu) => rosterIds.has(cpu.id))
+    const latestChoices = withLatestCharacterMeasurements(choices)
+    const shown = play.phase === 'roster_required' ? latestChoices : latestChoices.filter((cpu) => rosterIds.has(cpu.id))
     setCpus(shown)
     setSelectedCpuIds([])
     setRosterMode(play.phase === 'roster_required')
@@ -647,12 +668,11 @@ function App() {
         const choices = await getRosterCandidates(accessToken)
         if (!isCurrentLocalRequest(requestToken, generation)) return
         const ids = new Set(localPlay.roster.map((cpu) => cpu.cpu_character_id))
-        setCpus(localPlay.phase === 'roster_required' ? choices : choices.filter((cpu) => ids.has(cpu.id)))
+        const latestChoices = withLatestCharacterMeasurements(choices)
+        setCpus(localPlay.phase === 'roster_required' ? latestChoices : latestChoices.filter((cpu) => ids.has(cpu.id)))
       }} />}
       {isDesktop && accessToken && soundSettingsOpen && <LocalSoundPanel accessToken={accessToken} onClose={() => setSoundSettingsOpen(false)} onSelectionChanged={setSoundSelection} onPlaybackChanged={stopGameAudio} />}
-      {isDesktop && accessToken && contentSettingsOpen && <LocalContentPanel accessToken={accessToken} onClose={() => setContentSettingsOpen(false)} onPackApplied={stopGameAudio} onMeasurementsUpdated={(cpuId, measurements) => {
-        setCpus((current) => current?.map((cpu) => cpu.id === cpuId ? { ...cpu, measurements_cm: measurements } : cpu) ?? current)
-      }} />}
+      {isDesktop && accessToken && contentSettingsOpen && <LocalContentPanel accessToken={accessToken} onClose={() => setContentSettingsOpen(false)} onPackApplied={stopGameAudio} onMeasurementsUpdated={updateCharacterContent} />}
       {isDesktop && soundError && <p className="form-error" role="status">{soundError}</p>}
       {!isDesktop && !accessToken && (
         <AuthPanel

@@ -19,7 +19,7 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
   accessToken: string
   onClose: () => void
   onPackApplied: () => void
-  onMeasurementsUpdated: (cpuId: number, measurements: CharacterContent['measurements_cm']) => void
+  onMeasurementsUpdated: (content: CharacterContent) => void
 }) {
   const [tab, setTab] = useState<Tab>('prompts')
   const [cpus, setCpus] = useState<{ id: number; slug: string; name: string }[]>([])
@@ -48,7 +48,7 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
     setCpuId(id); setSelectedPack(''); setContent(null); setDirty({}); setLoading(true); setError(null)
     try {
       const next = await getCharacterContent(accessToken, id)
-      if (request === requestId.current) setContent(next)
+      if (request === requestId.current) { onMeasurementsUpdated(next); setContent(next) }
     } catch (caught) {
       if (request === requestId.current) setError(message(caught))
     } finally {
@@ -129,7 +129,7 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
         ...(framing.length ? { framing } : {}),
         ...(Object.keys(measurements).length ? { measurements_cm: measurements } : {}),
       })
-      onMeasurementsUpdated(selectedId, saved.measurements_cm)
+      onMeasurementsUpdated(saved)
       if (request === requestId.current && selectedId === cpuId) {
         setContent(saved); setDirty({})
       }
@@ -153,7 +153,7 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
       const next = await applyCharacterPack(accessToken, selectedId, {
         expected_revision: content.revision, pack_id: targetPack.id, registered_revision_id: targetRevision.id,
       })
-      onMeasurementsUpdated(selectedId, next.measurements_cm)
+      onMeasurementsUpdated(next)
       if (request === requestId.current && selectedId === cpuId) {
         setContent(next); setSelectedPack('')
         onPackApplied()
