@@ -1,22 +1,16 @@
 # 현재 상태
 
-W08-D는 준비 main `7fcc8bf` 기반 PR #96(`task/w08-d-shared-prompts-impl`)로 제출했다.
+W08-D 제품 구현은 준비 main `7fcc8bf`에서 `task/w08-d-shared-prompts-impl`로 제출한다.
 `20261018_0011` additive migration, 공유 복장 상태/포즈 CRUD, CPU·Level·종류별 명시 후보와
 기본값, 영향 미리보기 digest 후 참조 해제·논리 삭제/Level 이동, 기존 설정의 관리 탭을 구현했다.
 공유 자료를 seed하지 않았고 game snapshot·CharacterContent·event/CG 표시와 연결하지 않았다.
-리뷰에서 발견한 기본값 저장 후 결과 갱신과 같은 Level 이동 차단도 보완했고 관련 회귀를 추가했다.
-최종 source SHA `dd1a874152a02e8de6ba3e1be5a442012a162909`의 W04 run
-[39174102431](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/39174102431)와 W05 run
-[39174102562](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/39174102562)는 모두 성공했다.
-W04 artifact `12153871577`의 SHA-256 `74f48efd270d490335ce48a661ce1c7f5012bfa4dee37b0b2a57d99753c790fc`;
-다운로드 ZIP hash 및 내부 `source-sha.txt`를 대조했다. W05 artifact `12153314712`의 SHA-256
-`7f06edad047829076cb77b0190644fc76aa695c9323f1d8af60584a1478ca730`; 다운로드 ZIP hash와
-내부 source SHA를 대조했고 packaged Windows ZIP SHA-256은
-`4d6d4c9d0abfeb0b6d463bec4d6a23e81df0fa7478ec00c3cb80fcdc380bf97a`다.
-두 artifact의 source SHA는 최종 SHA와 일치한다. 각 Windows backend unittest 152개와 dialogue pytest
-10개, W04 renderer build, W05 browser·packaged renderer/reset/restart·lifecycle 검사가 통과했다.
-Linux 로컬 Chromium은 malformed download archive로 실행하지 못했으나 W05 Windows browser regression이 통과했다.
-PR은 열려 있고 병합하지 않았다. 개인 Windows PC 실기, 이미지/음향 생성·실제 콘텐츠 출력은 미검증이며
+자동 리뷰에서 지적된 기본값 저장 후 결과 갱신과 같은 Level 이동 차단을 보완하고 회귀 테스트를 추가했다.
+제품 source SHA `dd1a874152a02e8de6ba3e1be5a442012a162909`의 W04/W05 Windows CI는 통과했고,
+각 152 backend unittest와 dialogue pytest 10개를 확인했다. W05 browser·packaged renderer/reset/restart·
+lifecycle도 통과했다. 해당 source SHA artifact·digest·source proof는 PR #96에 기록했고,
+이 뒤의 저장소 문서만 변경한 후속 commit에서 재실행한 정확한 head 검증은 PR #96에 추가한다.
+Linux 로컬 Chromium은 malformed download archive로 실행하지 못했으나 W05 Windows browser regression은 통과했다.
+PR #96은 열려 있고 병합하지 않았다. 개인 Windows PC 실기와 실제 이미지/음향 출력은 미검증이며
 W08-D 범위 밖이다. 상황/대사 event 편집·기존 문구 이전·생성은 이번 범위에서 수행하지 않았다.
 
 W08-M PR #93은 main `f5623af`에 병합됐다. 검토 source `f87b7ca`와 병합 tree가 같다.
