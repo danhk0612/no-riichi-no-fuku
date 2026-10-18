@@ -1,0 +1,47 @@
+{
+  "source_base": "e8a70b57db22727a861956ae6ee42c087057f6b8",
+  "measured_source_tree": "69efafd5417629094151868c1f628c132d531b5c",
+  "checks": [
+    {
+      "command": "python -m unittest discover -s tests -v",
+      "cwd": "backend",
+      "tests": 129,
+      "elapsed_s": 94.656,
+      "result": "passed"
+    },
+    {
+      "command": "PYTHONPATH=backend python -m pytest backend/tests/test_dialogue_service.py -q",
+      "tests": 10,
+      "elapsed_s": 0.12,
+      "result": "passed"
+    },
+    {
+      "command": "python spikes/w-diff-a/decision-probe/test_deadline.py",
+      "tests": 4,
+      "elapsed_s": 0.35,
+      "result": "passed"
+    },
+    {
+      "command": "python spikes/w-diff-a/decision-probe/test_analysis.py",
+      "tests": 1,
+      "elapsed_s": 0.018,
+      "result": "passed"
+    }
+  ],
+  "initial_invocation": {
+    "command": "PYTHONPATH=backend python -m unittest discover -s backend/tests -v",
+    "cwd": "repository root",
+    "tests": 129,
+    "errors": 1,
+    "elapsed_s": 66.117,
+    "reason": "migration regression requires backend cwd for alembic.ini",
+    "product_modified_to_fix": false
+  },
+  "not_run": [
+    "new frontend build/browser",
+    "Windows CI/artifact",
+    "production policy3/file DB restore",
+    "human opponents",
+    "independent strength holdout"
+  ]
+}

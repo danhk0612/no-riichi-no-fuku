@@ -1,0 +1,677 @@
+[
+  {
+    "context": "neutral",
+    "label": "000",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "496d82eb1782b24b5966f443a73cff59f240b920e3b4997880236699a34e4818",
+    "scores": [
+      20000,
+      12900,
+      42400,
+      24700
+    ],
+    "ranks": [
+      3,
+      4,
+      1,
+      2
+    ],
+    "steps": 418,
+    "decisions": 104,
+    "changed": 0,
+    "folds": 0,
+    "nondiscard": 23
+  },
+  {
+    "context": "neutral",
+    "label": "001",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "50d4089daa205289c57b6cab181fa7af0651d524cb1062f907ff9a8eac7e656a",
+    "scores": [
+      29600,
+      34500,
+      25200,
+      10700
+    ],
+    "ranks": [
+      2,
+      1,
+      3,
+      4
+    ],
+    "steps": 486,
+    "decisions": 116,
+    "changed": 33,
+    "folds": 2,
+    "nondiscard": 21
+  },
+  {
+    "context": "neutral",
+    "label": "010",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "496d82eb1782b24b5966f443a73cff59f240b920e3b4997880236699a34e4818",
+    "scores": [
+      20000,
+      12900,
+      42400,
+      24700
+    ],
+    "ranks": [
+      3,
+      4,
+      1,
+      2
+    ],
+    "steps": 418,
+    "decisions": 104,
+    "changed": 0,
+    "folds": 0,
+    "nondiscard": 23
+  },
+  {
+    "context": "neutral",
+    "label": "011",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "50d4089daa205289c57b6cab181fa7af0651d524cb1062f907ff9a8eac7e656a",
+    "scores": [
+      29600,
+      34500,
+      25200,
+      10700
+    ],
+    "ranks": [
+      2,
+      1,
+      3,
+      4
+    ],
+    "steps": 486,
+    "decisions": 116,
+    "changed": 33,
+    "folds": 2,
+    "nondiscard": 21
+  },
+  {
+    "context": "neutral",
+    "label": "100",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "2dd3863394be5c694869985d3b72ed2084c4f01431b37bc8eb55ae4b17000415",
+    "scores": [
+      26400,
+      31800,
+      20600,
+      21200
+    ],
+    "ranks": [
+      2,
+      1,
+      4,
+      3
+    ],
+    "steps": 542,
+    "decisions": 131,
+    "changed": 17,
+    "folds": 3,
+    "nondiscard": 23
+  },
+  {
+    "context": "neutral",
+    "label": "101",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "f2df8f7a3e602e49de2443f71e80deb6615c647ecfb7a70e15e34bd8b149911a",
+    "scores": [
+      10400,
+      33600,
+      32400,
+      23600
+    ],
+    "ranks": [
+      4,
+      1,
+      2,
+      3
+    ],
+    "steps": 453,
+    "decisions": 115,
+    "changed": 33,
+    "folds": 3,
+    "nondiscard": 24
+  },
+  {
+    "context": "neutral",
+    "label": "110",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "2dd3863394be5c694869985d3b72ed2084c4f01431b37bc8eb55ae4b17000415",
+    "scores": [
+      26400,
+      31800,
+      20600,
+      21200
+    ],
+    "ranks": [
+      2,
+      1,
+      4,
+      3
+    ],
+    "steps": 542,
+    "decisions": 131,
+    "changed": 17,
+    "folds": 3,
+    "nondiscard": 23
+  },
+  {
+    "context": "neutral",
+    "label": "111",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "f2df8f7a3e602e49de2443f71e80deb6615c647ecfb7a70e15e34bd8b149911a",
+    "scores": [
+      10400,
+      33600,
+      32400,
+      23600
+    ],
+    "ranks": [
+      4,
+      1,
+      2,
+      3
+    ],
+    "steps": 453,
+    "decisions": 115,
+    "changed": 33,
+    "folds": 3,
+    "nondiscard": 24
+  },
+  {
+    "context": "neutral",
+    "label": "tier2",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "496d82eb1782b24b5966f443a73cff59f240b920e3b4997880236699a34e4818",
+    "scores": [
+      20000,
+      12900,
+      42400,
+      24700
+    ],
+    "ranks": [
+      3,
+      4,
+      1,
+      2
+    ],
+    "steps": 418,
+    "decisions": 104,
+    "changed": 0,
+    "folds": 0,
+    "nondiscard": 23
+  },
+  {
+    "context": "mixed",
+    "label": "000",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "0319d6ecb0c7f6722a0dd8a1e26c20df9c7f1e974af51eb1a0f27352cdc52c97",
+    "scores": [
+      26000,
+      38400,
+      20600,
+      15000
+    ],
+    "ranks": [
+      2,
+      1,
+      3,
+      4
+    ],
+    "steps": 348,
+    "decisions": 86,
+    "changed": 0,
+    "folds": 3,
+    "nondiscard": 17
+  },
+  {
+    "context": "mixed",
+    "label": "001",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "5328aacb0192ffc26615ca1a97e270013a158ce7d9ec58699d983d9c379df9ca",
+    "scores": [
+      20500,
+      30600,
+      28300,
+      20600
+    ],
+    "ranks": [
+      4,
+      1,
+      2,
+      3
+    ],
+    "steps": 539,
+    "decisions": 126,
+    "changed": 38,
+    "folds": 0,
+    "nondiscard": 23
+  },
+  {
+    "context": "mixed",
+    "label": "010",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "0319d6ecb0c7f6722a0dd8a1e26c20df9c7f1e974af51eb1a0f27352cdc52c97",
+    "scores": [
+      26000,
+      38400,
+      20600,
+      15000
+    ],
+    "ranks": [
+      2,
+      1,
+      3,
+      4
+    ],
+    "steps": 348,
+    "decisions": 86,
+    "changed": 0,
+    "folds": 3,
+    "nondiscard": 17
+  },
+  {
+    "context": "mixed",
+    "label": "011",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "5328aacb0192ffc26615ca1a97e270013a158ce7d9ec58699d983d9c379df9ca",
+    "scores": [
+      20500,
+      30600,
+      28300,
+      20600
+    ],
+    "ranks": [
+      4,
+      1,
+      2,
+      3
+    ],
+    "steps": 539,
+    "decisions": 126,
+    "changed": 38,
+    "folds": 0,
+    "nondiscard": 23
+  },
+  {
+    "context": "mixed",
+    "label": "100",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "f928dbabee443fd860e40fdb2cb0e962a0f8b1f306ed673ecf58692fd9e8a498",
+    "scores": [
+      2300,
+      24300,
+      35700,
+      37700
+    ],
+    "ranks": [
+      4,
+      3,
+      2,
+      1
+    ],
+    "steps": 347,
+    "decisions": 83,
+    "changed": 7,
+    "folds": 1,
+    "nondiscard": 15
+  },
+  {
+    "context": "mixed",
+    "label": "101",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "0b59f4efb2db5b8b963af9af423e8deb139d602f74fbfdbd722ea6cc2e0beaa3",
+    "scores": [
+      22300,
+      31700,
+      29000,
+      17000
+    ],
+    "ranks": [
+      3,
+      1,
+      2,
+      4
+    ],
+    "steps": 503,
+    "decisions": 113,
+    "changed": 37,
+    "folds": 0,
+    "nondiscard": 16
+  },
+  {
+    "context": "mixed",
+    "label": "110",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "f928dbabee443fd860e40fdb2cb0e962a0f8b1f306ed673ecf58692fd9e8a498",
+    "scores": [
+      2300,
+      24300,
+      35700,
+      37700
+    ],
+    "ranks": [
+      4,
+      3,
+      2,
+      1
+    ],
+    "steps": 347,
+    "decisions": 83,
+    "changed": 7,
+    "folds": 1,
+    "nondiscard": 15
+  },
+  {
+    "context": "mixed",
+    "label": "111",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "4788d3ed1b315cdff16d3ce3d5b310b83eb26d1dde9fcbeb0a86434413766771",
+    "scores": [
+      22300,
+      31700,
+      29000,
+      17000
+    ],
+    "ranks": [
+      3,
+      1,
+      2,
+      4
+    ],
+    "steps": 502,
+    "decisions": 112,
+    "changed": 36,
+    "folds": 0,
+    "nondiscard": 15
+  },
+  {
+    "context": "mixed",
+    "label": "tier2",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "0319d6ecb0c7f6722a0dd8a1e26c20df9c7f1e974af51eb1a0f27352cdc52c97",
+    "scores": [
+      26000,
+      38400,
+      20600,
+      15000
+    ],
+    "ranks": [
+      2,
+      1,
+      3,
+      4
+    ],
+    "steps": 348,
+    "decisions": 86,
+    "changed": 0,
+    "folds": 0,
+    "nondiscard": 17
+  },
+  {
+    "context": "characters",
+    "label": "000",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "73d9921111f899bfaa3a995e6a6024ba7ba9316ac9e3bdc71771178a2dbcd7af",
+    "scores": [
+      17600,
+      48700,
+      34500,
+      -800
+    ],
+    "ranks": [
+      3,
+      1,
+      2,
+      4
+    ],
+    "steps": 472,
+    "decisions": 113,
+    "changed": 0,
+    "folds": 7,
+    "nondiscard": 20
+  },
+  {
+    "context": "characters",
+    "label": "001",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "9540c2e74c0d64bfd8dbee9d4c05ab11170f795b901d462b042d6bd4282640af",
+    "scores": [
+      26500,
+      11200,
+      38800,
+      23500
+    ],
+    "ranks": [
+      2,
+      4,
+      1,
+      3
+    ],
+    "steps": 323,
+    "decisions": 77,
+    "changed": 23,
+    "folds": 0,
+    "nondiscard": 14
+  },
+  {
+    "context": "characters",
+    "label": "010",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "73d9921111f899bfaa3a995e6a6024ba7ba9316ac9e3bdc71771178a2dbcd7af",
+    "scores": [
+      17600,
+      48700,
+      34500,
+      -800
+    ],
+    "ranks": [
+      3,
+      1,
+      2,
+      4
+    ],
+    "steps": 472,
+    "decisions": 113,
+    "changed": 0,
+    "folds": 7,
+    "nondiscard": 20
+  },
+  {
+    "context": "characters",
+    "label": "011",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "9540c2e74c0d64bfd8dbee9d4c05ab11170f795b901d462b042d6bd4282640af",
+    "scores": [
+      26500,
+      11200,
+      38800,
+      23500
+    ],
+    "ranks": [
+      2,
+      4,
+      1,
+      3
+    ],
+    "steps": 323,
+    "decisions": 77,
+    "changed": 23,
+    "folds": 0,
+    "nondiscard": 14
+  },
+  {
+    "context": "characters",
+    "label": "100",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "848998e344407cac6a751d77a63466e8652bade84f09e40cd5360d785017fe0a",
+    "scores": [
+      18300,
+      18300,
+      35500,
+      27900
+    ],
+    "ranks": [
+      3,
+      4,
+      1,
+      2
+    ],
+    "steps": 471,
+    "decisions": 118,
+    "changed": 17,
+    "folds": 0,
+    "nondiscard": 26
+  },
+  {
+    "context": "characters",
+    "label": "101",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "3d806b0496ea92ab51d2108521919ffa331e6fdf8a998c742de7042eb81e19a9",
+    "scores": [
+      26500,
+      11200,
+      38800,
+      23500
+    ],
+    "ranks": [
+      2,
+      4,
+      1,
+      3
+    ],
+    "steps": 323,
+    "decisions": 77,
+    "changed": 25,
+    "folds": 0,
+    "nondiscard": 14
+  },
+  {
+    "context": "characters",
+    "label": "110",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "848998e344407cac6a751d77a63466e8652bade84f09e40cd5360d785017fe0a",
+    "scores": [
+      18300,
+      18300,
+      35500,
+      27900
+    ],
+    "ranks": [
+      3,
+      4,
+      1,
+      2
+    ],
+    "steps": 471,
+    "decisions": 118,
+    "changed": 17,
+    "folds": 0,
+    "nondiscard": 26
+  },
+  {
+    "context": "characters",
+    "label": "111",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "3d806b0496ea92ab51d2108521919ffa331e6fdf8a998c742de7042eb81e19a9",
+    "scores": [
+      26500,
+      11200,
+      38800,
+      23500
+    ],
+    "ranks": [
+      2,
+      4,
+      1,
+      3
+    ],
+    "steps": 323,
+    "decisions": 77,
+    "changed": 25,
+    "folds": 0,
+    "nondiscard": 14
+  },
+  {
+    "context": "characters",
+    "label": "tier2",
+    "seed": 2000,
+    "seat": 2,
+    "personality_index": 0,
+    "trace": "73d9921111f899bfaa3a995e6a6024ba7ba9316ac9e3bdc71771178a2dbcd7af",
+    "scores": [
+      17600,
+      48700,
+      34500,
+      -800
+    ],
+    "ranks": [
+      3,
+      1,
+      2,
+      4
+    ],
+    "steps": 472,
+    "decisions": 113,
+    "changed": 0,
+    "folds": 0,
+    "nondiscard": 20
+  }
+]

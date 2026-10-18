@@ -1,0 +1,36 @@
+{
+  "base": "e8a70b57db22727a861956ae6ee42c087057f6b8",
+  "python": "3.12.14",
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+  "workers": 8,
+  "wall_budget_s": 1200,
+  "planned_matches": 1728,
+  "stages": [
+    {
+      "name": "gate1",
+      "elapsed_s": 31.44273909499998
+    },
+    {
+      "name": "gate2",
+      "elapsed_s": 32.09591696200005
+    },
+    {
+      "name": "matches",
+      "elapsed_s": 207.297891746
+    },
+    {
+      "name": "reproduce",
+      "elapsed_s": 14.556159463999848
+    },
+    {
+      "name": "replay",
+      "elapsed_s": 4.679198294000116
+    }
+  ],
+  "active_stage": "replay",
+  "independent_gate_sha256": "8c812f1d076165f86e3ec2926c4ac0261cf289e6233ca532f271b73c5a45490d",
+  "status": "passed",
+  "elapsed_s": 290.073828219,
+  "completed_matches": 1728,
+  "uncompleted_matches": 0
+}

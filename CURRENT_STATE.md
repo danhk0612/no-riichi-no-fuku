@@ -1,6 +1,33 @@
 # 현재 상태
 
-## 난이도 후속 — 판단 축 분리 설계, 구현/측정 전
+## W-DIFF-A 판단 축 진단 — 완료, 제품/10profile 미채택
+
+최신/준비 main `e8a70b57db22727a861956ae6ee42c087057f6b8`(PR #87 병합), 열린 PR #35를
+확인하고 `task/w-diff-a-decision-probe`에서 별도 격리 진단만 수행했다. 상세 표/명령/원자료/정확한
+source hash는 `spikes/w-diff-a/decision-probe/README.md`와 evidence를 따른다. 사전 로컬 commit
+`eb4f303`과 전송 commit `da07bcf`의 source tree가 같으며 측정 코드/PLAN은 이후 불변이다.
+
+- 사전 공개160관측×8성향×8조합, 두 독립 프로세스의 전체 결정적 자료 일치. 합법성·000 원본행동/RNG·
+  성향6값·비discard/fold 보존 gate 통과. 성향 표현의 비율 보존을 통과했다는 뜻은 아니다.
+- 9조합×3상대×16seed×4좌석 **1,728대국**, 최대8worker. gate2회·대국·추출/전체복구까지
+  **290.074초/전체1,200초**, 실패/timeout/제외/재시도/누락0. 최대1,615step/5,000.
+- 원 Tier2 대조와000의192쌍 전체trace/점수/순위/step 일치. 고정27대국 추출재현과8조합
+  JSON 저장 후 전체잔여35~70턴/결과 재현. 변경설정 실제 전달·저장profile 우선/새대국 변경설정 적용.
+  factory 주입 격리이며 production policy3/파일DB 복구 완료가 아니다.
+- 최대값 선택 M의 점수contrast(중립/혼합/성향) +2,104/+3,119/+1,345점, 순위
+  −0.1406/−0.4297/+0.0742로 성향상대는 방향 충돌. U/D는 context별 효과 방향이 바뀐다.
+  16seed블록 paired48비교의 설명용 Bonferroni 정규근사구간은 모두0을 포함했다.
+- M의 행동상 성향 표현이 크게 축소: 같은 입력에서 중립 대비5캐릭터의 버림패 종류 차이가
+  원000은27~47건이나001/011은0~1건,101/111은0건(양쪽discard135관측)이다.
+  성향6값/비discard/fold 보존과 행동상 표현 보존을 혼동하지 않는다.
+- **현재3축으로 성향을 유지하는10강도 profile 설계 근거 부족. 최적 조합 채택/10profile 추가
+  튜닝/holdout/W-DIFF-B는 하지 않았다.** 다음은 별도 승인 후 판단 평가/선택 설계 범위 및
+  성향 표현 수용 기준·점수/순위 목표·새 독립 검증 예산 재검토다. 새 탐색 구현 승인이 아니다.
+- 기존 backend129·대사pytest10·deadline/종료4·집계1 검사 통과. 첫 unittest의 루트 cwd
+  오류1건은 문서의 backend cwd에서 재실행해 해소했다. 제품/기존근거/fixture blob hash 불변.
+  새 Windows/build/browser/실제 Windows/인간상대/화료·방총률/production 복구는 미검증.
+
+## 이전 난이도 후속 설계 — 실제 진단 결과는 위 절
 
 기준 main `9cc62550b856300ccad6e2f704adac0211ac600d`(PR #86 병합), 별도 열린 PR은
 Docker 문서 #35임을 확인했다. 사용자의 계속 지시에 따라 기존 Tier0/1/2와 두 spike를 읽고
