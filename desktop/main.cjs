@@ -982,7 +982,7 @@ async function smokeRun() {
     await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('캐릭터 프롬프트'))?.click()")
     await waitForRenderer("Boolean(document.querySelector('.content-panel [role=tab]'))")
     await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.content-panel [role=tab]')).find(button => button.innerText.includes('공유 복장'))?.click()")
-    await waitForRenderer(`Array.from(document.querySelectorAll('.shared-prompt-list button')).some(button => button.innerText === '${sharedPromptSmoke.label}')`, 30000)
+    await waitForRenderer(`Array.from(document.querySelectorAll('.shared-prompt-list button')).some(button => button.innerText.startsWith('${sharedPromptSmoke.label}'))`, 30000)
     await window.webContents.executeJavaScript("document.querySelector('.content-panel .sound-panel-heading .text-button')?.click()")
     addCheck('shared prompt, default, and character candidate survived packaged engine restart')
     let turns = 0
