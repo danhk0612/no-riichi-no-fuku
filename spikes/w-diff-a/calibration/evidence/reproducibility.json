@@ -1,0 +1,451 @@
+{
+  "independent_check_equal": true,
+  "deterministic_check_sha256": "6f497c3528b2b25643705e07ca113620430a783a0dcc9b6aefe0f50446cccd32",
+  "timings_process1": [
+    {
+      "level": 1,
+      "cpu_mean_ms": 1.473143425,
+      "cpu_p95_ms": 2.736824,
+      "cpu_max_ms": 5.644402,
+      "wall_mean_ms": 2.0169297625000002
+    },
+    {
+      "level": 2,
+      "cpu_mean_ms": 1.4663946,
+      "cpu_p95_ms": 2.806087,
+      "cpu_max_ms": 3.828689,
+      "wall_mean_ms": 2.28280426875
+    },
+    {
+      "level": 3,
+      "cpu_mean_ms": 1.05462868125,
+      "cpu_p95_ms": 1.92102,
+      "cpu_max_ms": 5.167912,
+      "wall_mean_ms": 1.52758986875
+    },
+    {
+      "level": 4,
+      "cpu_mean_ms": 1.24027416875,
+      "cpu_p95_ms": 2.468825,
+      "cpu_max_ms": 3.39952,
+      "wall_mean_ms": 1.6316212
+    },
+    {
+      "level": 5,
+      "cpu_mean_ms": 1.4368802125,
+      "cpu_p95_ms": 2.741961,
+      "cpu_max_ms": 3.098592,
+      "wall_mean_ms": 2.68839103125
+    },
+    {
+      "level": 6,
+      "cpu_mean_ms": 1.11428911875,
+      "cpu_p95_ms": 2.57386,
+      "cpu_max_ms": 4.114099,
+      "wall_mean_ms": 2.0321584625
+    },
+    {
+      "level": 7,
+      "cpu_mean_ms": 1.0501489,
+      "cpu_p95_ms": 2.356768,
+      "cpu_max_ms": 2.898294,
+      "wall_mean_ms": 1.5451242250000001
+    },
+    {
+      "level": 8,
+      "cpu_mean_ms": 1.00188798125,
+      "cpu_p95_ms": 1.792708,
+      "cpu_max_ms": 2.806658,
+      "wall_mean_ms": 1.553806175
+    },
+    {
+      "level": 9,
+      "cpu_mean_ms": 1.12287233125,
+      "cpu_p95_ms": 2.507192,
+      "cpu_max_ms": 3.209768,
+      "wall_mean_ms": 1.7894509125
+    },
+    {
+      "level": 10,
+      "cpu_mean_ms": 0.986869525,
+      "cpu_p95_ms": 1.790075,
+      "cpu_max_ms": 3.396856,
+      "wall_mean_ms": 1.557661025
+    }
+  ],
+  "timings_process2": [
+    {
+      "level": 1,
+      "cpu_mean_ms": 1.0185420125,
+      "cpu_p95_ms": 2.073997,
+      "cpu_max_ms": 2.888019,
+      "wall_mean_ms": 1.4668120625
+    },
+    {
+      "level": 2,
+      "cpu_mean_ms": 0.94412298125,
+      "cpu_p95_ms": 1.651729,
+      "cpu_max_ms": 2.330038,
+      "wall_mean_ms": 1.42053801875
+    },
+    {
+      "level": 3,
+      "cpu_mean_ms": 0.937833325,
+      "cpu_p95_ms": 1.65266,
+      "cpu_max_ms": 1.796574,
+      "wall_mean_ms": 1.40850655
+    },
+    {
+      "level": 4,
+      "cpu_mean_ms": 1.0877123,
+      "cpu_p95_ms": 2.430789,
+      "cpu_max_ms": 2.817213,
+      "wall_mean_ms": 1.39841316875
+    },
+    {
+      "level": 5,
+      "cpu_mean_ms": 1.02849699375,
+      "cpu_p95_ms": 2.074738,
+      "cpu_max_ms": 3.104831,
+      "wall_mean_ms": 1.489633175
+    },
+    {
+      "level": 6,
+      "cpu_mean_ms": 1.05843949375,
+      "cpu_p95_ms": 1.978775,
+      "cpu_max_ms": 4.574729,
+      "wall_mean_ms": 1.64674946875
+    },
+    {
+      "level": 7,
+      "cpu_mean_ms": 1.00054363125,
+      "cpu_p95_ms": 1.819388,
+      "cpu_max_ms": 2.533621,
+      "wall_mean_ms": 1.4890931
+    },
+    {
+      "level": 8,
+      "cpu_mean_ms": 0.998654425,
+      "cpu_p95_ms": 1.814601,
+      "cpu_max_ms": 2.337089,
+      "wall_mean_ms": 1.48482679375
+    },
+    {
+      "level": 9,
+      "cpu_mean_ms": 1.096801825,
+      "cpu_p95_ms": 2.26437,
+      "cpu_max_ms": 2.847859,
+      "wall_mean_ms": 1.5955593
+    },
+    {
+      "level": 10,
+      "cpu_mean_ms": 0.99701696875,
+      "cpu_p95_ms": 1.746239,
+      "cpu_max_ms": 2.740729,
+      "wall_mean_ms": 1.41559903125
+    }
+  ],
+  "v1_summary_analysis_and_script_hashes_unchanged": true,
+  "repeated_holdout_matches": [
+    {
+      "context": "neutral",
+      "label": 1,
+      "seed": 1000,
+      "seat": 2,
+      "personality_index": 0,
+      "trace": "51e572c5e2e9827b5f44d5efe94659ac4fc35b8d6a4a0603813e45a0c354c60f",
+      "scores": [
+        20800,
+        31800,
+        13800,
+        33600
+      ],
+      "ranks": [
+        3,
+        2,
+        4,
+        1
+      ],
+      "steps": 615,
+      "decisions": 143,
+      "lapses": 65,
+      "changed": 54,
+      "protected_folds": 8
+    },
+    {
+      "context": "neutral",
+      "label": 5,
+      "seed": 1000,
+      "seat": 2,
+      "personality_index": 0,
+      "trace": "acd646d4ad6e994a4ec944bd619cc927d2f4fbcdd9896e24eb560570de277b3f",
+      "scores": [
+        35800,
+        28700,
+        13100,
+        22400
+      ],
+      "ranks": [
+        1,
+        2,
+        4,
+        3
+      ],
+      "steps": 589,
+      "decisions": 143,
+      "lapses": 18,
+      "changed": 18,
+      "protected_folds": 0
+    },
+    {
+      "context": "neutral",
+      "label": 10,
+      "seed": 1000,
+      "seat": 2,
+      "personality_index": 0,
+      "trace": "774a5963e755b4f0b7e325aa7ada7d52a723b10e50bd888ac8550785189861cf",
+      "scores": [
+        23500,
+        28300,
+        18000,
+        30200
+      ],
+      "ranks": [
+        3,
+        2,
+        4,
+        1
+      ],
+      "steps": 319,
+      "decisions": 73,
+      "lapses": 0,
+      "changed": 0,
+      "protected_folds": 7
+    },
+    {
+      "context": "neutral",
+      "label": "tier2",
+      "seed": 1000,
+      "seat": 2,
+      "personality_index": 0,
+      "trace": "774a5963e755b4f0b7e325aa7ada7d52a723b10e50bd888ac8550785189861cf",
+      "scores": [
+        23500,
+        28300,
+        18000,
+        30200
+      ],
+      "ranks": [
+        3,
+        2,
+        4,
+        1
+      ],
+      "steps": 319,
+      "decisions": 73,
+      "lapses": 0,
+      "changed": 0,
+      "protected_folds": 0
+    },
+    {
+      "context": "mixed",
+      "label": 1,
+      "seed": 1000,
+      "seat": 2,
+      "personality_index": 0,
+      "trace": "f7236b81229ddbe85bc1a7d421f0fc21741ddf60069cd3321a197df490c0b38e",
+      "scores": [
+        32300,
+        22800,
+        20600,
+        24300
+      ],
+      "ranks": [
+        1,
+        3,
+        4,
+        2
+      ],
+      "steps": 430,
+      "decisions": 102,
+      "lapses": 44,
+      "changed": 32,
+      "protected_folds": 9
+    },
+    {
+      "context": "mixed",
+      "label": 5,
+      "seed": 1000,
+      "seat": 2,
+      "personality_index": 0,
+      "trace": "38b7a691ff005344dc0f5e9ebcf2cbef334ed451bc5d7078b6d7edd660abce7d",
+      "scores": [
+        31200,
+        22700,
+        35100,
+        11000
+      ],
+      "ranks": [
+        2,
+        3,
+        1,
+        4
+      ],
+      "steps": 566,
+      "decisions": 144,
+      "lapses": 18,
+      "changed": 15,
+      "protected_folds": 2
+    },
+    {
+      "context": "mixed",
+      "label": 10,
+      "seed": 1000,
+      "seat": 2,
+      "personality_index": 0,
+      "trace": "9f801df174d426dd63771585b08a18e82c7d047167d7cd606e51e17ae7c64b25",
+      "scores": [
+        44200,
+        10100,
+        37600,
+        8100
+      ],
+      "ranks": [
+        1,
+        3,
+        2,
+        4
+      ],
+      "steps": 431,
+      "decisions": 111,
+      "lapses": 0,
+      "changed": 0,
+      "protected_folds": 0
+    },
+    {
+      "context": "mixed",
+      "label": "tier2",
+      "seed": 1000,
+      "seat": 2,
+      "personality_index": 0,
+      "trace": "9f801df174d426dd63771585b08a18e82c7d047167d7cd606e51e17ae7c64b25",
+      "scores": [
+        44200,
+        10100,
+        37600,
+        8100
+      ],
+      "ranks": [
+        1,
+        3,
+        2,
+        4
+      ],
+      "steps": 431,
+      "decisions": 111,
+      "lapses": 0,
+      "changed": 0,
+      "protected_folds": 0
+    },
+    {
+      "context": "characters",
+      "label": 1,
+      "seed": 1000,
+      "seat": 2,
+      "personality_index": 0,
+      "trace": "7c31cb6dc101affa85886d015c56c096616a0259ccb05d85a216440b669c5345",
+      "scores": [
+        28100,
+        20000,
+        18500,
+        33400
+      ],
+      "ranks": [
+        2,
+        3,
+        4,
+        1
+      ],
+      "steps": 415,
+      "decisions": 100,
+      "lapses": 43,
+      "changed": 32,
+      "protected_folds": 7
+    },
+    {
+      "context": "characters",
+      "label": 5,
+      "seed": 1000,
+      "seat": 2,
+      "personality_index": 0,
+      "trace": "9336cac8029a6856b62fe528a41da15b48f7f65e678db003c05fa6c6d3b2b4cb",
+      "scores": [
+        29300,
+        25400,
+        26900,
+        18400
+      ],
+      "ranks": [
+        1,
+        3,
+        2,
+        4
+      ],
+      "steps": 597,
+      "decisions": 155,
+      "lapses": 18,
+      "changed": 15,
+      "protected_folds": 3
+    },
+    {
+      "context": "characters",
+      "label": 10,
+      "seed": 1000,
+      "seat": 2,
+      "personality_index": 0,
+      "trace": "2738f40435ba0d4b2125ab6749e6d181414e98ccbfff30b52fe4bcaf664d247b",
+      "scores": [
+        33200,
+        19100,
+        29100,
+        14600
+      ],
+      "ranks": [
+        1,
+        3,
+        2,
+        4
+      ],
+      "steps": 573,
+      "decisions": 145,
+      "lapses": 0,
+      "changed": 0,
+      "protected_folds": 0
+    },
+    {
+      "context": "characters",
+      "label": "tier2",
+      "seed": 1000,
+      "seat": 2,
+      "personality_index": 0,
+      "trace": "2738f40435ba0d4b2125ab6749e6d181414e98ccbfff30b52fe4bcaf664d247b",
+      "scores": [
+        33200,
+        19100,
+        29100,
+        14600
+      ],
+      "ranks": [
+        1,
+        3,
+        2,
+        4
+      ],
+      "steps": 573,
+      "decisions": 145,
+      "lapses": 0,
+      "changed": 0,
+      "protected_folds": 0
+    }
+  ]
+}

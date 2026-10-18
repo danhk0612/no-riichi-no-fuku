@@ -1,0 +1,1838 @@
+{
+  "split": "tune",
+  "matches": 576,
+  "steps": 269519,
+  "target_decisions": 67184,
+  "max_steps": 1090,
+  "seed_blocks_per_context": 4,
+  "rotations_per_block": 4,
+  "interval": "df31 t approximation 2.04 (32 only); Bonferroni normal approximation over 54 tests, not exact simultaneous t inference",
+  "adjusted_normal_multiplier": 3.3121176662593372,
+  "level10_equals_tier2_all_traces": true,
+  "pairs": [
+    {
+      "context": "neutral",
+      "low": 1,
+      "high": 2,
+      "scores": {
+        "mean": 2506.25,
+        "se": 743.6099307880891,
+        "seed_blocks": [
+          1900,
+          725,
+          4050,
+          3350
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": 0.25,
+        "se": 0.14433756729740643,
+        "seed_blocks": [
+          0,
+          0,
+          0.5,
+          0.5
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "neutral",
+      "low": 2,
+      "high": 3,
+      "scores": {
+        "mean": -906.25,
+        "se": 2979.1703088555823,
+        "seed_blocks": [
+          475,
+          950,
+          -9450,
+          4400
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.3125,
+        "se": 0.21347814095749162,
+        "seed_blocks": [
+          -0.5,
+          -0.25,
+          0.25,
+          -0.75
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "neutral",
+      "low": 3,
+      "high": 4,
+      "scores": {
+        "mean": 3612.5,
+        "se": 4841.170011818768,
+        "seed_blocks": [
+          2200,
+          -5475,
+          17275,
+          450
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.3125,
+        "se": 0.5038911092686593,
+        "seed_blocks": [
+          0.25,
+          0.5,
+          -1.75,
+          -0.25
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "neutral",
+      "low": 4,
+      "high": 5,
+      "scores": {
+        "mean": -1556.25,
+        "se": 4889.736008126274,
+        "seed_blocks": [
+          -7075,
+          11925,
+          -10175,
+          -900
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": 0.3125,
+        "se": 0.5716842805838435,
+        "seed_blocks": [
+          0.5,
+          -1.25,
+          1.5,
+          0.5
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "neutral",
+      "low": 5,
+      "high": 6,
+      "scores": {
+        "mean": 6881.25,
+        "se": 3055.5341697483927,
+        "seed_blocks": [
+          9525,
+          7900,
+          12025,
+          -1925
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.3125,
+        "se": 0.3869619921043065,
+        "seed_blocks": [
+          -0.75,
+          -0.25,
+          -1,
+          0.75
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "neutral",
+      "low": 6,
+      "high": 7,
+      "scores": {
+        "mean": 4081.25,
+        "se": 4518.646264369451,
+        "seed_blocks": [
+          -4025,
+          15875,
+          -1850,
+          6325
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.5625,
+        "se": 0.21347814095749162,
+        "seed_blocks": [
+          0,
+          -1,
+          -0.5,
+          -0.75
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "neutral",
+      "low": 7,
+      "high": 8,
+      "scores": {
+        "mean": -2156.25,
+        "se": 3112.6317743189607,
+        "seed_blocks": [
+          -4450,
+          -9925,
+          2975,
+          2775
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": 0.3125,
+        "se": 0.2576941016011038,
+        "seed_blocks": [
+          1,
+          0.25,
+          0.25,
+          -0.25
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "neutral",
+      "low": 8,
+      "high": 9,
+      "scores": {
+        "mean": 1293.75,
+        "se": 3394.501911793049,
+        "seed_blocks": [
+          9100,
+          -3225,
+          -5425,
+          4725
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.5,
+        "se": 0.5103103630798288,
+        "seed_blocks": [
+          -1.25,
+          0.5,
+          0.25,
+          -1.5
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "neutral",
+      "low": 9,
+      "high": 10,
+      "scores": {
+        "mean": -4143.75,
+        "se": 2676.311497035924,
+        "seed_blocks": [
+          -125,
+          -9675,
+          975,
+          -7750
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": 0.4375,
+        "se": 0.29536347664078805,
+        "seed_blocks": [
+          0,
+          0.5,
+          0,
+          1.25
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "neutral",
+      "low": 1,
+      "high": 10,
+      "scores": {
+        "mean": 9612.5,
+        "se": 848.6815755433051,
+        "seed_blocks": [
+          7525,
+          9075,
+          10400,
+          11450
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.6875,
+        "se": 0.11967838846954226,
+        "seed_blocks": [
+          -0.75,
+          -1,
+          -0.5,
+          -0.5
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "neutral",
+      "low": "v1-L1",
+      "high": 1,
+      "scores": {
+        "mean": 2650,
+        "se": 2568.823498542994,
+        "seed_blocks": [
+          6700,
+          1775,
+          6400,
+          -4275
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.4375,
+        "se": 0.21347814095749162,
+        "seed_blocks": [
+          -0.25,
+          0,
+          -1,
+          -0.5
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "mixed",
+      "low": 1,
+      "high": 2,
+      "scores": {
+        "mean": -5281.25,
+        "se": 3170.705346738062,
+        "seed_blocks": [
+          -11275,
+          -3825,
+          3000,
+          -9025
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": 0.1875,
+        "se": 0.21347814095749162,
+        "seed_blocks": [
+          0.75,
+          0.25,
+          -0.25,
+          0
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "mixed",
+      "low": 2,
+      "high": 3,
+      "scores": {
+        "mean": 2918.75,
+        "se": 3011.166284985493,
+        "seed_blocks": [
+          11100,
+          3675,
+          -725,
+          -2375
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.1875,
+        "se": 0.1875,
+        "seed_blocks": [
+          -0.75,
+          0,
+          0,
+          0
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "mixed",
+      "low": 3,
+      "high": 4,
+      "scores": {
+        "mean": -318.75,
+        "se": 5810.105913764969,
+        "seed_blocks": [
+          -6250,
+          -11975,
+          2175,
+          14775
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": 0.0,
+        "se": 0.28867513459481287,
+        "seed_blocks": [
+          0.5,
+          0.5,
+          -0.5,
+          -0.5
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "mixed",
+      "low": 4,
+      "high": 5,
+      "scores": {
+        "mean": 1637.5,
+        "se": 1812.8735247299153,
+        "seed_blocks": [
+          2650,
+          5700,
+          -3025,
+          1225
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": 0.25,
+        "se": 0.10206207261596575,
+        "seed_blocks": [
+          0.25,
+          0,
+          0.5,
+          0.25
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "mixed",
+      "low": 5,
+      "high": 6,
+      "scores": {
+        "mean": -1206.25,
+        "se": 2823.01506593571,
+        "seed_blocks": [
+          4700,
+          300,
+          -975,
+          -8850
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.4375,
+        "se": 0.3125,
+        "seed_blocks": [
+          -1.25,
+          -0.5,
+          -0.25,
+          0.25
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "mixed",
+      "low": 6,
+      "high": 7,
+      "scores": {
+        "mean": 7600,
+        "se": 2340.4282015619847,
+        "seed_blocks": [
+          5325,
+          12175,
+          2150,
+          10750
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.75,
+        "se": 0.28867513459481287,
+        "seed_blocks": [
+          -0.25,
+          -1.25,
+          -0.25,
+          -1.25
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "mixed",
+      "low": 7,
+      "high": 8,
+      "scores": {
+        "mean": -2500,
+        "se": 1536.2630525618542,
+        "seed_blocks": [
+          900,
+          -5075,
+          -700,
+          -5125
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": 0.375,
+        "se": 0.125,
+        "seed_blocks": [
+          0,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "mixed",
+      "low": 8,
+      "high": 9,
+      "scores": {
+        "mean": 1850,
+        "se": 2530.583760057483,
+        "seed_blocks": [
+          300,
+          3200,
+          7975,
+          -4075
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.25,
+        "se": 0.1767766952966369,
+        "seed_blocks": [
+          -0.25,
+          0,
+          -0.75,
+          0
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "mixed",
+      "low": 9,
+      "high": 10,
+      "scores": {
+        "mean": -150,
+        "se": 663.2464348440429,
+        "seed_blocks": [
+          100,
+          1625,
+          -1250,
+          -1075
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.125,
+        "se": 0.1613743060919757,
+        "seed_blocks": [
+          -0.25,
+          -0.5,
+          0,
+          0.25
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "mixed",
+      "low": 1,
+      "high": 10,
+      "scores": {
+        "mean": 4550,
+        "se": 2835.397532387067,
+        "seed_blocks": [
+          7550,
+          5800,
+          8625,
+          -3775
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.9375,
+        "se": 0.15728821740147395,
+        "seed_blocks": [
+          -1.25,
+          -1,
+          -1,
+          -0.5
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "mixed",
+      "low": "v1-L1",
+      "high": 1,
+      "scores": {
+        "mean": 7950,
+        "se": 3117.1066979920124,
+        "seed_blocks": [
+          14100,
+          8375,
+          -675,
+          10000
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.3125,
+        "se": 0.21347814095749162,
+        "seed_blocks": [
+          -0.75,
+          -0.25,
+          0.25,
+          -0.5
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "characters",
+      "low": 1,
+      "high": 2,
+      "scores": {
+        "mean": -756.25,
+        "se": 2832.0593030219784,
+        "seed_blocks": [
+          -5475,
+          7350,
+          -1325,
+          -3575
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": 0.0625,
+        "se": 0.2366211810750114,
+        "seed_blocks": [
+          -0.25,
+          -0.25,
+          0,
+          0.75
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "characters",
+      "low": 2,
+      "high": 3,
+      "scores": {
+        "mean": 437.5,
+        "se": 3253.5957672499308,
+        "seed_blocks": [
+          -5250,
+          -5075,
+          6925,
+          5150
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.375,
+        "se": 0.46210568776705907,
+        "seed_blocks": [
+          0.75,
+          0,
+          -1,
+          -1.25
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "characters",
+      "low": 3,
+      "high": 4,
+      "scores": {
+        "mean": 2375,
+        "se": 1251.5407171429408,
+        "seed_blocks": [
+          5575,
+          2450,
+          -525,
+          2000
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": 0.0,
+        "se": 0.27003086243366087,
+        "seed_blocks": [
+          -0.5,
+          -0.25,
+          0,
+          0.75
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "characters",
+      "low": 4,
+      "high": 5,
+      "scores": {
+        "mean": -3481.25,
+        "se": 1485.6387164561017,
+        "seed_blocks": [
+          -1525,
+          -525,
+          -4975,
+          -6900
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": 0.3125,
+        "se": 0.11967838846954226,
+        "seed_blocks": [
+          0,
+          0.25,
+          0.5,
+          0.5
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "characters",
+      "low": 5,
+      "high": 6,
+      "scores": {
+        "mean": 2106.25,
+        "se": 2660.7364073065687,
+        "seed_blocks": [
+          3075,
+          5875,
+          -5675,
+          5150
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.375,
+        "se": 0.21650635094610965,
+        "seed_blocks": [
+          -0.5,
+          -0.75,
+          0.25,
+          -0.5
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "characters",
+      "low": 6,
+      "high": 7,
+      "scores": {
+        "mean": 3818.75,
+        "se": 1824.1828935626677,
+        "seed_blocks": [
+          -1175,
+          3500,
+          7100,
+          5850
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.25,
+        "se": 0.30618621784789724,
+        "seed_blocks": [
+          0.5,
+          -0.25,
+          -0.25,
+          -1
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "characters",
+      "low": 7,
+      "high": 8,
+      "scores": {
+        "mean": 1337.5,
+        "se": 1372.668477819754,
+        "seed_blocks": [
+          550,
+          5150,
+          1025,
+          -1375
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.0625,
+        "se": 0.11967838846954226,
+        "seed_blocks": [
+          -0.25,
+          -0.25,
+          0,
+          0.25
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "characters",
+      "low": 8,
+      "high": 9,
+      "scores": {
+        "mean": 987.5,
+        "se": 995.3276261278662,
+        "seed_blocks": [
+          750,
+          -1625,
+          3100,
+          1725
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.1875,
+        "se": 0.0625,
+        "seed_blocks": [
+          -0.25,
+          0,
+          -0.25,
+          -0.25
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "characters",
+      "low": 9,
+      "high": 10,
+      "scores": {
+        "mean": 1775,
+        "se": 2951.7297188823595,
+        "seed_blocks": [
+          0,
+          7300,
+          5550,
+          -5750
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": 0.0,
+        "se": 0.27003086243366087,
+        "seed_blocks": [
+          0,
+          -0.5,
+          -0.25,
+          0.75
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "characters",
+      "low": 1,
+      "high": 10,
+      "scores": {
+        "mean": 8600,
+        "se": 6070.497302528022,
+        "seed_blocks": [
+          -3475,
+          24400,
+          11200,
+          2275
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.875,
+        "se": 0.42695628191498325,
+        "seed_blocks": [
+          -0.5,
+          -2,
+          -1,
+          0
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    },
+    {
+      "context": "characters",
+      "low": "v1-L1",
+      "high": 1,
+      "scores": {
+        "mean": 4362.5,
+        "se": 1902.8624271519648,
+        "seed_blocks": [
+          9950,
+          1425,
+          3250,
+          2825
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      },
+      "ranks": {
+        "mean": -0.375,
+        "se": 0.125,
+        "seed_blocks": [
+          -0.25,
+          -0.25,
+          -0.25,
+          -0.75
+        ],
+        "descriptive_95": null,
+        "bonferroni_normal_54": null
+      }
+    }
+  ],
+  "personality_strata": [
+    {
+      "context": "mixed",
+      "personality": 0,
+      "label": 1,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 24075,
+      "mean_rank": 3
+    },
+    {
+      "context": "mixed",
+      "personality": 0,
+      "label": 2,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 12800,
+      "mean_rank": 3.75
+    },
+    {
+      "context": "mixed",
+      "personality": 0,
+      "label": 3,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 23900,
+      "mean_rank": 3
+    },
+    {
+      "context": "mixed",
+      "personality": 0,
+      "label": 4,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 17650,
+      "mean_rank": 3.5
+    },
+    {
+      "context": "mixed",
+      "personality": 0,
+      "label": 5,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 20300,
+      "mean_rank": 3.75
+    },
+    {
+      "context": "mixed",
+      "personality": 0,
+      "label": 6,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 25000,
+      "mean_rank": 2.5
+    },
+    {
+      "context": "mixed",
+      "personality": 0,
+      "label": 7,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 30325,
+      "mean_rank": 2.25
+    },
+    {
+      "context": "mixed",
+      "personality": 0,
+      "label": 8,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 31225,
+      "mean_rank": 2.25
+    },
+    {
+      "context": "mixed",
+      "personality": 0,
+      "label": 9,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 31525,
+      "mean_rank": 2
+    },
+    {
+      "context": "mixed",
+      "personality": 0,
+      "label": 10,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 31625,
+      "mean_rank": 1.75
+    },
+    {
+      "context": "mixed",
+      "personality": 0,
+      "label": "v1-L1",
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 9975,
+      "mean_rank": 3.75
+    },
+    {
+      "context": "mixed",
+      "personality": 0,
+      "label": "tier2",
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 31625,
+      "mean_rank": 1.75
+    },
+    {
+      "context": "mixed",
+      "personality": 1,
+      "label": 1,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 20275,
+      "mean_rank": 3.25
+    },
+    {
+      "context": "mixed",
+      "personality": 1,
+      "label": 2,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 16450,
+      "mean_rank": 3.5
+    },
+    {
+      "context": "mixed",
+      "personality": 1,
+      "label": 3,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 20125,
+      "mean_rank": 3.5
+    },
+    {
+      "context": "mixed",
+      "personality": 1,
+      "label": 4,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 8150,
+      "mean_rank": 4
+    },
+    {
+      "context": "mixed",
+      "personality": 1,
+      "label": 5,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 13850,
+      "mean_rank": 4
+    },
+    {
+      "context": "mixed",
+      "personality": 1,
+      "label": 6,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 14150,
+      "mean_rank": 3.5
+    },
+    {
+      "context": "mixed",
+      "personality": 1,
+      "label": 7,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 26325,
+      "mean_rank": 2.25
+    },
+    {
+      "context": "mixed",
+      "personality": 1,
+      "label": 8,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 21250,
+      "mean_rank": 2.75
+    },
+    {
+      "context": "mixed",
+      "personality": 1,
+      "label": 9,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 24450,
+      "mean_rank": 2.75
+    },
+    {
+      "context": "mixed",
+      "personality": 1,
+      "label": 10,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 26075,
+      "mean_rank": 2.25
+    },
+    {
+      "context": "mixed",
+      "personality": 1,
+      "label": "v1-L1",
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 11900,
+      "mean_rank": 3.5
+    },
+    {
+      "context": "mixed",
+      "personality": 1,
+      "label": "tier2",
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 26075,
+      "mean_rank": 2.25
+    },
+    {
+      "context": "mixed",
+      "personality": 2,
+      "label": 1,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 15450,
+      "mean_rank": 3.75
+    },
+    {
+      "context": "mixed",
+      "personality": 2,
+      "label": 2,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 18450,
+      "mean_rank": 3.5
+    },
+    {
+      "context": "mixed",
+      "personality": 2,
+      "label": 3,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 17725,
+      "mean_rank": 3.5
+    },
+    {
+      "context": "mixed",
+      "personality": 2,
+      "label": 4,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 19900,
+      "mean_rank": 3
+    },
+    {
+      "context": "mixed",
+      "personality": 2,
+      "label": 5,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 16875,
+      "mean_rank": 3.5
+    },
+    {
+      "context": "mixed",
+      "personality": 2,
+      "label": 6,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 15900,
+      "mean_rank": 3.25
+    },
+    {
+      "context": "mixed",
+      "personality": 2,
+      "label": 7,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 18050,
+      "mean_rank": 3
+    },
+    {
+      "context": "mixed",
+      "personality": 2,
+      "label": 8,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 17350,
+      "mean_rank": 3.5
+    },
+    {
+      "context": "mixed",
+      "personality": 2,
+      "label": 9,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 25325,
+      "mean_rank": 2.75
+    },
+    {
+      "context": "mixed",
+      "personality": 2,
+      "label": 10,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 24075,
+      "mean_rank": 2.75
+    },
+    {
+      "context": "mixed",
+      "personality": 2,
+      "label": "v1-L1",
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 16125,
+      "mean_rank": 3.5
+    },
+    {
+      "context": "mixed",
+      "personality": 2,
+      "label": "tier2",
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 24075,
+      "mean_rank": 2.75
+    },
+    {
+      "context": "mixed",
+      "personality": 3,
+      "label": 1,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 22550,
+      "mean_rank": 3.25
+    },
+    {
+      "context": "mixed",
+      "personality": 3,
+      "label": 2,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 13525,
+      "mean_rank": 3.25
+    },
+    {
+      "context": "mixed",
+      "personality": 3,
+      "label": 3,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 11150,
+      "mean_rank": 3.25
+    },
+    {
+      "context": "mixed",
+      "personality": 3,
+      "label": 4,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 25925,
+      "mean_rank": 2.75
+    },
+    {
+      "context": "mixed",
+      "personality": 3,
+      "label": 5,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 27150,
+      "mean_rank": 3
+    },
+    {
+      "context": "mixed",
+      "personality": 3,
+      "label": 6,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 18300,
+      "mean_rank": 3.25
+    },
+    {
+      "context": "mixed",
+      "personality": 3,
+      "label": 7,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 29050,
+      "mean_rank": 2
+    },
+    {
+      "context": "mixed",
+      "personality": 3,
+      "label": 8,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 23925,
+      "mean_rank": 2.5
+    },
+    {
+      "context": "mixed",
+      "personality": 3,
+      "label": 9,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 19850,
+      "mean_rank": 2.5
+    },
+    {
+      "context": "mixed",
+      "personality": 3,
+      "label": 10,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 18775,
+      "mean_rank": 2.75
+    },
+    {
+      "context": "mixed",
+      "personality": 3,
+      "label": "v1-L1",
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 12550,
+      "mean_rank": 3.75
+    },
+    {
+      "context": "mixed",
+      "personality": 3,
+      "label": "tier2",
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 18775,
+      "mean_rank": 2.75
+    },
+    {
+      "context": "characters",
+      "personality": 0,
+      "label": 1,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 28900,
+      "mean_rank": 2.75
+    },
+    {
+      "context": "characters",
+      "personality": 0,
+      "label": 2,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 23425,
+      "mean_rank": 2.5
+    },
+    {
+      "context": "characters",
+      "personality": 0,
+      "label": 3,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 18175,
+      "mean_rank": 3.25
+    },
+    {
+      "context": "characters",
+      "personality": 0,
+      "label": 4,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 23750,
+      "mean_rank": 2.75
+    },
+    {
+      "context": "characters",
+      "personality": 0,
+      "label": 5,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 22225,
+      "mean_rank": 2.75
+    },
+    {
+      "context": "characters",
+      "personality": 0,
+      "label": 6,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 25300,
+      "mean_rank": 2.25
+    },
+    {
+      "context": "characters",
+      "personality": 0,
+      "label": 7,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 24125,
+      "mean_rank": 2.75
+    },
+    {
+      "context": "characters",
+      "personality": 0,
+      "label": 8,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 24675,
+      "mean_rank": 2.5
+    },
+    {
+      "context": "characters",
+      "personality": 0,
+      "label": 9,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 25425,
+      "mean_rank": 2.25
+    },
+    {
+      "context": "characters",
+      "personality": 0,
+      "label": 10,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 25425,
+      "mean_rank": 2.25
+    },
+    {
+      "context": "characters",
+      "personality": 0,
+      "label": "v1-L1",
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 18950,
+      "mean_rank": 3
+    },
+    {
+      "context": "characters",
+      "personality": 0,
+      "label": "tier2",
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 25425,
+      "mean_rank": 2.25
+    },
+    {
+      "context": "characters",
+      "personality": 1,
+      "label": 1,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 13275,
+      "mean_rank": 3.5
+    },
+    {
+      "context": "characters",
+      "personality": 1,
+      "label": 2,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 20625,
+      "mean_rank": 3.25
+    },
+    {
+      "context": "characters",
+      "personality": 1,
+      "label": 3,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 15550,
+      "mean_rank": 3.25
+    },
+    {
+      "context": "characters",
+      "personality": 1,
+      "label": 4,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 18000,
+      "mean_rank": 3
+    },
+    {
+      "context": "characters",
+      "personality": 1,
+      "label": 5,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 17475,
+      "mean_rank": 3.25
+    },
+    {
+      "context": "characters",
+      "personality": 1,
+      "label": 6,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 23350,
+      "mean_rank": 2.5
+    },
+    {
+      "context": "characters",
+      "personality": 1,
+      "label": 7,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 26850,
+      "mean_rank": 2.25
+    },
+    {
+      "context": "characters",
+      "personality": 1,
+      "label": 8,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 32000,
+      "mean_rank": 2
+    },
+    {
+      "context": "characters",
+      "personality": 1,
+      "label": 9,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 30375,
+      "mean_rank": 2
+    },
+    {
+      "context": "characters",
+      "personality": 1,
+      "label": 10,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 37675,
+      "mean_rank": 1.5
+    },
+    {
+      "context": "characters",
+      "personality": 1,
+      "label": "v1-L1",
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 11850,
+      "mean_rank": 3.75
+    },
+    {
+      "context": "characters",
+      "personality": 1,
+      "label": "tier2",
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 37675,
+      "mean_rank": 1.5
+    },
+    {
+      "context": "characters",
+      "personality": 2,
+      "label": 1,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 18225,
+      "mean_rank": 3.25
+    },
+    {
+      "context": "characters",
+      "personality": 2,
+      "label": 2,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 16900,
+      "mean_rank": 3.25
+    },
+    {
+      "context": "characters",
+      "personality": 2,
+      "label": 3,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 23825,
+      "mean_rank": 2.25
+    },
+    {
+      "context": "characters",
+      "personality": 2,
+      "label": 4,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 23300,
+      "mean_rank": 2.25
+    },
+    {
+      "context": "characters",
+      "personality": 2,
+      "label": 5,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 18325,
+      "mean_rank": 2.75
+    },
+    {
+      "context": "characters",
+      "personality": 2,
+      "label": 6,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 12650,
+      "mean_rank": 3
+    },
+    {
+      "context": "characters",
+      "personality": 2,
+      "label": 7,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 19750,
+      "mean_rank": 2.75
+    },
+    {
+      "context": "characters",
+      "personality": 2,
+      "label": 8,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 20775,
+      "mean_rank": 2.75
+    },
+    {
+      "context": "characters",
+      "personality": 2,
+      "label": 9,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 23875,
+      "mean_rank": 2.5
+    },
+    {
+      "context": "characters",
+      "personality": 2,
+      "label": 10,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 29425,
+      "mean_rank": 2.25
+    },
+    {
+      "context": "characters",
+      "personality": 2,
+      "label": "v1-L1",
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 14975,
+      "mean_rank": 3.5
+    },
+    {
+      "context": "characters",
+      "personality": 2,
+      "label": "tier2",
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 29425,
+      "mean_rank": 2.25
+    },
+    {
+      "context": "characters",
+      "personality": 3,
+      "label": 1,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 20500,
+      "mean_rank": 2.75
+    },
+    {
+      "context": "characters",
+      "personality": 3,
+      "label": 2,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 16925,
+      "mean_rank": 3.5
+    },
+    {
+      "context": "characters",
+      "personality": 3,
+      "label": 3,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 22075,
+      "mean_rank": 2.25
+    },
+    {
+      "context": "characters",
+      "personality": 3,
+      "label": 4,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 24075,
+      "mean_rank": 3
+    },
+    {
+      "context": "characters",
+      "personality": 3,
+      "label": 5,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 17175,
+      "mean_rank": 3.5
+    },
+    {
+      "context": "characters",
+      "personality": 3,
+      "label": 6,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 22325,
+      "mean_rank": 3
+    },
+    {
+      "context": "characters",
+      "personality": 3,
+      "label": 7,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 28175,
+      "mean_rank": 2
+    },
+    {
+      "context": "characters",
+      "personality": 3,
+      "label": 8,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 26800,
+      "mean_rank": 2.25
+    },
+    {
+      "context": "characters",
+      "personality": 3,
+      "label": 9,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 28525,
+      "mean_rank": 2
+    },
+    {
+      "context": "characters",
+      "personality": 3,
+      "label": 10,
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 22775,
+      "mean_rank": 2.75
+    },
+    {
+      "context": "characters",
+      "personality": 3,
+      "label": "v1-L1",
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 17675,
+      "mean_rank": 3.5
+    },
+    {
+      "context": "characters",
+      "personality": 3,
+      "label": "tier2",
+      "matches": 4,
+      "seed_blocks": 1,
+      "mean_score": 22775,
+      "mean_rank": 2.75
+    }
+  ],
+  "adjacent_practical_pass_count": 0
+}
