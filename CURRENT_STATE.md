@@ -2,9 +2,10 @@
 
 W08-M은 준비 main `8e44eb1`(PR #92 병합)에서 독립 브랜치로 구현했다. nullable `CharacterContent.measurements_cm`,
 소수 한 자리 cm API/편집, 명시적 팩 적용 시 원본 metadata와 필드별 override 보존, 로스터 후보 카드 표시를 추가했다.
-기존 manifest/digest·대국 snapshot·초기화 보존 경계를 유지한다. Linux backend 142개, 대사 pytest 10개,
-frontend build 및 관련 브라우저 검사까지 통과했다. Windows W05 hosted artifact 검사와 PR 제출은 진행 중이며
-해당 최종 source SHA와 증거는 완료 후 이 문서 및 TASKS에 기록한다. 직접 병합·Release/tag는 하지 않는다.
+기존 manifest/digest·대국 snapshot·초기화 보존 경계를 유지한다. Linux backend 143개, 대사 pytest 10개,
+frontend build 및 local-content/local-sound/audio-packs/difficulty browser 검사를 통과했다. PR #93은 열려 있고
+정확한 source `bd9698d16ba3e11fce87d5e07ea946bf8161eb21`의 Windows W05 hosted job은 진행 중이다.
+완료 후 artifact SHA와 packaged smoke 증거를 기록한다. 직접 병합·Release/tag는 하지 않는다.
 
 아래 절은 W08-M 이전의 시점별 이력으로 보존한다.
 
