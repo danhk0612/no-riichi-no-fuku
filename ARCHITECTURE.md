@@ -1,5 +1,11 @@
 # 구조와 전환 검토
 
+## W08-M 다음 독립 계약
+
+Q-META A의 키·B/W/H 선택 입력만 기존 CharacterContent/편집/팩 명시 적용에 확장한다.
+현재 미구현이며 저장·십진 cm·nullable/override·manifest v1 보존·최소 표시·검증 경계는
+[W08-M 계약](docs/W08_M_METADATA_CONTRACT.md)을 따른다. 공통 상황/생성/뷰어 정책을 확정하지 않는다.
+
 ## W-DIFF-B 현재 구현 — 신규 local policy3
 
 2026-10-18 사용자 DIFF-* 및 수용 기준 승인, 무늬 교정 뒤 독립 재검증 통과 후 연결했다.
