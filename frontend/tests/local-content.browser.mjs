@@ -190,6 +190,8 @@ try {
   await panel.getByRole('button', { name: '확인 후 이동' }).click()
   await page.waitForFunction(() => !document.querySelector('.shared-prompt-list button'))
   assert.equal(sharedCandidateRows['1:0:clothing_state'].item_ids.length, 0, 'confirmed move must detach the source candidate')
+  await panel.getByRole('tab', { name: '공유 복장·포즈' }).click()
+  await panel.getByLabel('Level', { exact: true }).waitFor({ state: 'visible' })
   await panel.getByLabel('Level', { exact: true }).selectOption('1')
   await panel.getByRole('button', { name: 'test-only-shared-prompt', exact: true }).waitFor()
   assert.equal(sharedCandidate(1, 1, 'clothing_state').unregistered, true, 'a moved item must not be auto-attached at its target level')
