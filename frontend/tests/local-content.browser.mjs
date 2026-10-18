@@ -191,6 +191,7 @@ try {
   await page.waitForFunction(() => !document.querySelector('.shared-prompt-list button'))
   assert.equal(sharedCandidateRows['1:0:clothing_state'].item_ids.length, 0, 'confirmed move must detach the source candidate')
   await panel.getByRole('tab', { name: '공유 복장·포즈' }).click()
+  console.log('shared prompt UI after move', await panel.locator('.content-tabs').evaluate((el, pageErrors) => ({ selected: [...el.querySelectorAll('[role="tab"]')].map((tab) => ({ label: tab.textContent, selected: tab.getAttribute('aria-selected') })), managerCount: document.querySelectorAll('.shared-prompt-manager').length, managerHidden: document.querySelector('.shared-prompt-manager')?.closest('[hidden]')?.getAttribute('hidden') ?? null, errors: pageErrors }), errors))
   await panel.getByLabel('Level', { exact: true }).waitFor({ state: 'visible' })
   await panel.getByLabel('Level', { exact: true }).selectOption('1')
   await panel.getByRole('button', { name: 'test-only-shared-prompt', exact: true }).waitFor()
