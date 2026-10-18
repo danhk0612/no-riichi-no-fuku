@@ -1,0 +1,47 @@
+{
+  "rows": [
+    {
+      "label": "baseline",
+      "turns": 57,
+      "trace": "d0993679fd96242f5714bb5b900a620d4583997dc426a8b14f2dad60a387e8a7",
+      "result": {
+        "scores": [
+          15700,
+          25100,
+          37100,
+          22100
+        ],
+        "ranks": [
+          4,
+          2,
+          1,
+          3
+        ]
+      },
+      "saved_profile_wins": true,
+      "fresh_setting": "candidate"
+    },
+    {
+      "label": "candidate",
+      "turns": 70,
+      "trace": "b91318f3631444bdaad027c60bd96db68dc46baa5f4fb3e60967a592feb890ea",
+      "result": {
+        "scores": [
+          18000,
+          26000,
+          23800,
+          32200
+        ],
+        "ranks": [
+          4,
+          2,
+          3,
+          1
+        ]
+      },
+      "saved_profile_wins": true,
+      "fresh_setting": "baseline"
+    }
+  ],
+  "invalid_profiles_rejected": true
+}

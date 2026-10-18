@@ -1,0 +1,581 @@
+{
+  "status": "passed",
+  "completed_matches": 288,
+  "candidate_action_changes": [
+    8,
+    6,
+    8,
+    6,
+    8,
+    6,
+    8,
+    8
+  ],
+  "gate_passed": true,
+  "personality_differences": [
+    {
+      "label": "baseline",
+      "vs_neutral": [
+        {
+          "personality": 1,
+          "all_actions": 13,
+          "both_discard": 25,
+          "tile_kinds": 12
+        },
+        {
+          "personality": 2,
+          "all_actions": 0,
+          "both_discard": 25,
+          "tile_kinds": 0
+        },
+        {
+          "personality": 3,
+          "all_actions": 13,
+          "both_discard": 25,
+          "tile_kinds": 12
+        },
+        {
+          "personality": 4,
+          "all_actions": 0,
+          "both_discard": 25,
+          "tile_kinds": 0
+        },
+        {
+          "personality": 5,
+          "all_actions": 13,
+          "both_discard": 25,
+          "tile_kinds": 12
+        },
+        {
+          "personality": 6,
+          "all_actions": 5,
+          "both_discard": 25,
+          "tile_kinds": 3
+        },
+        {
+          "personality": 7,
+          "all_actions": 0,
+          "both_discard": 25,
+          "tile_kinds": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "vs_neutral": [
+        {
+          "personality": 1,
+          "all_actions": 13,
+          "both_discard": 25,
+          "tile_kinds": 12
+        },
+        {
+          "personality": 2,
+          "all_actions": 0,
+          "both_discard": 25,
+          "tile_kinds": 0
+        },
+        {
+          "personality": 3,
+          "all_actions": 13,
+          "both_discard": 25,
+          "tile_kinds": 12
+        },
+        {
+          "personality": 4,
+          "all_actions": 0,
+          "both_discard": 25,
+          "tile_kinds": 0
+        },
+        {
+          "personality": 5,
+          "all_actions": 13,
+          "both_discard": 25,
+          "tile_kinds": 12
+        },
+        {
+          "personality": 6,
+          "all_actions": 5,
+          "both_discard": 25,
+          "tile_kinds": 3
+        },
+        {
+          "personality": 7,
+          "all_actions": 0,
+          "both_discard": 25,
+          "tile_kinds": 0
+        }
+      ]
+    }
+  ],
+  "timings": [
+    {
+      "personality": 0,
+      "label": "baseline",
+      "cpu_mean_ms": 1.2071591875,
+      "cpu_p95_ms": 2.025563,
+      "cpu_max_ms": 2.200323
+    },
+    {
+      "personality": 0,
+      "label": "candidate",
+      "cpu_mean_ms": 24.1754125,
+      "cpu_p95_ms": 62.183238,
+      "cpu_max_ms": 136.570812
+    },
+    {
+      "personality": 1,
+      "label": "baseline",
+      "cpu_mean_ms": 1.22702628125,
+      "cpu_p95_ms": 2.03734,
+      "cpu_max_ms": 2.509035
+    },
+    {
+      "personality": 1,
+      "label": "candidate",
+      "cpu_mean_ms": 25.351369125,
+      "cpu_p95_ms": 64.961548,
+      "cpu_max_ms": 151.86197
+    },
+    {
+      "personality": 2,
+      "label": "baseline",
+      "cpu_mean_ms": 1.20480915625,
+      "cpu_p95_ms": 2.309625,
+      "cpu_max_ms": 2.567497
+    },
+    {
+      "personality": 2,
+      "label": "candidate",
+      "cpu_mean_ms": 24.7164375625,
+      "cpu_p95_ms": 70.347313,
+      "cpu_max_ms": 147.051472
+    },
+    {
+      "personality": 3,
+      "label": "baseline",
+      "cpu_mean_ms": 1.2955203125,
+      "cpu_p95_ms": 2.608178,
+      "cpu_max_ms": 3.120607
+    },
+    {
+      "personality": 3,
+      "label": "candidate",
+      "cpu_mean_ms": 25.26080028125,
+      "cpu_p95_ms": 63.62733,
+      "cpu_max_ms": 142.49051
+    },
+    {
+      "personality": 4,
+      "label": "baseline",
+      "cpu_mean_ms": 1.2975245625,
+      "cpu_p95_ms": 2.342674,
+      "cpu_max_ms": 4.779857
+    },
+    {
+      "personality": 4,
+      "label": "candidate",
+      "cpu_mean_ms": 22.1986456875,
+      "cpu_p95_ms": 60.731777,
+      "cpu_max_ms": 133.14977
+    },
+    {
+      "personality": 5,
+      "label": "baseline",
+      "cpu_mean_ms": 1.0951900625,
+      "cpu_p95_ms": 1.813469,
+      "cpu_max_ms": 2.190307
+    },
+    {
+      "personality": 5,
+      "label": "candidate",
+      "cpu_mean_ms": 22.8281404375,
+      "cpu_p95_ms": 68.439949,
+      "cpu_max_ms": 133.224992
+    },
+    {
+      "personality": 6,
+      "label": "baseline",
+      "cpu_mean_ms": 1.0986526875,
+      "cpu_p95_ms": 1.914809,
+      "cpu_max_ms": 2.011152
+    },
+    {
+      "personality": 6,
+      "label": "candidate",
+      "cpu_mean_ms": 22.533731875,
+      "cpu_p95_ms": 58.250678,
+      "cpu_max_ms": 131.427797
+    },
+    {
+      "personality": 7,
+      "label": "baseline",
+      "cpu_mean_ms": 1.08305203125,
+      "cpu_p95_ms": 1.69971,
+      "cpu_max_ms": 2.02276
+    },
+    {
+      "personality": 7,
+      "label": "candidate",
+      "cpu_mean_ms": 22.13940909375,
+      "cpu_p95_ms": 58.321884,
+      "cpu_max_ms": 130.12233
+    }
+  ],
+  "gate_failure": null,
+  "matches": 288,
+  "steps": 141135,
+  "max_steps": 963,
+  "baseline_reference_pairs": 96,
+  "summaries": [
+    {
+      "context": "neutral",
+      "label": "tier2",
+      "matches": 32,
+      "mean_score": 25000,
+      "mean_rank": 2.5,
+      "decisions": 3390,
+      "changed": 0,
+      "nodes": 0
+    },
+    {
+      "context": "neutral",
+      "label": "baseline",
+      "matches": 32,
+      "mean_score": 25000,
+      "mean_rank": 2.5,
+      "decisions": 3390,
+      "changed": 0,
+      "nodes": 0
+    },
+    {
+      "context": "neutral",
+      "label": "candidate",
+      "matches": 32,
+      "mean_score": 23768.75,
+      "mean_rank": 2.6875,
+      "decisions": 4284,
+      "changed": 861,
+      "nodes": 18187907
+    },
+    {
+      "context": "mixed",
+      "label": "tier2",
+      "matches": 32,
+      "mean_score": 24893.75,
+      "mean_rank": 2.5625,
+      "decisions": 3722,
+      "changed": 0,
+      "nodes": 0
+    },
+    {
+      "context": "mixed",
+      "label": "baseline",
+      "matches": 32,
+      "mean_score": 24893.75,
+      "mean_rank": 2.5625,
+      "decisions": 3722,
+      "changed": 0,
+      "nodes": 0
+    },
+    {
+      "context": "mixed",
+      "label": "candidate",
+      "matches": 32,
+      "mean_score": 24393.75,
+      "mean_rank": 2.46875,
+      "decisions": 4373,
+      "changed": 901,
+      "nodes": 19220850
+    },
+    {
+      "context": "characters",
+      "label": "tier2",
+      "matches": 32,
+      "mean_score": 25525,
+      "mean_rank": 2.46875,
+      "decisions": 4198,
+      "changed": 0,
+      "nodes": 0
+    },
+    {
+      "context": "characters",
+      "label": "baseline",
+      "matches": 32,
+      "mean_score": 25525,
+      "mean_rank": 2.46875,
+      "decisions": 4198,
+      "changed": 0,
+      "nodes": 0
+    },
+    {
+      "context": "characters",
+      "label": "candidate",
+      "matches": 32,
+      "mean_score": 24746.875,
+      "mean_rank": 2.46875,
+      "decisions": 4337,
+      "changed": 851,
+      "nodes": 18904754
+    }
+  ],
+  "paired": [
+    {
+      "context": "neutral",
+      "metrics": {
+        "scores": {
+          "descriptive_t95": {
+            "n": 8,
+            "mean": -1231.25,
+            "se": 1066.7326407238668,
+            "interval": [
+              -3754.072695311945,
+              1291.5726953119452
+            ],
+            "seed_blocks": [
+              -2625,
+              925,
+              1100,
+              -3675,
+              3975,
+              -2775,
+              -1525,
+              -5250
+            ]
+          },
+          "bonferroni_normal95": {
+            "n": 8,
+            "mean": -1231.25,
+            "se": 1066.7326407238668,
+            "interval": [
+              -4045.5651482448034,
+              1583.0651482448034
+            ],
+            "seed_blocks": [
+              -2625,
+              925,
+              1100,
+              -3675,
+              3975,
+              -2775,
+              -1525,
+              -5250
+            ]
+          }
+        },
+        "ranks": {
+          "descriptive_t95": {
+            "n": 8,
+            "mean": 0.1875,
+            "se": 0.18749999999999997,
+            "interval": [
+              -0.2559375,
+              0.6309374999999999
+            ],
+            "seed_blocks": [
+              0.25,
+              0,
+              0,
+              1,
+              -0.75,
+              0,
+              0.25,
+              0.75
+            ]
+          },
+          "bonferroni_normal95": {
+            "n": 8,
+            "mean": 0.1875,
+            "se": 0.18749999999999997,
+            "interval": [
+              -0.30717323877689073,
+              0.6821732387768907
+            ],
+            "seed_blocks": [
+              0.25,
+              0,
+              0,
+              1,
+              -0.75,
+              0,
+              0.25,
+              0.75
+            ]
+          }
+        }
+      }
+    },
+    {
+      "context": "mixed",
+      "metrics": {
+        "scores": {
+          "descriptive_t95": {
+            "n": 8,
+            "mean": -500,
+            "se": 1868.3692278103304,
+            "interval": [
+              -4918.693223771432,
+              3918.693223771432
+            ],
+            "seed_blocks": [
+              3500,
+              -2025,
+              -5350,
+              6850,
+              5450,
+              -7075,
+              -5075,
+              -275
+            ]
+          },
+          "bonferroni_normal95": {
+            "n": 8,
+            "mean": -500,
+            "se": 1868.3692278103304,
+            "interval": [
+              -5429.238704810745,
+              4429.238704810745
+            ],
+            "seed_blocks": [
+              3500,
+              -2025,
+              -5350,
+              6850,
+              5450,
+              -7075,
+              -5075,
+              -275
+            ]
+          }
+        },
+        "ranks": {
+          "descriptive_t95": {
+            "n": 8,
+            "mean": -0.09375,
+            "se": 0.2711479399832181,
+            "interval": [
+              -0.735014878060311,
+              0.547514878060311
+            ],
+            "seed_blocks": [
+              -0.75,
+              0.25,
+              0.5,
+              -1,
+              -1,
+              1,
+              0.5,
+              -0.25
+            ]
+          },
+          "bonferroni_normal95": {
+            "n": 8,
+            "mean": -0.09375,
+            "se": 0.2711479399832181,
+            "interval": [
+              -0.8091080248489627,
+              0.6216080248489627
+            ],
+            "seed_blocks": [
+              -0.75,
+              0.25,
+              0.5,
+              -1,
+              -1,
+              1,
+              0.5,
+              -0.25
+            ]
+          }
+        }
+      }
+    },
+    {
+      "context": "characters",
+      "metrics": {
+        "scores": {
+          "descriptive_t95": {
+            "n": 8,
+            "mean": -778.125,
+            "se": 1861.9932046590363,
+            "interval": [
+              -5181.738929018621,
+              3625.488929018621
+            ],
+            "seed_blocks": [
+              -1200,
+              550,
+              -8525,
+              2200,
+              9525,
+              -3250,
+              -1500,
+              -4025
+            ]
+          },
+          "bonferroni_normal95": {
+            "n": 8,
+            "mean": -778.125,
+            "se": 1861.9932046590363,
+            "interval": [
+              -5690.542115355987,
+              4134.292115355987
+            ],
+            "seed_blocks": [
+              -1200,
+              550,
+              -8525,
+              2200,
+              9525,
+              -3250,
+              -1500,
+              -4025
+            ]
+          }
+        },
+        "ranks": {
+          "descriptive_t95": {
+            "n": 8,
+            "mean": 0.0,
+            "se": 0.20044593143431827,
+            "interval": [
+              -0.47405462784216273,
+              0.47405462784216273
+            ],
+            "seed_blocks": [
+              -0.5,
+              -0.25,
+              1,
+              -0.25,
+              -0.5,
+              0,
+              -0.25,
+              0.75
+            ]
+          },
+          "bonferroni_normal95": {
+            "n": 8,
+            "mean": 0.0,
+            "se": 0.20044593143431827,
+            "interval": [
+              -0.5288279365454123,
+              0.5288279365454123
+            ],
+            "seed_blocks": [
+              -0.5,
+              -0.25,
+              1,
+              -0.25,
+              -0.5,
+              0,
+              -0.25,
+              0.75
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "bonferroni_normal_multiplier": 2.638257273476751,
+  "comparison_unit": "8 seed blocks; four rotated seats averaged first"
+}

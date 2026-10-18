@@ -1,5 +1,31 @@
 # 현재 상태
 
+## W-DIFF-A 공개 1수 선읽기 — 격리 검증 완료, 제품 미채택
+
+기준 main `4c883a085e24aff1d9e0da7457315588be7f21f9`(PR #88 병합), 열린 별도 PR #35를
+확인했다. 사용자가 새 탐색의 좁은 예외로 제한적 공개1수 선읽기 설계·격리 검증을 승인했다.
+`task/w-diff-a-one-step`에서 별도 spike만 추가했다. 제품/원본agent/기존연구/fixture는 보존했다.
+측정 전 고정 local `8e73bb0`과 동일 tree의 원격 `55ff6e1`, 정의/예산/근거는
+`spikes/w-diff-a/one-step/PLAN.md`·README·evidence를 따른다.
+
+- 단일 blend1/4 후보, 원 최소샹텐/rational pool·비discard/fold·성향6값/계수·shadow RNG 보존.
+  최대값 최종 선택 대신 기존 성향 가중 추첨. 공개 미확인 수 가중의 own draw1회/다음discard만 평가.
+- 두 독립512입력 gate·288대국·9대국 추출재현·두profile JSON 전체복구 총112.509초/전체20분.
+  실패/timeout/제외/재시도0. 96개 원Tier2/baseline쌍 전체trace 동일, 최대963step/5,000.
+- 중립 후보 평균CPU24.175ms/p95 62.183ms/max136.571ms(baseline 평균1.207ms).
+  연구 비용gate는 통과했지만 Windows/전체/최악지연·제품 지연 수용 검증이 아니다.
+- 후보 점수차 중립−1,231.2/혼합−500/성향−778.1, 순위차+0.1875/−0.09375/0.
+  8seed 블록의 설명용/보정 구간 모두0 포함. **강도 개선·10구간은 미입증, 제품 채택 비권고.**
+- 공통32입력의 실제5성향간 버림패 종류 차이는 baseline/후보 모두[12,0,12,0,12]/25.
+  작은 표본이며 전반적 성향 표현 보장이 아니다. 이 corpus에는fold0건, 별도 합성 보호 경계 확인.
+- 두profile 저장12행동 후 전체 잔여57/70턴·완료 결과 동일. 저장profile 우선/새대국 변경설정
+  실제 전달 및 unknown/변조 profile 거절. production policy3/파일DB 복구 완료와 구분한다.
+- backend129개55.360초·대사pytest10개0.11초 통과. 세부 합성/집계/공용 deadline 검증은
+  verification.json에 보존한다. 새 Windows/build/browser/인간상대/독립 강도holdout은 미검증.
+
+이번 승인 연구는 완료했다. 후보/계수/seed를 추가 튜닝하거나 제품10profile·DIFF-*·B를
+자동 채택하지 않는다. 한 후보의 미입증을 모든 선읽기 방식의 불가능으로 일반화하지 않는다.
+
 ## W-DIFF-A 판단 축 진단 — 완료, 제품/10profile 미채택
 
 최신/준비 main `e8a70b57db22727a861956ae6ee42c087057f6b8`(PR #87 병합), 열린 PR #35를
