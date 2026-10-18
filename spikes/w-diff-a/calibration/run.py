@@ -1,6 +1,6 @@
 """Fixed-budget rotated comparisons. Run tune before holdout; no candidate search."""
 import argparse
-from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import Pool, TimeoutError as PoolTimeoutError
 from dataclasses import asdict
 import hashlib
 import json
@@ -22,6 +22,29 @@ PERSONALITIES = [{k: p[k] for k in FIELDS} for p in json.loads(
     (ROOT / 'backend/app/seeds/cpu_characters.json').read_text())]
 CONTEXTS = ('neutral', 'mixed', 'characters')
 LABELS = (*range(1, 11), 'v1-L1', 'tier2')
+
+def run_jobs(jobs, *, worker=None, workers=8, wall_budget=2700, on_result=None):
+    """Keep submission order, but bound waits and terminate workers on failure."""
+    before = time.perf_counter()
+    rows = []
+    # Pool's context exit terminates queued AND running work, unlike executor
+    # shutdown(wait=True). A timed iterator wait also covers a stalled first job.
+    with Pool(processes=workers) as pool:
+        pending = pool.imap(match if worker is None else worker, jobs)
+        for _ in range(len(jobs)):
+            remaining = wall_budget - (time.perf_counter() - before)
+            if remaining <= 0:
+                raise TimeoutError('fixed wall budget exceeded')
+            try:
+                row = pending.next(timeout=remaining)
+            except PoolTimeoutError as exc:
+                raise TimeoutError('fixed wall budget exceeded') from exc
+            rows.append(row)
+            if on_result is not None:
+                on_result(rows)
+        if time.perf_counter() - before >= wall_budget:
+            raise TimeoutError('fixed wall budget exceeded')
+    return rows
 
 def match(job):
     context, label, seed, seat, start = job
@@ -74,13 +97,10 @@ if __name__ == '__main__':
     jobs = [(c,l,s,seat,start) for c in CONTEXTS for l in LABELS
             for s in range(start,start+count) for seat in range(4)]
     before = time.perf_counter()
-    rows = []
-    with ProcessPoolExecutor(max_workers=8) as pool:
-        for row in pool.map(match,jobs):
-            rows.append(row)
-            if len(rows) % (count*4) == 0:
-                print(json.dumps(dict(context=row['context'], summary=summarize(rows[-count*4:])[0])),flush=True)
-            assert time.perf_counter()-before < 2700, 'fixed wall budget exceeded'
+    def progress(rows):
+        if len(rows) % (count*4) == 0:
+            print(json.dumps(dict(context=rows[-1]['context'], summary=summarize(rows[-count*4:])[0])),flush=True)
+    rows = run_jobs(jobs, on_result=progress)
     payload = dict(base='a50f13b57c41becb56cac9561bad456e9246199f', split=args.split,
         python=platform.python_version(), platform=platform.platform(),riichienv='0.4.8',
         seed_start=start,seed_count=count,workers=8,elapsed_s=time.perf_counter()-before,

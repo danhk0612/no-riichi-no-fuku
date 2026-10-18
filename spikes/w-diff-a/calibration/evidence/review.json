@@ -1,0 +1,48 @@
+{
+  "reviewed_head": "50d2bf6ce9c6c09fa4ee5d470f364016d9d20dc4",
+  "python": "3.12.14",
+  "original_run_py_sha256": "28acf377d973953120cb6aae2f3c021dbab256cabcdc125a8724d351f6bd6985",
+  "fixed_run_py_sha256": "82b8ed0fbe52d6625add63ddc09e31f6b9befae43dae7c0b0abb007f30f219b9",
+  "match_function_ast_unchanged": true,
+  "fixed_runner_fault_tests": {
+    "passed": 3,
+    "elapsed_s": 0.215,
+    "cases": [
+      "submission order",
+      "stalled first job terminates running and queued work",
+      "worker failure terminates other work"
+    ]
+  },
+  "original_evidence_hashes_verified": true,
+  "split_match_counts": {
+    "tune": 576,
+    "holdout": 4608
+  },
+  "both_split_full_analysis_recomputed_equal": true,
+  "v1_1664_summary_analysis_and_five_script_hashes_equal": true,
+  "fixed_runner_full_match_reproduction": {
+    "count": 12,
+    "contexts": [
+      "neutral",
+      "mixed",
+      "characters"
+    ],
+    "labels": [
+      1,
+      5,
+      10,
+      "tier2"
+    ],
+    "seed": 1000,
+    "seat": 2,
+    "workers": 4,
+    "all_deterministic_fields_equal": true
+  },
+  "independent_check_processes": 2,
+  "all_check_results_equal_to_submitted": true,
+  "deterministic_check_sha256": "6f497c3528b2b25643705e07ca113620430a783a0dcc9b6aefe0f50446cccd32",
+  "backend_suite_rerun": false,
+  "full_5184_matches_rerun": false,
+  "production_files_changed": false,
+  "windows_frontend_browser": "not rerun: isolated research runner and documents only"
+}

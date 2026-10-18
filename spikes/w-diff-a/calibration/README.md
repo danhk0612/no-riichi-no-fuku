@@ -40,6 +40,7 @@ PYTHONPATH=backend python spikes/w-diff-a/calibration/run.py holdout /tmp/calibr
 PYTHONPATH=backend python spikes/w-diff-a/calibration/check.py /tmp/calibration-check1.json
 PYTHONPATH=backend python spikes/w-diff-a/calibration/check.py /tmp/calibration-check2.json
 PYTHONPATH=backend python spikes/w-diff-a/calibration/finalize.py /tmp
+PYTHONPATH=backend python spikes/w-diff-a/calibration/test_budget.py -v
 cd backend
 python -m unittest discover -s tests -v
 python -m pytest tests/test_dialogue_service.py -q
@@ -47,6 +48,10 @@ python -m pytest tests/test_dialogue_service.py -q
 
 run은8worker·대국당5,000step·split별wall2,700초 한도를 적용한다. 실제 총 실행시간도 사전45분
 예산과 대조한다. 실패/seed 제외/후보 검색으로 성공 표본만 남기지 않는다.
+최종 검토에서 순서대로 결과를 기다리는 동안 deadline 검사가 멈추고 executor 종료가 남은
+작업을 기다리는 문제를 수정했다. 이제 남은 시간만큼 기다리며 시간 초과/worker 오류에는
+실행 중·대기 중 작업을 모두 종료한다. 제한 초과 시 새 결과 파일을 쓰지 않는다.
+`test_budget.py`는 결과 순서, 첫 작업 지연과 대기 작업 취소, worker 오류 후 종료를 검사한다.
 `finalize.py`는 최종 분석 도구로 전체 격자/중복/누락, v1 원본 통계·script hash,
 독립 프로세스 check 자료(시간 제외), holdout12개 추출 전체대국 trace를 대조한다.
 `evidence/sources.json`은 최종 도구/계획·JSON 근거의 SHA256이다.
@@ -179,6 +184,12 @@ L1→10 평균점수차는 중립 +7,160.9/혼합 +8,175.8/성향상대 +5,222.7
 기존 backend unittest129개(78.057초)·대사 pytest10개(0.26초) 통과. 기존 policy1/2/legacy 매턴
 golden·파일 DB 복구·writer/정산 실패·reset/오마케·음향 회귀를 보존했다. v1 원본1,664행의 summary/paired 분석을
 재계산했고 원본5개 스크립트 SHA256도 일치했다. 제품은 여전히 기존 Tier0/1/2다.
+
+최종 검토에서는 원본 JSON 근거 hash와 양쪽 split의 전체 통계/분석을 다시 대조하고,
+수정한 실행기에서 holdout12대국의 전체 trace/점수/순위/step 등 결정적 결과가 일치함을 확인했다.
+실행기 장애 검사3개도 통과했고, 별도 두 프로세스의 공통입력12,800건·10레벨 전체 복구
+결과도 제출 자료와 일치했다. 후보·match 함수·원본5,184대국 자료는 수정하지 않았고
+전체 대국을 다시 실행하지 않았다. 검토 근거와 도구 변경 전 hash는 `evidence/review.json`을 따른다.
 
 다음 조건은 DIFF-* 사용자 결정과10구간 강도 검증/수용 기준 해결이다. 이번 결과를 v2 채택 승인으로
 간주하지 않는다. 추가 후보 탐색/표본 변경은 별도 범위로 정하며 W-DIFF-B·직접 병합·Release/tag는 수행하지 않았다.
