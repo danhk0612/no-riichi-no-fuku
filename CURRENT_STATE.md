@@ -1,15 +1,23 @@
 # 현재 상태
 
-W08-D 구현은 준비 main `7fcc8bf`에서 `task/w08-d-shared-prompts-impl`로 제출한다.
-`20261018_0011` additive migration 및 공유 복장 상태/포즈 CRUD, CPU·Level·종류 후보와 지정 기본값,
-preview digest 확인 후 연결 해제·논리 삭제/Level 이동, 기존 콘텐츠 패널 탭을 구현했다.
-공유 자료는 seed하지 않고 게임 snapshot·CharacterContent·event/CG 표시에는 연결하지 않았다.
-Linux focused backend 회귀 8개, 대사 pytest 10개, frontend build, Electron/browser smoke 스크립트
-구문 검사가 통과했다. 전체 backend unittest 151개 중 150개가 통과했고 기존 engine lock subprocess
-검사가 10초 timeout으로 한 번 실패했다. 해당 검사를 단독 재실행해 통과했다. 로컬 Chromium 다운로드가
-유효한 archive로 완료되지 않아 local-content browser script는 실행하지 못했다. 최종 source SHA의
-Windows CI/artifact와 W05 workflow의 해당 browser script·packaged UI 저장/reset/restart는 PR에서 확인한다.
-상황/대사 event 편집·기존 문구 이전·생성은 이번 범위 밖이다.
+W08-D는 준비 main `7fcc8bf` 기반 PR #96(`task/w08-d-shared-prompts-impl`)로 제출했다.
+`20261018_0011` additive migration, 공유 복장 상태/포즈 CRUD, CPU·Level·종류별 명시 후보와
+기본값, 영향 미리보기 digest 후 참조 해제·논리 삭제/Level 이동, 기존 설정의 관리 탭을 구현했다.
+공유 자료를 seed하지 않았고 game snapshot·CharacterContent·event/CG 표시와 연결하지 않았다.
+리뷰에서 발견한 기본값 저장 후 결과 갱신과 같은 Level 이동 차단도 보완했고 관련 회귀를 추가했다.
+최종 source SHA `dd1a874152a02e8de6ba3e1be5a442012a162909`의 W04 run
+[39174102431](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/39174102431)와 W05 run
+[39174102562](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/39174102562)는 모두 성공했다.
+W04 artifact `12153871577`의 SHA-256 `74f48efd270d490335ce48a661ce1c7f5012bfa4dee37b0b2a57d99753c790fc`;
+다운로드 ZIP hash 및 내부 `source-sha.txt`를 대조했다. W05 artifact `12153314712`의 SHA-256
+`7f06edad047829076cb77b0190644fc76aa695c9323f1d8af60584a1478ca730`; 다운로드 ZIP hash와
+내부 source SHA를 대조했고 packaged Windows ZIP SHA-256은
+`4d6d4c9d0abfeb0b6d463bec4d6a23e81df0fa7478ec00c3cb80fcdc380bf97a`다.
+두 artifact의 source SHA는 최종 SHA와 일치한다. 각 Windows backend unittest 152개와 dialogue pytest
+10개, W04 renderer build, W05 browser·packaged renderer/reset/restart·lifecycle 검사가 통과했다.
+Linux 로컬 Chromium은 malformed download archive로 실행하지 못했으나 W05 Windows browser regression이 통과했다.
+PR은 열려 있고 병합하지 않았다. 개인 Windows PC 실기, 이미지/음향 생성·실제 콘텐츠 출력은 미검증이며
+W08-D 범위 밖이다. 상황/대사 event 편집·기존 문구 이전·생성은 이번 범위에서 수행하지 않았다.
 
 W08-M PR #93은 main `f5623af`에 병합됐다. 검토 source `f87b7ca`와 병합 tree가 같다.
 독립 재검증 backend143개(66.948초)·대사pytest10개·build·브라우저4종이 통과했다.
