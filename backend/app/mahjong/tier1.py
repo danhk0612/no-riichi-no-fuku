@@ -310,7 +310,7 @@ class Tier1Agent:
         if not melds:
             bonus += 0.3
 
-        suits = {tile // 9 for tile in hand if tile // 4 < 27}
+        suits = {kind // 9 for kind in tile_kinds if kind < 27}
         if len(suits) == 1:
             bonus += 0.8
 
