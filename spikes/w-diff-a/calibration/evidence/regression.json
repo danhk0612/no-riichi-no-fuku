@@ -1,0 +1,16 @@
+{
+  "base": "a50f13b57c41becb56cac9561bad456e9246199f",
+  "backend_unittest": {
+    "command": "cd backend && python -m unittest discover -s tests -v",
+    "passed": 129,
+    "elapsed_s": 78.057,
+    "output_sha256": "f387daf951e3aa4811bf91b90808702346ef1088ba8855d4dbd8de89e774b282"
+  },
+  "dialogue_pytest": {
+    "command": "cd backend && python -m pytest tests/test_dialogue_service.py -q",
+    "passed": 10,
+    "elapsed_s": 0.26
+  },
+  "environment_sha256": "742de8151ada8fe92fee408bf9c84e5cfd8c6b1be8241c0053865838b3eeb2f6",
+  "windows_frontend_browser": "not run: isolated spike/document change; no production path changed"
+}
