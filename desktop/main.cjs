@@ -120,7 +120,7 @@ function readMessage(childProcess, wantedType, timeoutMs = 30000) {
   })
 }
 
-async function spawnEngine(root, port = 0) {
+async function spawnEngine(root, port = 0, retries = 0) {
   if (child) throw new Error('host already owns a local engine')
   const identity = randomUUID()
   const processChild = spawn(enginePath(), ['--data', root, '--identity', identity, '--port', String(port)], {
@@ -175,7 +175,12 @@ async function spawnEngine(root, port = 0) {
   } catch (error) {
     await stopSpecificChild(record, 5000).catch(() => {})
     if (child === record) child = undefined
-    throw new Error(`${error.message}${stderr ? `; ${stderr}` : ''}`)
+    const detail = `${error.message}${stderr ? `; ${stderr}` : ''}`
+    if (port === 0 && retries < 3 && /10048|address already in use/i.test(detail)) {
+      await delay(100)
+      return spawnEngine(root, port, retries + 1)
+    }
+    throw new Error(detail)
   }
 }
 
