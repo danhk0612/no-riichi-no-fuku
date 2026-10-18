@@ -1,0 +1,33 @@
+{
+  "base": "4c883a085e24aff1d9e0da7457315588be7f21f9",
+  "planned_matches": 288,
+  "wall_budget_s": 1200,
+  "stages": [
+    {
+      "name": "gate1",
+      "elapsed_s": 7.73883087799959
+    },
+    {
+      "name": "gate2",
+      "elapsed_s": 8.200192790000074
+    },
+    {
+      "name": "matches",
+      "elapsed_s": 69.7591444159998
+    },
+    {
+      "name": "reproduce",
+      "elapsed_s": 16.509911229999943
+    },
+    {
+      "name": "replay",
+      "elapsed_s": 10.295902163999926
+    }
+  ],
+  "status": "passed",
+  "active_stage": "replay",
+  "gate_sha256": "243fe54c70d76049386d5f57b4ca66a80727fdf5a1fc52d76935ab9bd96ed2aa",
+  "elapsed_s": 112.5094245969999,
+  "completed_matches": 288,
+  "uncompleted_matches": 0
+}

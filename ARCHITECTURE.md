@@ -161,6 +161,37 @@ M은 중립/혼합 점수·순위 개선 경향과 성향상대 점수/순위 �
 성향 표현 수용 기준·새 독립검증을 재설계하며 이번에 새 탐색/제품profile/기본값을 확정하지 않는다.
 기존 B snapshot 표는 계속 미승인 설계 예시다. production policy3/파일DB는 구현하지 않았다.
 
+### 승인된 후속 연구 — 공개 정보 1수 선읽기
+
+PR #88 병합 main `4c883a0` 뒤 사용자가 제한적 1수 선읽기의 설계·격리 검증을 승인했다.
+이 절은 이전 새 탐색 금지의 좁은 예외다. 실제 결과는 CURRENT_STATE 및
+`spikes/w-diff-a/one-step/README.md`, 측정 전 고정 정의/예산은 같은 경로 PLAN을 따른다.
+원본 agent/policy1/2·기존 연구는 수정하지 않으며 제품 agent 등록/API/DB는 추가하지 않는다.
+
+- 원 Tier2 policy2의 최소샹텐/수용패수 cutoff 후보를 유지하고, 원 비discard/fold를 그대로 반환한다.
+  후보별 손패에서 현재 discard→가상 own draw1회→다음 discard까지만 순수 손패 함수를 계산한다.
+  말 그대로 다음 실제 draw를 아는 것이 아니며 타가 turn/호출/승리 확률은 시뮬레이션하지 않는다.
+- 공개 own hand/discard/meld/indicator의 물리ID set으로 이미 본 패를 중복 제거한다.
+  종류별 `4−공개수`는 미확인 수 가중치이며 실제 live-wall 분포나 독립 추출 확률이 아니다.
+  현재/미래 discard를 미확인 풀에 반환하지 않고 가상 draw 종류만1 감소한다.
+- 다음 최소샹텐 discard의 최대 수용패수를 정적 잎 평가로 쓰며 shape 완성은 별도 proxy다.
+  그 가중 평균 Q로 현재 수용패수와 `0.75*현재+0.25*Q`를 혼합한 단일 후보를 진단한다.
+  도라/역/위험/종반·성향6값/계수는 유지한다. 기존 휴리스틱을 실제 기대 득점으로 부르지 않는다.
+- 최댓값 최종 선택 대신 같은 rational pool에서 기존 성향 가중 추첨을 유지한다.
+  원 discard 직전 RNG의 복제본을 사용하고 shadow agent/엔진/콘텐츠 RNG 소비는 보존한다.
+  baseline wrapper는 기존 Tier2와 완전히 같아야 한다. 선읽기는 종류별로만 재사용하고
+  추첨의 물리copy/정렬은 명시한다. 성향값 불변과 행동상 성향 표현은 별도로 기록한다.
+- 결정별 최대50,000개 샹텐 cache miss, 초과는 실패이며 원판단 fallback/시간 의존 가지치기를
+  하지 않는다. 캐시는 한 결정에만 존재한다. 현재 구현은 실제 시간 제한으로 행동을 바꾸지 않는다.
+- 먼저32관측×8성향×두wrapper 비용/합법/재현 검사. 중립 CPU p95≤250ms/max≤1,000ms는
+  연구 진행용 한도이며 제품 수용 기준이 아니다. 통과해야 288대국 비교로 진행한다.
+  두 gate·대국·추출9대국·두profile 전체 JSON 복구를 하나의20분 deadline에 포함한다.
+  실패·제외/재시도 없이 중단하고 근거를 보존한다. 10단계 튜닝/새 holdout은 포함하지 않는다.
+
+profile identity는 `public-one-draw-v1`과 blend 분자/분모·node limit의 완전한 immutable 조합이다.
+bool/float를 정수 파라미터로 허용하지 않는다. 저장profile 우선/새대국만 현재설정 적용은 주입
+factory로 검사하며 production policy3/파일DB 복구 완료와 구분한다. DIFF-*와 B 게이트는 유지한다.
+
 ### 상태·저장·policy 버전 축
 
 | 축 | 원본과 저장 위치 / 새 설계 |

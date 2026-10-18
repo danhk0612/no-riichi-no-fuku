@@ -1,0 +1,55 @@
+{
+  "base": "4c883a085e24aff1d9e0da7457315588be7f21f9",
+  "python": "3.12.14",
+  "riichienv": "0.4.8",
+  "checks": [
+    {
+      "name": "search synthetic",
+      "tests": 5,
+      "elapsed_s": 0.001,
+      "result": "passed"
+    },
+    {
+      "name": "forecast/protected boundary synthetic",
+      "tests": 3,
+      "elapsed_s": 0.001,
+      "result": "passed"
+    },
+    {
+      "name": "known paired aggregation",
+      "tests": 1,
+      "elapsed_s": 0.003,
+      "result": "passed"
+    },
+    {
+      "name": "shared deadline/termination",
+      "tests": 4,
+      "elapsed_s": 0.335,
+      "result": "passed"
+    },
+    {
+      "name": "backend unittest",
+      "cwd": "backend",
+      "tests": 129,
+      "elapsed_s": 55.36,
+      "result": "passed",
+      "output_sha256": "2f1e8b54b8e45d09c2a78d98bfcafbcab058670030fee73f2bd79d507e45d7f2"
+    },
+    {
+      "name": "dialogue pytest",
+      "cwd": "backend",
+      "tests": 10,
+      "elapsed_s": 0.11,
+      "result": "passed"
+    }
+  ],
+  "fold_observations_in_neutral_gate": 0,
+  "fold_boundary_validation": "synthetic protected-action test and code review; no fold in 32 common observations",
+  "not_run": [
+    "Windows/build/browser",
+    "independent strength holdout",
+    "production policy3/file DB restore",
+    "human opponents",
+    "10 profiles"
+  ]
+}

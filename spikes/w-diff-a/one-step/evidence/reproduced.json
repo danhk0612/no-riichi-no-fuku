@@ -1,0 +1,209 @@
+[
+  {
+    "context": "neutral",
+    "label": "tier2",
+    "seed": 4000,
+    "seat": 2,
+    "scores": [
+      27400,
+      13200,
+      35200,
+      24200
+    ],
+    "ranks": [
+      2,
+      4,
+      1,
+      3
+    ],
+    "steps": 603,
+    "trace": "5d58e20bf7601cb921f927af09c328ae55ae9b089d1b25a80599ef1c3d6cb698",
+    "decisions": 151,
+    "changed": 0,
+    "nodes": 0
+  },
+  {
+    "context": "neutral",
+    "label": "baseline",
+    "seed": 4000,
+    "seat": 2,
+    "scores": [
+      27400,
+      13200,
+      35200,
+      24200
+    ],
+    "ranks": [
+      2,
+      4,
+      1,
+      3
+    ],
+    "steps": 603,
+    "trace": "5d58e20bf7601cb921f927af09c328ae55ae9b089d1b25a80599ef1c3d6cb698",
+    "decisions": 151,
+    "changed": 0,
+    "nodes": 0
+  },
+  {
+    "context": "neutral",
+    "label": "candidate",
+    "seed": 4000,
+    "seat": 2,
+    "scores": [
+      18800,
+      34400,
+      23900,
+      22900
+    ],
+    "ranks": [
+      4,
+      1,
+      2,
+      3
+    ],
+    "steps": 933,
+    "trace": "fa1f31f4cb02d9dea2917f499cbe5ff9cb229aa3cd6cc9abe99c11654b87a31f",
+    "decisions": 243,
+    "changed": 40,
+    "nodes": 942976
+  },
+  {
+    "context": "mixed",
+    "label": "tier2",
+    "seed": 4000,
+    "seat": 2,
+    "scores": [
+      20300,
+      16900,
+      26200,
+      35600
+    ],
+    "ranks": [
+      3,
+      4,
+      2,
+      1
+    ],
+    "steps": 568,
+    "trace": "93af90f83fe47c5873fde1535f27cd5fab63fcc2bfa8f16262fa099abab0cfae",
+    "decisions": 135,
+    "changed": 0,
+    "nodes": 0
+  },
+  {
+    "context": "mixed",
+    "label": "baseline",
+    "seed": 4000,
+    "seat": 2,
+    "scores": [
+      20300,
+      16900,
+      26200,
+      35600
+    ],
+    "ranks": [
+      3,
+      4,
+      2,
+      1
+    ],
+    "steps": 568,
+    "trace": "93af90f83fe47c5873fde1535f27cd5fab63fcc2bfa8f16262fa099abab0cfae",
+    "decisions": 135,
+    "changed": 0,
+    "nodes": 0
+  },
+  {
+    "context": "mixed",
+    "label": "candidate",
+    "seed": 4000,
+    "seat": 2,
+    "scores": [
+      19400,
+      28300,
+      31200,
+      21100
+    ],
+    "ranks": [
+      4,
+      2,
+      1,
+      3
+    ],
+    "steps": 697,
+    "trace": "98cfa09068c86fe5287f75ff8de0d2fc8024bfff053b7dd2f0430ed8638c2969",
+    "decisions": 176,
+    "changed": 25,
+    "nodes": 545849
+  },
+  {
+    "context": "characters",
+    "label": "tier2",
+    "seed": 4000,
+    "seat": 2,
+    "scores": [
+      36200,
+      -3600,
+      46500,
+      20900
+    ],
+    "ranks": [
+      2,
+      4,
+      1,
+      3
+    ],
+    "steps": 580,
+    "trace": "e2b960e12629f196f9125d569f937ba275a9fb9b9c39c67b81fc5d16db64e52b",
+    "decisions": 154,
+    "changed": 0,
+    "nodes": 0
+  },
+  {
+    "context": "characters",
+    "label": "baseline",
+    "seed": 4000,
+    "seat": 2,
+    "scores": [
+      36200,
+      -3600,
+      46500,
+      20900
+    ],
+    "ranks": [
+      2,
+      4,
+      1,
+      3
+    ],
+    "steps": 580,
+    "trace": "e2b960e12629f196f9125d569f937ba275a9fb9b9c39c67b81fc5d16db64e52b",
+    "decisions": 154,
+    "changed": 0,
+    "nodes": 0
+  },
+  {
+    "context": "characters",
+    "label": "candidate",
+    "seed": 4000,
+    "seat": 2,
+    "scores": [
+      20700,
+      28200,
+      32600,
+      18500
+    ],
+    "ranks": [
+      3,
+      2,
+      1,
+      4
+    ],
+    "steps": 601,
+    "trace": "a2b034dc6727812aa846587cdecb2d4cda559b8e27ba3e2c2008f07bcdd8b1a0",
+    "decisions": 147,
+    "changed": 36,
+    "nodes": 622022
+  }
+]
