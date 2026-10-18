@@ -488,8 +488,10 @@ async function smokeSharedPrompts() {
   await window.webContents.executeJavaScript(`(() => {
     const checkbox = Array.from(document.querySelectorAll('.shared-candidate-list label')).find(label => label.innerText.includes('${label}'))?.querySelector('input')
     if (!checkbox) throw new Error('packaged shared candidate checkbox is missing')
-    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'checked').set.call(checkbox, true)
-    checkbox.dispatchEvent(new Event('change', { bubbles: true }))
+    if (!checkbox.checked) checkbox.click()
+  })()`)
+  await waitForRenderer(`Array.from(document.querySelectorAll('.shared-prompt-configuration button')).some(button => button.innerText.includes('캐릭터 후보 저장') && !button.disabled)`)
+  await window.webContents.executeJavaScript(`(() => {
     const save = Array.from(document.querySelectorAll('.shared-prompt-configuration button')).find(button => button.innerText.includes('캐릭터 후보 저장'))
     if (!save || save.disabled) throw new Error('packaged shared candidate save button is unavailable')
     save.click()
