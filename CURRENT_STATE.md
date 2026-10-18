@@ -1,5 +1,9 @@
 # 현재 상태
 
+W-DIFF-B는 PR #91로 병합됐다(main `7bcec42`). 최종 source `fd7e2d7`의 Windows W04/W05·artifact
+검증은 PR #91에 기록했다. 다음 W08-M의 독립 저장/팩/표시 계약과 Work 지시문을 정리했다.
+**W08-M 제품 코드/DB/UI는 아직 구현하지 않았다.** `docs/W08_M_METADATA_CONTRACT.md`와 TASKS를 따른다.
+
 ## W-DIFF-B — 10단계 로컬 난이도 구현·회귀, 최종 Windows 증거는 PR 참조
 
 기준 main `d6cc88258739363e2408a80c99103b45c64b99bc`(PR #90). 사용자2026-10-18 승인으로

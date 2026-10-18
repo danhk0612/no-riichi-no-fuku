@@ -4,13 +4,40 @@
 W00은 초기 분석·기준 문서 준비(완료); 본 파일은 후속 개발 명세다.
 Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결정 후 갱신한다.
 
-## 현재 우선 — W-DIFF-B
+## 현재 우선 — W08-M 독립 구현 인계
 
-2026-10-18 사용자가 DIFF-* 권고 전체 및 수용 기준을 승인했다. 요구사항의 새 확정 절이
-과거 지시문의 미확정/인접통계분리 게이트를 대체한다. 무늬 교정 뒤 독립4,224대국/행동/재현 검증
-통과로 제품 연결을 수행했다. 신규 local policy3·설정저장·서버preview·현재snapshot 표시를 구현했고
-Linux 회귀 후 정확한 head의 W04/W05 Windows CI/artifact를 검증한다. 정책/성향/CG/음향의 추가 변경,
-Release/tag·다음 기능 착수는 하지 않는다. 과거 연구와 지시문은 당시 결과/승인 범위의 이력이다.
+W-DIFF-B는 PR #91로 병합됐다. main `7bcec42`이며 최종 source `fd7e2d7`의
+W04/W05 및 다운로드 artifact·renderer24/종료/복구 검증을 PR #91에 기록했다.
+다음은 이미 확정된 Q-META A만 독립 구현하는 **W08-M**이다. 저장/팩 적용/표시 계약은
+`docs/W08_M_METADATA_CONTRACT.md`를 따른다. 현재는 설계·인계이며 제품 미구현이다.
+공유 관리/변수/생성의 미응답 정책과 분리한다. 권장 환경은 저성능 Work다.
+
+### 다음 Work에 입력할 지시문 — W08-M
+
+```text
+danhk0612/no-riichi-no-fuku의 W08-M만 수행해.
+최신 main·현재 branch·열린 PR·AGENTS.md와 루트 기준 문서를 확인해.
+PR #91 및 W08-M 설계 PR 병합을 확인하고 docs/W08_M_METADATA_CONTRACT.md 전체를 따라.
+task/w08-m-character-measurements에서 기존 사용자/다른 브랜치 변경을 덮지 말고 작업해.
+
+Q-META A의 선택 입력 키·B/W/H(cm·소수1자리·미입력 숨김)를 기존 캐릭터 설정에 구현해.
+CharacterContent additive JSON·기존 revision/override를 사용하고 local content GET/PATCH,
+팩 명시 적용의 필드별 Q-PACK A, 기존 편집 UI와 선택 카드 최소 표시만 확장해.
+manifest v1 opaque metadata/과거 revision·digest는 보존하고 scanner에서 소급 정규화하지 마.
+새 팩 적용의 잘못된 치수는 P/N/voice까지 부분 반영하지 말고 전체 이전 상태를 유지해.
+미포함 필드는 보존하고 명시 null/원본과 같은 값 저장도 직접 편집으로 보호해.
+초기화·재시작 보존, 늦은 응답/캐릭터 전환·revision/commit 경계를 지켜.
+
+실제 치수/이미지/프롬프트/음향을 임의 seed·생성하지 마.
+CPU 난이도·성향·게임 snapshot/규칙/정산·음향 RNG, shared 상황/후보/변수/생성,
+전신/CG/hover 상세/뷰어, 팩 교체·해제 기능은 변경하지 마.
+
+계약의 migration/API/팩/브라우저 회귀와 backend 전체·대사pytest·frontend build,
+정확한 최종head W04/W05 Windows CI 및 다운로드 artifact source/hash,
+packaged 치수 편집·재시작·초기화 보존 검증을 마쳐.
+검증 사실/미검증과 CURRENT_STATE/TASKS/ARCHITECTURE/REQUIREMENTS/README를 갱신해.
+commit/push·PR 제출까지 진행하되 직접 병합·Release/tag·후속 Task 착수는 하지 마.
+```
 
 ## 순서와 우선순위
 
@@ -33,6 +60,7 @@ Release/tag·다음 기능 착수는 하지 않는다. 과거 연구와 지시�
 | W08-B | 기존 캐릭터 기본/구도 P/N 편집·로컬 편집 기록·팩 목록 UI | P1 / 완료(PR #81 병합) | W08-A 병합, Q-PACK A | 저성능 Work |
 | W08-C | 기존 CPU의 명시 캐릭터팩 연결·같은 팩 갱신 | P1 / 완료(PR #82 병합) | W08-A/B 병합, Q-PACK A | 저성능 Work |
 | W08 | 캐릭터·공유 후보·단계별 이미지 편집/적용 | P1 / 정책 의존 부분 대기 | W08-A, W07 관련 결정 | 저성능 Work |
+| W08-M | 캐릭터 선택 신체 치수·편집·팩 원본/override | P1 / 독립 계약·구현 인계, 제품 미구현 | Q-META A, Q-PACK A, PR #91 | 저성능 Work |
 | W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / 완료(PR #83 병합, 최종 검증은 PR 참조) | W07 팩/event 계약, W08-A/B/C 병합, Q-PACK/Q-AUDIO/D-WIN/Q-OMAKE-VOICE | 저성능 Work |
 | W-DIFF-A | 난이도 1~10 설계·격리 기술 검증·구현 인계 | P1 / 공개1수 선읽기 격리검증 완료·강도 개선/10구간 미입증 | PR #83/#84 병합, 2026-10-18 사용자 승인 | 고성능 Work |
 | W-DIFF-B | 단계+게임 설정의 최종 난이도·저장·설정 UI 적용 | P1 / 정책·독립 재검증·구현·Linux 회귀 완료, 최종 Windows 근거는 제품 PR 참조 | W-DIFF-A 검토 | 저성능 Work(판단 구현 복잡 시 고성능 Work) |
