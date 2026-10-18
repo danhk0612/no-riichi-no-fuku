@@ -124,6 +124,23 @@ class SharedPromptTests(unittest.TestCase):
         })
         self.assertEqual(unchanged_default.json()["revision"], 1)
 
+    def test_same_level_move_is_rejected_without_detaching_references(self):
+        item = self.create("same-level")
+        self.client.put("/api/local/shared-prompt-defaults/0/clothing_state", headers=self.headers, json={
+            "expected_revision": 0, "item_id": item["id"],
+        })
+        self.client.put("/api/local/characters/1/prompt-candidates/0/clothing_state", headers=self.headers, json={
+            "expected_revision": 0, "item_ids": [item["id"]],
+        })
+        preview = self.client.post(f"/api/local/shared-prompts/{item['id']}/change-preview", headers=self.headers, json={
+            "expected_revision": 1, "action": "move", "target_level": 0,
+        })
+        self.assertEqual((preview.status_code, preview.json()["detail"]["code"]), (422, "same_level_move"))
+        candidate = self.client.get("/api/local/characters/1/prompt-candidates/0/clothing_state", headers=self.headers).json()
+        default = self.client.get("/api/local/shared-prompt-defaults/0/clothing_state", headers=self.headers).json()
+        self.assertEqual(candidate["stored_item_ids"], [item["id"]])
+        self.assertEqual(default["item_id"], item["id"])
+
     def test_move_preview_confirmation_stale_guard_and_no_target_auto_attach(self):
         item = self.create("move me")
         saved = self.client.put("/api/local/characters/1/prompt-candidates/0/clothing_state", headers=self.headers, json={
