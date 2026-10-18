@@ -48,6 +48,7 @@ class CpuChoice:
     # Present only in new local progression snapshots; legacy snapshots infer
     # their tier from defeat_stage exactly as before.
     effective_tier: int | None = None
+    difficulty_snapshot: dict | None = None
 
 
 class CpuAgentFactory(Protocol):
@@ -101,6 +102,18 @@ def create_production_cpu_agent(
     *,
     seed: int | None,
 ) -> MahjongAgent:
+    from app.services.difficulty import DifficultyError, FIELDS, validate_snapshot
+    from app.mahjong.difficulty import ProfileAgent
+    try:
+        if type(choice.policy_version) is not int or choice.policy_version not in (1, 2, 3):
+            raise DifficultyError("unknown CPU policy")
+        if choice.policy_version == 3:
+            profile = validate_snapshot(choice.difficulty_snapshot, choice.defeat_stage)
+            return ProfileAgent(profile, seed=seed, **{key: getattr(choice, key) for key in FIELDS})
+        if choice.difficulty_snapshot is not None:
+            raise DifficultyError("legacy CPU policy cannot contain a difficulty snapshot")
+    except DifficultyError as error:
+        raise GameSetupError(str(error)) from error
     tier = choice.defeat_stage if choice.effective_tier is None else choice.effective_tier
     if tier == 0:
         return Tier0Agent(

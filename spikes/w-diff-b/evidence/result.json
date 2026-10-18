@@ -1,0 +1,998 @@
+{
+  "source": "cd65c1e268344785bdd90340315ac728efde0235",
+  "profiles": [
+    {
+      "level": 1,
+      "lapse_numerator": 650,
+      "version": "tier2-bounded-lapse-suitfix-v1",
+      "denominator": 1000,
+      "max_shanten_excess": 1,
+      "max_tile_kinds": 6
+    },
+    {
+      "level": 2,
+      "lapse_numerator": 480,
+      "version": "tier2-bounded-lapse-suitfix-v1",
+      "denominator": 1000,
+      "max_shanten_excess": 1,
+      "max_tile_kinds": 6
+    },
+    {
+      "level": 3,
+      "lapse_numerator": 380,
+      "version": "tier2-bounded-lapse-suitfix-v1",
+      "denominator": 1000,
+      "max_shanten_excess": 1,
+      "max_tile_kinds": 6
+    },
+    {
+      "level": 4,
+      "lapse_numerator": 290,
+      "version": "tier2-bounded-lapse-suitfix-v1",
+      "denominator": 1000,
+      "max_shanten_excess": 1,
+      "max_tile_kinds": 6
+    },
+    {
+      "level": 5,
+      "lapse_numerator": 210,
+      "version": "tier2-bounded-lapse-suitfix-v1",
+      "denominator": 1000,
+      "max_shanten_excess": 1,
+      "max_tile_kinds": 6
+    },
+    {
+      "level": 6,
+      "lapse_numerator": 145,
+      "version": "tier2-bounded-lapse-suitfix-v1",
+      "denominator": 1000,
+      "max_shanten_excess": 1,
+      "max_tile_kinds": 6
+    },
+    {
+      "level": 7,
+      "lapse_numerator": 90,
+      "version": "tier2-bounded-lapse-suitfix-v1",
+      "denominator": 1000,
+      "max_shanten_excess": 1,
+      "max_tile_kinds": 6
+    },
+    {
+      "level": 8,
+      "lapse_numerator": 50,
+      "version": "tier2-bounded-lapse-suitfix-v1",
+      "denominator": 1000,
+      "max_shanten_excess": 1,
+      "max_tile_kinds": 6
+    },
+    {
+      "level": 9,
+      "lapse_numerator": 20,
+      "version": "tier2-bounded-lapse-suitfix-v1",
+      "denominator": 1000,
+      "max_shanten_excess": 1,
+      "max_tile_kinds": 6
+    },
+    {
+      "level": 10,
+      "lapse_numerator": 0,
+      "version": "tier2-bounded-lapse-suitfix-v1",
+      "denominator": 1000,
+      "max_shanten_excess": 1,
+      "max_tile_kinds": 6
+    }
+  ],
+  "checks": [
+    "b6b0b63a9b78bb55068e2721d1d0a3298bd24a57acae3091715acc6d734d9017",
+    "b6b0b63a9b78bb55068e2721d1d0a3298bd24a57acae3091715acc6d734d9017"
+  ],
+  "sample_reproductions": [
+    {
+      "context": "neutral",
+      "label": 1,
+      "seed": 5000,
+      "seat": 1,
+      "personality_index": 0,
+      "scores": [
+        33400,
+        15000,
+        27500,
+        24100
+      ],
+      "ranks": [
+        1,
+        4,
+        2,
+        3
+      ],
+      "steps": 735,
+      "trace": "2e3316c51c94f83faf4189129ef1f6aaad8524bd063e0704b68fd5f2fd1e60dc",
+      "elapsed_s": 0.8766894479999792,
+      "decisions": 176,
+      "decision_ms_sum": 241.13661,
+      "decision_ms_p95": 2.380975,
+      "decision_ms_max": 2.93192,
+      "lapses": 95,
+      "changed": 71,
+      "protected_folds": 0
+    },
+    {
+      "context": "neutral",
+      "label": 5,
+      "seed": 5000,
+      "seat": 1,
+      "personality_index": 0,
+      "scores": [
+        23600,
+        28200,
+        30600,
+        17600
+      ],
+      "ranks": [
+        3,
+        2,
+        1,
+        4
+      ],
+      "steps": 727,
+      "trace": "bf706f20768e159f390da89c240a1bb57c696fb1be6f4232b8795cb970bcffde",
+      "elapsed_s": 0.8977219119999518,
+      "decisions": 180,
+      "decision_ms_sum": 224.081701,
+      "decision_ms_p95": 2.183082,
+      "decision_ms_max": 4.319714,
+      "lapses": 30,
+      "changed": 24,
+      "protected_folds": 0
+    },
+    {
+      "context": "neutral",
+      "label": 10,
+      "seed": 5000,
+      "seat": 1,
+      "personality_index": 0,
+      "scores": [
+        39000,
+        21200,
+        20100,
+        19700
+      ],
+      "ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "steps": 321,
+      "trace": "6f18a66c0edc2e62892d5577c170c1182d8e3e2f96fb80e8d519d3802d680b83",
+      "elapsed_s": 0.38570141999991847,
+      "decisions": 84,
+      "decision_ms_sum": 112.057658,
+      "decision_ms_p95": 2.035784,
+      "decision_ms_max": 3.024938,
+      "lapses": 0,
+      "changed": 0,
+      "protected_folds": 9
+    },
+    {
+      "context": "neutral",
+      "label": "tier2",
+      "seed": 5000,
+      "seat": 1,
+      "personality_index": 0,
+      "scores": [
+        39000,
+        21200,
+        20100,
+        19700
+      ],
+      "ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "steps": 321,
+      "trace": "6f18a66c0edc2e62892d5577c170c1182d8e3e2f96fb80e8d519d3802d680b83",
+      "elapsed_s": 0.3861058290000301,
+      "decisions": 84,
+      "decision_ms_sum": 112.209135,
+      "decision_ms_p95": 2.080499,
+      "decision_ms_max": 2.281187,
+      "lapses": 0,
+      "changed": 0,
+      "protected_folds": 0
+    },
+    {
+      "context": "mixed",
+      "label": 1,
+      "seed": 5000,
+      "seat": 1,
+      "personality_index": 0,
+      "scores": [
+        23700,
+        19000,
+        25700,
+        30600
+      ],
+      "ranks": [
+        3,
+        4,
+        2,
+        1
+      ],
+      "steps": 525,
+      "trace": "25e7013a7d5f32ba15fd6661c8746ce53e28dd63199411934cfb17c80a91362e",
+      "elapsed_s": 0.6480105300000787,
+      "decisions": 132,
+      "decision_ms_sum": 206.04497,
+      "decision_ms_p95": 2.748429,
+      "decision_ms_max": 12.544659,
+      "lapses": 73,
+      "changed": 62,
+      "protected_folds": 0
+    },
+    {
+      "context": "mixed",
+      "label": 5,
+      "seed": 5000,
+      "seat": 1,
+      "personality_index": 0,
+      "scores": [
+        25800,
+        28800,
+        35400,
+        10000
+      ],
+      "ranks": [
+        3,
+        2,
+        1,
+        4
+      ],
+      "steps": 581,
+      "trace": "5dae5fb97f3e6d2ff8901e9807bb9986a3b7b8ddfdbef66544aaaaa4b37a1faf",
+      "elapsed_s": 0.6332052640000256,
+      "decisions": 138,
+      "decision_ms_sum": 153.572494,
+      "decision_ms_p95": 2.08714,
+      "decision_ms_max": 2.683372,
+      "lapses": 16,
+      "changed": 9,
+      "protected_folds": 9
+    },
+    {
+      "context": "mixed",
+      "label": 10,
+      "seed": 5000,
+      "seat": 1,
+      "personality_index": 0,
+      "scores": [
+        20400,
+        26300,
+        32700,
+        20600
+      ],
+      "ranks": [
+        4,
+        2,
+        1,
+        3
+      ],
+      "steps": 621,
+      "trace": "709f1e4f26212bf15a20e766816ca7e427df8694710115ddb2eecb245cb1c613",
+      "elapsed_s": 0.6850967899999887,
+      "decisions": 150,
+      "decision_ms_sum": 174.619293,
+      "decision_ms_p95": 2.030175,
+      "decision_ms_max": 2.365892,
+      "lapses": 0,
+      "changed": 0,
+      "protected_folds": 1
+    },
+    {
+      "context": "mixed",
+      "label": "tier2",
+      "seed": 5000,
+      "seat": 1,
+      "personality_index": 0,
+      "scores": [
+        20400,
+        26300,
+        32700,
+        20600
+      ],
+      "ranks": [
+        4,
+        2,
+        1,
+        3
+      ],
+      "steps": 621,
+      "trace": "709f1e4f26212bf15a20e766816ca7e427df8694710115ddb2eecb245cb1c613",
+      "elapsed_s": 0.7022445439999956,
+      "decisions": 150,
+      "decision_ms_sum": 179.013205,
+      "decision_ms_p95": 2.068061,
+      "decision_ms_max": 2.683623,
+      "lapses": 0,
+      "changed": 0,
+      "protected_folds": 0
+    },
+    {
+      "context": "characters",
+      "label": 1,
+      "seed": 5000,
+      "seat": 1,
+      "personality_index": 0,
+      "scores": [
+        21900,
+        19500,
+        36800,
+        21800
+      ],
+      "ranks": [
+        2,
+        4,
+        1,
+        3
+      ],
+      "steps": 462,
+      "trace": "10f562ae6f2b6b09d1dcc642441e1d97d9bd781a0218720f5eacae835bb7882a",
+      "elapsed_s": 0.5301930379999931,
+      "decisions": 108,
+      "decision_ms_sum": 136.845004,
+      "decision_ms_p95": 2.068632,
+      "decision_ms_max": 2.433122,
+      "lapses": 63,
+      "changed": 46,
+      "protected_folds": 0
+    },
+    {
+      "context": "characters",
+      "label": 5,
+      "seed": 5000,
+      "seat": 1,
+      "personality_index": 0,
+      "scores": [
+        24000,
+        21400,
+        34500,
+        20100
+      ],
+      "ranks": [
+        2,
+        3,
+        1,
+        4
+      ],
+      "steps": 824,
+      "trace": "cc5f9e2c4423c30a77c1412e02c0a94b76153d7533e206505c3d733a531b94af",
+      "elapsed_s": 1.0102964379999548,
+      "decisions": 206,
+      "decision_ms_sum": 256.386017,
+      "decision_ms_p95": 2.193027,
+      "decision_ms_max": 3.105848,
+      "lapses": 31,
+      "changed": 20,
+      "protected_folds": 0
+    },
+    {
+      "context": "characters",
+      "label": 10,
+      "seed": 5000,
+      "seat": 1,
+      "personality_index": 0,
+      "scores": [
+        11600,
+        31300,
+        33300,
+        23800
+      ],
+      "ranks": [
+        4,
+        2,
+        1,
+        3
+      ],
+      "steps": 494,
+      "trace": "42b91024e80c866e6bbaedd0e8f8cb2b6158cf42fa05019533a6ce20d587f9dc",
+      "elapsed_s": 0.5914075040000171,
+      "decisions": 121,
+      "decision_ms_sum": 164.244994,
+      "decision_ms_p95": 2.140799,
+      "decision_ms_max": 3.883779,
+      "lapses": 0,
+      "changed": 0,
+      "protected_folds": 5
+    },
+    {
+      "context": "characters",
+      "label": "tier2",
+      "seed": 5000,
+      "seat": 1,
+      "personality_index": 0,
+      "scores": [
+        11600,
+        31300,
+        33300,
+        23800
+      ],
+      "ranks": [
+        4,
+        2,
+        1,
+        3
+      ],
+      "steps": 494,
+      "trace": "42b91024e80c866e6bbaedd0e8f8cb2b6158cf42fa05019533a6ce20d587f9dc",
+      "elapsed_s": 0.5780086989999518,
+      "decisions": 121,
+      "decision_ms_sum": 158.057289,
+      "decision_ms_p95": 2.117324,
+      "decision_ms_max": 2.37112,
+      "lapses": 0,
+      "changed": 0,
+      "protected_folds": 0
+    }
+  ],
+  "summary": {
+    "neutral": [
+      {
+        "label": 1,
+        "matches": 128,
+        "mean_score": 18498.4375,
+        "mean_rank": 3.359375,
+        "first": 8,
+        "last": 74,
+        "seed_block_score_se": 922.4558636804842,
+        "decision_ms_mean": 1.3760770924274688,
+        "max_match_p95_ms": 3.986018,
+        "decision_ms_max": 42.855843,
+        "decisions": 15028,
+        "lapses": 7559,
+        "changed": 5999
+      },
+      {
+        "label": 2,
+        "matches": 128,
+        "mean_score": 19025.78125,
+        "mean_rank": 3.328125,
+        "first": 7,
+        "last": 71,
+        "seed_block_score_se": 714.5128299351139,
+        "decision_ms_mean": 1.369067565737052,
+        "max_match_p95_ms": 4.168968,
+        "decision_ms_max": 20.786651,
+        "decisions": 16064,
+        "lapses": 6020,
+        "changed": 4726
+      },
+      {
+        "label": 3,
+        "matches": 128,
+        "mean_score": 18371.875,
+        "mean_rank": 3.328125,
+        "first": 8,
+        "last": 71,
+        "seed_block_score_se": 674.7589081837949,
+        "decision_ms_mean": 1.292076614308877,
+        "max_match_p95_ms": 3.744771,
+        "decision_ms_max": 13.075997,
+        "decisions": 14802,
+        "lapses": 4367,
+        "changed": 3504
+      },
+      {
+        "label": 4,
+        "matches": 128,
+        "mean_score": 19743.75,
+        "mean_rank": 3.140625,
+        "first": 11,
+        "last": 63,
+        "seed_block_score_se": 610.6920733624613,
+        "decision_ms_mean": 1.4289702873843781,
+        "max_match_p95_ms": 4.357747,
+        "decision_ms_max": 31.663126,
+        "decisions": 15568,
+        "lapses": 3588,
+        "changed": 2894
+      },
+      {
+        "label": 5,
+        "matches": 128,
+        "mean_score": 21813.28125,
+        "mean_rank": 2.8515625,
+        "first": 17,
+        "last": 46,
+        "seed_block_score_se": 703.0830940693131,
+        "decision_ms_mean": 1.4457020557663125,
+        "max_match_p95_ms": 3.943214,
+        "decision_ms_max": 19.957199,
+        "decisions": 15816,
+        "lapses": 2541,
+        "changed": 2046
+      },
+      {
+        "label": 6,
+        "matches": 128,
+        "mean_score": 23369.53125,
+        "mean_rank": 2.703125,
+        "first": 23,
+        "last": 40,
+        "seed_block_score_se": 605.4000676445137,
+        "decision_ms_mean": 1.3679583270172315,
+        "max_match_p95_ms": 4.462202,
+        "decision_ms_max": 20.294928,
+        "decisions": 15727,
+        "lapses": 1751,
+        "changed": 1415
+      },
+      {
+        "label": 7,
+        "matches": 128,
+        "mean_score": 22206.25,
+        "mean_rank": 2.8515625,
+        "first": 18,
+        "last": 48,
+        "seed_block_score_se": 652.6128085033121,
+        "decision_ms_mean": 1.3692663819470348,
+        "max_match_p95_ms": 5.644362,
+        "decision_ms_max": 17.933525,
+        "decisions": 16086,
+        "lapses": 1075,
+        "changed": 836
+      },
+      {
+        "label": 8,
+        "matches": 128,
+        "mean_score": 22532.03125,
+        "mean_rank": 2.7734375,
+        "first": 25,
+        "last": 43,
+        "seed_block_score_se": 692.6832054799522,
+        "decision_ms_mean": 1.467538375149118,
+        "max_match_p95_ms": 4.133405,
+        "decision_ms_max": 27.891819,
+        "decisions": 15927,
+        "lapses": 609,
+        "changed": 492
+      },
+      {
+        "label": 9,
+        "matches": 128,
+        "mean_score": 23418.75,
+        "mean_rank": 2.8046875,
+        "first": 24,
+        "last": 51,
+        "seed_block_score_se": 545.5534146404057,
+        "decision_ms_mean": 1.3420025788132508,
+        "max_match_p95_ms": 3.829706,
+        "decision_ms_max": 45.109554,
+        "decisions": 16482,
+        "lapses": 247,
+        "changed": 186
+      },
+      {
+        "label": 10,
+        "matches": 128,
+        "mean_score": 25000,
+        "mean_rank": 2.5,
+        "first": 32,
+        "last": 32,
+        "seed_block_score_se": 0.0,
+        "decision_ms_mean": 1.398049679919536,
+        "max_match_p95_ms": 4.223479,
+        "decision_ms_max": 14.635645,
+        "decisions": 16902,
+        "lapses": 0,
+        "changed": 0
+      },
+      {
+        "label": "tier2",
+        "matches": 128,
+        "mean_score": 25000,
+        "mean_rank": 2.5,
+        "first": 32,
+        "last": 32,
+        "seed_block_score_se": 0.0,
+        "decision_ms_mean": 1.4896871911016447,
+        "max_match_p95_ms": 6.324147,
+        "decision_ms_max": 41.954396,
+        "decisions": 16902,
+        "lapses": 0,
+        "changed": 0
+      }
+    ],
+    "mixed": [
+      {
+        "label": 1,
+        "matches": 128,
+        "mean_score": 17342.96875,
+        "mean_rank": 3.3515625,
+        "first": 6,
+        "last": 73,
+        "seed_block_score_se": 703.4998860598628,
+        "decision_ms_mean": 1.4490625988875954,
+        "max_match_p95_ms": 6.194986,
+        "decision_ms_max": 24.211693,
+        "decisions": 15462,
+        "lapses": 7727,
+        "changed": 6116
+      },
+      {
+        "label": 2,
+        "matches": 128,
+        "mean_score": 19058.59375,
+        "mean_rank": 3.25,
+        "first": 13,
+        "last": 70,
+        "seed_block_score_se": 613.9636574752228,
+        "decision_ms_mean": 1.4487137520342879,
+        "max_match_p95_ms": 4.145244,
+        "decision_ms_max": 38.799712,
+        "decisions": 16099,
+        "lapses": 6051,
+        "changed": 4834
+      },
+      {
+        "label": 3,
+        "matches": 128,
+        "mean_score": 18628.125,
+        "mean_rank": 3.234375,
+        "first": 7,
+        "last": 62,
+        "seed_block_score_se": 671.966891690525,
+        "decision_ms_mean": 1.386992116716769,
+        "max_match_p95_ms": 4.050172,
+        "decision_ms_max": 15.437361,
+        "decisions": 15302,
+        "lapses": 4509,
+        "changed": 3645
+      },
+      {
+        "label": 4,
+        "matches": 128,
+        "mean_score": 21478.125,
+        "mean_rank": 2.875,
+        "first": 18,
+        "last": 49,
+        "seed_block_score_se": 821.9577874408621,
+        "decision_ms_mean": 1.2910285464812639,
+        "max_match_p95_ms": 4.145345,
+        "decision_ms_max": 32.957667,
+        "decisions": 15318,
+        "lapses": 3475,
+        "changed": 2770
+      },
+      {
+        "label": 5,
+        "matches": 128,
+        "mean_score": 22021.875,
+        "mean_rank": 2.8984375,
+        "first": 21,
+        "last": 52,
+        "seed_block_score_se": 850.6785049892859,
+        "decision_ms_mean": 1.4049037218780567,
+        "max_match_p95_ms": 4.23079,
+        "decision_ms_max": 11.470291,
+        "decisions": 15335,
+        "lapses": 2462,
+        "changed": 1988
+      },
+      {
+        "label": 6,
+        "matches": 128,
+        "mean_score": 21971.875,
+        "mean_rank": 2.8515625,
+        "first": 17,
+        "last": 46,
+        "seed_block_score_se": 637.7853073615684,
+        "decision_ms_mean": 1.4831780535836179,
+        "max_match_p95_ms": 4.071195,
+        "decision_ms_max": 14.950955,
+        "decisions": 14650,
+        "lapses": 1632,
+        "changed": 1315
+      },
+      {
+        "label": 7,
+        "matches": 128,
+        "mean_score": 24000.78125,
+        "mean_rank": 2.65625,
+        "first": 25,
+        "last": 38,
+        "seed_block_score_se": 876.8266391423261,
+        "decision_ms_mean": 1.3213569122118065,
+        "max_match_p95_ms": 3.899975,
+        "decision_ms_max": 18.214304,
+        "decisions": 15788,
+        "lapses": 1084,
+        "changed": 851
+      },
+      {
+        "label": 8,
+        "matches": 128,
+        "mean_score": 23573.4375,
+        "mean_rank": 2.625,
+        "first": 29,
+        "last": 43,
+        "seed_block_score_se": 843.1785232389468,
+        "decision_ms_mean": 1.2628336718506998,
+        "max_match_p95_ms": 3.971141,
+        "decision_ms_max": 13.017286,
+        "decisions": 14789,
+        "lapses": 588,
+        "changed": 474
+      },
+      {
+        "label": 9,
+        "matches": 128,
+        "mean_score": 24505.46875,
+        "mean_rank": 2.5703125,
+        "first": 32,
+        "last": 40,
+        "seed_block_score_se": 968.0654022081198,
+        "decision_ms_mean": 1.3428979168229307,
+        "max_match_p95_ms": 4.180473,
+        "decision_ms_max": 10.60363,
+        "decisions": 14932,
+        "lapses": 202,
+        "changed": 163
+      },
+      {
+        "label": 10,
+        "matches": 128,
+        "mean_score": 24743.75,
+        "mean_rank": 2.4453125,
+        "first": 41,
+        "last": 36,
+        "seed_block_score_se": 972.0832353930696,
+        "decision_ms_mean": 1.3572230388728226,
+        "max_match_p95_ms": 4.051117,
+        "decision_ms_max": 16.318424,
+        "decisions": 14869,
+        "lapses": 0,
+        "changed": 0
+      },
+      {
+        "label": "tier2",
+        "matches": 128,
+        "mean_score": 24743.75,
+        "mean_rank": 2.4453125,
+        "first": 41,
+        "last": 36,
+        "seed_block_score_se": 972.0832353930696,
+        "decision_ms_mean": 1.3496008121595267,
+        "max_match_p95_ms": 3.944049,
+        "decision_ms_max": 20.206735,
+        "decisions": 14869,
+        "lapses": 0,
+        "changed": 0
+      }
+    ],
+    "characters": [
+      {
+        "label": 1,
+        "matches": 128,
+        "mean_score": 18178.125,
+        "mean_rank": 3.3671875,
+        "first": 8,
+        "last": 78,
+        "seed_block_score_se": 784.9691715618004,
+        "decision_ms_mean": 1.3939107620612594,
+        "max_match_p95_ms": 4.142948,
+        "decision_ms_max": 26.140198,
+        "decisions": 15214,
+        "lapses": 7640,
+        "changed": 6013
+      },
+      {
+        "label": 2,
+        "matches": 128,
+        "mean_score": 18233.59375,
+        "mean_rank": 3.3359375,
+        "first": 5,
+        "last": 72,
+        "seed_block_score_se": 653.3949119841724,
+        "decision_ms_mean": 1.4214903453677559,
+        "max_match_p95_ms": 4.921826,
+        "decision_ms_max": 27.935226,
+        "decisions": 14874,
+        "lapses": 5579,
+        "changed": 4429
+      },
+      {
+        "label": 3,
+        "matches": 128,
+        "mean_score": 18940.625,
+        "mean_rank": 3.21875,
+        "first": 10,
+        "last": 66,
+        "seed_block_score_se": 860.5582030675993,
+        "decision_ms_mean": 1.3281687578160253,
+        "max_match_p95_ms": 4.37485,
+        "decision_ms_max": 54.088105,
+        "decisions": 15513,
+        "lapses": 4603,
+        "changed": 3696
+      },
+      {
+        "label": 4,
+        "matches": 128,
+        "mean_score": 19544.53125,
+        "mean_rank": 3.09375,
+        "first": 16,
+        "last": 63,
+        "seed_block_score_se": 815.029201169394,
+        "decision_ms_mean": 1.3078281095848028,
+        "max_match_p95_ms": 4.162763,
+        "decision_ms_max": 27.490264,
+        "decisions": 16161,
+        "lapses": 3685,
+        "changed": 2958
+      },
+      {
+        "label": 5,
+        "matches": 128,
+        "mean_score": 22199.21875,
+        "mean_rank": 2.8984375,
+        "first": 22,
+        "last": 46,
+        "seed_block_score_se": 670.9307265188011,
+        "decision_ms_mean": 1.2555606753657573,
+        "max_match_p95_ms": 3.6949,
+        "decision_ms_max": 37.981641,
+        "decisions": 15174,
+        "lapses": 2456,
+        "changed": 1971
+      },
+      {
+        "label": 6,
+        "matches": 128,
+        "mean_score": 23145.3125,
+        "mean_rank": 2.7578125,
+        "first": 23,
+        "last": 43,
+        "seed_block_score_se": 648.1065760710753,
+        "decision_ms_mean": 1.2543803071920927,
+        "max_match_p95_ms": 3.737604,
+        "decision_ms_max": 26.801549,
+        "decisions": 15378,
+        "lapses": 1697,
+        "changed": 1355
+      },
+      {
+        "label": 7,
+        "matches": 128,
+        "mean_score": 22248.4375,
+        "mean_rank": 2.8203125,
+        "first": 23,
+        "last": 52,
+        "seed_block_score_se": 741.7879867001767,
+        "decision_ms_mean": 1.426868252809698,
+        "max_match_p95_ms": 3.997248,
+        "decision_ms_max": 24.222761,
+        "decisions": 15838,
+        "lapses": 1074,
+        "changed": 867
+      },
+      {
+        "label": 8,
+        "matches": 128,
+        "mean_score": 24493.75,
+        "mean_rank": 2.5234375,
+        "first": 30,
+        "last": 33,
+        "seed_block_score_se": 774.5722675003574,
+        "decision_ms_mean": 1.3017280524532564,
+        "max_match_p95_ms": 4.088793,
+        "decision_ms_max": 20.412471,
+        "decisions": 15938,
+        "lapses": 619,
+        "changed": 510
+      },
+      {
+        "label": 9,
+        "matches": 128,
+        "mean_score": 25757.8125,
+        "mean_rank": 2.421875,
+        "first": 36,
+        "last": 30,
+        "seed_block_score_se": 749.2187105814178,
+        "decision_ms_mean": 1.3493652705304646,
+        "max_match_p95_ms": 4.321326,
+        "decision_ms_max": 10.664299,
+        "decisions": 15477,
+        "lapses": 210,
+        "changed": 169
+      },
+      {
+        "label": 10,
+        "matches": 128,
+        "mean_score": 25678.90625,
+        "mean_rank": 2.5390625,
+        "first": 31,
+        "last": 33,
+        "seed_block_score_se": 651.2783155248864,
+        "decision_ms_mean": 1.283156367616714,
+        "max_match_p95_ms": 3.848307,
+        "decision_ms_max": 15.913312,
+        "decisions": 15508,
+        "lapses": 0,
+        "changed": 0
+      },
+      {
+        "label": "tier2",
+        "matches": 128,
+        "mean_score": 25678.90625,
+        "mean_rank": 2.5390625,
+        "first": 31,
+        "last": 33,
+        "seed_block_score_se": 651.2783155248864,
+        "decision_ms_mean": 1.22406115443642,
+        "max_match_p95_ms": 3.97861,
+        "decision_ms_max": 11.118742,
+        "decisions": 15508,
+        "lapses": 0,
+        "changed": 0
+      }
+    ]
+  },
+  "bands": {
+    "neutral": [
+      {
+        "name": "low",
+        "mean_score": 18632.03125,
+        "mean_rank": 3.3385416666666665
+      },
+      {
+        "name": "mid",
+        "mean_score": 21783.203125,
+        "mean_rank": 2.88671875
+      },
+      {
+        "name": "high",
+        "mean_score": 23650.260416666668,
+        "mean_rank": 2.6927083333333335
+      }
+    ],
+    "mixed": [
+      {
+        "name": "low",
+        "mean_score": 18343.229166666668,
+        "mean_rank": 3.2786458333333335
+      },
+      {
+        "name": "mid",
+        "mean_score": 22368.1640625,
+        "mean_rank": 2.8203125
+      },
+      {
+        "name": "high",
+        "mean_score": 24274.21875,
+        "mean_rank": 2.546875
+      }
+    ],
+    "characters": [
+      {
+        "name": "low",
+        "mean_score": 18450.78125,
+        "mean_rank": 3.3072916666666665
+      },
+      {
+        "name": "mid",
+        "mean_score": 21784.375,
+        "mean_rank": 2.892578125
+      },
+      {
+        "name": "high",
+        "mean_score": 25310.15625,
+        "mean_rank": 2.4947916666666665
+      }
+    ]
+  },
+  "l10_tier2_identical": 384,
+  "elapsed_s": 7.983328572000005,
+  "passed": true
+}

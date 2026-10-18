@@ -26,6 +26,7 @@ from app.api.dependencies import (
 )
 from app.api.game import router as game_router
 from app.api.local_play import router as local_play_router
+from app.api.local_difficulty import router as local_difficulty_router
 from app.api.local_sound import router as local_sound_router
 from app.api.audio_packs import router as audio_packs_router
 from app.api.local_content import character_router as local_character_content_router
@@ -279,6 +280,7 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
         app.include_router(local_admin_router)
         app.include_router(game_router)
         app.include_router(local_play_router)
+        app.include_router(local_difficulty_router)
         app.include_router(local_sound_router)
         app.include_router(audio_packs_router)
         app.include_router(local_content_router)

@@ -1,0 +1,4 @@
+PASS difficulty: preview, draft/conflict, selection preservation, saved revision, active snapshot
+PASS: BGM cycle/order continuity, one-track repeat, stale callback rejection, media replacement, retry after file/autoplay failure, inactive selection clearing, and final committed SFX survive match completion
+PASS: dirty-only/empty saves, failure/conflict drafts, pending save, stale selection/save, scan deduplication, explicit pack link/update, empty overrides, source distinction and late application isolation
+PASS: startup title BGM/selection transition, voice-off/SFX pack save discard held media and queued voices, future voice queue recovers, active voice stops

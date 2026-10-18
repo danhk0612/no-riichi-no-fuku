@@ -87,6 +87,9 @@ jobs:
             node tests/audio-packs.browser.mjs *> ../out/w05-evidence/audio-packs-browser.txt
             if ($LASTEXITCODE -ne 0) { Get-Content ../out/w05-evidence/audio-packs-browser.txt; exit $LASTEXITCODE }
             Get-Content ../out/w05-evidence/audio-packs-browser.txt
+            node tests/difficulty.browser.mjs *> ../out/w05-evidence/difficulty-browser.txt
+            if ($LASTEXITCODE -ne 0) { Get-Content ../out/w05-evidence/difficulty-browser.txt; exit $LASTEXITCODE }
+            Get-Content ../out/w05-evidence/difficulty-browser.txt
           } finally {
             & taskkill.exe /PID $vite.Id /T /F 2>$null | Out-Null
           }
@@ -125,6 +128,8 @@ jobs:
           }
           $required = @(
             'same-origin React loaded without login',
+            'renderer saved next-match difficulty from its settings panel',
+            'active difficulty snapshot survived setting change and engine restart',
             'renderer opened local sound and ending settings',
             'new local profile starts silent with ending resources unregistered',
             'renderer name editor persisted the local profile',

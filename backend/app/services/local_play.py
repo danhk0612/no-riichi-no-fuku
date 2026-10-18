@@ -122,6 +122,8 @@ def effective_choices(
         raise LocalPlayConflict("ending_pending", "the ending must be acknowledged")
     if state.phase == "progress" and unfinished >= 3 and any(stages.get(cpu_id, 0) >= 3 for cpu_id in selected_ids):
         raise InvalidCpuSelectionError("completed CPUs are unavailable while three or more remain")
+    from app.services.difficulty import read_setting, resolve
+    difficulty = read_setting(session)
     choices = []
     for cpu_id in selected_ids:
         choice = candidates.get(cpu_id)
@@ -131,7 +133,9 @@ def effective_choices(
         if stage is None:
             raise InvalidCpuSelectionError("roster CPU progress is missing")
         tier = 2 if state.phase == "omake" else (0 if stage == 3 else stage)
-        choices.append(replace(choice, defeat_stage=stage, effective_tier=tier, policy_version=2))
+        choices.append(replace(choice, defeat_stage=stage, effective_tier=tier, policy_version=3,
+            difficulty_snapshot=resolve(stage, "omake" if state.phase == "omake" else "progress",
+                                        difficulty["setting"], difficulty["revision"])))
     return tuple(choices)  # type: ignore[return-value]
 
 

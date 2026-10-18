@@ -1,5 +1,35 @@
 # 현재 상태
 
+## W-DIFF-B — 10단계 로컬 난이도 구현·회귀, 최종 Windows 증거는 PR 참조
+
+기준 main `d6cc88258739363e2408a80c99103b45c64b99bc`(PR #90). 사용자2026-10-18 승인으로
+설정1~10/기본5, stage0/1/2 기본3/6/9, clamp(base+setting-5,1,10), 완료보충1/오마케10
+우선, 다음 대국 적용/초기화 보존을 확정했다. 인접9구간 모두의 통계 분리 조건은 사용하지 않는다.
+
+- 독립 seed5000..5031, 세 상대군×11조건×32seed×4좌석 **4,224대국**. 저(L1~3)→중(L4~7)→고(L8~10)
+  모든 상대군에서 평균 점수 증가·평균 순위 감소. L10과 교정된 Tier2는384대국 scores/ranks/steps/trace 동일.
+  숫자10이 기존 Tier2보다 강하다는 뜻은 아니다. 인접 레벨 승률/점수의 단조성·통계 분리는 주장하지 않는다.
+- corpus seed5701×160관측×8성향×10profile: 합법성·성향6값·수비/비버림패 보존, 모든 인접쌍의
+  전체 corpus 행동 차이, 각 레벨의 캐릭터간 행동 차이 통과. 두 독립 process digest 일치.
+  모든10profile에서12행동 후 다른 현재설정을 주고 끝까지 저장 profile 재현, 표본12대국 별도process 재현.
+- 새 version `tier2-bounded-lapse-suitfix-v1`: 분모1000/실수율분자650,480,380,290,210,145,90,50,20,0.
+  최소shanten+1/상위6종류 이내, 기존 성향 EV 가중치와 fold/비버림패 보존. 낮은 레벨은 여전히
+  확률적 실수로 성향의 행동 표현이 약해질 수 있다. 새 선읽기/추가 평가식은 채택하지 않았다.
+- 측정 source local `cd65c1e`, 공개 동일tree source `2da2cde7a5fcebb9cace1ce0e5bd4b4802ee6d56`.
+  측정 후 재현 비교 harness의 tuple/list 비교 오류와 analysis-resume seed 초기화를 고쳤다.
+  측정/표본/판정/후보는 바꾸지 않고 완료된 원자료로 분석을 재개했다. 전체 wall span/budget와 해시는
+  `spikes/w-diff-b/evidence/execution.json`, 원본 실패 log도 보존했다. 이전 연구 파일은 변경하지 않았다.
+- 신규 local 대국만 policy3 + immutable difficulty_snapshot. rules v2/effective_tier는 기존 진행 의미 유지.
+  현재 설정을 복구에 재조회하지 않는다. 완료 결과는 재정산하지 않고 저장결과/난이도 표시를 읽는다.
+  legacy policy1/2/누락형식과 교정 후 golden은 유지한다. 손상/unknown 새 snapshot은 명시 오류다.
+- `GameSetting.local_cpu_difficulty` 기존JSON 저장, GET읽기전용/PUT revision+commit, 동일 writer에서
+  대국 시작과 직렬화. reset은 설정 보존. UI 선택카드는 서버 preview, 현재 대국은 저장 snapshot 표시.
+  늦은 설정 저장/preview 응답은 진행세대/요청token으로 격리하며 CPU 재선택·socket/음향 RNG 재생성 없음.
+
+Linux 최종 backend140개59.650초, 신규 난이도7개5.883초·대사pytest10개0.13초·frontend build·브라우저4종·종료3개
+검증을 통과했다. 최신 최종 head의 Windows W04/W05·artifact와 최종 회귀 수치는 해당 PR에 추가한다.
+Windows hosted와 개인 PC 실기는 구분하며 Release/tag는 만들지 않는다. 아래 절들은 당시 source의 이력이다.
+
 ## CPU 무늬 계산 직접 교정 — 구버전 평가 미유지 결정 반영
 
 기준 main `d04a178a91344f2bbd13fad3276b462769431ef9`(PR #89 병합), 사용자2026-10-18

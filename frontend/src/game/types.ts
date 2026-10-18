@@ -45,6 +45,8 @@ export type PlayerSeat = {
   isHuman: boolean
 }
 
+export type CpuDifficulty = { seat: number; cpu_character_id: number; level: number; profile_version: string; reason: string }
+
 export type CpuChoice = {
   id: number
   slug: string
@@ -55,18 +57,22 @@ export type CpuChoice = {
   long_description: string | null
   profile_image_key: string | null
   defeat_stage: number
+  difficulty_preview?: { level: number; profile_version: string; reason: string } | null
+  difficulty_setting_revision?: number | null
 }
 
 export type GameSessionCreated = {
   session_id: string
   players: PlayerSeat[]
   generation?: string | null
+  cpu_difficulties?: CpuDifficulty[] | null
 }
 
 export type GameScreenState =
   | { status: 'waiting' }
   | {
       status: 'human_turn'
+      cpuDifficulties?: CpuDifficulty[] | null
       actionVersion: number
       turn: HumanTurn
       players: PlayerSeat[]
@@ -74,6 +80,7 @@ export type GameScreenState =
     }
   | {
       status: 'complete'
+      cpuDifficulties?: CpuDifficulty[] | null
       result: MatchResult
       settlement: MatchSettlement | LocalMatchSettlement
       players: PlayerSeat[]
@@ -130,9 +137,10 @@ export type DialogueEvent = {
 }
 
 export type GameServerMessage =
-  | { type: 'human_turn'; action_version: number; turn: HumanTurn; generation?: string | null; session_id?: string }
+  | { type: 'human_turn'; cpu_difficulties?: CpuDifficulty[] | null; action_version: number; turn: HumanTurn; generation?: string | null; session_id?: string }
   | {
       type: 'match_complete'
+      cpu_difficulties?: CpuDifficulty[] | null
       result: MatchResult
       settlement: MatchSettlement
       result_asset: ResultAsset | null

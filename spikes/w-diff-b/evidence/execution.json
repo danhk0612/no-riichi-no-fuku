@@ -1,0 +1,19 @@
+{
+  "frozen_local_source": "cd65c1e",
+  "published_identical_tree_source": "2da2cde7a5fcebb9cace1ce0e5bd4b4802ee6d56",
+  "frozen_tree": "7880bde74a0a2abdd71a96912df0bc4b4ba23001",
+  "elapsed_wall_span_upper_s": 541.2221176624298,
+  "wall_span_method": "result mtime minus original redirected log filesystem birth epoch rounded down to seconds; includes measurement, manual harness repair and all sample reproductions",
+  "budget_s": 1200,
+  "source_hashes": {
+    "backend/app/mahjong/difficulty.py": "fb5735706e1ba4aeed1099708761778d5184793df5df84ffb6ef1f5f07a87ed7",
+    "backend/app/mahjong/tier0.py": "470358313187cebd9cd0af780fc69557e6c97475781ac99d54a66f049cff15b9",
+    "backend/app/mahjong/tier1.py": "090474172ba2a14cd577e2f81762a0cd26668cb2fbafd7f42f69debd782a8dc2",
+    "backend/app/mahjong/tier2.py": "67050b5999a036da3731835ec48ed440b392cac2dd454c12e9f4952fd2244d9f",
+    "backend/app/mahjong/riichienv_adapter.py": "4ad155b2fbf252ed96676f697d9e9e3aefb246a022bd337e0077933b78f9dd80",
+    "backend/app/seeds/cpu_characters.json": "90e2439d465e246a45b70d2cb0acad6ef0f3778754c020677db51f88cfd021d3",
+    "spikes/w-diff-a/calibration/run.py": "82b8ed0fbe52d6625add63ddc09e31f6b9befae43dae7c0b0abb007f30f219b9",
+    "spikes/w-diff-b/check.py": "0d204da41b5c972bbb124b75a0e293a0a5ccb93b48405cf7ef3df72c3ed123f5"
+  },
+  "note": "All 4224 matches completed before postprocessing failed on tuple/list representation. Normalized both operands, added analysis-only resume and initialized its seed start; no profile/seed/opponent/sample/gate changes or match reruns. result.elapsed_s is analysis-only duration. Prior research unchanged."
+}

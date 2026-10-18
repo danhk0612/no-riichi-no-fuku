@@ -53,6 +53,7 @@ from app.services.game_setup import (
     list_selectable_cpus,
 )
 from app.services.local_play import LocalPlayConflict
+from app.services.difficulty import DifficultyError
 from app.services.local_sound import selected_effect_clip
 from app.services.audio_packs import resolve_audio_pack_slot, resolve_voice_slot
 from app.services.result_assets import (
@@ -108,6 +109,9 @@ def create_registered_game_session(
         raise HTTPException(status_code=503, detail=str(error)) from None
     except GameSetupError as error:
         raise HTTPException(status_code=409, detail=str(error)) from None
+    except DifficultyError as error:
+        session.rollback()
+        raise HTTPException(status_code=409, detail={"code": "invalid_difficulty", "message": str(error)}) from None
     except LocalPlayConflict as error:
         session.rollback()
         raise HTTPException(status_code=409, detail={"code": error.code, "message": str(error)}) from None
@@ -122,7 +126,10 @@ def get_active_game_session(
     session: Session = Depends(get_session),
     registry: GameRegistry = Depends(get_game_registry),
 ) -> RegisteredGame | None:
-    return registry.get_active(session, user.id)
+    try:
+        return registry.get_active(session, user.id)
+    except (DifficultyError, GameSetupError, GameRegistryError) as error:
+        raise HTTPException(status_code=409, detail={"code": "invalid_cpu_snapshot", "message": str(error)}) from None
 
 
 @router.get(
@@ -372,6 +379,8 @@ async def send_registered_game_state(
                 message.update({"generation": registered.play_generation, "session_id": registered.session_id})
     else:
         message = message
+    if registered.play_generation is not None:
+        message["cpu_difficulties"] = registered.cpu_difficulties
     await websocket.send_json(message)
     if result_voice_message is not None:
         await websocket.send_json(result_voice_message)
@@ -441,6 +450,13 @@ async def game_session_websocket(
                 session_id=session_id if local_runtime is not None else None,
             )
             await websocket.close(code=4404)
+            return
+
+        except (DifficultyError, GameSetupError, GameRegistryError) as error:
+            await send_websocket_error(websocket, "invalid_cpu_snapshot", str(error),
+                generation=requested_generation if isinstance(requested_generation, str) else None,
+                session_id=session_id if local_runtime is not None else None)
+            await websocket.close(code=4409)
             return
 
         if local_runtime is not None:

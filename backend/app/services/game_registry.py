@@ -29,6 +29,7 @@ from app.services.local_play import (
 )
 from app.services.dialogue_service import DialogueSelector
 from app.services.result_assets import get_unlocked_result_asset, result_asset_metadata
+from app.services.difficulty import DifficultyError, summaries, validate_snapshot
 
 
 class GameRegistryError(RuntimeError):
@@ -70,6 +71,7 @@ class RegisteredGame:
     play_generation: str | None = None
     rules_mode: str | None = None
     presentation: dict[str, object] | None = None
+    cpu_difficulties: list[dict] | None = None
 
     def __post_init__(self) -> None:
         self.lock = RLock()
@@ -148,6 +150,7 @@ class GameRegistry:
                 game=game,
                 play_generation=generation,
                 rules_mode=rules_mode,
+                cpu_difficulties=summaries(choices),
             )
             db_session.add(
                 GameSessionRecord(
@@ -156,7 +159,7 @@ class GameRegistry:
                     match_seed=seed,
                     cpu_choices=[
                         {key: value for key, value in asdict(choice).items()
-                         if key != "effective_tier" or value is not None}
+                         if key not in {"effective_tier", "difficulty_snapshot"} or value is not None}
                         for choice in choices
                     ],
                     players=[asdict(player) for player in players],
@@ -338,6 +341,15 @@ class GameRegistry:
                     mode = record.rules_snapshot.get("mode")
                     if mode not in ("progress", "omake") or any(c.effective_tier not in (0, 1, 2) for c in choices):
                         raise GameRegistryError("persisted local rules snapshot is invalid")
+            for choice in choices:
+                if choice.policy_version == 3:
+                    try:
+                        validate_snapshot(choice.difficulty_snapshot, choice.defeat_stage, mode or "invalid")
+                        expected_tier = 2 if mode == "omake" else (0 if choice.defeat_stage == 3 else choice.defeat_stage)
+                        if type(choice.effective_tier) is not int or choice.effective_tier != expected_tier:
+                            raise DifficultyError("invalid difficulty effective tier")
+                    except DifficultyError as error:
+                        raise GameRegistryError(str(error)) from error
             game = create_game_session_from_choices(
                 record.user_id,
                 choices,
@@ -356,6 +368,8 @@ class GameRegistry:
                 play_generation=record.play_generation,
                 rules_mode=mode,
             )
+        if any(c.get("difficulty_snapshot") is not None or c.get("policy_version") == 3 for c in record.cpu_choices):
+            registered.cpu_difficulties = summaries(tuple(CpuChoice(**c) for c in record.cpu_choices))
         self._games[registered.session_id] = registered
         return registered
 

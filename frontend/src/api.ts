@@ -278,3 +278,11 @@ export function applyCharacterPack(accessToken: string, cpuId: number, changes: 
 }): Promise<CharacterContent> {
   return apiRequest(`/api/local/characters/${cpuId}/pack-application`, { method: 'POST', body: JSON.stringify(changes) }, accessToken)
 }
+
+export type LocalDifficulty = { version: 1; revision: number; setting: number; applies_to: 'next_match' }
+export function getLocalDifficulty(accessToken: string): Promise<LocalDifficulty> {
+  return apiRequest('/api/local/difficulty', {}, accessToken)
+}
+export function saveLocalDifficulty(accessToken: string, setting: number, expectedRevision: number): Promise<LocalDifficulty> {
+  return apiRequest('/api/local/difficulty', { method: 'PUT', body: JSON.stringify({ setting, expected_revision: expectedRevision }) }, accessToken)
+}

@@ -69,6 +69,7 @@ export function CpuSelection({
                 <strong>{cpu.name}</strong>
               </span>
               <span className="cpu-stage">{defeatStageLabel(cpu.defeat_stage)}</span>
+              {!rosterMode && cpu.difficulty_preview && <span>다음 대국 난이도 {cpu.difficulty_preview.level}/10</span>}
               <span>{cpu.style}</span>
               <p>{cpu.short_description}</p>
               {unavailable && <small>최종 완료 · 현재 대국 선택 불가</small>}
