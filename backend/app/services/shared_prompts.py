@@ -245,6 +245,8 @@ def preview_change(session: Session, item_id: str, data) -> dict:
         _error(404, "not_found", "공유 프롬프트를 찾을 수 없습니다.")
     if item.revision != data.expected_revision:
         _error(409, "revision_conflict", "공유 프롬프트가 변경됐습니다. 다시 불러와 주세요.", {"expected_revision": item.revision})
+    if data.action == "move" and data.target_level == item.level:
+        _error(422, "same_level_move", "이미 같은 Level의 공유 프롬프트입니다.")
     impact = _impact(session, item, data.action, data.target_level)
     canonical = json.dumps(impact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     impact["preview_digest"] = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
