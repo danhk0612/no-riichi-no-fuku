@@ -225,7 +225,7 @@ try {
   await panel.getByRole('button', { name: 'test-only-disabled-prompt', exact: true }).click()
   await candidateCheck('test-only-shared-survivor').check()
   await candidateCheck('test-only-disabled-prompt').check()
-  await panel.locator('.shared-prompt-actions select').selectOption('delete')
+  await panel.locator('.shared-prompt-actions select').first().selectOption('delete')
   await panel.getByRole('button', { name: '영향 확인' }).click()
   await panel.getByRole('region', { name: '변경 영향 확인' }).waitFor()
   await panel.getByRole('button', { name: '확인 후 비활성화' }).click()
