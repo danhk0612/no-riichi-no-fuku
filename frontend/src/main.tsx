@@ -650,7 +650,9 @@ function App() {
         setCpus(localPlay.phase === 'roster_required' ? choices : choices.filter((cpu) => ids.has(cpu.id)))
       }} />}
       {isDesktop && accessToken && soundSettingsOpen && <LocalSoundPanel accessToken={accessToken} onClose={() => setSoundSettingsOpen(false)} onSelectionChanged={setSoundSelection} onPlaybackChanged={stopGameAudio} />}
-      {isDesktop && accessToken && contentSettingsOpen && <LocalContentPanel accessToken={accessToken} onClose={() => setContentSettingsOpen(false)} onPackApplied={stopGameAudio} />}
+      {isDesktop && accessToken && contentSettingsOpen && <LocalContentPanel accessToken={accessToken} onClose={() => setContentSettingsOpen(false)} onPackApplied={stopGameAudio} onMeasurementsUpdated={(cpuId, measurements) => {
+        setCpus((current) => current?.map((cpu) => cpu.id === cpuId ? { ...cpu, measurements_cm: measurements } : cpu) ?? current)
+      }} />}
       {isDesktop && soundError && <p className="form-error" role="status">{soundError}</p>}
       {!isDesktop && !accessToken && (
         <AuthPanel

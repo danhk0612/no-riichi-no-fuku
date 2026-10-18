@@ -66,7 +66,9 @@ try {
     if (path === '/api/local/packs/rescan') { scans++; const held = scanGate; if (held) { held.seen(); await held.wait }; return route.fulfill({ json: { registry: listing } }) }
     if (path === '/api/local/packs') return route.fulfill({ json: listing })
     if (path === '/api/profile/me') return route.fulfill({ json: { player_name: 'test-only', current_hp: null, max_hp: null } })
+    if (path === '/api/local/play/roster' && request.method() === 'POST') return route.fulfill({ json: { generation: 'test-game', phase: 'progress', roster: cpus.map((cpu) => ({ cpu_character_id: cpu.id, defeat_stage: 0 })), ending_event_id: null, ending_payload: null, active_session_id: null, recent_session_id: null, legacy_active: false } })
     if (path === '/api/local/play') return route.fulfill({ json: { generation: 'test-only', phase: 'roster_required', roster: [], ending_event_id: null, ending_payload: null, active_session_id: null, recent_session_id: null, legacy_active: false } })
+    if (path === '/api/game/sessions' && request.method() === 'POST') return route.fulfill({ json: { session_id: 'test-game-session', generation: 'test-game', players: [{ seat: 0, name: 'test-only', isHuman: true }, ...cpus.map((cpu, index) => ({ seat: index + 1, name: cpu.name, isHuman: false }))] } })
     if (path === '/api/game/sessions/active') return route.fulfill({ json: null })
     if (path === '/api/local/sound-selection') return route.fulfill({ json: { effect_set_id: null, bgm_ids: [], effect_sets: [], tracks: [], effect_set_available: false, bgm_available: [] } })
     throw new Error(`Unexpected API: ${path}`)
@@ -74,6 +76,9 @@ try {
   await page.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
   await page.getByText('키 170.0 cm', { exact: true }).waitFor()
   assert.equal(await page.getByText('가슴(B)', { exact: true }).count(), 0, 'selection card must omit unset measurement rows')
+  const cpuCards = page.locator('.cpu-card')
+  for (let index = 0; index < 3; index++) await cpuCards.nth(index).click()
+  assert.equal(await page.locator('.cpu-card.selected').count(), 3, 'test must retain the full selected CPU list')
   await page.getByRole('button', { name: '캐릭터 프롬프트·팩 설정' }).click()
   const panel = page.getByRole('region', { name: '캐릭터 프롬프트와 팩 관리' })
   const select = panel.getByRole('combobox', { name: '캐릭터', exact: true })
@@ -122,6 +127,15 @@ try {
     await page.waitForFunction(() => !document.querySelector('.content-editor button.primary-button')?.textContent.includes('저장 중'))
     assert.deepEqual(lastPatch, { expected_revision: 3, measurements_cm: { height: '172.4' } })
     assert.equal(await panel.locator('input[aria-label^="키"]').inputValue(), '172.4')
+    await page.getByText('키 172.4 cm', { exact: true }).waitFor({ timeout: 1000 })
+    assert.equal(await page.locator('.cpu-card.selected').count(), 3, 'saving measurements must preserve selected CPUs')
+    await panel.locator('input[aria-label="키 (cm)"]').fill('')
+    const clearResponse = page.waitForResponse((r) => r.url().endsWith('/characters/1/content') && r.request().method() === 'PATCH')
+    await save.click(); await clearResponse
+    await page.waitForFunction(() => !document.querySelector('.content-editor button.primary-button')?.textContent.includes('저장 중'))
+    assert.deepEqual(lastPatch, { expected_revision: 4, measurements_cm: { height: null } })
+    assert.equal(await page.getByText('키 172.4 cm', { exact: true }).count(), 0, 'cleared measurement must disappear from the selection card')
+    assert.equal(await page.locator('.cpu-card.selected').count(), 3, 'clearing measurements must preserve selected CPUs')
   }
   // Rapid tab re-entry reuses the in-flight scan.
   scanGate = gate(); await panel.getByRole('tab', { name: '팩 목록·진단' }).click(); await scanGate.entered
@@ -158,7 +172,10 @@ try {
   applyGate = undefined
   await select.selectOption('1'); await panel.getByText('연결된 팩: test-pack', { exact: false }).waitFor()
   assert.equal(await positive.inputValue(), 'test-pending-draft')
-  assert.equal(await panel.locator('input[aria-label^="키"]').inputValue(), '172.4', 'direct measurement edit must survive first pack application')
+  assert.equal(await panel.locator('input[aria-label^="키"]').inputValue(), '', 'directly cleared measurement must survive first pack application')
+  assert.equal(await page.getByText('키 172.4 cm', { exact: true }).count(), 0, 'pack application must not restore a cleared measurement on the card')
+  await page.getByText('가슴(B) 88.5 cm', { exact: true }).waitFor({ timeout: 1000 })
+  assert.equal(await page.locator('.cpu-card.selected').count(), 3, 'applying a pack must preserve selected CPUs')
   const negative = panel.getByRole('group', { name: '외모', exact: true }).locator('textarea').nth(1)
   assert.equal(await negative.inputValue(), 'test-source-1-N')
   await negative.fill(''); await save.click()
@@ -170,14 +187,30 @@ try {
   const update = panel.getByRole('button', { name: '같은 팩의 등록 revision 적용', exact: true })
   await update.click(); await panel.getByText('적용 revision 2', { exact: false }).first().waitFor()
   assert.equal(await negative.inputValue(), ''); assert.equal(await positive.inputValue(), 'test-pending-draft')
-  assert.equal(await panel.locator('input[aria-label^="키"]').inputValue(), '172.4', 'direct measurement edit must survive pack revision update')
+  assert.equal(await panel.locator('input[aria-label^="키"]').inputValue(), '', 'directly cleared measurement must survive pack revision update')
   assert.equal(await panel.locator('input[aria-label^="가슴(B)"]').inputValue(), '88.5')
   assert.equal(await panel.getByRole('group', { name: '하의 속옷', exact: true }).locator('textarea').first().inputValue(), 'test-source-2-P')
   assert.equal(await update.isEnabled(), false)
   assert.equal(applications, 4)
   await panel.getByRole('group', { name: '외모', exact: true }).getByText('적용한 팩 원본 P/N').click()
   await panel.getByText('Positive: test-source-2-P', { exact: true }).first().waitFor()
+  // A measurement response arriving after the game starts must not restore the selection screen.
+  await panel.locator('input[aria-label="키 (cm)"]').fill('173.3')
+  saveGate = gate(); await save.click(); await saveGate.entered
+  await panel.getByRole('button', { name: '닫기', exact: true }).click()
+  await page.getByRole('button', { name: '참가 명단 확정', exact: true }).click()
+  await page.getByRole('button', { name: '동풍전 시작', exact: true }).waitFor()
+  for (let index = 0; index < 3; index++) await page.locator('.cpu-card').nth(index).click()
+  await page.getByRole('button', { name: '동풍전 시작', exact: true }).click()
+  await page.locator('.game-toolbar').waitFor()
+  assert.equal(await page.locator('.cpu-grid').count(), 0)
+  const lateMeasurementResponse = page.waitForResponse((response) => response.url().endsWith('/characters/1/content') && response.request().method() === 'PATCH')
+  saveGate.release(); saveGate = undefined
+  await lateMeasurementResponse
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+  assert.equal(await page.locator('.cpu-grid').count(), 0, 'late measurement save must not restore selection screen after game start')
+  assert.equal(await page.locator('.game-toolbar').count(), 1, 'late measurement save must preserve the current game')
   if (process.env.TEST_SCREENSHOT) await page.screenshot({ path: process.env.TEST_SCREENSHOT, fullPage: true })
   assert.deepEqual(errors, [])
-  console.log('PASS: dirty-only/empty saves, failure/conflict drafts, pending save, stale selection/save, scan deduplication, explicit pack link/update, empty overrides, source distinction and late application isolation')
+  console.log('PASS: dirty-only/empty saves, failure/conflict drafts, pending save, stale selection/save, scan deduplication, immediate save/clear/pack card updates, selection preservation and current-game late-response isolation')
 } finally { await browser.close() }

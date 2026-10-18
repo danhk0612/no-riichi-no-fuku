@@ -15,7 +15,12 @@ const LEVELS = ['정상', '상의 겉옷 탈의', '속옷 세트', '전체 탈�
 const MEASUREMENTS = [['height', '키'], ['bust', '가슴(B)'], ['waist', '허리(W)'], ['hips', '엉덩이(H)']] as const
 type Tab = 'prompts' | 'packs'
 
-export function LocalContentPanel({ accessToken, onClose, onPackApplied }: { accessToken: string; onClose: () => void; onPackApplied: () => void }) {
+export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasurementsUpdated }: {
+  accessToken: string
+  onClose: () => void
+  onPackApplied: () => void
+  onMeasurementsUpdated: (cpuId: number, measurements: CharacterContent['measurements_cm']) => void
+}) {
   const [tab, setTab] = useState<Tab>('prompts')
   const [cpus, setCpus] = useState<{ id: number; slug: string; name: string }[]>([])
   const [cpuId, setCpuId] = useState<number | null>(null)
@@ -124,7 +129,10 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied }: { acc
         ...(framing.length ? { framing } : {}),
         ...(Object.keys(measurements).length ? { measurements_cm: measurements } : {}),
       })
-      if (request === requestId.current && selectedId === cpuId) { setContent(saved); setDirty({}) }
+      onMeasurementsUpdated(selectedId, saved.measurements_cm)
+      if (request === requestId.current && selectedId === cpuId) {
+        setContent(saved); setDirty({})
+      }
     } catch (caught) {
       if (request === requestId.current && selectedId === cpuId) setError(message(caught))
     } finally { mutationInFlight.current = false; setSaving(false) }
@@ -145,8 +153,11 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied }: { acc
       const next = await applyCharacterPack(accessToken, selectedId, {
         expected_revision: content.revision, pack_id: targetPack.id, registered_revision_id: targetRevision.id,
       })
-      onPackApplied()
-      if (request === requestId.current) { setContent(next); setSelectedPack('') }
+      onMeasurementsUpdated(selectedId, next.measurements_cm)
+      if (request === requestId.current && selectedId === cpuId) {
+        setContent(next); setSelectedPack('')
+        onPackApplied()
+      }
     } catch (caught) { if (request === requestId.current) setError(message(caught)) }
     finally { mutationInFlight.current = false; setSaving(false) }
   }
