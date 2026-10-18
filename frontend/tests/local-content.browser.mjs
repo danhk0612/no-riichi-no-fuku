@@ -198,7 +198,7 @@ try {
   await sharedLevelSelect.selectOption('0')
   await panel.getByRole('tab', { name: '캐릭터 편집' }).click()
   const positive = panel.getByRole('group', { name: '외모', exact: true }).locator('textarea').first()
-  const save = panel.locator('button.primary-button')
+  const save = panel.locator('.content-editor:not(.shared-prompt-manager) button.primary-button')
   await positive.waitFor()
   if (!process.argv.includes('--scan-only')) {
     // Failures/conflicts preserve drafts; only dirty strings are submitted.
