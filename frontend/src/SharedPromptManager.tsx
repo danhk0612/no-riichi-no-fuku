@@ -87,7 +87,8 @@ export function SharedPromptManager({ accessToken, cpus }: { accessToken: string
     setBusy(true); setError(null)
     try {
       const next = await putSharedPromptDefault(accessToken, level, kind, defaultValue.revision, defaultChoice || null)
-      setDefaultValue(next); setDefaultChoice(next.item_id ?? '')
+      const resolved = activeCpu === null ? null : await getPromptCandidates(accessToken, activeCpu, level, kind)
+      setDefaultValue(next); setDefaultChoice(next.item_id ?? ''); setCandidate(resolved)
       setDefaultDrafts((current) => { const result = { ...current }; delete result[`${level}:${kind}`]; return result })
     }
     catch (caught) { setError(message(caught)) }
