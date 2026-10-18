@@ -425,6 +425,21 @@ async function smokeRun() {
     throw new Error('desktop renderer showed web login')
   }
   addCheck('same-origin React loaded without login')
+  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText === '난이도 설정')?.click()")
+  await waitForRenderer("Boolean(document.querySelector('.difficulty-panel select:not([disabled])'))")
+  const difficultyDefault = await window.webContents.executeJavaScript("document.querySelector('.difficulty-panel select').value")
+  if (difficultyDefault !== '5') throw new Error('new local difficulty default is not five')
+  await window.webContents.executeJavaScript(`(() => {
+    const select = document.querySelector('.difficulty-panel select')
+    select.value = '6'; select.dispatchEvent(new Event('change', { bubbles: true }))
+  })()`)
+  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.difficulty-panel button')).find(button => button.innerText === '난이도 저장')?.click()")
+  await waitForRenderer("document.querySelector('.difficulty-panel [role=status]')?.innerText.includes('저장했습니다')")
+  const savedDifficulty = await window.webContents.executeJavaScript("fetch('/api/local/difficulty').then(response => response.json())")
+  if (savedDifficulty.setting !== 6 || savedDifficulty.revision !== 1) throw new Error('renderer difficulty did not persist')
+  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.difficulty-panel button')).find(button => button.innerText === '닫기')?.click()")
+  addCheck('renderer saved next-match difficulty from its settings panel')
+
   await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('사운드'))?.click()")
   await waitForRenderer("Boolean(document.querySelector('.sound-panel'))")
   const soundDefaults = await window.webContents.executeJavaScript(`Promise.all([
@@ -802,6 +817,22 @@ async function smokeRun() {
       recoveryCheckpoint = true
     }
     if (!recoveryCheckpoint) throw new Error('normal matches ended before the active-recovery checkpoint could be exercised')
+    const frozenDifficulty = await fetch(`${origin}/api/game/sessions/active`, {
+      headers: { 'X-Local-Capability': capability },
+    }).then(response => response.json())
+    if (!frozenDifficulty.cpu_difficulties?.length) throw new Error('active match omitted difficulty snapshots')
+    const difficultyText = await window.webContents.executeJavaScript("document.querySelector('.current-difficulty')?.innerText")
+    const currentSetting = await fetch(`${origin}/api/local/difficulty`, {
+      headers: { 'X-Local-Capability': capability },
+    }).then(response => response.json())
+    const updatedSetting = await fetch(`${origin}/api/local/difficulty`, { method: 'PUT',
+      headers: { 'X-Local-Capability': capability, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expected_revision: currentSetting.revision, setting: 10 }),
+    }).then(response => response.json())
+    if (updatedSetting.setting !== 10) throw new Error('could not change future-match difficulty')
+    if (await window.webContents.executeJavaScript("document.querySelector('.current-difficulty')?.innerText") !== difficultyText) {
+      throw new Error('future difficulty setting changed active match display')
+    }
     const before = await rendererSnapshot()
     window.destroy()
     window = undefined
@@ -814,6 +845,18 @@ async function smokeRun() {
     const after = await rendererSnapshot()
     if (JSON.stringify(before) !== JSON.stringify(after)) throw new Error('active match did not restore the same renderer state')
     addCheck('active match restored after engine shutdown/restart at committed turn')
+    const restoredDifficulty = await fetch(`${origin}/api/game/sessions/active`, {
+      headers: { 'X-Local-Capability': capability },
+    }).then(response => response.json())
+    const restoredSetting = await fetch(`${origin}/api/local/difficulty`, {
+      headers: { 'X-Local-Capability': capability },
+    }).then(response => response.json())
+    if (JSON.stringify(restoredDifficulty.cpu_difficulties) !== JSON.stringify(frozenDifficulty.cpu_difficulties)
+      || restoredSetting.setting !== 10
+      || await window.webContents.executeJavaScript("document.querySelector('.current-difficulty')?.innerText") !== difficultyText) {
+      throw new Error('restart recomputed the saved difficulty or lost the future setting')
+    }
+    addCheck('active difficulty snapshot survived setting change and engine restart')
     let turns = 0
     while (!(await window.webContents.executeJavaScript("Boolean(document.querySelector('.match-result'))")) && turns < 600) {
       await clickHumanAction()

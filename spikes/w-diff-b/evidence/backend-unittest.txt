@@ -1,0 +1,1011 @@
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+test_admin_cpu_and_dialogue_management (test_admin_api.AdminApiTest.test_admin_cpu_and_dialogue_management) ... Executing <Task pending name='Task-1' coro=<AdminApiTest.asyncSetUp() running at /workspace/scratch/4c5a2f8d95d2/w-diff-b/backend/tests/test_admin_api.py:54> cb=[_run_until_complete_cb() at /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py:181] created at /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py:100> took 0.120 seconds
+ok
+test_admin_member_management_and_access_boundary (test_admin_api.AdminApiTest.test_admin_member_management_and_access_boundary) ... ok
+test_audio_and_voice_commit_failure_preserve_saved_selection (test_audio_packs.AudioPackTests.test_audio_and_voice_commit_failure_preserve_saved_selection) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ok
+test_audio_fallback_and_q_audio_switch_preserve_legacy (test_audio_packs.AudioPackTests.test_audio_fallback_and_q_audio_switch_preserve_legacy) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ok
+test_audio_selection_competing_writers_use_revision_gate (test_audio_packs.AudioPackTests.test_audio_selection_competing_writers_use_revision_gate) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_voice_default_pack_revision_and_explicit_selected_off_are_preserved (test_audio_packs.AudioPackTests.test_voice_default_pack_revision_and_explicit_selected_off_are_preserved) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ok
+test_voice_namespace_is_distribution_identity_not_cpu_restriction (test_audio_packs.AudioPackTests.test_voice_namespace_is_distribution_identity_not_cpu_restriction) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_member_authentication_and_profile_flow (test_auth_api.AuthApiTest.test_member_authentication_and_profile_flow) ... ok
+test_superadmin_must_change_initial_password (test_auth_api.AuthApiTest.test_superadmin_must_change_initial_password) ... ok
+test_cpu_seed_is_idempotent (test_backend_foundation.BackendFoundationTest.test_cpu_seed_is_idempotent) ... ok
+test_settings_build_database_url_from_postgres_fields (test_backend_foundation.BackendFoundationTest.test_settings_build_database_url_from_postgres_fields) ... ok
+test_settings_require_explicit_secrets (test_backend_foundation.BackendFoundationTest.test_settings_require_explicit_secrets) ... ok
+test_superadmin_is_created_once_without_player_defaults (test_backend_foundation.BackendFoundationTest.test_superadmin_is_created_once_without_player_defaults) ... ok
+test_bytes_revision_canonical_noop_revert_and_history (test_content_packs.PackRegistryTests.test_bytes_revision_canonical_noop_revert_and_history) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ok
+test_character_editor_commit_failure_keeps_saved_snapshot (test_content_packs.PackRegistryTests.test_character_editor_commit_failure_keeps_saved_snapshot) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_character_editor_conflict_validation_auth_and_restart (test_content_packs.PackRegistryTests.test_character_editor_conflict_validation_auth_and_restart) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ok
+test_character_editor_reads_without_writes_and_tracks_fields_independently (test_content_packs.PackRegistryTests.test_character_editor_reads_without_writes_and_tracks_fields_independently) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_character_pack_application_failures_preserve_content (test_content_packs.PackRegistryTests.test_character_pack_application_failures_preserve_content) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_character_pack_edit_apply_and_two_applications_race (test_content_packs.PackRegistryTests.test_character_pack_edit_apply_and_two_applications_race) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_character_pack_link_update_field_history_and_immutable_media (test_content_packs.PackRegistryTests.test_character_pack_link_update_field_history_and_immutable_media) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ok
+test_character_pack_missing_immutable_media_and_dependency_auth (test_content_packs.PackRegistryTests.test_character_pack_missing_immutable_media_and_dependency_auth) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_character_structure_and_original_snapshot (test_content_packs.PackRegistryTests.test_character_structure_and_original_snapshot) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_commit_failure_removes_only_owned_files (test_content_packs.PackRegistryTests.test_commit_failure_removes_only_owned_files) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_concurrent_scan_no_duplicates_and_reads_outside_writer (test_content_packs.PackRegistryTests.test_concurrent_scan_no_duplicates_and_reads_outside_writer) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_dependencies_stored_unresolved_and_not_applied (test_content_packs.PackRegistryTests.test_dependencies_stored_unresolved_and_not_applied) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_duplicate_claims_block_both (test_content_packs.PackRegistryTests.test_duplicate_claims_block_both) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_file_copy_failure_preserves_previous_registration (test_content_packs.PackRegistryTests.test_file_copy_failure_preserves_previous_registration) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_four_kinds_namespace_and_authentication (test_content_packs.PackRegistryTests.test_four_kinds_namespace_and_authentication) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_invalid_or_missing_source_preserves_existing_revision (test_content_packs.PackRegistryTests.test_invalid_or_missing_source_preserves_existing_revision) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_malformed_json_types_missing_manifest_and_size_limits (test_content_packs.PackRegistryTests.test_malformed_json_types_missing_manifest_and_size_limits) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_mutating_file_between_reads_is_incomplete_copy (test_content_packs.PackRegistryTests.test_mutating_file_between_reads_is_incomplete_copy) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_pack_rescan_does_not_replace_local_prompt_edits (test_content_packs.PackRegistryTests.test_pack_rescan_does_not_replace_local_prompt_edits) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_path_validation_and_links (test_content_packs.PackRegistryTests.test_path_validation_and_links) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_startup_repeat_migration_restart_reset_preserve_files_get_is_readonly (test_content_packs.PackRegistryTests.test_startup_repeat_migration_restart_reset_preserve_files_get_is_readonly) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ok
+test_upgrade_from_w06_preserves_settings_data_and_file_bytes (test_content_packs.PackRegistryTests.test_upgrade_from_w06_preserves_settings_data_and_file_bytes) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running downgrade 20261016_0009 -> 20261016_0008, Add per-character voice pack selection links.
+INFO  [alembic.runtime.migration] Running downgrade 20261016_0008 -> 20261016_0007, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running downgrade 20261016_0007 -> 20261016_0006, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ok
+test_windows_reserved_pack_and_voice_namespace_ids (test_content_packs.PackRegistryTests.test_windows_reserved_pack_and_voice_namespace_ids) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_honors_do_not_create_a_second_numbered_suit (test_cpu_suit_evaluation.CpuSuitEvaluationTest.test_honors_do_not_create_a_second_numbered_suit) ... ok
+test_mixed_suits_do_not_get_single_suit_bonus (test_cpu_suit_evaluation.CpuSuitEvaluationTest.test_mixed_suits_do_not_get_single_suit_bonus) ... ok
+test_physical_copy_does_not_change_suit_bonus (test_cpu_suit_evaluation.CpuSuitEvaluationTest.test_physical_copy_does_not_change_suit_bonus) ... ok
+test_single_suit_across_all_ranks_gets_existing_bonus (test_cpu_suit_evaluation.CpuSuitEvaluationTest.test_single_suit_across_all_ranks_gets_existing_bonus) ... ok
+test_all_profiles_public_corpus_golden (test_difficulty.DifficultyTests.test_all_profiles_public_corpus_golden) ... ok
+test_protected_fold_and_nondiscard_never_use_lapse_rng (test_difficulty.DifficultyTests.test_protected_fold_and_nondiscard_never_use_lapse_rng) ... ok
+test_resolver_full_table_and_strict_snapshot (test_difficulty.DifficultyTests.test_resolver_full_table_and_strict_snapshot) ... ok
+test_active_snapshot_replay_after_setting_change_and_completed_restore (test_difficulty.LocalDifficultyTests.test_active_snapshot_replay_after_setting_change_and_completed_restore) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_read_only_strict_revision_commit_failure_and_reset_preserves_setting (test_difficulty.LocalDifficultyTests.test_read_only_strict_revision_commit_failure_and_reset_preserves_setting) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_save_start_race_and_start_commit_failure_preserve_original (test_difficulty.LocalDifficultyTests.test_save_start_race_and_start_commit_failure_preserve_original) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_settings_writer_race_and_start_snapshot (test_difficulty.LocalDifficultyTests.test_settings_writer_race_and_start_snapshot) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_completed_cpu_progress_is_rejected_without_hp_change (test_game_result.MatchResultSettlementTest.test_completed_cpu_progress_is_rejected_without_hp_change) ... ok
+test_cpu_last_increments_only_mapped_progress (test_game_result.MatchResultSettlementTest.test_cpu_last_increments_only_mapped_progress) ... ok
+test_player_last_decrements_only_hp_and_detects_game_over (test_game_result.MatchResultSettlementTest.test_player_last_decrements_only_hp_and_detects_game_over) ... ok
+test_same_session_cannot_be_settled_twice (test_game_result.MatchResultSettlementTest.test_same_session_cannot_be_settled_twice) ... ok
+test_unfinished_authoritative_session_cannot_be_settled (test_game_result.MatchResultSettlementTest.test_unfinished_authoritative_session_cannot_be_settled) ... ok
+test_zero_hp_member_is_rejected_without_changes (test_game_result.MatchResultSettlementTest.test_zero_hp_member_is_rejected_without_changes) ... ok
+test_cpu_choices_require_member_authentication (test_game_setup.GameSetupApiTest.test_cpu_choices_require_member_authentication) ... ok
+test_member_lists_only_active_incomplete_cpu_choices (test_game_setup.GameSetupApiTest.test_member_lists_only_active_incomplete_cpu_choices) ... ok
+test_selection_requires_three_distinct_available_cpus_and_hp (test_game_setup.GameSetupServiceTest.test_selection_requires_three_distinct_available_cpus_and_hp) ... ok
+test_settled_stage_three_cpu_is_removed_from_replay_choices (test_game_setup.GameSetupServiceTest.test_settled_stage_three_cpu_is_removed_from_replay_choices) ... ok
+test_stage_is_passed_to_factory_without_tier_zero_fallback (test_game_setup.GameSetupServiceTest.test_stage_is_passed_to_factory_without_tier_zero_fallback) ... ok
+test_stage_zero_selection_creates_started_authoritative_session (test_game_setup.GameSetupServiceTest.test_stage_zero_selection_creates_started_authoritative_session) ... ok
+test_failed_action_commit_recovers_only_persisted_turn (test_game_websocket.GameWebSocketApiTest.test_failed_action_commit_recovers_only_persisted_turn) ... ok
+test_fixed_seed_match_completes_and_persists_server_settlement (test_game_websocket.GameWebSocketApiTest.test_fixed_seed_match_completes_and_persists_server_settlement) ... ok
+test_invalid_action_preserves_turn_across_reconnect (test_game_websocket.GameWebSocketApiTest.test_invalid_action_preserves_turn_across_reconnect) ... ok
+test_new_tier2_policy_survives_registry_restart (test_game_websocket.GameWebSocketApiTest.test_new_tier2_policy_survives_registry_restart) ... ok
+test_persisted_action_restores_same_turn_with_fresh_registry (test_game_websocket.GameWebSocketApiTest.test_persisted_action_restores_same_turn_with_fresh_registry) ... ok
+test_restart_after_final_action_before_settlement_settles_once (test_game_websocket.GameWebSocketApiTest.test_restart_after_final_action_before_settlement_settles_once) ... ok
+test_session_creation_enforces_single_unfinished_game (test_game_websocket.GameWebSocketApiTest.test_session_creation_enforces_single_unfinished_game) ... ok
+test_stale_action_is_rejected_and_latest_turn_is_resent (test_game_websocket.GameWebSocketApiTest.test_stale_action_is_rejected_and_latest_turn_is_resent) ... ok
+test_tier2_snapshot_replays_every_suit_corrected_turn (test_game_websocket.GameWebSocketApiTest.test_tier2_snapshot_replays_every_suit_corrected_turn) ... ok
+test_web_session_creation_still_rejects_member_with_zero_hp (test_game_websocket.GameWebSocketApiTest.test_web_session_creation_still_rejects_member_with_zero_hp) ... ok
+test_websocket_requires_first_message_authentication_and_owner (test_game_websocket.GameWebSocketApiTest.test_websocket_requires_first_message_authentication_and_owner) ... ok
+test_candidates_include_stage_three_and_roster_keeps_stage_without_copy (test_local_play.LocalPlayTests.test_candidates_include_stage_three_and_roster_keeps_stage_without_copy) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_completed_cpu_eligibility_and_tier_are_separate_from_stage (test_local_play.LocalPlayTests.test_completed_cpu_eligibility_and_tier_are_separate_from_stage) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_completed_cpu_last_dialogue_is_persisted_once (test_local_play.LocalPlayTests.test_completed_cpu_last_dialogue_is_persisted_once) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_confirming_roster_of_completed_cpus_creates_ending_immediately (test_local_play.LocalPlayTests.test_confirming_roster_of_completed_cpus_creates_ending_immediately) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_last_unfinished_cpu_fourth_place_completes_and_ack_is_idempotent (test_local_play.LocalPlayTests.test_last_unfinished_cpu_fourth_place_completes_and_ack_is_idempotent) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_local_settlement_commit_failure_rolls_back_and_old_completed_game_is_stale_after_reset (test_local_play.LocalPlayTests.test_local_settlement_commit_failure_rolls_back_and_old_completed_game_is_stale_after_reset) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_mutable_local_routes_do_not_report_success_when_commit_fails (test_local_play.LocalPlayTests.test_mutable_local_routes_do_not_report_success_when_commit_fails) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_omake_keeps_final_stage_defeat_dialogue_without_progress_or_cg (test_local_play.LocalPlayTests.test_omake_keeps_final_stage_defeat_dialogue_without_progress_or_cg) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_reset_closes_old_generation_socket_before_old_action_can_commit (test_local_play.LocalPlayTests.test_reset_closes_old_generation_socket_before_old_action_can_commit) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_reset_preserves_registered_data_and_files_but_cancels_active_generation (test_local_play.LocalPlayTests.test_reset_preserves_registered_data_and_files_but_cancels_active_generation) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_reset_rejects_delayed_legacy_settlement_even_when_cached (test_local_play.LocalPlayTests.test_reset_rejects_delayed_legacy_settlement_even_when_cached) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_simultaneous_resets_accept_only_one_generation_change (test_local_play.LocalPlayTests.test_simultaneous_resets_accept_only_one_generation_change) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_upgrade_from_0004_preserves_legacy_profile_progress_and_active_record (test_local_play.LocalPlayTests.test_upgrade_from_0004_preserves_legacy_profile_progress_and_active_record) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running downgrade 20261016_0009 -> 20261016_0008, Add per-character voice pack selection links.
+INFO  [alembic.runtime.migration] Running downgrade 20261016_0008 -> 20261016_0007, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running downgrade 20261016_0007 -> 20261016_0006, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running downgrade 20261016_0006 -> 20261015_0005, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running downgrade 20261015_0005 -> 20260912_0004, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_capability_protects_local_rest_ws_and_web_auth_remains_separate (test_local_runtime.LocalRuntimeTests.test_capability_protects_local_rest_ws_and_web_auth_remains_separate) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ok
+test_concurrent_active_session_writers_are_serialized_by_sqlite (test_local_runtime.LocalRuntimeTests.test_concurrent_active_session_writers_are_serialized_by_sqlite) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_default_path_is_only_localappdata_and_requires_explicit_test_override (test_local_runtime.LocalRuntimeTests.test_default_path_is_only_localappdata_and_requires_explicit_test_override) ... ok
+test_default_sqlite_engine_preserves_main_read_transactions (test_local_runtime.LocalRuntimeTests.test_default_sqlite_engine_preserves_main_read_transactions) ... ok
+test_engine_lock_foreign_keys_and_active_game_unique_constraint (test_local_runtime.LocalRuntimeTests.test_engine_lock_foreign_keys_and_active_game_unique_constraint) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ok
+test_explicit_data_root_layout_migration_and_idempotent_profile_restore (test_local_runtime.LocalRuntimeTests.test_explicit_data_root_layout_migration_and_idempotent_profile_restore) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ok
+test_file_database_restores_exact_turn_after_process_runtime_restart (test_local_runtime.LocalRuntimeTests.test_file_database_restores_exact_turn_after_process_runtime_restart) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ok
+test_file_db_settlement_commit_failure_rolls_back_and_retries_once (test_local_runtime.LocalRuntimeTests.test_file_db_settlement_commit_failure_rolls_back_and_retries_once) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ok
+test_local_read_transactions_do_not_reserve_writer_slot (test_local_runtime.LocalRuntimeTests.test_local_read_transactions_do_not_reserve_writer_slot) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_commit_state_sender_emits_basic_effect_identity_in_omake_once (test_local_sound.LocalSoundTests.test_commit_state_sender_emits_basic_effect_identity_in_omake_once) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_ending_snapshot_survives_resource_changes_reset_and_restart (test_local_sound.LocalSoundTests.test_ending_snapshot_survives_resource_changes_reset_and_restart) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ok
+test_media_metadata_commit_failure_removes_only_new_upload (test_local_sound.LocalSoundTests.test_media_metadata_commit_failure_removes_only_new_upload) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_selection_persists_inactive_refs_and_empty_is_silent (test_local_sound.LocalSoundTests.test_selection_persists_inactive_refs_and_empty_is_silent) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+/tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ok
+test_upload_korean_filename_stream_range_and_path_guard (test_local_sound.LocalSoundTests.test_upload_korean_filename_stream_range_and_path_guard) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_upload_rejects_extension_signature_mismatch_and_size_limit (test_local_sound.LocalSoundTests.test_upload_rejects_extension_signature_mismatch_and_size_limit) ... /tmp/nrnf-diff-b-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+ok
+test_call_preference_parameter_stored (test_personality_integration.TestTier0Personality.test_call_preference_parameter_stored)
+Verify call_preference parameter is stored in agent. ... ok
+test_defense_affects_discard_weighting (test_personality_integration.TestTier0Personality.test_defense_affects_discard_weighting)
+High defense should weight safety more heavily. ... ok
+test_riichi_preference_parameter_stored (test_personality_integration.TestTier0Personality.test_riichi_preference_parameter_stored)
+Verify riichi_preference parameter is stored in agent. ... ok
+test_all_personality_parameters_stored (test_personality_integration.TestTier1Personality.test_all_personality_parameters_stored)
+Verify all personality parameters are stored in Tier1Agent. ... ok
+test_hand_value_preference_affects_score_weighting (test_personality_integration.TestTier1Personality.test_hand_value_preference_affects_score_weighting)
+hand_value_preference should affect dora/yaku weighting in discard evaluation. ... ok
+test_aggression_affects_ev_calculation (test_personality_integration.TestTier2Personality.test_aggression_affects_ev_calculation)
+Aggression should affect expected value in placement-critical situations. ... ok
+test_all_personality_parameters_stored_tier2 (test_personality_integration.TestTier2Personality.test_all_personality_parameters_stored_tier2)
+Verify all personality parameters are stored in Tier2Agent. ... ok
+test_upload_rejects_invalid_format_and_oversize_file (test_result_assets.ResultAssetApiTest.test_upload_rejects_invalid_format_and_oversize_file) ... ok
+test_upload_replace_unlock_serve_and_delete (test_result_assets.ResultAssetApiTest.test_upload_replace_unlock_serve_and_delete) ... ok
+test_four_seat_east_match_completes_through_human_boundary (test_riichienv_session.AuthoritativeGameSessionTest.test_four_seat_east_match_completes_through_human_boundary) ... ok
+test_invalid_human_action_index_does_not_advance (test_riichienv_session.AuthoritativeGameSessionTest.test_invalid_human_action_index_does_not_advance) ... ok
+test_adapter_rejects_action_outside_current_legal_actions (test_riichienv_session.RiichiEnvAdapterTest.test_adapter_rejects_action_outside_current_legal_actions) ... ok
+test_adapter_requires_every_pending_seat_action (test_riichienv_session.RiichiEnvAdapterTest.test_adapter_requires_every_pending_seat_action) ... ok
+test_discard_stays_in_top_hand_efficiency_candidates (test_tier0_agent.Tier0AgentTest.test_discard_stays_in_top_hand_efficiency_candidates) ... ok
+test_riichi_genbutsu_adds_weak_safety_weight (test_tier0_agent.Tier0AgentTest.test_riichi_genbutsu_adds_weak_safety_weight) ... ok
+test_same_seed_produces_same_legal_discard_sequence (test_tier0_agent.Tier0AgentTest.test_same_seed_produces_same_legal_discard_sequence) ... ok
+test_three_tier_zero_cpus_complete_fixed_seed_east_match (test_tier0_agent.Tier0AgentTest.test_three_tier_zero_cpus_complete_fixed_seed_east_match) ... ok
+test_winning_action_is_prioritized (test_tier0_agent.Tier0AgentTest.test_winning_action_is_prioritized) ... ok
+test_danger_level_increases_against_riichi (test_tier1_agent.Tier1AgentTest.test_danger_level_increases_against_riichi) ... ok
+test_discard_considers_dora_and_value (test_tier1_agent.Tier1AgentTest.test_discard_considers_dora_and_value) ... ok
+test_same_seed_produces_same_legal_discard_sequence (test_tier1_agent.Tier1AgentTest.test_same_seed_produces_same_legal_discard_sequence) ... ok
+test_three_tier_one_cpus_complete_fixed_seed_east_match (test_tier1_agent.Tier1AgentTest.test_three_tier_one_cpus_complete_fixed_seed_east_match) ... ok
+test_tier1_behaves_differently_from_tier0 (test_tier1_agent.Tier1AgentTest.test_tier1_behaves_differently_from_tier0)
+Tier1 should produce different results when playing a full match against Tier0. ... ok
+test_winning_action_is_prioritized (test_tier1_agent.Tier1AgentTest.test_winning_action_is_prioritized) ... ok
+test_completes_fixed_seed_match_with_tier2_agents (test_tier2_agent.Tier2AgentTest.test_completes_fixed_seed_match_with_tier2_agents) ... ok
+test_endgame_round_boundary_and_legacy_policy (test_tier2_agent.Tier2AgentTest.test_endgame_round_boundary_and_legacy_policy) ... ok
+test_expected_value_computation_considers_placement (test_tier2_agent.Tier2AgentTest.test_expected_value_computation_considers_placement) ... ok
+test_factory_creates_tier2_agent_for_stage_2 (test_tier2_agent.Tier2AgentTest.test_factory_creates_tier2_agent_for_stage_2) ... ok
+test_game_state_analysis_calculates_ranks (test_tier2_agent.Tier2AgentTest.test_game_state_analysis_calculates_ranks) ... ok
+test_placement_awareness_affects_decisions (test_tier2_agent.Tier2AgentTest.test_placement_awareness_affects_decisions) ... ok
+test_real_engine_east_and_sudden_death_rounds (test_tier2_agent.Tier2AgentTest.test_real_engine_east_and_sudden_death_rounds) ... ok
+test_same_seed_produces_same_legal_discard_sequence (test_tier2_agent.Tier2AgentTest.test_same_seed_produces_same_legal_discard_sequence) ... ok
+test_suji_defense_reduces_danger (test_tier2_agent.Tier2AgentTest.test_suji_defense_reduces_danger) ... ok
+test_wall_defense_identifies_safe_tiles (test_tier2_agent.Tier2AgentTest.test_wall_defense_identifies_safe_tiles) ... ok
+test_winning_action_is_prioritized (test_tier2_agent.Tier2AgentTest.test_winning_action_is_prioritized) ... ok
+test_analyze_results_computes_tier_statistics (test_tournament_simulation.TournamentTest.test_analyze_results_computes_tier_statistics) ... ok
+test_balanced_combinations_cover_all_tiers (test_tournament_simulation.TournamentTest.test_balanced_combinations_cover_all_tiers) ... ok
+test_homogeneous_tier0_match_produces_varied_ranks (test_tournament_simulation.TournamentTest.test_homogeneous_tier0_match_produces_varied_ranks) ... ok
+test_single_match_completes_with_fixed_seed (test_tournament_simulation.TournamentTest.test_single_match_completes_with_fixed_seed) ... ok
+test_small_tournament_produces_complete_results (test_tournament_simulation.TournamentTest.test_small_tournament_produces_complete_results)
+Integration test: run a small tournament and verify all data is present. ... ok
+test_tier_statistics_properties (test_tournament_simulation.TournamentTest.test_tier_statistics_properties) ... ok
+test_tournament_runs_multiple_seeds_and_combinations (test_tournament_simulation.TournamentTest.test_tournament_runs_multiple_seeds_and_combinations) ... ok
+
+----------------------------------------------------------------------
+Ran 140 tests in 59.650s
+
+OK

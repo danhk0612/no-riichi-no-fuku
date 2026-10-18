@@ -1,0 +1,43 @@
+check 1 b6b0b63a9b78bb55068e2721d1d0a3298bd24a57acae3091715acc6d734d9017
+check 2 b6b0b63a9b78bb55068e2721d1d0a3298bd24a57acae3091715acc6d734d9017
+128 neutral 1
+256 neutral 2
+384 neutral 3
+512 neutral 4
+640 neutral 5
+768 neutral 6
+896 neutral 7
+1024 neutral 8
+1152 neutral 9
+1280 neutral 10
+1408 neutral tier2
+1536 mixed 1
+1664 mixed 2
+1792 mixed 3
+1920 mixed 4
+2048 mixed 5
+2176 mixed 6
+2304 mixed 7
+2432 mixed 8
+2560 mixed 9
+2688 mixed 10
+2816 mixed tier2
+2944 characters 1
+3072 characters 2
+3200 characters 3
+3328 characters 4
+3456 characters 5
+3584 characters 6
+3712 characters 7
+3840 characters 8
+3968 characters 9
+4096 characters 10
+4224 characters tier2
+Traceback (most recent call last):
+  File "/workspace/scratch/4c5a2f8d95d2/w-diff-b/spikes/w-diff-b/validate.py", line 73, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/workspace/scratch/4c5a2f8d95d2/w-diff-b/spikes/w-diff-b/validate.py", line 46, in main
+    assert json.loads(json.dumps(fresh[key]))==saved[key],(job,key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (('neutral', 1, 5000, 1, 5000), 'scores')

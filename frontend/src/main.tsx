@@ -25,6 +25,7 @@ import {
 import type { LocalPlayState, ResolvedEnding, SoundSelection } from './api'
 import { LocalSoundPanel } from './LocalSoundPanel'
 import { LocalContentPanel } from './LocalContentPanel'
+import { LocalDifficultyPanel } from './LocalDifficultyPanel'
 import { MahjongTable } from './game/MahjongTable'
 import type {
   CpuChoice,
@@ -63,6 +64,7 @@ function App() {
   const [soundSelection, setSoundSelection] = useState<SoundSelection | null>(null)
   const [soundSettingsOpen, setSoundSettingsOpen] = useState(false)
   const [contentSettingsOpen, setContentSettingsOpen] = useState(false)
+  const [difficultySettingsOpen, setDifficultySettingsOpen] = useState(false)
   const [soundError, setSoundError] = useState<string | null>(null)
   const socketRef = useRef<WebSocket | null>(null)
   const resultAssetUrlRef = useRef<string | null>(null)
@@ -75,6 +77,7 @@ function App() {
   const activeSoundEffectsRef = useRef(new Map<string, { audio: HTMLAudioElement; url: string }>())
   const voiceQueueRef = useRef<Promise<void>>(Promise.resolve())
   const isDesktop = window.nrnfDesktop?.isDesktop === true
+  const difficultyPreviewToken = localRequestTokenRef.current
   const playbackAccessToken = accessToken ?? (isDesktop ? DESKTOP_SESSION : null)
 
   useEffect(() => {
@@ -395,6 +398,7 @@ function App() {
       if (message.type === 'human_turn') {
         setGameState({
           status: 'human_turn',
+          cpuDifficulties: message.cpu_difficulties,
           actionVersion: message.action_version,
           turn: message.turn,
           players: seats,
@@ -409,6 +413,7 @@ function App() {
         clearResultAssetUrl()
         setGameState({
           status: 'complete',
+          cpuDifficulties: message.cpu_difficulties,
           result: message.result,
           settlement: message.settlement,
           players: seats,
@@ -631,9 +636,19 @@ function App() {
         <p className="eyebrow">4-PLAYER RIICHI MAHJONG</p>
         <h1>No Riichi No Fuku</h1>
         <p>플레이어 1명과 CPU 3명이 진행하는 동풍전</p>
+        {isDesktop && accessToken && <button className="text-button" type="button" onClick={() => setDifficultySettingsOpen((open) => !open)}>난이도 설정</button>}
         {isDesktop && accessToken && <button className="text-button" type="button" onClick={() => setSoundSettingsOpen((open) => !open)}>사운드·자료 설정</button>}
         {isDesktop && accessToken && <button className="text-button" type="button" onClick={() => setContentSettingsOpen((open) => !open)}>캐릭터 프롬프트·팩 설정</button>}
       </header>
+      {isDesktop && accessToken && difficultySettingsOpen && <LocalDifficultyPanel accessToken={accessToken} onClose={() => setDifficultySettingsOpen(false)} onSaved={async () => {
+        if (!cpus || !localPlay) return
+        const requestToken = difficultyPreviewToken
+        const generation = localPlay.generation
+        const choices = await getRosterCandidates(accessToken)
+        if (!isCurrentLocalRequest(requestToken, generation)) return
+        const ids = new Set(localPlay.roster.map((cpu) => cpu.cpu_character_id))
+        setCpus(localPlay.phase === 'roster_required' ? choices : choices.filter((cpu) => ids.has(cpu.id)))
+      }} />}
       {isDesktop && accessToken && soundSettingsOpen && <LocalSoundPanel accessToken={accessToken} onClose={() => setSoundSettingsOpen(false)} onSelectionChanged={setSoundSelection} onPlaybackChanged={stopGameAudio} />}
       {isDesktop && accessToken && contentSettingsOpen && <LocalContentPanel accessToken={accessToken} onClose={() => setContentSettingsOpen(false)} onPackApplied={stopGameAudio} />}
       {isDesktop && soundError && <p className="form-error" role="status">{soundError}</p>}
@@ -675,6 +690,9 @@ function App() {
             <span>{players.map((player) => player.name).join(' · ') || desktopProfile}</span>
             {isDesktop && <button className="text-button" disabled={busy} onClick={resetPlay} type="button">초기화</button>}
           </div>
+          {isDesktop && (gameState.status === 'human_turn' || gameState.status === 'complete') && <p className="current-difficulty">
+            현재 대국 난이도: {gameState.cpuDifficulties?.map((cpu) => `${players.find((p) => p.seat === cpu.seat)?.name ?? cpu.seat} ${cpu.level}/10`).join(' · ') ?? '기존 저장'}
+          </p>}
           {error && <p className="form-error" role="alert">{error}</p>}
           {gameState.status === 'ending' ? (
             <EndingScreen accessToken={accessToken} generation={gameState.generation} eventId={gameState.eventId} fallback={gameState.payload} busy={busy} onContinue={continueFromEnding} />

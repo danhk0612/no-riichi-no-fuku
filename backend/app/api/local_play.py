@@ -78,14 +78,31 @@ def get_play(
 def get_roster_candidates(
     user: User = Depends(get_current_member), session: Session = Depends(get_session)
 ) -> list[dict[str, object]]:
-    return [{
-        "id": choice.id, "slug": choice.slug, "name": choice.name,
-        "age_adult": choice.age_adult, "style": choice.style,
-        "short_description": choice.short_description,
-        "long_description": choice.long_description,
-        "profile_image_key": choice.profile_image_key,
-        "defeat_stage": choice.defeat_stage,
-    } for choice in roster_candidates(session, user.id)]
+    from app.services.difficulty import DifficultyError, read_setting, resolve
+    state = get_local_play_state(session, user.id)
+    choices = roster_candidates(session, user.id)
+    ids = set(roster_cpu_ids(session, user.id))
+    unfinished = sum(c.defeat_stage < 3 for c in choices if c.id in ids)
+    try:
+        setting = read_setting(session)
+        result = []
+        for choice in choices:
+            preview = None
+            if choice.id in ids and state.phase in ("progress", "omake") and (
+                choice.defeat_stage < 3 or state.phase == "omake" or 0 < unfinished < 3
+            ):
+                snapshot = resolve(choice.defeat_stage, state.phase, setting["setting"], setting["revision"])
+                preview = {"level": snapshot["profile"]["level"], "profile_version": snapshot["profile"]["version"], "reason": snapshot["reason"]}
+            result.append({
+                "id": choice.id, "slug": choice.slug, "name": choice.name,
+                "age_adult": choice.age_adult, "style": choice.style,
+                "short_description": choice.short_description, "long_description": choice.long_description,
+                "profile_image_key": choice.profile_image_key, "defeat_stage": choice.defeat_stage,
+                "difficulty_preview": preview, "difficulty_setting_revision": setting["revision"],
+            })
+        return result
+    except DifficultyError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from None
 
 
 @router.post("/roster", response_model=LocalPlayStateResponse)

@@ -33,6 +33,7 @@ class CreateGameSessionResponse(BaseModel):
 
     session_id: str
     players: tuple[GamePlayerResponse, ...]
+    cpu_difficulties: list[dict] | None = None
     generation: str | None = None
 
 

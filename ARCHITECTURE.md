@@ -1,5 +1,39 @@
 # 구조와 전환 검토
 
+## W-DIFF-B 현재 구현 — 신규 local policy3
+
+2026-10-18 사용자 DIFF-* 및 수용 기준 승인, 무늬 교정 뒤 독립 재검증 통과 후 연결했다.
+설정 정수1~10/기본5, stage0/1/2 기본3/6/9, `clamp(base+setting-5,1,10)`;
+완료보충1·오마케10이 우선이다. 설정 변경은 다음 대국부터이며 reset에도 보존한다.
+
+`services/difficulty.py`의 순수 resolver는 다음 immutable snapshot을 만든다.
+`{version:1, profile:{version:"tier2-bounded-lapse-suitfix-v1",level,lapse_numerator,
+ denominator:1000,max_shanten_excess:1,max_tile_kinds:6},formula_version:"stage-offset-v1",
+ setting,setting_revision,base_level,reason}`. 분자는650/480/380/290/210/145/90/50/20/0이며
+level순으로 고정한다. 일반base는3/6/9, 특수base는null. reason은stage_setting/completed_fill/omake.
+
+새 agent는 내부 교정 Tier2 policy2를 먼저 실행하고 fold/비버림패/L10은 그대로 반환한다.
+다른 버림패만 기존 shanten/EV/physicaltile 순서→종류 중복 제거→6종 이내에서 가중 추첨한다.
+기존 seed*10+seat 및 expert RNG는 그대로, 실수 RNG만 seed XOR0x574449464641로 분리한다.
+6성향은 그대로 전달한다. 대국마다 L10이 Tier2보다 강하거나 인접통계분리가 보장되지는 않는다.
+
+`CpuChoice.difficulty_snapshot`만 nullable 추가하며 새 local choice는policy3다. 구 policy1/2/누락형식은
+계속 읽고 신규null 필드는 저장에서 생략한다. rules v2와 effective_tier0/1/2는 정산·음향 의미를 유지한다.
+시작 시 완전한 snapshot을 저장하고 복구는 현재설정 대신 저장 profile/6성향/stage/seed/action을 쓴다.
+알 수 없는 policy/profile/formula·파라미터 불일치·legacy혼합은 명시 오류이며 rewrite/fallback하지 않는다.
+완료기록은 기존 저장결과를 읽으며 새로운 agent 생성/재정산을 하지 않는다.
+
+새 DB 열/테이블 없이 `GameSetting` key `local_cpu_difficulty`에 `{version:1,revision,setting}` 저장.
+GET은 기본5/revision0을 읽기만 한다. PUT strict정수/expected_revision→동일local writer→commit 후200,
+stale409/validation422. start도 같은 writer에서 read/resolve/save하므로 설정 revision이 섞이지 않는다.
+`GET /api/local/play/roster-candidates`의 preview는 서버 계산이며 start는 이를 신뢰하지 않는다.
+생성/복구 응답과 local human_turn/match_complete의 cpu_difficulties는 저장snapshot 요약이다.
+UI는 다음대국preview/현재대국snapshot/CG stage를 구분하며 구 저장은 '기존 저장'으로 표시한다.
+설정 저장은 현재 game/agent/socket/콘텐츠/음향 RNG를 건드리지 않는다. 늦은 preview는 기존요청token/세대로 거른다.
+
+아래 W-DIFF-A 절은 당시 설계·연구 이력이다. 상충하는 v1분모10 예시/미확정 기본값/인접강도 게이트는
+이 현재 구현 절 및 REQUIREMENTS의 최신 승인으로 대체한다. 원자료와 당시 결과는 보존한다.
+
 ## 현재 CPU 무늬 계산 교정 — 2026-10-18 사용자 결정
 
 Tier1/2 `_estimate_yaku_bonus`는 물리tile ID를9로 나눠 무늬로 사용해 같은 패 종류의
