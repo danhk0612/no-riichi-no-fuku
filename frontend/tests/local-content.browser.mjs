@@ -245,6 +245,12 @@ try {
   assert.deepEqual(sharedCandidateRows['1:0:clothing_state']?.item_ids, [survivorItem.id], 'candidate save after disable must exclude the inactive item')
   assert.equal(sharedItems.find((item) => item.id === sharedItem.id).level, 1, 'confirmed move must retain the item at its target level')
   assert.equal(sharedItems.find((item) => item.id === disabledItem.id).active, false, 'confirmed disable must deactivate the item')
+  const sharedLevelSelect = panel.locator('.shared-prompt-controls select').first()
+  await sharedLevelSelect.selectOption('1')
+  await panel.getByRole('button', { name: 'test-only-shared-prompt', exact: true }).waitFor()
+  assert.equal(sharedCandidate(1, 1, 'clothing_state').unregistered, true, 'a moved item must not be auto-attached at its target level')
+  await sharedLevelSelect.selectOption('0')
+  await panel.getByRole('tab', { name: '캐릭터 편집' }).click()
 
   const positive = panel.getByRole('group', { name: '외모', exact: true }).locator('textarea').first()
   const save = panel.locator('.content-editor:not(.shared-prompt-manager) button.primary-button')
