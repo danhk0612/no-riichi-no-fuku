@@ -1,10 +1,14 @@
 # 구조와 전환 검토
 
-## 다음 독립 범위 — W08-D 공유 복장 상태·포즈
+## W08-D 구현 — 공유 복장 상태·포즈 관리
 
 복장 상태/포즈 원문과 명시 후보·지정 기본값, 영향 확인 후 삭제/Level 이동의 구현 계약은
-[W08-D 계약](docs/W08_D_SHARED_PROMPTS_CONTRACT.md)을 따른다. 기존 W08의 독립 부분이며
-상황/대사/event·변수 실행·팩 포맷·이미지/생성은 포함하지 않는다. 아직 설계 단계다.
+[W08-D 계약](docs/W08_D_SHARED_PROMPTS_CONTRACT.md)을 따른다. `SharedPromptItem`,
+`CharacterPromptCandidates`, entry 및 `SharedPromptDefault`는 기존 CharacterContent/game snapshot과
+분리하고 `20261018_0011` additive migration에 둔다. local shared-prompts API는 기존 superadmin /
+local capability 경계와 SQLite writer를 재사용하며 preview digest를 확인한 뒤 후보/기본/항목을
+단일 transaction으로 변경한다. 기존 캐릭터 콘텐츠 관리에 공유 복장·포즈 탭을 둔다.
+상황/대사/event·변수 실행·팩 포맷·이미지/생성과 표시 경로는 포함하지 않는다. 구현·검증 상태는 CURRENT_STATE를 따른다.
 
 ## W08-M 구현 — CharacterContent 신체 메타데이터
 

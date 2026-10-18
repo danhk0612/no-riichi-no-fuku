@@ -1,10 +1,17 @@
 # 현재 상태
 
-PR #94 정책 문서는 main `b3bfcb5`에 병합됐다. 사용자 재확인으로 CG는 캐릭터별·단계별 자료이며
-패배 정산으로 단계를 변경한 뒤 그 단계의 `cg`를 표시함을 명확히 했다. 별도 패배 CG kind는 없다.
-다음 독립 범위 W08-D(공유 복장 상태/포즈·명시 후보·기본값)의 구현 계약과 저성능 Work 지시문을
-준비했다. 제품 코드는 아직 변경하지 않았으며 W08 전체 완료도 아니다. 상황/대사 event 편집 방향,
-기존 문구 이전 및 생성 관련 미응답은 이 독립 범위와 분리한다.
+W08-D 제품 구현은 준비 main `7fcc8bf`에서 `task/w08-d-shared-prompts-impl`로 제출한다.
+`20261018_0011` additive migration, 공유 복장 상태/포즈 CRUD, CPU·Level·종류별 명시 후보와
+기본값, 영향 미리보기 digest 후 참조 해제·논리 삭제/Level 이동, 기존 설정의 관리 탭을 구현했다.
+공유 자료를 seed하지 않았고 game snapshot·CharacterContent·event/CG 표시와 연결하지 않았다.
+자동 리뷰에서 지적된 기본값 저장 후 결과 갱신과 같은 Level 이동 차단을 보완하고 회귀 테스트를 추가했다.
+제품 source SHA `dd1a874152a02e8de6ba3e1be5a442012a162909`의 W04/W05 Windows CI는 통과했고,
+각 152 backend unittest와 dialogue pytest 10개를 확인했다. W05 browser·packaged renderer/reset/restart·
+lifecycle도 통과했다. 해당 source SHA artifact·digest·source proof는 PR #96에 기록했고,
+이 뒤의 저장소 문서만 변경한 후속 commit에서 재실행한 정확한 head 검증은 PR #96에 추가한다.
+Linux 로컬 Chromium은 malformed download archive로 실행하지 못했으나 W05 Windows browser regression은 통과했다.
+PR #96은 열려 있고 병합하지 않았다. 개인 Windows PC 실기와 실제 이미지/음향 출력은 미검증이며
+W08-D 범위 밖이다. 상황/대사 event 편집·기존 문구 이전·생성은 이번 범위에서 수행하지 않았다.
 
 W08-M PR #93은 main `f5623af`에 병합됐다. 검토 source `f87b7ca`와 병합 tree가 같다.
 독립 재검증 backend143개(66.948초)·대사pytest10개·build·브라우저4종이 통과했다.
@@ -16,7 +23,7 @@ Windows renderer27검사·일반 종료/재시작 lifecycle 각각2검사도 확
 
 후속 정책으로 단계 변경 패배에서만 이벤트 CG 표시, 공유 항목 이동/소속 변경의 영향 확인 후
 기본 재연결, 이름 변수 `{{character_name}}`를 확정했다(REQUIREMENTS 최신 절).
-이번 변경은 문서만이며 공유 관리/변수/생성 구현은 미착수다. D05-c 설명 확인·Q-LEGACY 및
+W08-D 구현은 공유 관리 UI/API에 한정하며 변수/생성은 별도 범위다. D05-c 설명 확인·Q-LEGACY 및
 생성 관련 미응답은 남아 있다. 아래 W08-M 제출/검증 checkpoint는 병합 전 기록이다.
 
 W08-M은 준비 main `8e44eb1`(PR #92 병합)에서 독립 브랜치로 구현했다. nullable `CharacterContent.measurements_cm`,
@@ -33,8 +40,8 @@ W04 artifact `12133212090` / SHA256 `324ae3495cfe2ac98481919ae1d38648fb4235084e4
 W05 artifact `12133482311` / outer ZIP SHA256 `98f5084a45d48f63ce2f25c1119b6801c9e8819dc05205beb2342d6cad075ee0`.
 다운로드 artifact의 `source-sha.txt`가 위 최종 source와 일치한다. 패키지 ZIP SHA256은
 `7A25A7BE7052FAF8D316D3BD0508D16FCF2BF6D118DE0E4F777C1AF461D03490`; packaged renderer smoke에서 치수 저장,
-진행 초기화 보존, engine 재시작 보존 세 검사가 통과했다. 개인 Windows PC 실기는 미검증이다.
-PR은 열려 있으며 직접 병합·Release/tag·후속 Task 착수는 하지 않았다.
+진행 초기화 보존, engine 재시작 보존 세 검사가 통과했다. 제출 시점 당시 PR 미병합 상태 기록이며,
+현재 PR #93은 main에 병합됐다. 개인 Windows PC 실기는 미검증이다.
 
 아래 절은 W08-M 이전의 시점별 이력으로 보존한다.
 

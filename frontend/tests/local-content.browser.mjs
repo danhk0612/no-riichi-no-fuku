@@ -18,9 +18,77 @@ try {
   saved[1].measurements_cm = { height: '170.0', bust: null, waist: '62.5', hips: null }
   const cpus = [1, 2, 3].map((id) => ({ id, slug: `cpu-${id}`, name: `CPU ${id}`, defeat_stage: 0, style: 'balanced', short_description: 'test-only', profile_image_key: null, measurements_cm: id === 1 ? { height: '170.0', bust: null, waist: '62.5', hips: null } : { height: null, bust: null, waist: null, hips: null } }))
   let saveMode = 'ok', loseSaveResponse = false, saveGate, saveGateCommitFirst = false, readGate, scanGate, scans = 0, lastPatch, applyGate, applyGateCommitFirst = false, applyMode = 'ok', loseApplyResponse = false, lastApplication, applications = 0
+  let sharedSequence = 0, sharedItems = [], sharedDefaults = {}, sharedCandidateRows = {}
+  const sharedKey = (cpuId, level, kind) => `${cpuId}:${level}:${kind}`
+  const sharedDefaultKey = (level, kind) => `${level}:${kind}`
+  const sharedCandidate = (cpuId, level, kind) => {
+    const key = sharedKey(cpuId, level, kind), row = sharedCandidateRows[key]
+    const stored = row?.item_ids ?? []
+    const explicit = stored.map((id) => sharedItems.find((item) => item.id === id && item.active && item.level === level && item.kind === kind)).filter(Boolean)
+    const fallback = sharedDefaults[sharedDefaultKey(level, kind)]
+    const usingDefault = explicit.length === 0
+    const effective = usingDefault ? sharedItems.filter((item) => item.id === fallback?.item_id && item.active && item.level === level && item.kind === kind) : explicit
+    return { cpu_id: cpuId, level, kind, revision: row?.revision ?? 0, stored_item_ids: stored,
+      effective_items: effective, uses_default: usingDefault, default_revision: fallback?.revision ?? 0, unregistered: effective.length === 0 }
+  }
   const listing = { schema_version: 1, packs: [], scan_entries: [] }
   await page.route('**/api/**', async (route) => {
     const request = route.request(), path = new URL(request.url()).pathname
+    if (path === '/api/local/shared-prompts') {
+      const query = new URL(request.url()).searchParams
+      const kind = query.get('kind'), level = Number(query.get('level'))
+      if (request.method() === 'GET') return route.fulfill({ json: { items: sharedItems.filter((item) => item.active && item.kind === kind && item.level === level) } })
+      const body = request.postDataJSON(), item = { id: `shared-${++sharedSequence}`, ...body, revision: 1, active: true }
+      sharedItems.push(item); return route.fulfill({ json: item })
+    }
+    const sharedItemPath = path.match(/^\/api\/local\/shared-prompts\/([^/]+)$/)
+    if (sharedItemPath && request.method() === 'PATCH') {
+      const item = sharedItems.find((value) => value.id === sharedItemPath[1]), body = request.postDataJSON()
+      Object.assign(item, Object.fromEntries(Object.entries(body).filter(([key]) => key !== 'expected_revision'))); item.revision++
+      return route.fulfill({ json: item })
+    }
+    const sharedDefaultPath = path.match(/^\/api\/local\/shared-prompt-defaults\/(\d+)\/(clothing_state|pose)$/)
+    if (sharedDefaultPath) {
+      const level = Number(sharedDefaultPath[1]), kind = sharedDefaultPath[2], key = sharedDefaultKey(level, kind)
+      if (request.method() === 'GET') { const row = sharedDefaults[key]; return route.fulfill({ json: { level, kind, revision: row?.revision ?? 0, item_id: row?.item_id ?? null, valid: !!row?.item_id, item: sharedItems.find((item) => item.id === row?.item_id) ?? null } }) }
+      const body = request.postDataJSON(), row = sharedDefaults[key]
+      if (body.expected_revision !== (row?.revision ?? 0)) return route.fulfill({ status: 409, json: { detail: { message: 'test default conflict' } } })
+      sharedDefaults[key] = { item_id: body.item_id, revision: (row?.revision ?? 0) + 1 }
+      return route.fulfill({ json: { level, kind, ...sharedDefaults[key], valid: !!body.item_id, item: sharedItems.find((item) => item.id === body.item_id) ?? null } })
+    }
+    const sharedCandidatesPath = path.match(/^\/api\/local\/characters\/(\d+)\/prompt-candidates\/(\d+)\/(clothing_state|pose)$/)
+    if (sharedCandidatesPath) {
+      const cpuId = Number(sharedCandidatesPath[1]), level = Number(sharedCandidatesPath[2]), kind = sharedCandidatesPath[3], key = sharedKey(cpuId, level, kind)
+      if (request.method() === 'GET') return route.fulfill({ json: sharedCandidate(cpuId, level, kind) })
+      const body = request.postDataJSON(), row = sharedCandidateRows[key]
+      if (body.expected_revision !== (row?.revision ?? 0)) return route.fulfill({ status: 409, json: { detail: { message: 'test candidate conflict' } } })
+      if (body.item_ids.some((id) => !sharedItems.some((item) => item.id === id && item.active && item.level === level && item.kind === kind))) {
+        return route.fulfill({ status: 422, json: { detail: { message: 'test candidate contains an invalid shared item' } } })
+      }
+      sharedCandidateRows[key] = { item_ids: body.item_ids, revision: (row?.revision ?? 0) + 1 }
+      return route.fulfill({ json: sharedCandidate(cpuId, level, kind) })
+    }
+    const changePreviewPath = path.match(/^\/api\/local\/shared-prompts\/([^/]+)\/change-preview$/)
+    if (changePreviewPath) {
+      const item = sharedItems.find((value) => value.id === changePreviewPath[1]), body = request.postDataJSON()
+      const candidate_changes = Object.entries(sharedCandidateRows).filter(([key, row]) => key.endsWith(`:${item.level}:${item.kind}`) && row.item_ids.includes(item.id)).map(([key, row]) => ({ cpu_id: Number(key.split(':')[0]), cpu_name: `CPU ${key.split(':')[0]}`, cpu_slug: `cpu-${key.split(':')[0]}`, candidate_set_id: key, candidate_revision: row.revision, stored_item_ids: row.item_ids, after_item_ids: row.item_ids.filter((id) => id !== item.id), after_effective_item_ids: [], uses_default_after: true, fallback_item_id: null, unregistered_after: true }))
+      const defaultRow = sharedDefaults[sharedDefaultKey(item.level, item.kind)]
+      return route.fulfill({ json: { item: { id: item.id, kind: item.kind, level: item.level, label: item.label, revision: item.revision }, action: body.action, target_level: body.target_level ?? null, preview_digest: 'a'.repeat(64), candidate_changes, candidate_scope_snapshot: [], affected_cpus: [], source_default: { item_id: defaultRow?.item_id ?? null, revision: defaultRow?.revision ?? 0, after_item_id: null, after_item_revision: null, will_clear: defaultRow?.item_id === item.id }, new_level: body.target_level ? { level: body.target_level, candidate_auto_inclusion: false, default_auto_assignment: false } : null } })
+    }
+    const changeConfirmPath = path.match(/^\/api\/local\/shared-prompts\/([^/]+)\/change-confirmation$/)
+    if (changeConfirmPath) {
+      const item = sharedItems.find((value) => value.id === changeConfirmPath[1]), body = request.postDataJSON()
+      for (const [key, row] of Object.entries(sharedCandidateRows)) {
+        if (row.item_ids.includes(item.id) && key.endsWith(`:${item.level}:${item.kind}`)) {
+          row.item_ids = row.item_ids.filter((id) => id !== item.id); row.revision++
+        }
+      }
+      const defaultKey = sharedDefaultKey(item.level, item.kind), fallback = sharedDefaults[defaultKey]
+      if (fallback?.item_id === item.id) { fallback.item_id = null; fallback.revision++ }
+      if (body.action === 'move') item.level = body.target_level; else item.active = false
+      item.revision++
+      return route.fulfill({ json: { item, action: body.action, confirmed: true, changed_candidate_sets: 0, cleared_default: false } })
+    }
     const character = path.match(/^\/api\/local\/characters\/(\d+)\/content$/)
     const application = path.match(/^\/api\/local\/characters\/(\d+)\/pack-application$/)
     if (application) {
@@ -97,8 +165,95 @@ try {
   const select = panel.getByRole('combobox', { name: '캐릭터', exact: true })
   assert.equal(await select.inputValue(), '')
   await select.selectOption('1')
+  await panel.getByRole('tab', { name: '공유 복장·포즈' }).click()
+  const sharedLabel = panel.getByRole('textbox', { name: '공유 항목 표시 이름' })
+  await sharedLabel.fill('test-only-shared-prompt')
+  await panel.getByRole('textbox', { name: '공유 항목 Positive' }).fill('  test-only P\n<lora:fixture:0.7>  ')
+  await panel.getByRole('tab', { name: '캐릭터 편집' }).click()
+  await panel.getByRole('tab', { name: '공유 복장·포즈' }).click()
+  assert.equal(await sharedLabel.inputValue(), 'test-only-shared-prompt', 'switching editor tabs must preserve a pending shared item draft')
+  await panel.getByRole('button', { name: '공유 항목 추가' }).click()
+  const sharedItemButton = panel.getByRole('button', { name: 'test-only-shared-prompt', exact: true })
+  await sharedItemButton.waitFor()
+  const sharedItem = sharedItems.find((item) => item.label === 'test-only-shared-prompt')
+  assert.equal(sharedItem.positive, '  test-only P\n<lora:fixture:0.7>  ', 'shared prompt whitespace and newline must be preserved')
+  // Leave the default and candidate changes unsaved while moving the checked item.
+  await panel.getByRole('button', { name: '새 항목', exact: true }).click()
+  await panel.getByRole('textbox', { name: '공유 항목 표시 이름' }).fill('test-only-shared-survivor')
+  await panel.getByRole('button', { name: '공유 항목 추가' }).click()
+  await panel.getByRole('button', { name: 'test-only-shared-survivor', exact: true }).waitFor()
+  const survivorItem = sharedItems.find((item) => item.label === 'test-only-shared-survivor')
+  await panel.getByRole('button', { name: 'test-only-shared-prompt', exact: true }).click()
+  const defaultSelect = panel.getByRole('combobox', { name: '지정 기본 항목' })
+  await defaultSelect.selectOption(sharedItem.id)
+  const candidateCheck = (label) => panel.locator('.shared-candidate-list label').filter({ hasText: label }).locator('input')
+  await candidateCheck('test-only-shared-prompt').check()
+  await candidateCheck('test-only-shared-survivor').check()
+  await panel.getByRole('button', { name: '영향 확인' }).click()
+  await panel.getByRole('region', { name: '변경 영향 확인' }).waitFor()
+  await panel.getByRole('button', { name: '확인 후 이동' }).click()
+  await page.waitForFunction(() => !document.querySelector('.shared-prompt-manager button.primary-button')?.textContent.includes('저장 중'), { timeout: 8000 })
+  await panel.getByRole('button', { name: 'test-only-shared-survivor', exact: true }).waitFor()
+  assert.equal(await defaultSelect.inputValue(), '', 'moving an item must clear its unsaved default draft')
+  assert.equal(await candidateCheck('test-only-shared-survivor').isChecked(), true, 'moving an item must preserve another valid unsaved candidate')
+  assert.equal(await panel.getByRole('button', { name: '캐릭터 후보 저장' }).isEnabled(), true, 'remaining candidate draft must still be saveable')
+  const characterSelect = panel.locator('.shared-prompt-controls select').nth(2)
+  await characterSelect.selectOption('2')
+  await panel.getByRole('button', { name: '새 항목', exact: true }).waitFor()
+  await characterSelect.selectOption('1')
+  await panel.getByRole('button', { name: 'test-only-shared-survivor', exact: true }).waitFor()
+  assert.equal(await candidateCheck('test-only-shared-survivor').isChecked(), true, 'valid unsaved candidates must survive switching characters away and back')
+  const moveCandidateWrite = page.waitForResponse((response) => response.url().includes('/prompt-candidates/0/clothing_state') && response.request().method() === 'PUT')
+  await panel.getByRole('button', { name: '캐릭터 후보 저장' }).click()
+  await moveCandidateWrite
+  assert.deepEqual(sharedCandidateRows['1:0:clothing_state']?.item_ids, [survivorItem.id], 'candidate save after move must contain only the surviving valid item')
+  assert.equal(sharedCandidate(1, 0, 'clothing_state').uses_default, false, 'explicit candidate must take precedence over the configured default')
+  await candidateCheck('test-only-shared-survivor').uncheck()
+  const clearCandidatesWrite = page.waitForResponse((response) => response.url().includes('/prompt-candidates/0/clothing_state') && response.request().method() === 'PUT')
+  await panel.getByRole('button', { name: '캐릭터 후보 저장' }).click()
+  await clearCandidatesWrite
+  assert.deepEqual(sharedCandidateRows['1:0:clothing_state'].item_ids, [], 'test must clear persisted candidates before the disable case')
+
+  // Keep a valid unsaved default and candidate while disabling a different item.
+  await panel.getByRole('button', { name: '새 항목', exact: true }).click()
+  await panel.getByRole('textbox', { name: '공유 항목 표시 이름' }).fill('test-only-disabled-prompt')
+  await panel.getByRole('button', { name: '공유 항목 추가' }).click()
+  await panel.getByRole('button', { name: 'test-only-disabled-prompt', exact: true }).waitFor()
+  const disabledItem = sharedItems.find((item) => item.label === 'test-only-disabled-prompt')
+  await panel.getByRole('button', { name: 'test-only-shared-survivor', exact: true }).click()
+  await defaultSelect.selectOption(survivorItem.id)
+  await panel.getByRole('button', { name: 'test-only-disabled-prompt', exact: true }).click()
+  await candidateCheck('test-only-shared-survivor').check()
+  await candidateCheck('test-only-disabled-prompt').check()
+  await panel.locator('.shared-prompt-actions select').first().selectOption('delete')
+  await panel.getByRole('button', { name: '영향 확인' }).click()
+  await panel.getByRole('region', { name: '변경 영향 확인' }).waitFor()
+  await panel.getByRole('button', { name: '확인 후 비활성화' }).click()
+  await page.waitForFunction(() => !document.querySelector('.shared-prompt-manager button.primary-button')?.textContent.includes('저장 중'), { timeout: 8000 })
+  assert.equal(await defaultSelect.inputValue(), survivorItem.id, 'disabling another item must preserve a valid unsaved default draft')
+  assert.equal(await candidateCheck('test-only-shared-survivor').isChecked(), true, 'disabling an item must preserve another valid unsaved candidate')
+  assert.equal(await panel.getByRole('button', { name: '캐릭터 후보 저장' }).isEnabled(), true)
+  await characterSelect.selectOption('2')
+  await panel.getByRole('button', { name: '새 항목', exact: true }).waitFor()
+  await characterSelect.selectOption('1')
+  await panel.getByRole('button', { name: 'test-only-shared-survivor', exact: true }).waitFor()
+  assert.equal(await defaultSelect.inputValue(), survivorItem.id, 'valid default draft must survive switching characters away and back')
+  assert.equal(await candidateCheck('test-only-shared-survivor').isChecked(), true)
+  const disableCandidateWrite = page.waitForResponse((response) => response.url().includes('/prompt-candidates/0/clothing_state') && response.request().method() === 'PUT')
+  await panel.getByRole('button', { name: '캐릭터 후보 저장' }).click()
+  await disableCandidateWrite
+  assert.deepEqual(sharedCandidateRows['1:0:clothing_state']?.item_ids, [survivorItem.id], 'candidate save after disable must exclude the inactive item')
+  assert.equal(sharedItems.find((item) => item.id === sharedItem.id).level, 1, 'confirmed move must retain the item at its target level')
+  assert.equal(sharedItems.find((item) => item.id === disabledItem.id).active, false, 'confirmed disable must deactivate the item')
+  const sharedLevelSelect = panel.locator('.shared-prompt-controls select').first()
+  await sharedLevelSelect.selectOption('1')
+  await panel.getByRole('button', { name: 'test-only-shared-prompt', exact: true }).waitFor()
+  assert.equal(sharedCandidate(1, 1, 'clothing_state').unregistered, true, 'a moved item must not be auto-attached at its target level')
+  await sharedLevelSelect.selectOption('0')
+  await panel.getByRole('tab', { name: '캐릭터 편집' }).click()
+
   const positive = panel.getByRole('group', { name: '외모', exact: true }).locator('textarea').first()
-  const save = panel.locator('button.primary-button')
+  const save = panel.locator('.content-editor:not(.shared-prompt-manager) button.primary-button')
   await positive.waitFor()
   if (!process.argv.includes('--scan-only')) {
     // Failures/conflicts preserve drafts; only dirty strings are submitted.

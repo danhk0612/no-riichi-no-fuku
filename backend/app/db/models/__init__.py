@@ -1,6 +1,7 @@
 from .content_pack import ContentPack, ContentPackRevision, ContentPackFile, ContentPackScanEntry
 from .character_content import CharacterContent, CharacterLevelFraming
 from .character_voice_link import CharacterVoiceLink
+from .shared_prompt import SharedPromptItem, CharacterPromptCandidates, CharacterPromptCandidateEntry, SharedPromptDefault
 from .cpu_character import CpuCharacter
 from .cpu_dialogue import CpuDialogue
 from .cpu_result_asset import CpuResultAsset
@@ -15,6 +16,7 @@ __all__ = [
     "ContentPack", "ContentPackRevision", "ContentPackFile", "ContentPackScanEntry",
     "CharacterContent", "CharacterLevelFraming",
     "CharacterVoiceLink",
+    "SharedPromptItem", "CharacterPromptCandidates", "CharacterPromptCandidateEntry", "SharedPromptDefault",
     "CpuCharacter",
     "CpuDialogue",
     "CpuResultAsset",

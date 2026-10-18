@@ -31,6 +31,7 @@ from app.api.local_sound import router as local_sound_router
 from app.api.audio_packs import router as audio_packs_router
 from app.api.local_content import character_router as local_character_content_router
 from app.api.local_content import router as local_content_router
+from app.api.local_shared_prompts import router as local_shared_prompts_router
 from app.services.content_packs import ContentPackRegistry
 from app.api.profile import router as profile_router
 from app.core.config import Settings
@@ -285,6 +286,7 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
         app.include_router(audio_packs_router)
         app.include_router(local_content_router)
         app.include_router(local_character_content_router)
+        app.include_router(local_shared_prompts_router)
         app.include_router(profile_router)
         registry = GameRegistry()
         app.state.local_runtime = None  # assigned below after runtime construction
