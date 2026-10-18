@@ -4,17 +4,38 @@
 W00은 초기 분석·기준 문서 준비(완료); 본 파일은 후속 개발 명세다.
 Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결정 후 갱신한다.
 
-## 현재 다음 단계 — 공유 콘텐츠 관리의 남은 정책·계약 확정
+## 다음 Work — W08-D 공유 복장 상태·포즈 관리
 
-W08-M PR #93은 main `f5623af`에 병합됐다. 최신 검토 source/검증은 CURRENT_STATE를 따른다.
-D05-b A(단계 변경 패배 CG), D06-c 이동/소속 변경의 영향 확인 후 기본 재연결,
-D10-a A(이름 변수만)는 REQUIREMENTS/ARCHITECTURE의 2026-10-18 결정대로 확정됐다.
+W08-M PR #93과 정책 PR #94가 병합됐다. 사용자 CG 재확인은 REQUIREMENTS 최신 절을 따른다.
+W08 전체 중 확정된 복장 상태/포즈 원문·캐릭터별 명시 후보·기본값·확인 후 삭제/이동부터 분리한다.
+구현 계약은 `docs/W08_D_SHARED_PROMPTS_CONTRACT.md`이며 권장 환경은 저성능 Work다.
+상황/대사 이벤트 연결·기존 대사 이전·모델/생성은 남은 정책 확정 후 별도 순서로 수행한다.
+현재는 계약/지시문 준비이며 제품 구현은 미착수다.
 
-다음 W08 공유 관리 계약에서는 복장 상태·상황·포즈·대사 원본과 캐릭터별 명시 후보,
-Level/소속 변경·삭제 영향과 기본값 복귀, revision/commit·과거 snapshot 보존을 구체화한다.
-D05-c 상황/event 매핑의 편집 방향은 설명 확인 중이며 Q-LEGACY 기존 문구 이전도 미확정이다.
-미응답 권고 전체를 승인 처리하거나 공유 관리·변수·생성 제품 구현을 시작하지 않는다.
-생성 관련 D07/D08/D09/Q-IMAGE/Q-FRAME은 후속 W10/W11 계약에서 따로 확정한다.
+```text
+danhk0612/no-riichi-no-fuku의 W08-D만 수행해.
+최신 main·현재 branch·열린 PR·AGENTS.md와 루트 기준 문서를 확인해.
+W08-M PR #93·정책 PR #94 및 W08-D 설계 PR의 병합을 확인하고
+TASKS와 docs/W08_D_SHARED_PROMPTS_CONTRACT.md 전체를 따라.
+task/w08-d-shared-prompts-impl에서 기존 사용자/다른 브랜치 변경을 덮지 말고 작업해.
+
+Level별 공유 복장 상태·포즈의 label/P/N CRUD, 기존 CPU의 Level/종류별 명시 후보,
+지정 기본값과 fallback, 삭제/Level 이동 영향 확인·확인 후 기본값 복귀를 구현해.
+공유 원문은 한 번만 저장하고 신규 항목을 기존 CPU 후보에 자동 포함하지 마.
+원문·빈 P/N·ID/revision·GET 무쓰기·같은 writer의 원자 commit·자료 reset/restart 보존을 지켜.
+기존 캐릭터 설정에 최소 관리 탭을 추가하고 CPU 선택·현재 대국·음향을 보존해.
+
+상황/대사/event 매핑·변수 실행·기존 대사 이전·모델/LoRA·생성/이미지/CG 표시,
+팩 manifest/scanner·새 팩 종류·CPU/규칙/난이도/진행/정산은 변경하지 마.
+CG는 캐릭터별·단계별 자료이며 패배로 단계 변경 후 변경된 단계의 CG를 표시한다.
+별도 패배 CG kind/화료 CG 기능을 추가하지 마. 실제 문구/이미지/음향을 작성·seed·커밋하지 마.
+
+계약의 migration/API/후보/기본값/삭제·이동/브라우저 회귀와 backend 전체·대사pytest·build,
+정확한 최종head W04/W05 Windows CI 및 다운로드 artifact source/hash,
+packaged UI 저장·초기화·engine 재시작 보존 검증을 마쳐.
+CURRENT_STATE/TASKS/ARCHITECTURE와 사용자 README를 사실에 맞게 갱신해.
+commit/push·PR 제출까지 진행하되 직접 병합·Release/tag·후속 Task 착수는 하지 마.
+```
 
 ## W08-M 제출 이력 — PR #93 병합 완료
 
@@ -74,6 +95,7 @@ commit/push·PR 제출까지 진행하되 직접 병합·Release/tag·후속 Tas
 | W08-B | 기존 캐릭터 기본/구도 P/N 편집·로컬 편집 기록·팩 목록 UI | P1 / 완료(PR #81 병합) | W08-A 병합, Q-PACK A | 저성능 Work |
 | W08-C | 기존 CPU의 명시 캐릭터팩 연결·같은 팩 갱신 | P1 / 완료(PR #82 병합) | W08-A/B 병합, Q-PACK A | 저성능 Work |
 | W08 | 캐릭터·공유 후보·단계별 이미지 편집/적용 | P1 / 정책 의존 부분 대기 | W08-A, W07 관련 결정 | 저성능 Work |
+| W08-D | 공유 복장 상태·포즈 원문/후보/기본값 관리 | P1 / 계약·구현 지시문 준비, 미구현 | PR #93/#94 및 W08-D 설계 병합 | 저성능 Work |
 | W08-M | 캐릭터 선택 신체 치수·편집·팩 원본/override | P1 / 완료(PR #93 병합, 최종 검증은 CURRENT_STATE) | Q-META A, Q-PACK A, PR #91·#92 | 저성능 Work |
 | W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / 완료(PR #83 병합, 최종 검증은 PR 참조) | W07 팩/event 계약, W08-A/B/C 병합, Q-PACK/Q-AUDIO/D-WIN/Q-OMAKE-VOICE | 저성능 Work |
 | W-DIFF-A | 난이도 1~10 설계·격리 기술 검증·구현 인계 | P1 / 공개1수 선읽기 격리검증 완료·강도 개선/10구간 미입증 | PR #83/#84 병합, 2026-10-18 사용자 승인 | 고성능 Work |
