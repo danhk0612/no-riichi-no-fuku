@@ -54,7 +54,10 @@ PATCH는 기존 `expected_revision`과 optional `measurements_cm` 부분 객체�
 원본과 같은 값을 저장해도 직접 편집이다. P/N과 치수를 한 번에 저장하면 하나의 revision/commit이다.
 기존 PATCH 권한·writer·revision 충돌409·유효성422·commit 후 응답을 사용한다.
 
-`GET /api/local/play/roster-candidates`에 읽기용 `measurements_cm`를 추가한다.
+`GET /api/local/play/roster-candidates`에 읽기용 `content_revision`과 `measurements_cm`를 추가한다.
+콘텐츠 행이 없으면 revision은 `0`이며, roster를 다시 조회한 클라이언트는 응답 revision과
+캐릭터별 캐시 revision을 비교해 더 최신 치수만 표시한다. 이 기준은 저장/팩 적용 응답 유실 뒤에도
+서버가 commit한 치수를 다시 불러올 수 있게 한다.
 새 대국 생성/현재 대국/WS의 CPU 판단 snapshot과 action payload는 바꾸지 않는다.
 기존 웹 관리자와 웹 CPU 선택 경로로 신체 편집 기능을 확장하지 않는다.
 

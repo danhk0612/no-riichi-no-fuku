@@ -243,6 +243,10 @@ class PackRegistryTests(unittest.TestCase):
         self.assertEqual(initial["measurement_overrides"], {key: False for key in ("height", "bust", "waist", "hips")})
         with self.runtime.session_factory() as session:
             self.assertEqual(session.query(CharacterContent).count(), 0)
+        candidate = self.client.get("/api/local/play/roster-candidates", headers=self.headers).json()
+        cpu = next(item for item in candidate if item["id"] == 1)
+        self.assertEqual(cpu["content_revision"], 0)
+        self.assertEqual(cpu["measurements_cm"], {key: None for key in ("height", "bust", "waist", "hips")})
 
         saved = self.client.patch(path, headers=self.headers, json={
             "expected_revision": 0,
@@ -255,6 +259,7 @@ class PackRegistryTests(unittest.TestCase):
         self.assertEqual(value["measurement_overrides"], {"height": True, "bust": True, "waist": True, "hips": False})
         candidate = self.client.get("/api/local/play/roster-candidates", headers=self.headers).json()
         cpu = next(item for item in candidate if item["id"] == 1)
+        self.assertEqual(cpu["content_revision"], value["revision"])
         self.assertEqual(cpu["measurements_cm"], value["measurements_cm"])
 
         saved = self.client.patch(path, headers=self.headers, json={
@@ -263,6 +268,10 @@ class PackRegistryTests(unittest.TestCase):
         self.assertEqual(saved.status_code, 200, saved.text)
         self.assertEqual(saved.json()["revision"], 2)
         self.assertEqual(saved.json()["measurements_cm"], {"height": None, "bust": "88.5", "waist": None, "hips": "96.0"})
+        candidate = self.client.get("/api/local/play/roster-candidates", headers=self.headers).json()
+        cpu = next(item for item in candidate if item["id"] == 1)
+        self.assertEqual(cpu["content_revision"], 2)
+        self.assertEqual(cpu["measurements_cm"], saved.json()["measurements_cm"])
         for key, invalid in (("height", "0"), ("bust", "-1"), ("waist", "70.25"), ("hips", "NaN"), ("height", "172 cm"), ("bust", 88)):
             response = self.client.patch(path, headers=self.headers, json={
                 "expected_revision": 2, "measurements_cm": {key: invalid},

@@ -85,9 +85,7 @@ def get_roster_candidates(
     content_rows = session.scalars(select(CharacterContent).where(
         CharacterContent.cpu_id.in_([choice.id for choice in choices])
     )).all() if choices else []
-    measurements_by_cpu = {
-        item.cpu_id: item.measurements_cm for item in content_rows
-    }
+    content_by_cpu = {item.cpu_id: item for item in content_rows}
     unfinished = sum(c.defeat_stage < 3 for c in choices if c.id in ids)
     try:
         setting = read_setting(session)
@@ -101,8 +99,9 @@ def get_roster_candidates(
                 preview = {"level": snapshot["profile"]["level"], "profile_version": snapshot["profile"]["version"], "reason": snapshot["reason"]}
             result.append({
                 "id": choice.id, "slug": choice.slug, "name": choice.name,
+                "content_revision": content_by_cpu[choice.id].revision if choice.id in content_by_cpu else 0,
                 "measurements_cm": {
-                    key: (measurements_by_cpu.get(choice.id) or {}).get(key)
+                    key: ((content_by_cpu[choice.id].measurements_cm or {}).get(key) if choice.id in content_by_cpu else None)
                     for key in ("height", "bust", "waist", "hips")
                 },
                 "age_adult": choice.age_adult, "style": choice.style,

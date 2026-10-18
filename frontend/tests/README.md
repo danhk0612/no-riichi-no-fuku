@@ -60,8 +60,9 @@ content is generated.
 `local-content.browser.mjs` checks the desktop character editor using routed REST responses. It covers
 dirty-only and explicit empty saves, failure/conflict draft preservation, and a server-committed save
 response delayed across settings close/re-entry and a newer save. It repeats that revision race for pack
-application, then checks the latest measurement survives roster re-query after reset, as well as late
-character loads/saves and deduplicating an in-flight scan when returning to the pack tab.
+application, then simulates committed save and pack changes whose responses are lost and verifies reset
+re-query adopts the higher server `content_revision`. It also checks late character loads/saves and
+deduplicates an in-flight scan when returning to the pack tab.
 It also covers explicit CPU/pack selection, dirty draft blocking, apply failure/conflict, late application
 responses across character switches, applied vs registered revisions, empty override preservation and
 source P/N inspection. It uses test-only strings and references without generating media. W05 runs it

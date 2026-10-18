@@ -112,7 +112,17 @@ function App() {
   function withLatestCharacterMeasurements(choices: CpuChoice[]): CpuChoice[] {
     return choices.map((cpu) => {
       const latest = characterContentRef.current.get(cpu.id)
-      return latest ? { ...cpu, measurements_cm: latest.measurements_cm } : cpu
+      const serverRevision = cpu.content_revision ?? 0
+      if (!latest || serverRevision >= latest.revision) {
+        if (typeof cpu.content_revision === 'number' && cpu.measurements_cm) {
+          characterContentRef.current.set(cpu.id, {
+            revision: serverRevision,
+            measurements_cm: cpu.measurements_cm,
+          })
+        }
+        return cpu
+      }
+      return { ...cpu, measurements_cm: latest.measurements_cm }
     })
   }
 
