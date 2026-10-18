@@ -12,6 +12,7 @@ function content(id) {
 try {
   const page = await browser.newPage(); page.setDefaultTimeout(8000)
   const errors = []; page.on('pageerror', (e) => errors.push(e.message))
+  page.on('dialog', (dialog) => void dialog.accept())
   await page.addInitScript(() => { window.nrnfDesktop = { isDesktop: true } })
   const saved = { 1: content(1), 2: content(2) }
   const cpus = [1, 2, 3].map((id) => ({ id, slug: `cpu-${id}`, name: `CPU ${id}`, defeat_stage: 0, style: 'balanced', short_description: 'test-only', profile_image_key: null, measurements_cm: id === 1 ? { height: '170.0', bust: null, waist: '62.5', hips: null } : { height: null, bust: null, waist: null, hips: null } }))
@@ -67,6 +68,7 @@ try {
     if (path === '/api/local/packs') return route.fulfill({ json: listing })
     if (path === '/api/profile/me') return route.fulfill({ json: { player_name: 'test-only', current_hp: null, max_hp: null } })
     if (path === '/api/local/play/roster' && request.method() === 'POST') return route.fulfill({ json: { generation: 'test-game', phase: 'progress', roster: cpus.map((cpu) => ({ cpu_character_id: cpu.id, defeat_stage: 0 })), ending_event_id: null, ending_payload: null, active_session_id: null, recent_session_id: null, legacy_active: false } })
+    if (path === '/api/local/play/reset' && request.method() === 'POST') return route.fulfill({ json: { generation: 'test-reset', phase: 'roster_required', roster: [], ending_event_id: null, ending_payload: null, active_session_id: null, recent_session_id: null, legacy_active: false } })
     if (path === '/api/local/play') return route.fulfill({ json: { generation: 'test-only', phase: 'roster_required', roster: [], ending_event_id: null, ending_payload: null, active_session_id: null, recent_session_id: null, legacy_active: false } })
     if (path === '/api/game/sessions' && request.method() === 'POST') return route.fulfill({ json: { session_id: 'test-game-session', generation: 'test-game', players: [{ seat: 0, name: 'test-only', isHuman: true }, ...cpus.map((cpu, index) => ({ seat: index + 1, name: cpu.name, isHuman: false }))] } })
     if (path === '/api/game/sessions/active') return route.fulfill({ json: null })
@@ -210,7 +212,23 @@ try {
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))))
   assert.equal(await page.locator('.cpu-grid').count(), 0, 'late measurement save must not restore selection screen after game start')
   assert.equal(await page.locator('.game-toolbar').count(), 1, 'late measurement save must preserve the current game')
+  await page.getByRole('button', { name: '캐릭터 프롬프트·팩 설정', exact: true }).click()
+  const resetPanel = page.getByRole('region', { name: '캐릭터 프롬프트와 팩 관리' })
+  await resetPanel.getByRole('combobox', { name: '캐릭터', exact: true }).selectOption('1')
+  await resetPanel.locator('input[aria-label="키 (cm)"]').fill('174.0')
+  saveGate = gate(); await resetPanel.locator('button.primary-button').click(); await saveGate.entered
+  await resetPanel.getByRole('button', { name: '닫기', exact: true }).click()
+  await page.getByRole('button', { name: '초기화', exact: true }).click()
+  await page.locator('.cpu-grid').waitFor()
+  assert.equal(await page.locator('.cpu-card.selected').count(), 0, 'reset must clear the CPU selection before the late response')
+  const lateResetResponse = page.waitForResponse((response) => response.url().endsWith('/characters/1/content') && response.request().method() === 'PATCH')
+  saveGate.release(); saveGate = undefined
+  await lateResetResponse
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+  assert.equal(await page.locator('.cpu-grid').count(), 1, 'late measurement save must not change the reset selection screen')
+  assert.equal(await page.locator('.cpu-card.selected').count(), 0, 'late measurement save must not restore pre-reset CPU selections')
+  assert.equal(await page.locator('.game-toolbar').count(), 0)
   if (process.env.TEST_SCREENSHOT) await page.screenshot({ path: process.env.TEST_SCREENSHOT, fullPage: true })
   assert.deepEqual(errors, [])
-  console.log('PASS: dirty-only/empty saves, failure/conflict drafts, pending save, stale selection/save, scan deduplication, immediate save/clear/pack card updates, selection preservation and current-game late-response isolation')
+  console.log('PASS: dirty-only/empty saves, failure/conflict drafts, pending save, stale selection/save, scan deduplication, immediate save/clear/pack card updates, selection preservation and late-response isolation after reset/game start')
 } finally { await browser.close() }
