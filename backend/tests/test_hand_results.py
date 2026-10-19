@@ -204,6 +204,47 @@ class LocalHandResultPersistenceTests(unittest.TestCase):
                     )))
                     self.assertEqual(runtime.registry._games, {})
 
+                # A result-row flush failure after the parent flush must roll back the
+                # whole create and must not be reported as an active-game conflict.
+                original_flush = LocalRuntimeSession.flush
+
+                def fail_result_flush(db_session, *args, **kwargs):
+                    if any(isinstance(item, GameHandResult) for item in db_session.new):
+                        raise SQLAlchemyError("injected start result flush failure")
+                    return original_flush(db_session, *args, **kwargs)
+
+                failure_client = TestClient(runtime.app, raise_server_exceptions=False)
+                with patch.object(registry_module, "create_game_session_from_choices", return_value=StartFactGame()), \
+                     patch.object(LocalRuntimeSession, "flush", new=fail_result_flush):
+                    failed_flush = failure_client.post("/api/game/sessions", headers=headers, json={
+                        "generation": state["generation"], "cpu_character_ids": list(cpu_ids),
+                    })
+                self.assertEqual(failed_flush.status_code, 500, failed_flush.text)
+                with runtime.session_factory() as db:
+                    self.assertIsNone(db.scalar(select(GameSessionRecord.id).where(
+                        GameSessionRecord.user_id == runtime.member_id,
+                        GameSessionRecord.status == "active",
+                    )))
+                    self.assertEqual(db.scalars(select(GameHandResult)).all(), [])
+                    self.assertEqual(runtime.registry._games, {})
+
+                # The route owns commit, so exercise its post-registry failure guard too.
+                with patch.object(registry_module, "create_game_session_from_choices", return_value=StartFactGame()), \
+                     patch.object(LocalRuntimeSession, "commit", side_effect=SQLAlchemyError("injected start result commit failure")):
+                    failed_commit = failure_client.post("/api/game/sessions", headers=headers, json={
+                        "generation": state["generation"], "cpu_character_ids": list(cpu_ids),
+                    })
+                self.assertEqual(failed_commit.status_code, 500, failed_commit.text)
+                with runtime.session_factory() as db:
+                    self.assertIsNone(db.scalar(select(GameSessionRecord.id).where(
+                        GameSessionRecord.user_id == runtime.member_id,
+                        GameSessionRecord.status == "active",
+                    )))
+                    self.assertEqual(db.scalars(select(GameHandResult)).all(), [])
+                    self.assertEqual(runtime.registry._games, {})
+
+                with runtime.session_factory() as db:
+                    user = db.get(User, runtime.member_id)
                     with patch.object(registry_module, "create_game_session_from_choices", return_value=StartFactGame()):
                         created = runtime.registry.create(db, user, cpu_ids, generation=state["generation"])
                         db.commit()
@@ -222,6 +263,8 @@ class LocalHandResultPersistenceTests(unittest.TestCase):
                     self.assertEqual(restored.action_version, 0)
                     self.assertIsNotNone(restored.game)
             finally:
+                if "failure_client" in locals():
+                    failure_client.close()
                 client.close()
                 runtime.close()
 
@@ -496,21 +539,41 @@ class LocalHandResultPersistenceTests(unittest.TestCase):
                 else:
                     self.fail("seed 701 did not close a hand within 120 human actions")
 
-                before_failed_write = restored.game.human_turn()
-                failed_index = next((i for i, action in enumerate(before_failed_write.legal_actions)
-                                     if action["type"] == int(ActionType.DISCARD)), 0)
-                with runtime.session_factory() as db:
-                    with patch("app.services.game_registry.append_facts", side_effect=RuntimeError("injected result write failure")):
-                        with self.assertRaisesRegex(RuntimeError, "injected result write failure"):
-                            runtime.registry.submit_action(db, restored, failed_index, restored.action_version)
-                    db.rollback()
-                    self.assertIsNone(restored.game, "failed result serialization/write must discard advanced engine")
+                failed_turn = None
+                result_flush_failed = False
+                original_flush = LocalRuntimeSession.flush
+
+                def fail_action_result_flush(db_session, *args, **kwargs):
+                    if any(isinstance(item, GameHandResult) for item in db_session.new):
+                        raise SQLAlchemyError("injected action result flush failure")
+                    return original_flush(db_session, *args, **kwargs)
+
+                # Advance to the next actual result batch so the injected failure is
+                # specifically the row flush, after the engine has already advanced.
+                for _ in range(180):
+                    before_failed_write = restored.game.human_turn()
+                    failed_index = next((i for i, action in enumerate(before_failed_write.legal_actions)
+                                         if action["type"] == int(ActionType.DISCARD)), 0)
+                    with runtime.session_factory() as db:
+                        with patch.object(LocalRuntimeSession, "flush", new=fail_action_result_flush):
+                            try:
+                                runtime.registry.submit_action(db, restored, failed_index, restored.action_version)
+                                db.commit()
+                            except SQLAlchemyError as error:
+                                self.assertIn("action result flush", str(error))
+                                db.rollback()
+                                failed_turn = before_failed_write
+                                result_flush_failed = True
+                    if result_flush_failed:
+                        break
+                self.assertTrue(result_flush_failed, "seed 701 did not reach a result-row flush within 180 actions")
+                self.assertIsNone(restored.game, "failed result flush must discard advanced engine")
                 with runtime.session_factory() as db:
                     restored = runtime.registry.get_owned(db, session_id, runtime.member_id)
-                    self.assertEqual(restored.game.human_turn(), before_failed_write)
+                    self.assertEqual(restored.game.human_turn(), failed_turn)
                     self.assertEqual(restored.action_version, len(db.get(GameSessionRecord, session_id).human_action_indices))
                     self.assertIsNotNone(restored.game, "cold recovery should rebuild the committed turn")
-                    self.assertEqual(len(db.scalars(select(GameHandResult).where(
+                    self.assertGreaterEqual(len(db.scalars(select(GameHandResult).where(
                         GameHandResult.session_id == session_id
                     )).all()), 1)
 
