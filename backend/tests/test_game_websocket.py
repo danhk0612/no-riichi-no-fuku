@@ -24,6 +24,7 @@ from app.db.base import Base
 from app.db.models import (
     CpuCharacter,
     CpuResultAsset,
+    GameHandResult,
     GameSessionRecord,
     GameSetting,
     User,
@@ -149,6 +150,10 @@ class GameWebSocketApiTest(unittest.TestCase):
             assert record is not None
             self.assertEqual(record.status, "active")
             self.assertEqual(record.human_action_indices, [])
+            self.assertIsNone(record.hand_results_version)
+            self.assertEqual(session.scalars(select(GameHandResult).where(
+                GameHandResult.session_id == record.id
+            )).all(), [])
             self.assertTrue(all(choice["policy_version"] == 2 for choice in record.cpu_choices))
         duplicate = self.client.post(
             "/api/game/sessions",

@@ -75,21 +75,32 @@ def append_facts(
     rows = load_rows(db_session, record)
     if [row.sequence for row in rows] != list(range(1, len(rows) + 1)):
         raise HandResultCaptureError("persisted hand result sequence is not contiguous")
+    starts_in_sequence = [row.hand_start_log_offset for row in rows]
+    if starts_in_sequence != sorted(starts_in_sequence) or len(set(starts_in_sequence)) != len(starts_in_sequence):
+        raise HandResultCaptureError("persisted hand result sequence conflicts with source order")
     by_start = {row.hand_start_log_offset: row for row in rows}
-    sequence_by_start = {row.hand_start_log_offset: row.sequence for row in rows}
+    expected_sequence_by_start = {start: index for index, start in enumerate(sorted(starts_in_sequence), start=1)}
     sequence = len(rows)
+    last_fact_start: int | None = None
     for fact in facts:
+        if type(fact.start_log_offset) is not int or type(fact.end_log_offset) is not int or fact.end_log_offset <= fact.start_log_offset:
+            raise HandResultCaptureError("hand result log offsets are invalid")
+        if last_fact_start is not None and fact.start_log_offset <= last_fact_start:
+            raise HandResultCaptureError("hand result batch conflicts with source sequence")
+        last_fact_start = fact.start_log_offset
         payload = fact_payload(record, fact)
         existing = by_start.get(fact.start_log_offset)
         if existing is not None:
             if (
-                existing.sequence != sequence_by_start[fact.start_log_offset]
+                existing.sequence != expected_sequence_by_start[fact.start_log_offset]
                 or existing.hand_end_log_offset != fact.end_log_offset
                 or existing.source_action_version != source_action_version
                 or existing.payload != payload
             ):
                 raise HandResultCaptureError("persisted hand result identity conflicts with replay")
             continue
+        if fact.start_log_offset <= (starts_in_sequence[-1] if starts_in_sequence else -1):
+            raise HandResultCaptureError("new hand result would reorder persisted source sequence")
         sequence += 1
         row = GameHandResult(
             session_id=record.id,
@@ -101,7 +112,8 @@ def append_facts(
         )
         db_session.add(row)
         by_start[fact.start_log_offset] = row
-        sequence_by_start[fact.start_log_offset] = sequence
+        expected_sequence_by_start[fact.start_log_offset] = sequence
+        starts_in_sequence.append(fact.start_log_offset)
 
 
 def verify_replay_batch(

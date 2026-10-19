@@ -1,6 +1,7 @@
 """Capture immutable, source-ordered facts for completed MJAI hands."""
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Mapping
 
@@ -145,7 +146,8 @@ class HandResultCollector:
         if suffix_horas != set(win_by_offset):
             raise HandResultCaptureError("B1 score capture and MJAI hora offsets differ")
         self._cursor = len(log)
-        self._prefix = list(log)
+        # Keep a comparison snapshot independent of the engine's mutable event dicts.
+        self._prefix = deepcopy(log)
         if terminal and not (closed_this_step and self._pending[closed_this_step[-1]].payload["terminal"]):
             raise HandResultCaptureError("terminal match did not close its final hand")
 

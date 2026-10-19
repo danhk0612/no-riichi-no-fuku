@@ -1,10 +1,70 @@
+Warning: truncated output (original token count: 23682)
+Total output lines: 1014
+
 # 개발 Task
 
-## W09-B2 — 구현·검증 완료 / PR #104 open
+## 현재 Work — W09-B2 PR #104 보완 구현 완료, exact-head 검증 진행 중
 
-`task/w09-b2-hand-results`에서 구현해 PR #104로 제출했다. source `f9d2754`의 Windows W04/W05, artifact source/hash와 packaged read-only 국 사실 검사를 통과했다.
-[계약](docs/W09_B2_HAND_RESULTS_CONTRACT.md)을 따른다. 국 사실만 저장하며 표시 queue/ack·문구/CG·화면/
-후속 action gate 및 후속 표시/생성 Task는 이번 범위가 아니다. PR 병합 전 다음 Task를 시작하지 않는다.
+기존 `task/w09-b2-hand-results`와 PR #104에서 수행한다. 최신 main의 PR #105 검토 문서를 병합했다.
+R1/R2 최소 수정과 회귀, R3 저장·복구 회귀를 추가했다. Linux backend 177개, 대사 pytest 10개,
+frontend production build 및 W09-B2 핵심 회귀가 통과했다. 검증 기록은 CURRENT_STATE를 따른다.
+현재 source를 포함한 임시 commit의 Windows W04/W05 exact-head workflow/artifact와 packaged read-only
+JSON 검증은 아직 대기 중이다. 로컬 Chromium 미설치로 이 환경의 routed browser 재실행은 미검증이다.
+[기존 계약](docs/W09_B2_HAND_RESULTS_CONTRACT.md)과 [검토 보완 R1~R3](docs/W09_B2_REVIEW_FINDINGS.md)을 따른다.
+
+```text
+danhk0612/no-riichi-no-fuku의 PR #104(W09-B2)만 보완해.
+최신 main·열린 PR·AGENTS와 루트 문서를 확인하고
+docs/W09_B2_HAND_RESULTS_CONTRACT.md 및 docs/W09_B2_REVIEW_FINDINGS.md 전체를 따라.
+기존 task/w09-b2-hand-results branch/PR을 이어가며 다른 작업을 덮지 마.
+R1 prefix alias와 R2 중복 sequence 검증을 수정 전 실패 회귀로 고정한 뒤 최소 수정해.
+R3 표의 start/version0·원자 저장 실패·파일 DB cold 복구·최종 action/정산 실패·모드/legacy
+검사를 실제 B2 경로로 보강하고 검사별 계약 대응을 기록해.
+전체 backend/대사·기존 build/browser, 최종 source SHA W04/W05 및 다운로드 artifact
+source/hash·내부 ZIP·packaged read-only 국 결과 JSON을 확인해.
+CURRENT_STATE/TASKS/PR을 실제 검증/미검증대로 갱신하고 commit/push·기존 PR 제출까지 진행해.
+직접 병합·Release/tag·표시/ack/UI/gate·문구/CG/생성 후속 Task는 하지 마.
+```
+
+아래 최초 구현 지시문은 이력이며 현재는 위 보완이 우선한다.
+
+## 현재 다음 Work — W09-B2 국 결과 사실 저장·복구
+
+권장: **저성능 Work**. 준비 main `67c4335`(PR #102 병합).
+[W09-B2 계약](docs/W09_B2_HAND_RESULTS_CONTRACT.md) 전체가 아래 지시문과 함께 적용된다.
+표시 queue/ack·문구/CG는 후속으로 남기고 사실 누적·원자 저장·복구를 먼저 구현한다.
+
+```text
+danhk0612/no-riichi-no-fuku의 W09-B2만 수행해.
+최신 main/현재 branch/열린 PR, AGENTS와 루트 기준 문서를 읽어.
+준비 main67c4335의 PR #102 병합과 B1 최종 source315409c 검증을 확인하고
+문서 W09_B2_HAND_RESULTS_CONTRACT.md 전체를 따라.
+task/w09-b2-hand-results에서 별도 내부 국 결과 collector와 새 로컬 대국의 사실 영속을 구현해.
+
+B1 last_hand_wins를 매 engine step 직후 대응하고 원본 start/end log offset으로
+전체 화료자·유국을 묶어 사람 차례 사이의 모든 종료국을 별도 누적해.
+기존 pending_events/음향 ordinal을 재사용하거나 callback/CPU RNG를 바꾸지 마.
+새 marker1 로컬 대국만 수집하며 NULL 구 저장/웹의 동작과 기존 completed 읽기를 유지해.
+최신 migration head를 확인해 다음 additive revision과 GameHandResult/최소 marker를 추가해.
+참가자/당시 이름/stage는 저장된 players/cpu_choices에서 가져오고 현재 진행값으로 덮지 마.
+create 시작 batch 및 action indices와 사실 rows를 같은 writer transaction에 저장해.
+중복 identity는 완전 동일할 때만 유지하고 충돌/점수 누락을 fallback/upsert로 숨기지 마.
+flush/commit/수집 실패에는 rollback·cache 폐기·저장 턴 복구를 유지해.
+active replay는 저장된 사실 전체와 대조 후 과거 batch를 비우고 GET에서 backfill하지 마.
+completed는 replay/재정산 없이 읽고 마지막 action→별도 정산의 기존 경계를 보존해.
+reset은 old generation 사실/사용자 파일을 보존해.
+
+문구·prompt/content/media snapshot/무작위 표시순서/ack·새 API/WS/화면·새 행동 gate는 추가하지 마.
+설정/규칙/CPU/오디오·ComfyUI·이미지/사운드 생성·사용자 자료 삭제는 제외해.
+원본 trace/policy1/2/3·복수 pending/유국/트리플론/특수 화료·중복/변조/누락,
+create/action 저장 실패·재시작/정산 전 crash·reset/legacy를 계약 검사표대로 검증해.
+고정seed701 Tier0/2×수집전후4대국의 로그/점수/행동 동일성과 수집 비용을 기록해.
+전체 backend/대사·기존 build/browser, 최종 SHA Windows W04/W05 및 artifact source/hash를 확인해.
+packaged renderer 종료 후 소유 game.db를 read-only로 검사해 새 marker/국 사실/terminal 근거를
+artifact에 기록하되 production 진단 endpoint는 만들지 마.
+CURRENT_STATE/TASKS/ARCHITECTURE를 실제 구현/미검증대로 갱신하고 commit/push·PR을 제출해.
+직접 병합·Release/tag·후속 표시/생성 Task 착수는 하지 마.
+```
 
 ## W09-B1 — 검토·병합 완료
 
@@ -218,7 +278,7 @@ commit/push·PR 제출까지 진행하되 직접 병합·Release/tag·후속 Tas
 | W-DIFF-B | 단계+게임 설정의 최종 난이도·저장·설정 UI 적용 | P1 / 정책·독립 재검증·구현·Linux 회귀 완료, 최종 Windows 근거는 제품 PR 참조 | W-DIFF-A 검토 | 저성능 Work(판단 구현 복잡 시 고성능 Work) |
 | W09-A | 국 결과/화료 등급/표시 순서·복구 기술 진단 | 진단 완료 / 후속 B1 경로 수용 | PR #96/#97 및 진단 준비 문서 | 고성능 Work |
 | W09-B1 | 검증된 화료 점수 adapter | 완료 / PR #102 병합 | W09-A2 | 저성능 Work |
-| W09-B2 | 국 결과 사실 누적·원자 저장·복구 | 구현·Windows 검증 완료 / PR #104 open | W09-B1 | 저성능 Work |
+| W09-B2 | 국 결과 사실 누적·원자 저장·복구 | 계약 준비 / 구현 전 | W09-B1 | 저성능 Work |
 | W09 | 국 결과·캐릭터 고정 대사·변수 연결(최신 요구) | P1 / 대기 | W08 | 저성능 Work |
 | W10 | 독립 ComfyUI·Anima adapter | P1 / 대기 | W03, W07 | 저성능 Work |
 | W11 | 이벤트 랜덤 조합·생성/파일 연동 | P1 / 대기 | W06, W09, W10 | 저성능 Work |
@@ -382,187 +442,7 @@ W-DIFF-B·UI/DB/정산/CG/음향/신체 정보 편집은 착수하지 마.
 
 ## 수행 기준 이력 — W-DIFF-B (최신 승인/상태는 상단 우선)
 
-권장 환경: **저성능 Work**. 성능/보정/복합 저장 판단이 해결되지 않으면 고성능 Work로 분리한다.
-아래 지시문은 구현 인계 초안이며 지금의 실행 승인이 아니다.
-
-```text
-danhk0612/no-riichi-no-fuku의 W-DIFF-B만 수행해.
-최신 main·현재 branch·열린 PR·AGENTS.md와 모든 루트 기준 문서를 확인해.
-W-DIFF-A PR의 최종 head/측정, REQUIREMENTS DIFF-* 실제 사용자 승인과 승인된 immutable
-profile 표/강도 검증 결과를 먼저 확인해. 후보나 권고만 있고 승인/강도 보정이 없으면 구현하지 말고
-남은 조건을 보고해. 이전 -1/0/+1, A의 3/6/9·기본5·실수율 표를 승인으로 간주하지 마.
-기존 브랜치/다른 PR 변경을 덮지 말고 task/w-diff-b-difficulty에서 작업해.
-
-ARCHITECTURE의 W-DIFF-A 계약을 따라 성향6값/CG stage0~3/게임 설정/최종1~10을 분리해.
-순수 난이도 resolver와 승인된 versioned profile agent를 신규 policy3 경로로 구현해.
-기존 Tier0/1/2와 policy1/2 RNG·종반 판정·seed*10+seat·legacy fixture·액션 순서를 고치지 마.
-기존 Tier2를 재사용한다면 내부 policy2를 전달하고 새 seed 소비 규칙을 별도로 고정해.
-v1 분모10 설계 예시와 v2 분모1000·후보폭/가중치/정렬 규칙을 혼합하지 마.
-승인된 version별 immutable 표만 사용하며 이번 v2도 아직 채택/강도 검증 게이트를 통과하지 못했어.
-10이 기존 Tier2보다 강하다고 표시하지 마. 승인된 보정표/정의와 실제 행동 차이를 확인해.
-
-CpuChoice에 nullable difficulty_snapshot만 추가하고 신규 local 대국만 policy3로 시작해.
-rules_snapshot version2와 effective_tier0/1/2는 기존 진행/호환 의미로 유지해.
-GameSetting key local_cpu_difficulty의 version/revision/setting, local GET/PUT /api/local/difficulty를
-구현해. 기존 JSON 열/key-value로 가능하면 새 schema migration/테이블은 만들지 마.
-현재 공식/프로필/설정 revision/reason/level/파라미터·성향·stage를 대국 시작 시 고정해.
-현재 대국/구 저장은 설정 변경 뒤에도 재계산하지 마. unknown/malformed 새 snapshot은 명시 오류로
-멈추고 최신/기본/legacy로 대체하거나 사용자 기록을 rewrite하지 마.
-
-writer에서 설정과 start를 직렬화하고 revision 검사→commit 후 응답을 지켜.
-GET은 읽기만, 저장 실패는 이전 설정/active game 보존, start 실패는 cache eviction/원본 복구.
-설정 변경이 기존 game/agent/socket/콘텐츠 RNG를 재생성하지 않게 해.
-완료 CPU 보충/omake 우선순위와 초기화 뒤 설정 보존은 승인된 DIFF-MODE/TIMING을 따라.
-정산/CG unlock/명단/HP 없음/엔딩·음향·voice 동작은 변경하지 마.
-
-선택 preview는 서버 resolve, 현재 대국 표시는 저장 snapshot에서 API/WS로 제공해.
-기존 화면에 최소 난이도1~10 선택·저장/다음 대국 안내와 최종 난이도 표시만 넣어.
-CG Level/성향/최종 난이도를 별도 명칭으로 표시해. legacy는 가짜 1~10으로 환산하지 마.
-기존 generation/load token으로 늦은 응답을 막고 표시 숫자 때문에 CPU/CG를 다시 선택하지 마.
-
-파일 범위: backend/app/mahjong의 새 profile agent, services/game_setup.py/local_play.py/
-game_registry.py 및 최소 difficulty service, schemas/game.py와 local 전용 schema/router,
-local_runtime.py의 router 연결, frontend/src/api.ts/game/types.ts/main.tsx/CpuSelection.tsx와
-최소 설정 component/style, 관련 backend/browser/Windows smoke와 기준 문서만 변경해.
-기존 agent/legacy fixture/정산·음향 알고리즘/신체 UI/팩·생성 기능 수정은 범위 밖이야.
-
-검증: 승인된 resolver 전 조합(stage0~3×설정1~10×progress/omake), 보충 자격·특수 모드,
-6성향 불변·최종난이도/CG 독립, 새 profile 전 레벨 합법성·동일 seed/action trace golden,
-설정 저장/start 경쟁·commit 실패/응답 유실·reset 보존, 12행동 후 변경/재시작과 완료 결과 동일,
-pre-versioned golden 매 턴·policy1/2 원본·unknown version 거절·완료/cancelled 보존을 확인해.
-기존 backend unittest/대사 pytest/frontend build·관련 browser 및 정확한 수정 SHA의 W04/W05
-Windows CI와 다운로드 artifact source/ZIP hash·packaged 설정/복구 smoke를 확인해.
-CI/Windows hosted/개인 PC·실전 강도 표본을 구분해. 부족한 검증을 완료로 기록하지 마.
-
-REQUIREMENTS/ARCHITECTURE/CURRENT_STATE/TASKS와 필요한 사용자 README를 실제 결과대로 갱신해.
-commit/push·PR 제출/관련 CI는 허용한다. 직접 병합·Release/tag·후속 Task 착수,
-실제/더미 CG·음향 생성·사용자 자료 수정/삭제·ComfyUI 실행은 하지 마.
-```
-
-## 이전 입력 지시문 — W-DIFF-A 난이도 확장 설계·격리 검증
-
-```text
-danhk0612/no-riichi-no-fuku의 W-DIFF-A만 수행해.
-준비 main은 PR #83 병합 467c706이다. 시작 시 최신 main·현재 브랜치·열린 PR을 확인해.
-AGENTS.md와 루트 기준 문서를 읽고 task/w-diff-a-difficulty-spike에서 작업해.
-
-확정 목표:
-- 성향 6값은 캐릭터 고유값. 캐릭터 stage/CG Level 0~3은 유지.
-- 최종 CPU 난이도는 캐릭터 단계의 기본 난이도와 게임 설정을 조합한 1~10.
-- 기존 Tier 0~2를 기반으로 판단 설정을 세분화하고 실질 차이를 검증.
-- 완료 보충의 매우 쉬움·엔딩 후 최고 난이도 정책은 임의 폐기하지 않음.
-- Q-META 신체 A는 별도 승인됐지만 이번 Task에서는 편집 UI/DB를 구현하지 않음.
-
-기존 알고리즘의 실제 성향/판단/난수 사용과 선택·복구 경계를 조사해.
-격리 spikes/w-diff-a에서 profile 후보와 seeded 비교 도구를 만들고
-레벨별 조절 지점·합법성·동일 입력 재현성·CPU 시간·표본 순위/점수를 검증해.
-기존 production agent/policy 1/2와 legacy fixture를 고치지 마.
-숫자만 10개로 분할하거나 기존 최고보다 강하다고 검증 없이 표시하지 마.
-
-게임 설정 범위/기본값·단계별 기본 레벨·조합 공식·특수 모드 우선순위·변경 적용 시점은
-구체 예시/권고와 사용자 결정 항목으로 제시해. 이전 -1/0/+1 제안은 승인되지 않았어.
-특히 진행 중 대국 snapshot, 구 저장 복구, 새 profile/policy version 경계와
-화면에 표시할 최종 난이도의 의미를 ARCHITECTURE에 구체화해.
-
-반복 대국 표본 수/seed/좌석 교대·비용·한계를 기록하고 핵심 기존 회귀를 확인해.
-제품 설정/DB/CG/정산/음향/콘텐츠 생성은 변경하지 마.
-REQUIREMENTS/ARCHITECTURE/CURRENT_STATE/TASKS를 정리하고
-잔여 결정 후 저성능 Work에서 독립 수행할 W-DIFF-B 구현 지시문을 작성해.
-commit/push·PR 제출까지 진행하되 직접 병합·Release/tag·W-DIFF-B 착수는 하지 마.
-```
-
-이 Task는 복합 CPU/저장 호환 설계가 필요하므로 고성능 Work를 사용한다. W08의 나머지
-metadata/공유 후보·W09·ComfyUI 작업을 이번 범위에 함께 넣지 않는다.
-
-## Task 명세
-
-### W01 — 기존 기능·회귀 기준 확정
-
-- 결과: `5762267e2366fa5bdbdd69bc6f38672d141dcbc8`에서 unittest 72개, 대사 pytest 10개,
-  frontend npm ci/build 통과. browser 4개는 Chromium 부재로 미검증. 코드→검사 대응·policy 1/2·
-  legacy 보존·검증 누락/후속 조건은 [CURRENT_STATE.md](CURRENT_STATE.md)에 기록했다. 제품 변경 없음.
-
-- 목적: 전환 중 보존해야 할 실제 동작과 재현 검증을 저성능 Work가 독립 사용하도록 정리.
-- 범위: 기존 unittest·browser/live integration·legacy fixture를 읽고 실행 가능한 기존 검사 재현,
-  규칙/CPU/HP/stage/복구/정산/CG 실패의 코드→검사 대응표를 CURRENT_STATE에 간결히 반영.
-  누락은 기존 검사로 보장되지 않는 항목으로 기록. 실제 결함 수정은 별도 Task로 제안.
-- 선행: W00 문서 PR 반영 또는 그 정확한 head에서 시작한다는 명시.
-- 완료: 정확한 baseline SHA, 실행 명령/환경/결과/미검증과 보존 불변조건이 재현 가능;
-  policy 1/2·seed/action replay, 중복 정산, CPU 부족/HP 0 보류 조건이 빠짐없이 인계됨.
-- 금지: 제품 코드·의존성·migration·CPU 가중치·규칙·진행 정책 변경, 이미지 생성/바이너리,
-  Windows 구현, 본 Task를 빌드 오류 수정으로 확대, 직접 병합/배포.
-- 환경: 저성능 Work. 설계 선택 없이 코드/테스트 대조·기존 검사 실행·Git/문서 작업 중심.
-
-### W02 — Windows 실행·엔진 번들 기술 검증
-
-- 결과: code `a9268d4b3b5eed3b55b8b40e2f06bbf28a549cb5`, Windows Server 2022 x64 CI
-  [38567208066](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38567208066) 전체 통과.
-  Python 3.12.10/RiichiEnv 0.4.8 frozen + Electron 44.7.2, 한글/공백 ZIP 해제·health·same-origin
-  REST/WS 108행동·12행동 복구·완료 정산 보존·포트 충돌/owned child 종료 확인.
-  원본 source/frozen 72 unittest·10 대사 pytest 및 기존 browser 4개 통과.
-  격리 spike/전용 CI뿐이며 제품 통합·기술 채택 없음. 정확한 hash/용량/조건은 CURRENT_STATE.
-  clean Windows 10/11·OS 인터넷 차단·사용자 X 클릭/강제 종료 등은 미검증;
-  사용자 증거는 PR #59 또는 Work 채팅, 실행법은 `spikes/w02/README.md`.
-
-- 목적: 기존 엔진이 Python 사전 설치 없는 Windows에서 재사용 가능한지 증거 확보.
-- 범위: 격리 spike에서 RiichiEnv 0.4.8/Python 3.12 x64 번들, Electron 우선 shell,
-  대안의 WebView2 오프라인 요구 비교. dependency package 발견 오류, native DLL·migration/seed
-  포함, 같은 origin REST/WS, ready/port/owned process 종료 검증. 제품 구조를 확정하지 않음.
-- 선행: W01, Windows 실행 환경 또는 사용자 실기 결과 경로. 없는 환경은 미검증으로 남김.
-- 완료: 실제 Windows 압축 해제 기동·health·동풍전·저장 재시작 증거 또는 정확한 차단과 재개 조건,
-  후보별 재사용 범위/배포 부담/변경 파일 경계 및 W03 권고. 인터넷 차단 조건 구분.
-- 금지: 라이브 사용자 DB/미디어 수정, 본 게임 재작성, 정식 패키징/Release, 자동 기술 확정.
-- 환경: 고성능 Work. native/host/runtime/저장 경계가 얽힌 최초 검증.
-
-### W03 — 실행·저장·프로필 정책 확정
-
-- 결과: 2026-10-14 사용자 승인으로 여섯 정책 확정. REQUIREMENTS/ARCHITECTURE의
-  로컬 저장·권한·writer·host 경계 계약을 따른다. 제품은 아직 미구현이다. 지원 OS/배포용
-  Python patch 공급 조건은 W05 준비에서 확인하고 W12 전 확정한다.
-
-- 목적: W04/W05가 설계 선택 없이 구현할 수 있도록 사용자 결정 확보.
-- 범위: D01~D03와 관리 UI 통합/분리(D09), 지원 Windows·배포/데이터 경로·인증/프로필/슬롯·
-  기존 데이터 이전 범위를 선택지/영향으로 제시. 채택된 실행/저장/수명/보안 계약을 문서화.
-- 선행: W02 실제 증거/제약.
-- 완료: 사용자 결정과 구조 경계·검증 기준·보류 기능·각 구현 파일 범위가 명시됨.
-- 금지: 사용자 대신 기술/삭제/이전 정책 확정, 제품 기능 구현.
-- 환경: 고성능 Chat. 좁혀진 선택의 집중 검토/상호작용. 복합 재설계 필요 시 고성능 Work.
-
-### W04 — 로컬 저장·복구 기반 전환
-
-- 목적: 확정 로컬 저장에서 행동 commit과 복구·진행 보존을 유지.
-- 범위: W03 저장/프로필 계약 구현, Alembic/bootstrap/paths, 로컬 writer/동시 요청 제어,
-  외래키/index/rollback·마지막 행동 후 정산 재시작, policy 1/2. 기존 데이터 이전은 승인 범위만.
-- 선행: W03 확정 정책/구현 계약, W01 baseline. Windows UI/번들 버전 확정은 W05에서 다룸.
-- 완료: schema/migration 재현, 진행/세션 동등 복구와 exactly-once, 동시·commit 실패 회귀 통과;
-  사용자 자료 보존/전환 실패 재개 기준. 전원 차단 검증은 실측한 범위만 기록.
-- 금지: CPU/룰/HP·완료 규칙, 공유 콘텐츠, ComfyUI, 미승인 기존 DB 덮어쓰기.
-- 환경: 저성능 Work. ARCHITECTURE의 확정 경계로 구현하고 계약을 바꿔야 하면 별도 검토.
-- 기존 검증 이력: PR #61 code SHA `3081dc56a2be95dd30ce0fa78a413da9b4bfeb29`에서
-  Linux backend unittest 78/대사 pytest 10/frontend build와 Windows Server 2022 x64 hosted
-  CI run [38572718064](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38572718064)이
-  통과했다. artifact `11897978928`의 source SHA/test 로그 확인은 CURRENT_STATE에 기록돼 있다.
-  이후 PR head `70c6d8bdc031803a713a324889e2f241c95750ac`도 Windows run 38573281946 및 기존
-  78/10 성공이었으나 2026-10-15 검토에서 이름 저장·capability·read/write lock 결함이 재현됐다.
-  이 기존 성공 이력은 보존하되 결함 보완/현재 수정 SHA의 검증으로 간주하지 않는다.
-- 보완 검증: local profile의 PATCH→GET→별도 DB→runtime 재시작, REST/member/admin 및 WS의
-  malformed capability 거절/4401, 기본 engine 동작 보존·local read/write 경계, 동시 writer/stale
-  action/admin write, 파일 DB 정산 commit 실패 rollback/cache eviction/재기동 exactly-once를 추가한다.
-  Linux Python 3.12.14 현재 검사 backend unittest 81, 대사 pytest 10, TypeScript/Vite build가
-  통과했다. 정확한 code SHA `d46782bef4947ff448b2d40555ac4b387b2bc25a`의 Windows Server 2022
-  x64 hosted run [38659727577](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38659727577),
-  unittest 81/pytest 10/frontend build가 통과했다. artifact ID `11938706685` source SHA 및 ZIP
-  SHA256 `c4f778a5cb4fcf51bc73ac59404dd2043c14968c6b77ca2956cb508d0e335bff` 검증은 CURRENT_STATE에 있다.
-  기존 PR #61은 열린 상태다. Windows 사용자 UI·LocalAppData·OS 인터넷 차단·전원 차단 검증은 미실행이다.
-
-### W05 — Windows shell·오프라인 게임 통합
-
-- 목적: 기본 게임을 한 Windows 프로그램에서 실행.
-- 범위: W03 확정 host에 React build/로컬 엔진 묶기, 기동 준비·포트·owned child 종료·오류 표시,
-  확정 프로필 진입·복구 연결. 기존 테이블과 transport를 우선 재사용.
-- 선행: W04, W02 증거와 W03 계약.
-- 완료: Python/Node/Docker/PostgreSQL/ComfyUI 사전 설치와 인터넷 없이 기본 대국·결과·
-  재실행 복구, UI 종료 시 owned 프로세스 처리, 사용자 데이터 보존을 실제 Windows에서 검증.
+권…3682 tokens truncated…용자 데이터 보존을 실제 Windows에서 검증.
 - 금지: UI 전체 재설계, ComfyUI 자동 기동, 다른 프로세스 종료, 진행 정책 변경, Release.
 - 환경: 저성능 Work. 승인된 실행 계약 구현; 범위 밖 구조 판단은 인계.
 
