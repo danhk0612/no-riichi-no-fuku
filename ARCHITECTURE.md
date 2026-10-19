@@ -1,14 +1,20 @@
 # 구조와 전환 검토
 
-## W09-B2 구현 계약 — 국 결과 사실 영속
+## W09-B2 구현 — 국 결과 사실 영속
 
-선행 B1은 PR #102/main67c4335에서 수용했다. 다음 구현은
-[W09-B2 계약](docs/W09_B2_HAND_RESULTS_CONTRACT.md)을 따른다. 엔진 step별 국 경계를 모아
-새 로컬 대국의 action transaction에 사실 rows를 함께 저장하고, active replay는 DB와 대조 후
-과거 batch를 비우며 completed는 저장값만 읽는다. marker NULL인 구 저장/웹은 그대로 유지한다.
-별도 source offset과 sequence를 사용하며 pending 음향 ordinal·규칙/CPU/RNG는 보존한다.
-사실 row는 표시 snapshot과 구분한다. 표시순서/ack·문구/CG·action gate는 이번 B2에 넣지 않는다.
-현재 B2 collector/schema/API는 미구현이다. 과거 W09-B 통합 제안보다 이 독립 범위가 우선한다.
+[W09-B2 계약](docs/W09_B2_HAND_RESULTS_CONTRACT.md)에 따라 0011 다음 additive migration
+`20261019_0012`에서 새 로컬 대국만 marker1과 `game_hand_results` 사실 row를 사용한다.
+독립 collector가 append-only MJAI log의 절대 offset, start/end 국 경계, 모든 B1 화료 점수와
+원본 유국을 모은다. `pending_hand_results()`는 음향/대사 `pending_events()`와 별도로 소비된다.
+참가자 이름/CPU/stage는 저장된 record snapshot에서 복사하며 hidden hand와 전체 log는 저장하지 않는다.
+
+새 대국 시작 결과는 parent record flush 뒤 같은 caller transaction에서 저장하고, 사람 action은
+사람 action index·결과 row와 같이 저장한다. (generation, session, start offset) 식별자와 연속 sequence를
+사용한다. 같은 row는 모든 metadata/payload가 같을 때만 중복으로 허용한다. active 복구는 source action
+version별 replay batch를 저장 row 전체와 대조한 뒤 pending fact를 비우고, completed 복구는 terminal
+row를 확인한 뒤 기존 저장 점수/정산만 읽는다. legacy/web marker NULL은 기존 복구로 둔다.
+reset/cancel은 기존 세대 사실을 삭제하지 않는다. B2 동안 결과 GET/WS, 표시/ack/문구/CG/action gate는 없다.
+수집 enabled 여부는 CPU/규칙/RNG에 영향을 주지 않고 음향 ordinal도 재사용하지 않는다.
 
 ## W09-B1 구현 — 점수 수집
 

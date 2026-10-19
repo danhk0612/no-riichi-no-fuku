@@ -1,29 +1,33 @@
 # 현재 상태
 
-## W09-B1 검토·병합 완료 / 다음 B2 계약
+## W09-B2 구현·검증 — PR 제출 전
 
-PR #102는 main `67c43356351b1cc320f107d2993679f3c9650eef`에 병합됐다.
-검토 head `315409cf3b902c8c3368dcc80547e58db42e923e`와 병합 tree
-`841298bbbbcf4757f9774789870c78b1ec4c0417`가 같다. 원본과 복제본 화료 대조·최근 step 불변 점수,
-action 실패 rollback/cache 폐기, 콜드 REST·WS 최초/stale 복구의 controlled failure를 구현했다.
-Linux165개(71.508초)·대사10개 통과. 동일 source Windows W04 run39198176244와
-W05 run39198176276에서 각각165개·대사10개, W05 브라우저4종/renderer30·일반 종료/재시작을 확인했다.
-두 artifact 내부 source 및 API digest/실제 다운로드 SHA256, W05 내부 package ZIP hash가 일치했다.
+준비 main `8f041fc`(PR #103 병합)에서 `task/w09-b2-hand-results`를 작업 중이다.
+`20261019_0012` additive migration, marker1 local-only schema, MJAI offset collector, action/create 사실 저장,
+active replay row 대조와 completed 저장값 복구를 구현했다. marker NULL의 웹/구 저장은 기존 replay 경로를
+유지한다. reset은 old generation row를 보존한다. 결과 사실은 표시 queue로 쓰지 않으며 API/WS/UI/ack/
+문구/CG/action gate 변경과 후속 표시·생성 Task는 시작하지 않았다.
 
-| 근거 | ID / SHA256 |
-|---|---|
-| W04 artifact | 12163450101 / d4bdec759130e6fd59f005a00ae7b1936dc04f0c28ec8d86367f618969e64623 |
-| W05 artifact | 12162896741 / 5397c8b34c31b11cb27f518e2ac37d4d8aa1bd6beff157415b46fdfa2c377b3b |
-| W05 내부 ZIP | 58ec3197d8e4dec58dbcb1fb05577b2c225aac25a4b98e5480288c291a0f5672 |
+- 고정 seed701 Tier0/2 각1대국에서 기존 main capture-off와 구현 capture-on을 대조했다. 양쪽 모두
+  action hash·MJAI 전체 로그 hash·step 수·최종 점수/순위가 같았다. Tier0 300 steps / 73 human actions /
+  465 events: 0.2435초→0.3994초. Tier2 335 / 84 / 571: 0.2785초→0.4603초. 이 단일 seed 표본이며
+  전체 성능 추정은 아니다.
+- 새 collector의 복수 경계·화료/유국/terminal·hidden hand 제외, 실패 batch rollback/같은 턴 재복구,
+  active row replay, row 누락/변조 거부, completed reconnect의 no-replay와 reset 보존 검사가 추가됐다.
+- Linux backend unittest 전체와 Windows W04/W05/artifact·W05 종료 후 read-only DB 검사는 현재 브랜치 PR CI에서
+  다시 확인할 대상이다. local final SHA 및 CI run/artifact/hash는 제출 후 아래에 기록한다.
+- 개발기: Python 3.12.14, RiichiEnv 0.4.8. 별도 local-browser: live-game와 W05 local sound/content/audio/difficulty
+  4종 통과, frontend production build 통과. Windows hosted/개인 Windows 실기와 power-loss는 아직 미확인이다.
 
-책임지불은 공개 setter 합성 상태이며 책임 성립 전체 대국/개인 Windows PC 실기는 미검증이다.
-국 결과 영속/화면·ack·문구/CG 연결은 B1 완료 범위가 아니다.
+W09-B1 선행 검토는 아래 이력과 PR #102를 따른다. 책임지불은 공개 setter 합성 상태이며 책임 성립 전체 대국과
+개인 Windows PC 실기는 미검증이다. W09-B2 구현은 화면 표시 및 기존 완료/ending 동작 변경으로 확장하지 않는다.
 
-다음 [W09-B2 계약](docs/W09_B2_HAND_RESULTS_CONTRACT.md)은 국 결과 사실의 별도 누적,
-새 로컬 대국에서 action과 원자 저장·replay 대조/완료 읽기·reset 보존까지만 구체화했다.
-아직 제품 collector/새 DB schema는 만들지 않았다. 문구 이전/생성 미확정 정책은 확정하지 않았으며
-표시 순서·ack·UI/다음 행동 gate는 후속 범위다. B2 동안 현재 대국 흐름은 유지한다.
-이번 추가 작업은 문서/검토다. 새 자연 대국/Windows CI·이미지·오디오 생성은 실행하지 않았다.
+선행 W09-B1 PR #102는 준비 main `67c4335`에 병합됐고 검토 head `315409c`와 병합 tree가 같다.
+최종 Linux backend 165개·대사10개 통과. 같은 source의 Windows W04 run39198176244/W05 run39198176276도
+각165개·대사10개 통과했고 W05 브라우저 4종·renderer 30·일반 종료/재시작 검증이 통과했다.
+W04 artifact 12163450101 SHA256 `d4bdec759130e6fd59f005a00ae7b1936dc04f0c28ec8d86367f618969e64623`,
+W05 artifact 12162896741 SHA256 `5397c8b34c31b11cb27f518e2ac37d4d8aa1bd6beff157415b46fdfa2c377b3b`,
+내부 ZIP SHA256 `58ec3197d8e4dec58dbcb1fb05577b2c225aac25a4b98e5480288c291a0f5672`다.
 
 
 ## W09-A2 — 복제본 점수 경로 진단 완료

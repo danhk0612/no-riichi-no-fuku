@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.db.models import GameSessionRecord, LocalPlayState, User, UserCpuProgress
 from app.mahjong.hand_scores import HandScoreCaptureError
+from app.mahjong.hand_results import HandResultCaptureError
 from app.mahjong.riichienv_adapter import MatchResult
 from app.mahjong.session import AuthoritativeGameSession, CPU_SEATS, HUMAN_SEAT
 from app.services.game_result import MatchSettlement, settle_completed_match
@@ -31,6 +32,7 @@ from app.services.local_play import (
 from app.services.dialogue_service import DialogueSelector
 from app.services.result_assets import get_unlocked_result_asset, result_asset_metadata
 from app.services.difficulty import DifficultyError, summaries, validate_snapshot
+from app.services.hand_results import append_facts, load_rows, verify_completed_rows, verify_replay_batch
 
 
 class GameRegistryError(RuntimeError):
@@ -131,7 +133,10 @@ class GameRegistry:
                     raise InvalidCpuSelectionError("selection contains an unavailable CPU")
                 rules_mode = None
             seed = self._seed_factory()
-            game = create_game_session_from_choices(user.id, choices, seed=seed)
+            capture_results = generation is not None
+            game = create_game_session_from_choices(
+                user.id, choices, seed=seed, capture_hand_results=capture_results
+            )
             players = (
                 GamePlayer(seat=HUMAN_SEAT, name=user.player_name, is_human=True),
                 *(
@@ -168,15 +173,26 @@ class GameRegistry:
                     status="active",
                     play_generation=generation,
                     rules_snapshot={"version": 2, "mode": rules_mode} if rules_mode else None,
+                    hand_results_version=1 if capture_results else None,
                 )
             )
             try:
                 db_session.flush()
             except IntegrityError:
+                db_session.rollback()
                 raise ActiveGameExistsError(
                     "member already has an active game session"
                 ) from None
             self._games[registered.session_id] = registered
+            if capture_results:
+                try:
+                    append_facts(db_session, db_session.get(GameSessionRecord, registered.session_id), game.pending_hand_results(), 0)
+                    db_session.flush()
+                except Exception:
+                    db_session.rollback()
+                    registered.game = None
+                    self.evict(registered.session_id)
+                    raise
             return registered
 
     def get_active(self, db_session: Session, user_id: int) -> RegisteredGame | None:
@@ -188,7 +204,7 @@ class GameRegistry:
         )
         if record is None:
             return None
-        return self._get_or_restore(record)
+        return self._get_or_restore(db_session, record)
 
     def get_owned(
         self,
@@ -210,7 +226,7 @@ class GameRegistry:
                 if cached.user_id != user_id:
                     raise RegisteredGameNotFoundError("game session not found")
                 return cached
-            return self._restore(record)
+            return self._restore(db_session, record)
 
     def submit_action(
         self,
@@ -245,6 +261,22 @@ class GameRegistry:
                 registered.game = None
                 self.evict(registered.session_id)
                 raise
+            if record.hand_results_version == 1:
+                registered.action_version += 1
+                try:
+                    append_facts(
+                        db_session, record, registered.game.pending_hand_results(),
+                        registered.action_version,
+                    )
+                    record.human_action_indices = [
+                        *record.human_action_indices, legal_action_index,
+                    ]
+                    db_session.flush()
+                except Exception:
+                    registered.game = None
+                    self.evict(registered.session_id)
+                    raise
+                return
             record.human_action_indices = [
                 *record.human_action_indices,
                 legal_action_index,
@@ -316,18 +348,27 @@ class GameRegistry:
         with self._lock:
             self._games.pop(session_id, None)
 
-    def _get_or_restore(self, record: GameSessionRecord) -> RegisteredGame:
+    def _get_or_restore(self, db_session: Session, record: GameSessionRecord) -> RegisteredGame:
         if record.status == "cancelled":
             raise RegisteredGameNotFoundError("game session was cancelled")
         with self._lock:
             cached = self._games.get(record.id)
             if cached is not None:
                 return cached
-            return self._restore(record)
+            return self._restore(db_session, record)
 
-    def _restore(self, record: GameSessionRecord) -> RegisteredGame:
+    def _restore(self, db_session: Session, record: GameSessionRecord) -> RegisteredGame:
+        if record.hand_results_version is not None and (
+            type(record.hand_results_version) is not int or record.hand_results_version != 1
+        ):
+            raise HandResultCaptureError("persisted hand result version is unknown")
+        rows = load_rows(db_session, record)
+        if record.hand_results_version is None and rows:
+            raise HandResultCaptureError("legacy session unexpectedly contains hand result rows")
         players = tuple(GamePlayer(**player) for player in record.players)
         if record.status == "completed":
+            if record.hand_results_version == 1:
+                verify_completed_rows(rows)
             registered = RegisteredGame(
                 session_id=record.id,
                 user_id=record.user_id,
@@ -357,13 +398,26 @@ class GameRegistry:
                             raise DifficultyError("invalid difficulty effective tier")
                     except DifficultyError as error:
                         raise GameRegistryError(str(error)) from error
+            capture_results = record.hand_results_version == 1
             game = create_game_session_from_choices(
                 record.user_id,
                 choices,
                 seed=record.match_seed,
+                capture_hand_results=capture_results,
             )
-            for legal_action_index in record.human_action_indices:
+            matched = 0
+            if capture_results:
+                matched = verify_replay_batch(
+                    record, rows, game.pending_hand_results(), 0, matched
+                )
+            for action_version, legal_action_index in enumerate(record.human_action_indices, start=1):
                 game.submit_human_action(legal_action_index)
+                if capture_results:
+                    matched = verify_replay_batch(
+                        record, rows, game.pending_hand_results(), action_version, matched
+                    )
+            if capture_results and matched != len(rows):
+                raise HandResultCaptureError("persisted hand result rows are missing from replay")
             # 복구 replay에서 발생한 과거 이벤트는 재전송하지 않는다.
             game.pending_events()
             registered = RegisteredGame(

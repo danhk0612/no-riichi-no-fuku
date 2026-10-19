@@ -153,6 +153,12 @@ jobs:
           $missing = @($required | Where-Object { $_ -notin $actual })
           if ($missing.Count -gt 0) { throw "renderer smoke omitted required checks: $($missing -join ', ')" }
           Get-Content $evidence -Raw
+      - name: Verify packaged hand result facts read-only
+        run: |
+          $testRoot = Join-Path (Get-Location) 'out/w05-scratch/explicit-test-data'
+          python backend/scripts/verify_hand_result_evidence.py (Join-Path $testRoot 'game.db') out/w05-evidence/hand-results.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-Content out/w05-evidence/hand-results.json -Raw
       - name: Verify packaged general-mode close, quit, timeout, and restart
         run: |
           $product = (Resolve-Path 'out/w05/package/No-Riichi-No-Fuku-win32-x64').Path

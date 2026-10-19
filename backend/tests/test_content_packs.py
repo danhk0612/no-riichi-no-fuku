@@ -838,7 +838,7 @@ class PackRegistryTests(unittest.TestCase):
             self.assertEqual(conn.execute(text("PRAGMA foreign_key_check")).all(), [])
             self.assertEqual(
                 conn.execute(text("select version_num from alembic_version")).scalar(),
-                "20261018_0011",
+                "20261019_0012",
             )
             self.assertIn("measurements_cm", {
                 row[1] for row in conn.execute(text("PRAGMA table_info(character_content)"))

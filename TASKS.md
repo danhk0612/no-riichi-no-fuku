@@ -1,42 +1,10 @@
 # 개발 Task
 
-## 현재 다음 Work — W09-B2 국 결과 사실 저장·복구
+## W09-B2 — 구현·검증 제출 중
 
-권장: **저성능 Work**. 준비 main `67c4335`(PR #102 병합).
-[W09-B2 계약](docs/W09_B2_HAND_RESULTS_CONTRACT.md) 전체가 아래 지시문과 함께 적용된다.
-표시 queue/ack·문구/CG는 후속으로 남기고 사실 누적·원자 저장·복구를 먼저 구현한다.
-
-```text
-danhk0612/no-riichi-no-fuku의 W09-B2만 수행해.
-최신 main/현재 branch/열린 PR, AGENTS와 루트 기준 문서를 읽어.
-준비 main67c4335의 PR #102 병합과 B1 최종 source315409c 검증을 확인하고
-문서 W09_B2_HAND_RESULTS_CONTRACT.md 전체를 따라.
-task/w09-b2-hand-results에서 별도 내부 국 결과 collector와 새 로컬 대국의 사실 영속을 구현해.
-
-B1 last_hand_wins를 매 engine step 직후 대응하고 원본 start/end log offset으로
-전체 화료자·유국을 묶어 사람 차례 사이의 모든 종료국을 별도 누적해.
-기존 pending_events/음향 ordinal을 재사용하거나 callback/CPU RNG를 바꾸지 마.
-새 marker1 로컬 대국만 수집하며 NULL 구 저장/웹의 동작과 기존 completed 읽기를 유지해.
-최신 migration head를 확인해 다음 additive revision과 GameHandResult/최소 marker를 추가해.
-참가자/당시 이름/stage는 저장된 players/cpu_choices에서 가져오고 현재 진행값으로 덮지 마.
-create 시작 batch 및 action indices와 사실 rows를 같은 writer transaction에 저장해.
-중복 identity는 완전 동일할 때만 유지하고 충돌/점수 누락을 fallback/upsert로 숨기지 마.
-flush/commit/수집 실패에는 rollback·cache 폐기·저장 턴 복구를 유지해.
-active replay는 저장된 사실 전체와 대조 후 과거 batch를 비우고 GET에서 backfill하지 마.
-completed는 replay/재정산 없이 읽고 마지막 action→별도 정산의 기존 경계를 보존해.
-reset은 old generation 사실/사용자 파일을 보존해.
-
-문구·prompt/content/media snapshot/무작위 표시순서/ack·새 API/WS/화면·새 행동 gate는 추가하지 마.
-설정/규칙/CPU/오디오·ComfyUI·이미지/사운드 생성·사용자 자료 삭제는 제외해.
-원본 trace/policy1/2/3·복수 pending/유국/트리플론/특수 화료·중복/변조/누락,
-create/action 저장 실패·재시작/정산 전 crash·reset/legacy를 계약 검사표대로 검증해.
-고정seed701 Tier0/2×수집전후4대국의 로그/점수/행동 동일성과 수집 비용을 기록해.
-전체 backend/대사·기존 build/browser, 최종 SHA Windows W04/W05 및 artifact source/hash를 확인해.
-packaged renderer 종료 후 소유 game.db를 read-only로 검사해 새 marker/국 사실/terminal 근거를
-artifact에 기록하되 production 진단 endpoint는 만들지 마.
-CURRENT_STATE/TASKS/ARCHITECTURE를 실제 구현/미검증대로 갱신하고 commit/push·PR을 제출해.
-직접 병합·Release/tag·후속 표시/생성 Task 착수는 하지 마.
-```
+`task/w09-b2-hand-results`에서 구현했고 PR 제출 후 정확한 source의 Windows W04/W05·artifact를 확인한다.
+[계약](docs/W09_B2_HAND_RESULTS_CONTRACT.md)을 따른다. 국 사실만 저장하며 표시 queue/ack·문구/CG·화면/
+후속 action gate 및 후속 표시/생성 Task는 이번 범위가 아니다. PR 병합 전 다음 Task를 시작하지 않는다.
 
 ## W09-B1 — 검토·병합 완료
 
@@ -250,7 +218,7 @@ commit/push·PR 제출까지 진행하되 직접 병합·Release/tag·후속 Tas
 | W-DIFF-B | 단계+게임 설정의 최종 난이도·저장·설정 UI 적용 | P1 / 정책·독립 재검증·구현·Linux 회귀 완료, 최종 Windows 근거는 제품 PR 참조 | W-DIFF-A 검토 | 저성능 Work(판단 구현 복잡 시 고성능 Work) |
 | W09-A | 국 결과/화료 등급/표시 순서·복구 기술 진단 | 진단 완료 / 후속 B1 경로 수용 | PR #96/#97 및 진단 준비 문서 | 고성능 Work |
 | W09-B1 | 검증된 화료 점수 adapter | 완료 / PR #102 병합 | W09-A2 | 저성능 Work |
-| W09-B2 | 국 결과 사실 누적·원자 저장·복구 | 계약 준비 / 구현 전 | W09-B1 | 저성능 Work |
+| W09-B2 | 국 결과 사실 누적·원자 저장·복구 | 구현 완료 / Windows 검증·PR 대기 | W09-B1 | 저성능 Work |
 | W09 | 국 결과·캐릭터 고정 대사·변수 연결(최신 요구) | P1 / 대기 | W08 | 저성능 Work |
 | W10 | 독립 ComfyUI·Anima adapter | P1 / 대기 | W03, W07 | 저성능 Work |
 | W11 | 이벤트 랜덤 조합·생성/파일 연동 | P1 / 대기 | W06, W09, W10 | 저성능 Work |
