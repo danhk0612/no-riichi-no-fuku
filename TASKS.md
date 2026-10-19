@@ -1,6 +1,40 @@
 # 개발 Task
 
-## 현재 상태 — W09-B2 PR #104 보완 제출 완료, 검토 대기
+## 현재 다음 Work — 국 결과 표시·확인 계약 설계
+
+권장: **고성능 Work**. W09-B2 PR #104는 main3341d4e에 병합됐고 검토 head3bb3307과 tree가 같다.
+국 결과 사실 저장·복구는 수용했다. 아래는 후속 표시의 설계 작업이며 제품 구현 지시가 아니다.
+
+```text
+danhk0612/no-riichi-no-fuku의 국 결과 표시·확인 계약 설계만 수행해.
+최신 main·열린 PR·AGENTS와 루트 문서를 확인하고 W09-B2 PR #104의 수용 결과,
+docs/W09_B2_HAND_RESULTS_CONTRACT.md 및 실제 model/registry/API/frontend 복구 흐름을 읽어.
+
+B2 사실 rows를 변형하지 않는 표시 snapshot/도입 경계·순서/cursor/ack의 소유와 수명을 설계해.
+모든 미확인 국→마지막 국→최종 결산의 stage_after CG/패배 문구→기존 ending→자유 대국의
+전달·복구 순서, 다음 행동/새 대국 gate, 응답 유실·동시 socket·reset 세대 격리를 정리해.
+복수 화료자는 독립 RNG로 무작위 표시순서를 한 번 고정하며 전환으로 모두 표시해.
+원본 화료/정산 순서·CPU RNG·음향 ordinal·기존 최종 action/별도 정산 transaction은 보존해.
+B2 기간의 사실/NULL legacy 저장을 현재 콘텐츠로 소급하여 표시 snapshot으로 만들지 마.
+
+문구 고정 데이터 관리·기존 행 이전, 공유 상황 연결, prompt/content/media snapshot 및 CG 생성과
+단순 표시 전달/확인 중 어떤 부분을 독립 구현할 수 있는지 의존성을 구분해.
+Q-LEGACY/D05-c/Q-IMAGE/Q-FRAME 등 미응답은 임의 채택하지 말고, 설계에 꼭 필요한 결정만
+짧은 질문·권고안으로 남겨. 기존 확정 정책을 다시 질문하지 마.
+실제 API/DB/UI는 만들지 않고 additive schema/API 계약·불변조건·실패/복구 검사·허용 파일을
+정리해 저성능 Work가 독립 수행할 수 있는 구현 지시문을 준비해.
+CURRENT_STATE/TASKS/ARCHITECTURE를 실제 설계 상태로 갱신하고 문서 commit/push·PR까지 진행해.
+직접 병합·Release/tag·제품 코드/사용자 자료 변경·CG/음향/프롬프트 생성·후속 구현은 하지 마.
+```
+
+## W09-B2 — 최종 검토·병합 완료
+
+PR #104/main3341d4e, 검토 head3bb3307/treef4de724 일치. 독립 backend177개·대사10개와
+최종 source의 W04/W05·두 artifact/내부 ZIP hash·packaged 국 사실/종료/재시작을 확인했다.
+수용 근거/합성 fixture·실측 경계는 CURRENT_STATE를 따른다. R1/R2/R3 보완은 수용했으며
+표시/ack/문구/CG/생성의 완료를 뜻하지 않는다. 아래 구현 지시문은 이력이다.
+
+## W09-B2 PR #104 보완 — 제출 당시 기록
 
 기존 `task/w09-b2-hand-results`와 PR #104에서 보완했다. 최신 main의 PR #105 검토 문서를 병합했다.
 R1/R2 최소 수정과 회귀, R3 저장·복구 회귀를 추가했다. Linux backend 177개, 대사 pytest 10개,
