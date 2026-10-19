@@ -1,23 +1,23 @@
 # 현재 상태
 
-## W09-B2 구현·검증 — PR 제출 전
+## W09-B2 구현·PR 검증 중
 
-준비 main `8f041fc`(PR #103 병합)에서 `task/w09-b2-hand-results`를 작업 중이다.
-`20261019_0012` additive migration, marker1 local-only schema, MJAI offset collector, action/create 사실 저장,
-active replay row 대조와 completed 저장값 복구를 구현했다. marker NULL의 웹/구 저장은 기존 replay 경로를
-유지한다. reset은 old generation row를 보존한다. 결과 사실은 표시 queue로 쓰지 않으며 API/WS/UI/ack/
-문구/CG/action gate 변경과 후속 표시·생성 Task는 시작하지 않았다.
+준비 main `8f041fc`(PR #103 병합)의 `task/w09-b2-hand-results`에서 구현했고 PR #104가 main 대상으로 열려
+있다. additive migration `20261019_0012`, marker1 local-only schema, MJAI offset collector, create/action 사실
+저장, active replay 대조와 completed 저장값 복구를 포함한다. 수정한 Git tree SHA는
+`9ba97185fa121a146e1470b006e56fe64a3d252c`로 로컬 검증본과 일치한다.
 
-- 고정 seed701 Tier0/2 각1대국에서 기존 main capture-off와 구현 capture-on을 대조했다. 양쪽 모두
-  action hash·MJAI 전체 로그 hash·step 수·최종 점수/순위가 같았다. Tier0 300 steps / 73 human actions /
-  465 events: 0.2435초→0.3994초. Tier2 335 / 84 / 571: 0.2785초→0.4603초. 이 단일 seed 표본이며
-  전체 성능 추정은 아니다.
-- 새 collector의 복수 경계·화료/유국/terminal·hidden hand 제외, 실패 batch rollback/같은 턴 재복구,
-  active row replay, row 누락/변조 거부, completed reconnect의 no-replay와 reset 보존 검사가 추가됐다.
-- Linux backend unittest 전체와 Windows W04/W05/artifact·W05 종료 후 read-only DB 검사는 현재 브랜치 PR CI에서
-  다시 확인할 대상이다. local final SHA 및 CI run/artifact/hash는 제출 후 아래에 기록한다.
-- 개발기: Python 3.12.14, RiichiEnv 0.4.8. 별도 local-browser: live-game와 W05 local sound/content/audio/difficulty
-  4종 통과, frontend production build 통과. Windows hosted/개인 Windows 실기와 power-loss는 아직 미확인이다.
+marker NULL인 웹/구 저장은 기존 replay 경로를 유지한다. reset은 old generation row를 보존한다. 결과 사실은
+표시 queue로 쓰지 않으며 API/WS/UI/ack/문구/CG/action gate 및 후속 표시·생성 Task는 시작하지 않았다.
+
+- Linux backend unittest 171개, 대사 pytest 10개, W09-B2 focused pytest 6개 통과.
+- migration downgrade/upgrade 및 로컬 browser/build 검증 통과.
+- 고정 seed701 Tier0/2 각1대국에서 capture-off/on의 action/MJAI log hash, step 수, 점수/순위 동일.
+  Tier0 300 steps / 73 human actions / 465 events: 0.2435초→0.3994초. Tier2 335 / 84 / 571:
+  0.2785초→0.4603초. 단일 seed 표본이며 전체 성능 추정은 아니다.
+- Windows W04/W05는 corrected PR source의 artifact/source SHA 및 packaged read-only DB 검사 완료 후 아래에 기록한다.
+- Windows hosted run이 성공하더라도 개인 Windows PC 실기와 power-loss는 별도 미확인이다.
+
 
 W09-B1 선행 검토는 아래 이력과 PR #102를 따른다. 책임지불은 공개 setter 합성 상태이며 책임 성립 전체 대국과
 개인 Windows PC 실기는 미검증이다. W09-B2 구현은 화면 표시 및 기존 완료/ending 동작 변경으로 확장하지 않는다.
