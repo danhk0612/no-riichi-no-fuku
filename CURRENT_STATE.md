@@ -1,6 +1,6 @@
 # 현재 상태
 
-## W09-B2 구현·PR 검증 중
+## W09-B2 구현·Windows 검증 완료 / PR #104 open
 
 준비 main `8f041fc`(PR #103 병합)의 `task/w09-b2-hand-results`에서 구현했고 PR #104가 main 대상으로 열려
 있다. additive migration `20261019_0012`, marker1 local-only schema, MJAI offset collector, create/action 사실
@@ -15,9 +15,16 @@ marker NULL인 웹/구 저장은 기존 replay 경로를 유지한다. reset은 
 - 고정 seed701 Tier0/2 각1대국에서 capture-off/on의 action/MJAI log hash, step 수, 점수/순위 동일.
   Tier0 300 steps / 73 human actions / 465 events: 0.2435초→0.3994초. Tier2 335 / 84 / 571:
   0.2785초→0.4603초. 단일 seed 표본이며 전체 성능 추정은 아니다.
-- Windows W04/W05는 corrected PR source의 artifact/source SHA 및 packaged read-only DB 검사 완료 후 아래에 기록한다.
-- Windows hosted run이 성공하더라도 개인 Windows PC 실기와 power-loss는 별도 미확인이다.
-
+- 검증 source SHA `f9d2754b8b8a7ddc7cd0012df38dc36cfba84990`에서 Windows Server 2022 x64 W04 run39202832315와
+  W05 run39202832330 통과. 두 artifact `source-sha.txt` 모두 같은 SHA이고 unittest171/대사 pytest10 통과.
+- W04 artifact 12164981121 SHA256 `04a742f843b460dd90d29d7ea40d27121b7e7dd1dfed13d65a0b316a04e92427`.
+  W05 artifact 12164342895 SHA256 `108cdc60ace2ff624a5b211f8f79f4464f94f0e1a74c0d844e162be383a5089f`.
+- W05 packaged `explicit-test-data/game.db` read-only 검사에서 revision20261019_0012, 완료 marker1 대국1건,
+  sequence1..5와 마지막 terminal만 true, 참가자 stage snapshot/hidden hand 미포함을 확인했다.
+  outer artifact의 `hand-results.json`에 payload digest가 기록됐다. 내부 W05 ZIP SHA256
+  `490e2ff8638d8f6cf0d4f4457bb3f9dda16546fc2bcc852917d00912191215b9`은 artifact manifest/직접 계산 일치.
+  outer artifact 다운로드 SHA256도 GitHub digest와 일치한다.
+- Windows hosted 검증은 통과했지만 개인 Windows PC 실기와 power-loss는 별도 미확인이다.
 
 W09-B1 선행 검토는 아래 이력과 PR #102를 따른다. 책임지불은 공개 setter 합성 상태이며 책임 성립 전체 대국과
 개인 Windows PC 실기는 미검증이다. W09-B2 구현은 화면 표시 및 기존 완료/ending 동작 변경으로 확장하지 않는다.
