@@ -1,6 +1,11 @@
 # 현재 상태
 
-## 국 결과 표시·확인 계약 — 문서 설계 제출
+## 국 결과 표시·확인 계약 — 설계 검토 수용
+
+PR #107의 최초 head `b8e112b`를 검토하고 전달 entry와 B2 사실 전체의 완전한 대응 검증을
+명확히 보강했다. 마지막/ack된 entry 또는 국 전체 누락도 오류이며, completed settlement는
+저장 parent 결과와 일치해야 한다. 실제 필드명 `result_delivery_version`/`hand_results_version`도
+통일했다. 최종 source/tree·병합 상태는 PR #107/Git을 따른다. 문서만 검토했으며 제품 구현 검증은 없다.
 
 기준 main `c197029`(PR #106), B2 수용 main `3341d4e`를 확인했다. 열린 PR은 #35로
 현재 범위의 동시 구현 PR은 없었다. 실제 DB model·registry·game/local play API·renderer 복구를

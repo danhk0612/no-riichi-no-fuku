@@ -42,7 +42,7 @@ asset는 저장된 v2를 그대로 보여 주고 재선택하지 않는다. 이�
 후속 C2는 별도 version과 content_mode를 사용하고 새 대국 생성 시에만 채택한다.
 
 migration은 최신 Alembic head0012 다음 additive revision을 사용한다. **server default/backfill 없음**.
-새 로컬 대국 create에서만 delivery_version=1을 명시하고 facts_version=1을 요구한다.
+새 로컬 대국 create에서만 `result_delivery_version=1`을 명시하고 `hand_results_version=1`을 요구한다.
 웹 신규/기존 NULL legacy 및 B2 기간 marker1 대국의 delivery_version은 NULL 그대로 둔다.
 업그레이드 당시 active를 포함해 opt-in하지 않는다. GET/재접속/정산 때 과거 facts를 표시로 변환하지 않는다.
 NULL 대국의 기존 결산/ending/선택 복구는 유지하며 새 ack/gate를 걸지 않는다.
@@ -67,6 +67,15 @@ terminal_ordinal은 settlement entry가 commit될 때만 설정한다. terminal�
 entry payload/event_id/순서는 insert 후 불변. ack는 cursor/revision만 변경하며 facts/entry를 삭제하지 않는다.
 전송했다고 cursor를 갱신하지 않는다. idempotent append는 identity·순서·payload 완전 일치만 허용한다.
 누락/중복 ordinal·잘못된 permutation·다른 generation·unknown payload version은 오류로 격리한다.
+
+읽기 검증은 남아 있는 entry의 유효성뿐 아니라 원본 facts **전체에 대한 완전한 대응**도 확인한다.
+각 fact_sequence/start/end/source_action_version과 원본 payload가 일치하고, 각 국의 entry 수는
+`max(1, 화료자 수)`, display_index는0부터 연속이며 각 winner가 저장 permutation대로 정확히 한 번
+나와야 한다. 모든 국을 fact_sequence 순으로 붙인 뒤에만 settlement가 올 수 있다.
+마지막 entry 삭제처럼 ordinal에 내부 빈칸이 없어도 누락은 오류다. ack된 과거 prefix도 검증하며,
+completed는 저장 parent scores/ranks/presentation과 일치하는 settlement 한 건과 terminal_ordinal을
+요구한다. active의 terminal 사실은 아직 settlement가 없어도 유효하지만, 그 외 국 entry는 이미
+원자 저장돼 있어야 한다. 누락을 GET/ack/replay에서 backfill하거나 cursor를 이동해 숨기지 않는다.
 
 hand payload v1 whitelist:
 
@@ -252,7 +261,7 @@ D07-b 모델/LoRA 범위와 D09-a endpoint 수명도 기존 미응답 그대로�
 | 최종 경계 | terminal action commit 후 crash/settle commit 실패→파일 SQLite cold resume→정산 한 번, 마지막 hand→settlement→ending; hand 확인과 settle 경쟁에서도 선택 노출 없음 |
 | completed | engine 미호출, facts/순서/텍스트/기존 presentation 고정. ack 후 재기동에 이미 본 결과 반복 없음, pending completed는 ending/omake보다 우선 |
 | 설정/자료 | 이름/stage/content/팩/기존 CG 변경이 저장 사실/순서/presentation을 덮지 않음. C1 unbound는 C2로 보충하지 않음 |
-| 세대/실패 | reset 성공/실패·옛 ack/WS/media callback·generation 경쟁, 옛 rows/files/hash 보존; missing/unknown version/permutation/ordinal 오류에 fallback 없음 |
+| 세대/실패 | reset 성공/실패·옛 ack/WS/media callback·generation 경쟁, 옛 rows/files/hash 보존; state 누락·마지막/ack된 entry 삭제·국 전체 누락·중복 winner/unknown version/permutation/ordinal 오류에 fallback/backfill 없음 |
 | renderer | 전원 카드 저장 순서/150ms 전환·reduced motion, 중간 winner 재시작, failed image에서도 명시 확인 가능, load/ended/화면 닫기 자동 ack 없음 |
 | 기존 회귀/배포 | backend 전체·대사 pytest·build·관련 browser 및 NULL legacy/W04/W05 종료·재시작, 정확한 source SHA Windows CI/artifact source/외부 archive·내부 ZIP hash |
 
