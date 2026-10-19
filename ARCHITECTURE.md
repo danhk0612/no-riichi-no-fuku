@@ -2,6 +2,10 @@
 
 ## W09-B2 구현 — 국 결과 사실 영속
 
+PR #104/main3341d4e에서 사실 수집·저장·복구까지 수용했다. prefix 비교 snapshot은 입력과 분리하고,
+동일 identity의 중복은 source 순서와 metadata/payload를 함께 검증한다. 후속 표시/cursor/ack의
+도입 경계·실패/복구 계약은 별도 설계하며 B2 저장 사실을 현재 콘텐츠로 소급 보충하지 않는다.
+
 [W09-B2 계약](docs/W09_B2_HAND_RESULTS_CONTRACT.md)에 따라 0011 다음 additive migration
 `20261019_0012`에서 새 로컬 대국만 marker1과 `game_hand_results` 사실 row를 사용한다.
 독립 collector가 append-only MJAI log의 절대 offset, start/end 국 경계, 모든 B1 화료 점수와

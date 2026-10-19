@@ -1,6 +1,35 @@
 # 현재 상태
 
-## W09-B2 PR #104 보완 — 수정·검증 완료, PR open
+## W09-B2 — 최종 검토·병합 완료
+
+PR #104를 main `3341d4ede7977640ecf2aa0c0dcd300550e7416c`에 병합했다.
+검토 head `3bb33079253ecd0a93b751f9c09f7549c94f1f8d`와 병합 tree
+`f4de724ac111dd202c223f2b7e9227efaf760ccf`가 같다. prefix in-place 변조 감지와 중복 sequence
+검증의 새 회귀를 이전 구현에 적용해 각각 실패를 독립 재현했고, 최종 전체 unittest177개/91.070초와
+대사 pytest10개/0.13초가 통과했다. `git diff --check` 통과.
+
+최종 source의 Windows Server 2022 x64 W04 run39209997970/W05 run39209997980은 각각
+unittest177·대사10 통과. 다운로드한 두 artifact의 source-sha.txt 및 GitHub digest/실제 SHA256,
+W05 내부 Windows ZIP SHA256/manifest가 일치한다. W05 browser4종·renderer30검사 및 일반 종료/
+재시작의 child 종료→window 파괴·host 정상 종료를 확인했다.
+
+| 최종 source 근거 | ID / SHA256 |
+|---|---|
+| W04 artifact | 12167825613 / `8e14f87d25d5e57d041d24e77824ede6b812de78b6a092efca618dc4974187a3` |
+| W05 artifact | 12167004649 / `7f72ae7c075856ecdbb71a2330982ea564c73d62ecab6149ad18bc66bb8f2f0b` |
+| W05 내부 Windows ZIP | `360d53c374bc709b60baf7c0afbeae839368c768d9e50bfad373bbe4acd48a05` |
+
+packaged read-only hand-results.json은 revision0012, marker1 완료 대국의 sequence1..6,
+마지막 row만 terminal=true, 참가 stage `[null,0,0,0]`을 보였다. 시작 version0 저장 검사는
+제어 factory fixture이고, 특수 복수 결과는 합성 collector 입력이다. 실제 대국/파일 SQLite로는
+action 저장 실패·cold replay 대조·terminal action 뒤 정산 실패/재시도·completed 엔진 미호출을 검사했다.
+개인 Windows PC/전원 차단은 미검증이며 독립 Linux frontend build/browser 재실행은 하지 않았다.
+
+B2 수용은 국 결과 사실 수집·원자 저장·복구까지다. 결과 전달/표시 순서·ack·다음 행동 gate·
+문구/CG/생성은 아직 없다. 다음은 TASKS의 **국 결과 표시·확인 계약 설계**이며 제품 구현 승인이 아니다.
+문구 이전/공유 상황 연결/생성의 미응답 정책은 확정하지 않았다. 아래는 제출 당시 보완/검증 이력이다.
+
+## W09-B2 PR #104 보완 — 제출 당시 기록
 
 PR #105가 main `ed48f39`에 병합된 뒤 GitHub merge commit `8852ea3`로 최신 main과
 `docs/W09_B2_REVIEW_FINDINGS.md`를 기존 구현 branch에 반영했다. PR #104는 open이며 직접 병합하지 않았다.
