@@ -417,6 +417,28 @@ class GameWebSocketApiTest(unittest.TestCase):
         self.assertEqual(recovered.json()['session_id'], created['session_id'])
         self.assertEqual(self.registry._games[created['session_id']].action_version, len(saved_actions))
 
+    def test_stale_action_restore_reports_score_failure_and_preserves_turn(self) -> None:
+        from app.mahjong.hand_scores import HandScoreCaptureError
+        created = self.create_game()
+        path = f"/api/game/sessions/{created['session_id']}/ws"
+        with self.client.websocket_connect(path) as websocket:
+            self.authenticate(websocket)
+            first = websocket.receive_json()
+            with patch.object(self.registry, 'get_owned',
+                              side_effect=HandScoreCaptureError('injected stale restore mismatch')):
+                websocket.send_json({'type': 'action', 'legal_action_index': 0,
+                                     'action_version': -1})
+                self.assertEqual(websocket.receive_json()['code'], 'hand_score_failed')
+                with self.assertRaises(WebSocketDisconnect) as closed:
+                    websocket.receive_json()
+                self.assertEqual(closed.exception.code, 1011)
+        self.assertNotIn(created['session_id'], self.registry._games)
+        with self.session_factory() as session:
+            self.assertEqual(session.get(GameSessionRecord, created['session_id']).human_action_indices, [])
+        with self.client.websocket_connect(path) as websocket:
+            self.authenticate(websocket)
+            self.assertEqual(websocket.receive_json(), first)
+
     def test_restart_after_final_action_before_settlement_settles_once(self) -> None:
         created = self.create_game()
         with self.session_factory() as session:

@@ -530,10 +530,16 @@ async def game_session_websocket(
                 continue
             except StaleGameActionError:
                 registry.evict(registered.session_id)
-                with session_factory() as session:
-                    registered = registry.get_owned(
-                        session, session_id, user.id
+                try:
+                    with session_factory() as session:
+                        registered = registry.get_owned(session, session_id, user.id)
+                except HandScoreCaptureError:
+                    await send_websocket_error(
+                        websocket, "hand_score_failed", "saved winning hand could not be verified",
+                        generation=registered.play_generation, session_id=session_id if local_runtime is not None else None,
                     )
+                    await websocket.close(code=1011)
+                    return
                 await send_websocket_error(
                     websocket,
                     "stale_action",
