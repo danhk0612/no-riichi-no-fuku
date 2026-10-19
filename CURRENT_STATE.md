@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 29046)
-Total output lines: 1250
-
 # 현재 상태
 
 ## W09-B2 PR #104 보완 — 코드·로컬 검증 완료, Windows exact-head 증거 대기
@@ -431,7 +428,381 @@ legacy fixture 불변을 확인했다. 자동 PR 코드 리뷰는 제품 source�
 GitHub API로 commit/branch 반영했다. 이후 검증 문서 commit의 정확한 head/CI/artifact는
 [PR #82](https://github.com/danhk0612/no-riichi-no-fuku/pull/82)의 최신 본문·check를 따른다.
 제품 source 이후 동작 변경은 없으며 직접 병합하지 않았다.
-개인 Windows PC·실제 …9046 tokens truncated… 추가/수정했다.
+개인 Windows PC·실제 이미지 decode/오디오 출력·전원 차단·ComfyUI는 미검증이다.
+새 CPU·다른 팩 교체/해제·metadata/shared/event·음향 적용·생성·선택/결과 화면 변경은 없다.
+W08 전체 완료/다음 Task 착수를 뜻하지 않는다.
+
+## W08-B 최종 검토 보완 — 저장 중 입력·재검색 중복
+
+PR #81 원본 head `d80f6b9`를 검토했다. 원본 exact-head W04 `38869316783`/W05 `38869316709`
+성공을 확인했고 Linux unittest 119개를 67.593초에 재현했다. 기존 packaged renderer 22개와
+사운드 browser 검사는 새 편집 UI의 지연 저장/전환을 검증하지 않아 전용 browser 검사를 추가했다.
+수정 전 저장 요청 대기 중 입력이 응답 뒤 사라짐, 팩 탭 재진입 시 검색 2회 중복을 각각 재현했다.
+저장 중 P/N 입력 잠금과 scan in-flight guard로 최소 보완했다. 캐릭터 선택은 계속 가능하며
+이전 캐릭터 저장 응답은 현 폼을 덮지 않는다. UI 안내를 사용자 표현으로 고치고 README를 보완했다.
+수정 후 프론트 build·새 content browser·기존 sound browser 통과. 새 검사는 dirty-only/빈 값·구도
+필드, 실패/충돌 초안, 지연 저장/캐릭터 GET/저장 응답과 재검색 중복 방지를 다룬다.
+W05 기존 Playwright/Vite 단계에서 새 검사를 실행하고 evidence에 기록하도록 연결했다.
+수정본의 최종 exact-head Windows CI/artifact 결과는 PR #81 최신 검사와 본문을 따른다.
+제품 source에 별도 콘텐츠/팩 적용·새 이벤트·생성·사용자 자료 변경을 추가하지 않았다.
+아래는 원본 구현/검증 이력이며 원본 성공을 수정본 성공으로 대체하지 않는다.
+
+## W08-B — 프롬프트 편집·팩 목록 UI 구현
+
+2026-10-16 KST 최신 `main`은 준비 SHA `469aa36`와 일치했고 PR #80이 병합됐다. 열린 PR은
+기존 Docker 문서 #35뿐이었다. `task/w08-b-character-editor`에서 0007 다음 additive migration 0008,
+기존 CPU PK별 기본 P/N 및 Level 0..3 × profile/full_body/cg 구도 P/N 저장, 문자열 필드별 override,
+revision 검사와 로컬 API를 추가했다. GET은 저장 전 빈 값을 revision 0으로 반환하며 행을 만들지 않는다.
+PATCH는 요청에 명시된 문자열만 기록하고 빈 문자열도 override로 보존한다. 캐릭터 팩과 로컬 편집을
+자동 연결·병합하지 않아 팩 재검색이 편집을 덮지 않는다. 기존 CPU PK 전체를 대상으로 하는
+로컬 관리자 CPU 목록에서 편집 대상을 선택한다.
+
+Electron 데스크톱 설정에 기본/구도 P/N 편집·필드별 편집 기록 UI와 팩 목록·정상/미해결/충돌 진단·
+명시 재검색 UI를 추가했다. 팩 탭 진입은 POST rescan, 목록 GET은 DB만 조회한다. 캐릭터 전환 stale
+응답은 현재 폼에 반영하지 않으며 저장 실패/충돌 시 초안은 보존한다. 실제 프롬프트·콘텐츠·이미지·
+사운드 seed, 이미지 파일 업로드/생성, CPU 연결 및 팩 적용은 추가하지 않았다.
+
+로컬 검증: Python 3.12.14/RiichiEnv 0.4.8의 backend unittest 119개, dialogue pytest 10개,
+frontend `npm run build`, Electron 종료 회귀 3개 통과. 신규 API 회귀는 GET 무쓰기, 빈 문자열/필드별
+override, 서로 다른 구도, stale revision, 권한, commit 실패 rollback, reset/restart 보존, 팩 재검색 후
+로컬 편집 불변을 확인한다.
+
+제품 commit `4b1d817e55c12f1cc2e97520b6eee21a727f8e38`의 Windows Server 2022 x64 검증은 통과했다.
+W04 run [38868373458](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38868373458)과
+W05 run [38868373403](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38868373403)은 둘 다
+정확한 head를 checkout했다. W04 artifact `12032177797`의 archive SHA-256은
+`a086fbaf3c822d289ff6cfe67ca552e02958a144172c6acea1d525de56d0e830`이며 source-sha.txt가 제품 SHA와
+일치한다. W04 evidence의 backend 119·dialogue 10 검사를 확인했다. W05 artifact `12031629509`의
+archive SHA-256은 `6904595e351f0ecbcee7eb21ffdcc342cb7f6360bdeaa5c3db8635e023241a06`이며 내부
+source-sha.txt도 같은 SHA다. 내부 Windows ZIP SHA-256은 `33fec22a58cabf814c12f3e94fcc731495e1a4f737c33856abed8c158dabaf71`로
+zip-sha256.json과 일치한다. Windows backend 119·dialogue 10·renderer smoke 22 checks 및 일반 모드
+종료/재시작 lifecycle evidence도 통과를 확인했다. PR #81은 열린 상태이며 직접 병합하지 않았다.
+개인 Windows PC·실제 이미지/오디오 출력·ComfyUI는 미검증이다.
+
+W08-B는 W08-A 기반 편집/목록 UI 범위만 다루며 W07 전체 완료나 W08 전체 구현 완료를 뜻하지 않는다.
+
+## Q-PACK A 결정 및 W08-B 인계 — 문서 작업
+
+2026-10-16 KST main `0068eb6`에서 PR #79 병합을 확인했다. 별도 열린 PR은 Docker 문서 #35다.
+사용자가 팩 업데이트 최적안 선택을 위임해 A(직접 편집 유지·미편집만 새 원본 반영)를 채택했다.
+Q-PACK을 재질문하지 않으며 필드별 명시 override·빈 문자열 보호·기본 음성/selected/off 경계를
+계약에 반영했다. 다음 독립 단위 W08-B는 기존 캐릭터 기본/구도 P/N 편집·편집 기록과 팩 목록 UI다.
+팩 실제 적용/새 CPU 연결·공유 후보·생성 등은 분리하며 다른 미응답 정책을 자동 승인하지 않았다.
+이번 변경은 문서 5개뿐이며 제품 코드·migration·실제 프롬프트·사용자 자료 변경은 없다.
+문서 공백·내부 링크·fence·범위를 검증하고 제품 테스트/Windows CI는 실행하지 않는다.
+
+W08-A 최종 head `f529c96`의 W04 `38850325569`/W05 `38850325453`은 성공했다.
+다운로드 artifact의 source SHA/압축 hash를 확인했고 Windows unittest 115·대사 10·renderer 22개,
+일반 종료/같은 data root 재시작을 대조했다. 자세한 source/ZIP hash는 PR #79 본문에 보존했다.
+아래 검토의 이전 성공 이력은 수정본 성공과 구분하며 실제 리소스/개인 PC/ComfyUI는 미검증이다.
+
+## W08-A 최종 검토 보완 — Windows 팩 ID 이식성
+
+PR #79 원본 head `0742a9d`를 검토했다. W04 `38845782594`/W05 `38845782569`는
+원본 정확한 head에서 성공했고 artifact identity/digest도 대조했다. Linux 원본 unittest 114개를
+75.929초에 재현했다. 팩/캐릭터/voice namespace의 Windows 예약 장치명 허용을 추가 발견했다.
+수정 전 새 회귀 1개에서 110개 subcase 실패를 재현하고 기존 상대 파일 경로 검증을 EnglishId에도
+적용했다. 제품 보완 source `ad12e6f`의 registry 검사 15개는 9.723초에 통과했다.
+이후 변경은 검토 문서이며 수정본 정확한 head의 Windows 검사/최종 artifact는
+[PR #79](https://github.com/danhk0612/no-riichi-no-fuku/pull/79)의 최신 check run과 PR 본문을 따른다.
+기존 CI 증거를 수정본 증거로 대체하지 않는다. 실제 파일 decode/오디오·개인 Windows·전원 차단·
+ComfyUI는 계속 미검증이며 팩 실제 적용/새 이벤트/UI/콘텐츠는 추가하지 않았다.
+
+## W08-A — 팩 등록 기반 구현·검증
+
+기준 main `01da78461a8e58bebc8e05d583fac2c5a0a9b38c`, PR #75~#78 병합 및 열린 별도 Docker 문서 #35를 확인했다.
+`task/w08-a-pack-registry`에서 migration 0007, 4종 manifest v1 검증, startup/rescan·DB 목록 API,
+pack/revision·manifest/content digest·파일별 immutable UUID 복사를 구현했다. 같은 manifest의 파일 bytes
+변경은 새 revision, 동일 content 재검색/과거 버전 재인식은 unchanged다(인식 포인터는 해당 버전으로 갱신). 실패/누락/충돌 시 기존 등록·파일은 보존한다.
+마지막 성공 인식 revision은 별도 FK로 저장한다. A→B→A 복원 시 기존 A를 다시 가리키며
+새 revision/파일을 추가하지 않는다. 자동 리뷰의 해당 지적은 수정 전 회귀 실패 1건을 재현한 뒤 보완했다.
+적용 pointer는 null이며 기존 CPU/명단/로컬 편집/재생 설정에 연결하지 않는다. 원본과 과거 revision은 수정하지 않는다.
+외모·상의 속옷·하의 속옷 P/N 및 4 Level×3종 이미지/구도 P/N은 manifest snapshot으로 보존한다.
+실제 콘텐츠/CG/오디오·기본 팩을 생성·seed하지 않았다. W07 전체 미완료, W08 전체 구현 착수도 아니다.
+
+Linux Python 3.12.14/RiichiEnv 0.4.8에서 backend unittest 114개(신규 registry 14개 포함),
+대사 pytest 10개, frontend npm ci/build, Node 종료 회귀 3개가 통과했다. 신규 검사는 0006→0007
+업그레이드/반복 migration·startup scan·reset/restart·한글/공백 경로·W06 행/설정/파일 bytes 보존,
+중복/경로 이탈/link·불완전/비지원 manifest·변경 중인 파일·동시 scan·DB commit/파일 복사 실패를 포함한다.
+모든 자료는 소유 임시 signature fixture이며 실제 이미지 decode/오디오 출력 검증이 아니다.
+제품 source `ca2c2efdeca564ca142c904efa4aa4d7d9206c38`의 Windows Server 2022 x64 CI가 통과했다.
+W04 [38845126341](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38845126341)와
+W05 [38845126360](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38845126360) 모두 exact head checkout이다.
+W04 artifact `12022728009`의 source SHA·archive SHA256
+`f03a9dcc88ece661e3f7f7d3718d02b13600b90ce42b656deb9ba636ab1d8a76`, unittest 114·대사 10 결과를 대조했다.
+다운로드한 W05 artifact `12023410265`의 source SHA·archive SHA256
+`be3a402c0c38636df7786df2ed71e959b7a549a2d14eda49568e3fd4ff8c1192`와 내부 Windows ZIP SHA256
+`d1d101549a866fe3af9d3f370125d1a6fc02d6fa88d6c2559174ff1a5f7cec7f`를 CI 기록과 대조했다.
+renderer smoke 22개·일반 모드 child/창/host 종료 순서·같은 data root 재시작,
+기존 W06 sound browser·Windows unittest 114/대사 10도 확인했다. 제품 파일은 위 source로 고정하며
+후속 증거 문서 commit의 head/CI 상태는 [PR #79](https://github.com/danhk0612/no-riichi-no-fuku/pull/79)를 따른다.
+개인 Windows PC/전원 차단·실제 리소스 출력·ComfyUI는 미검증이다.
+
+Q-PACK은 새 revision 적용/로컬 편집 병합, Q-META는 편집/표시 필드, Q-LEGACY는 기존 대사 이전,
+Q-AUDIO는 W08-S 재생 전환, D-WIN/Q-OMAKE-VOICE는 새 음성 hook, D05-c/D06-c/D10-a는
+event/후보 이동/변수, D07~D09/Q-IMAGE/Q-FRAME은 생성/표시 계약을 막는다. 등록/보관은 독립 구현했다.
+공유 registry가 아직 없어 shared_dependencies는 unresolved로 보관하며 연결/적용하지 않는다.
+후속 설정 UI는 목록 진입 때 POST rescan을 호출해야 한다. W08-A에는 UI를 추가하지 않았다.
+
+## W07 단계별 착의 상태 확정 — 문서 반영
+
+2026-10-16 KST main `73b79de`(PR #77 병합)와 열린 별도 Docker 문서 #35를 확인했다.
+Q-UNDER를 사용자 응답으로 확정했다. 1단계는 상의 겉옷을 벗어 브래지어가 보이고 하의 겉옷은 유지,
+2단계는 상·하의 겉옷 없이 속옷 세트만 착용한 누적 상태다. 0 정상/3 전체 탈의는 유지한다.
+후속 사용자 지시의 시스템 우선·실제 프롬프트 작성 최소화·사용자/다른 AI의 차후 작성 원칙도
+요구/후속 작업/AGENTS에 반영했다. 콘텐츠 문구 완성을 시스템 구현 선행 조건으로 삼지 않는다.
+REQUIREMENTS 상태표·ARCHITECTURE 프롬프트 계약·TASKS 후속 검증·AGENTS 요약에 반영했다.
+구체 프롬프트/이미지/오디오를 생성하지 않았으며 제품 코드·사용자 자료·migration 변경은 없다.
+문서 범위/공백·내부 링크·fence·legacy fixture 불변을 검증한다. 제품 테스트/Windows CI/ComfyUI는
+이번 문서 변경에서 실행하지 않았다. 다른 미응답 정책과 W07 후속 구현 게이트는 유지한다.
+아래는 이전 정책 조율 이력이며 Q-UNDER의 응답 대기 기록은 위 최신 확정으로 대체한다.
+
+## W07 명시 후보·조합·기본 P/N 응답 반영 — 문서만 갱신
+
+2026-10-16 KST main `b3867c8`(PR #76 병합)와 별도 열린 Docker 문서 PR #35를 확인했다.
+D06-a A(신규 공유 항목 명시 연결), D06-d A(같은 Level 허용 복장 상태/상황/포즈 조합),
+캐릭터 기본 프롬프트 외모/상의 속옷/하의 속옷의 독립 P/N을 기준 문서에 반영했다.
+기존 기본 복장 P/N 제안은 대체하며 겉옷 표현은 공유 복장 상태가 담당한다.
+미적용 속옷은 P/N 모두 제외, 전체 탈의 Level 3은 양쪽 제외한다. Level 0~2 속옷 적용표는
+Q-UNDER로 남겼고 단계 2 누적 의미·D07-a 결합 순서·다른 정책을 임의 확정하지 않았다.
+문서 범위/공백·내부 링크·fence·legacy fixture 불변을 검증한다. 제품 코드·migration·실제
+프롬프트/이미지/오디오·사용자 자료 변경은 없다. 제품 테스트/Windows CI/ComfyUI는 실행하지 않았다.
+W07 전체 미완료이며 후속 구현 착수 게이트는 유지한다. 아래는 이전 검토 이력이다.
+
+## W07 기본값·후보·삭제 정책 응답 반영 — 문서만 갱신
+
+2026-10-16 KST main `2c416fa`(PR #75 병합)를 확인했다. 열린 PR #35는 별도 Docker 문서다.
+D-DEFAULT(미설정/대상 누락 시 지정 기본값), D06-b A(기본값까지 없으면 해당 출력 생략),
+D06-c 삭제(영향 목록 확인 후 해제·기본 재연결)를 REQUIREMENTS와 계약/후속 검증에 반영했다.
+기본값은 stable ID로 식별하고 표시 순서와 분리한다. 음성은 팩 자체 누락과 슬롯 누락을 구분한다.
+명단 고정·과거 snapshot/파일·W06 자료는 보존한다. 신규 공유 항목 자동 포함·이동/소속 변경·
+D06-d 및 나머지 미응답 정책은 계속 보류다. W07 전체 완료/후속 구현 착수로 표시하지 않는다.
+문서 공백·내부 링크·fence·변경 범위·legacy fixture 불변을 검증한다. 제품 코드/자료/seed 변경,
+제품 테스트·Windows CI·실제 ComfyUI 실행은 이번 범위에 없다. 아래는 이전 검토 이력이다.
+
+## W07 정책 조율·계약 구체화 — 부분 설계, 응답 대기
+
+2026-10-16 KST 시작 main은 준비 SHA `eaaae74`와 일치했다. #72~#74는 병합됐고
+열린 PR은 Docker 문서 #35뿐이었다. `task/w07-policy-contracts`에서 승인된 기준 문서
+4개만 갱신했다. AGENTS 및 루트 문서, 실제 CPU/media/sound schema·API·pending event/
+정산·replay 경계를 대조했다. 기존 W06 자료/제품 코드는 변경하지 않았다.
+
+- ARCHITECTURE: v1 영문 ID/팩 manifest·폴더·scan/중복/immutable 복사·참조/오류,
+  단계별 3종 P/N/asset, event source ordinal·선언/voice 분리, W06 additive 보존,
+  선택/좌석/결과 DTO·세대 격리, 정책 조건부 cache/job·기술 검증 경계를 구체화했다.
+- REQUIREMENTS: 이미 확정된 사항은 재질문하지 않았다. 기존 미응답 D05~D10과 함께
+  각 판 승리·치수/마작 표시·3종 최초 생성·구도 결합·팩 갱신·W06 오디오/대사 이전을
+  예시/선택지/권고/영향으로 정리했다. 답변받은 새 정책은 없다.
+- TASKS: W08/W08-S/W09/W10/W11/W11-U의 정책/병합 선행·파일 범위·구현 지시·
+  검사/금지를 구체화했다. 전체 W07 및 후속 구현은 차단 상태를 유지한다.
+- 검증 범위는 문서 diff·공백·로컬 링크·4개 파일 제한·legacy fixture byte 불변·최신 main/PR 재확인이다.
+  backend/build/browser/Windows CI·artifact·migration/ComfyUI는 실행하지 않았다.
+  새 제품 성공 증거는 없으며 기존 W06 exact-SHA 결과는 아래 이력 그대로다.
+- PR #75 검토에서 manifest JSON digest와 참조 파일을 포함한 content digest를 분리했다. JSON이
+  같아도 이미지/음성 bytes 변경은 새 revision 후보이며, 동일 content digest만 no-op다. 배포용
+  voice 참조는 namespace까지 포함한 `{character_id,id}`, DB는 pack UUID로 대응한다. 이미지팩과
+  선택 voice pack의 캐릭터 ID를 강제로 일치시키지 않는다. 오마케 기본 선언 voice 억제는
+  미승인 단정 대신 Q-OMAKE-VOICE로 분리했다. 문서/링크/범위를 재검증하며 제품 구현은 없다.
+- 다음: REQUIREMENTS 미응답 ID별 정책 조율 후 조건부 schema/API를 최종화하고 후속 착수 게이트를
+  재검토한다. D11 콘텐츠/권리·개인 Windows/전원 차단·실제 이미지/오디오/ComfyUI는 계속 미검증이다.
+  제품 구현·콘텐츠 생성·사용자 자료 변경·직접 병합·Release/tag 없음.
+
+## 2026-10-16 중간 검토 반영 — 요구/작업 배분 완료, 제품 미구현
+
+기준 main `2000c5141e218700e256ff63ede76938c3bd6c34`(W07 준비 PR #72 병합)에서 사용자
+추가 요구를 R20~R29·중간 검토 및 TASKS 배분에 기록했다. stage=Level 0~3 의상 의미는 확정됐고,
+각 Level profile/full_body/CG·영문 ID 루트의 배포 폴더·선택/좌석/결과 연출과 뷰어를 후속 범위에 포함한다.
+
+SFX/화면 BGM 각각 단일 팩·파일별 기본 팩 fallback·없으면 무음, 이미지와 독립인 캐릭터별 단일
+음성팩·누락 무출력을 새 목표로 반영했다. 사운드 생성은 외부 프로그램, 사용자 제공 기본 음향만
+이후 별도 리소스 반영이다. 아직 제공 파일/권리를 확인하거나 이미지/오디오를 생성·seed하지 않았다.
+
+W06의 현재 UUID 업로드·6개 선언 SFX/BGM 순환 목록을 새 폴더팩/voice/패 타격 이벤트의 구현으로
+간주하지 않는다. W07 계약→W08 등록/팩 기반→W08-S 음향팩→W09 대사/음성→W10/W11 생성→
+W11-U 선택/대국/결과 UI→W12 배포/실기 순으로 배분했다. 기존 회귀와 저장/파일은 보존한다.
+
+사용자 재확인 반영: D04-count는 기존 미완료 `<3` 유지(미완료 1~2명일 때 완료 NPC 허용)로 종료했고
+조건부 W06-D 변경은 불필요하다. D10-text-voice는 기본 선언의 간단한 공통 화면 텍스트와
+actor 캐릭터 선택 음성팩 재생으로 확정했다. 이 분리는 W08-S/W09의 후속 계약/검증에 반영한다.
+단계별 이미지 생성/캐시 시점, 각 판 승리 event와 기타 미응답 W07 선택지도 계약 단계에 남긴다.
+
+두 재확인도 AGENTS/REQUIREMENTS/ARCHITECTURE/TASKS/CURRENT_STATE에 반영했다.
+이번 변경은 이 기준 문서 5개뿐이다.
+공백·링크·변경 범위 검증을 수행하며 제품 코드·DB·사용자 파일/콘텐츠 변경과 새 Windows CI는 실행하지 않는다.
+제품 테스트를 새로 통과했다고 주장하지 않고 기존 W06 exact-SHA 검증은 아래 이력으로 보존한다.
+
+## W07 설계 준비 — 문서 작성·정책 응답 대기
+
+- 확인일 2026-10-16(KST), 분석 main `1b548ae8ca901e97407cd02ccc45973a1539add7`.
+  Git main과 GitHub PR #70의 `merged=true`/merge commit을 대조했다. PR #70은 병합 완료이며
+  W06-C 최종 source `efd5a03`의 검증 기록은 아래에 보존한다. 열린 PR은 #35(기존 Docker 문서)이며
+  이번 분석 당시 W07 동일 브랜치/PR은 없었다. #35는 수정하지 않았다.
+- `task/w07-content-contract`에서 루트 기준 문서와 CPU 대사·CG·event·replay·local media/진행·
+  frontend 및 관련 tests를 읽고 R07~R14를 대조했다. 현재 CPU별 대사/단계 CG·W06 presentation은
+  재사용 가능하지만 공유 Level/후보/P/N/선택 저장·ComfyUI/cache는 없다.
+- REQUIREMENTS에 D05~D10 질문별 예시/선택지/영향/권고·막는 Task를 정리했다. 확정 정책은
+  재질문하지 않으며 모든 권고는 미승인이다. ARCHITECTURE에 새 관계/API/UI 책임·이전/seed 호환·
+  RNG 분리·event identity/지연 결과 격리·파일 보존·승인 뒤 검증 예제를 작성했다.
+  TASKS는 W07 준비와 전체 완료를 구분하고 W08~W11 구현 경계·착수 게이트·다음 문서 지시문을 남긴다.
+- 소스 대조에서 기존 “match_first/last 연결 없음”은 웹/초기 baseline 설명이며 현재 local 보충 CPU는
+  해당 승패 대사를 정산 presentation에 고정한다. 아래 구현 표를 웹 baseline로 명시해 혼동을 줄인다.
+  기존 CG slot은 교체 가능한 참조이며 W06 immutable media와 다르다. 생성 cache로 무조건 전용하지 않는다.
+- 이번 검증은 문서 diff/공백·로컬 링크 38개·질문 ID 15개/관계·기준 SHA와 변경 범위 확인이며
+  모두 통과했다. 기존 legacy replay fixture의 원본 byte 일치와 승인된 문서 4개만 변경됨도 확인했다.
+  제품 코드·의존성·migration·workflow 변경/실행 및 새 backend/browser/build/Windows CI·artifact
+  검증은 하지 않았다. 기존 W06 검증을 이번 W07 결과로 재분류하지 않는다.
+- 제품 구현·콘텐츠 생성·사용자 자료 작업·ComfyUI 실행·직접 병합·Release/tag 없음.
+  W07 전체는 미완료다. 사용자 응답 후 구체 schema/API/동시성·생성 입력/job 수명 계약 검토가 필요하다.
+  D11 실제 콘텐츠/권리, 개인 Windows PC·전원 차단 및 실제 CG/오디오/ComfyUI 출력은 계속 미검증이다.
+- PR #72의 설계 준비 문서를 검토했다. 변경은 기준 문서 4개뿐이며 제품 diff 없음·공백 검사·질문 ID와
+  참조 소스를 대조했다. 미승인 권고와 확정 정책의 구분을 유지하며 문서 준비 결과만 검토 통과다.
+  병합 상태/SHA는 PR #72/Git을 따른다. 일부 질문 응답이나 문서 병합은 나머지 권고의 승인이 아니다.
+
+## W06-C PR #70 — 최종 검토 통과
+
+확인일 2026-10-16(KST), 최신 main `4b170f83545f338c66f2888a6d641f00ba908444`.
+최초 검토 head는 `b8065358e60c43314ac16c599013158f7c019c96`(제품 `567a1a3`)이다.
+기존 `task/w06-c-sound-ending`과 열린 PR #70을 유지했다. 아래 수정 전 재현을 보존하고,
+회귀·Windows 검증을 통과한 보완을 PR #70에 갱신했다. W06-A 정책과 콘텐츠 범위는 변경하지 않았다.
+
+### 재현·코드 대조 결과
+
+| 우선 | 항목 | 확인한 동작과 기대값 |
+|---|---|---|
+| P1 | 한 곡 BGM 반복 | 실제 `BackgroundMusic` 함수를 Vite Oxc로 변환해 hook/Audio 모의 실행. A 한 곡 재생 후 ended를 전달해도 Audio 인스턴스 1개·play 1회에 멈춤. 같은 trackId setState가 다음 재생을 만들지 않음. 한 곡도 계속 순환해야 함 |
+| P1 | BGM 변경/늦은 callback | A 재생 중 [A,B]→[B,A] 변경 시 기존 A pause 1회·새 Audio 생성으로 곡을 재시작. 폐기한 A의 ended를 나중에 호출하면 현재 A가 B로 바뀜. 현재 곡을 유지하고 이전 audio callback을 무효화해야 함. 같은 ID의 media URL 교체도 현재 dependency로는 새 재생에 반영되지 않는 경로가 있음 |
+| P1 | 마지막 론·쯔모 효과음 취소 | 실제 `connectGame`/`stopGameAudio`를 모의 WebSocket/지연 media Promise로 실행. sound_effect(ron)→match_complete→media 응답 순서에서 play 0회·blob revoke. backend도 SFX 뒤 match_complete를 보내므로 결과 처리의 stopGameAudio가 마지막 정상 SFX를 취소함. 정산된 마지막 효과음도 한 번 재생되어야 함 |
+| P2 | 비활성 BGM 선택 해제 UI | 임시 실제 runtime에서 선택 곡 비활성화 후 GET은 ID 보존·available=false, 그대로 PUT은 400. `LocalSoundPanel` 코드는 active/available 곡만 checkbox로 제공하고 선택 순서 목록에는 이동 버튼만 있어 그 ID를 제거할 수 없음(코드 대조, 실제 DOM 미실행). unavailable 참조를 명시적으로 해제하고 선택을 저장할 수 있어야 함 |
+| P2 | 비활성화 후 새 엔딩 음악 | 임시 실제 API에서 엔딩 음악 등록→track 비활성화→전원 stage3 명단 확정 시 새 ending payload가 비활성 track의 asset을 snapshot하고 resolved music.available=true. 새 재생의 unavailable/무음 계약을 확인·보완해야 함. 비활성화 전에 이미 만들어진 pending payload의 immutable 참조는 계속 유지해야 함 |
+
+위 모의 검사는 실제 source 함수 실행이며 브라우저 DOM/실제 codec/실기 오디오 출력의 증거가 아니다.
+기존 `local-sound.browser.mjs`는 SFX 중복 검사를 담고 있으나 작성 당시 로컬에서 미실행이고,
+Windows packaged smoke의 추가 두 검사는 설정 화면/무음·미등록 기본값이다. 위 BGM·지연 SFX
+실패를 검증하지 않은 21 checks 성공을 실제 재생 회귀 통과로 간주하지 않는다.
+
+### 성공 증거와 범위
+
+- 재검증 Linux: backend unittest 100개/40.720초, dialogue pytest 10개/0.09초, frontend production build,
+  Node 종료 회귀 3개 통과. 사용자 자료 대신 소유 임시 runtime/file fixture를 사용했다.
+- head `b806535`의 Windows W04 run `38812476825`, W05 PR `38812477096`/push `38812469230` success.
+  PR artifact `12009995428`(203,331,514 bytes)의 `source-sha.txt`가 head와 일치한다.
+  다운로드 archive SHA256 `8c82a3ae15b2713fe88643a65d7beb88e2ad879817d876c088877fed1bb62770`,
+  내부 Windows ZIP SHA256 `33d17fa62395c0483614d11aec7350812e44c04d100549edf27d9a56414efc81`를 대조했다.
+  artifact unittest 100개/79.698초 OK, renderer passed=true/21 checks를 확인했다.
+- 개인 Windows PC/전원 차단 내구성·실제 CG 표시/오디오 출력(D11)은 계속 미검증이다.
+  현재 결함은 실제 사용자 파일 없이 재현 가능한 제어 흐름 문제이므로 D11 대기로 미루지 않는다.
+
+### 보완 후 검증
+
+- 보완 source SHA `e9918fec249e909faa135227399e96136d2b984e`는 이 문서 기록 전의 제품·검사 head다.
+  BGM 1곡 반복/순서 변경 시 현재 곡 유지/동일 ID의 media 교체/낡은 callback 차단, 파일 실패와
+  autoplay 재시도, 비활성 효과음·BGM·엔딩 선택 해제, 최종 SFX와 `match_complete` 순서 및 reset 뒤
+  지연 SFX 차단, 새 ending의 비활성 음악 미참조와 기존 pending snapshot 보존을 추가 검사했다.
+- Linux: backend unittest 100, `test_local_sound` 6, dialogue pytest 10, frontend production build,
+  Node 종료 회귀 3 통과. 브라우저 테스트는 로컬 Chromium 미설치/CDN archive 손상으로 실행하지 못했으며,
+  Windows hosted Playwright Chromium에서 실제 renderer DOM과 mock Audio를 실행했다.
+- Windows Server 2022 x64 exact source: W04 PR run [38823272350](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38823272350),
+  W05 push run [38823267255](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38823267255) 통과.
+  W05 PR run [38823272327](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38823272327)도 같은 SHA에서 통과했다. push artifact
+  `12012999384`의 `source-sha.txt`가 SHA와 일치한다. artifact ZIP SHA256
+  `839804e93f47eadc5ffbbb8c488fc3b3667a312819b2da3b48bdc2732a2961f3`, 내부 Windows ZIP SHA256
+  `deca88e1ab2ee99b44e7f3773ccedebbafc12aa30e315ace9740af0dbde716e4`를 대조했다. artifact는
+  unittest 100/77.065초, dialogue pytest 10, renderer `passed: true`/22 checks, 한 곡 mock 재생,
+  일반 대국/재시작/종료 smoke를 기록한다. 업로드 artifact digest와 다운로드 archive SHA가 일치한다.
+- 실제 CG/음악 콘텐츠·기기 출력과 개인 Windows PC/전원 차단 내구성(D11)은 미검증이다. 열린 PR #70은
+  병합하지 않았고 Release/tag/W07은 수행하지 않았다. 이후 문서 전용 commit의 exact-SHA Windows 결과는
+  아래 추가 기록으로 남긴다.
+
+문서 전용 head `46478adf02f82b8ed90d6e9e4a4f71e55d340c04`에서도 W05 push run
+`38824131192`가 통과했다. artifact `12014620725` source SHA는 해당 head와 일치하고 outer archive
+SHA256 `741e25cb2b30cbf501624e9c3235bfcad6918997a7d6471a12f83546c4cf4541`, 내부 Windows ZIP SHA256
+`7eb0393d43d2158c95d83f29655125f3b587346f7952335ebc8eb4d8ff40c0ee`를 대조했다. 이 문서 추가는
+제품 코드·검사 경로를 바꾸지 않는다.
+
+### 최종 재검토 (2026-10-16 KST)
+
+최종 검증 source는 `efd5a0316ff4f3f6f51c05d24566c0b1b5829157`이다. 이전 보완 source의
+핵심 5개 항목을 source 함수 모의 검사·API·실제 Windows browser 검사로 다시 대조했다.
+검토에서 수동 BGM 재생 응답과 SFX play rejection에도 현재 Audio/세대 검사를 추가했다.
+교체 전 BGM 재시도 실패와 초기화 전 SFX 실패가 나중에 새 화면의 오류를 켜지 않는 회귀를 보강했다.
+지연 SFX fetch 검사는 응답 완료까지 기다려 초기화 뒤 Audio가 만들어지지 않음을 판정한다.
+
+- Linux unittest 100개/38.172초, dialogue pytest 10개/0.09초, 수정 renderer production build,
+  Node 종료 회귀 3개 통과.
+- Windows Server 2022 W04 PR run `38826559169`, W05 PR `38826559160`/push `38826553799` 모두 success.
+  최종 browser mock 재생·packaged renderer·일반 종료/같은 data root 재시작을 통과했다.
+- artifact/source/내외 ZIP 및 renderer/browser 증거: push artifact `12015980287`(203,332,722 bytes, 2026-10-30 만료)의 source SHA가 위 source와 일치.
+  API digest와 다운로드 archive SHA256은 `149c355acba76e972c03f0daa6880d9fee16d1218d547bb1b2fd95065e1777a3`,
+  내부 Windows ZIP SHA256은 `973ebb7d481c1fa69c3d013b9ef65b26544fa6c71d690479a1f24f56a32fda56`.
+  artifact unittest 100개/80.676초 OK, browser PASS, renderer passed=true/22 checks와
+  두 일반 모드 종료/재시작 JSON의 engine→창→host 종료 순서를 대조했다.
+- 중간 source `04cae5f`는 browser를 통과했지만 PR run `38826086985`의 packaged 검사에서
+  stale-confirm reset 직후 다음 명단 선택 대기에 실패했다(artifact `12015024353`). 같은 source의
+  push run `38826082557`은 전체 통과했다. 제목만 확인하던 harness를 실제 enabled CPU 카드
+  3개 이상까지 기다리도록 보완했으며, 제한 시간·검사 범위·제품 복구 동작은 바꾸지 않았다.
+  위 최종 source의 PR/push 모두 통과한 결과로 다시 확인했다. 이전 실패/성공 이력은 보존한다.
+
+최종 검토를 통과했다. 이 source 뒤 문서 commit과 병합 상태/SHA는 PR #70/Git을 따른다.
+실제 콘텐츠/기기 출력(D11), 개인 Windows PC와 전원 차단 내구성은 계속 미검증이다.
+W07 제품 구현·콘텐츠 생성·Release/tag는 수행하지 않았다.
+
+## W06-B PR #68 — 최종 검토 통과
+
+확인일 2026-10-15. 최신 기준 main은 `1646bd9580d7aaa34d1d793b7272d74163fc57f2`;
+기준 문서 병합 충돌은 작업 브랜치의 `ece3a08b639d1da4b67db8ca543ede728ebbb59d`에서 정리했다.
+기존 `task/w06-b-progression` 및 PR #68에서 최종 검토를 통과했다. 병합 상태/SHA는 PR과 Git을 따른다.
+W06-A 계약과 정책은 변경하지 않았다.
+
+### 보완 전 재현과 수정
+
+| 회귀 | 보완 전 확인 | 보완 |
+|---|---|---|
+| reset 후 legacy 취소 대국의 늦은 정산 | 임시 파일 DB에서 `rules_snapshot=NULL` legacy record를 reset해 cancelled/stage 0으로 만든 뒤, 완료 객체의 `settle/commit`이 completed/stage 1로 되돌리는 것을 재현 | cached settlement 반환 전 DB status/generation 검증. legacy·version 2 모두 현재 generation과 active record 확인. reset/정산 순서, commit 실패·재시작을 회귀로 고정 |
+| 웹 member HP 0 대국 생성 | 보완 전 `POST /api/game/sessions`가 409 대신 201 반환 | 웹 legacy 경로의 member/HP precondition 복원. 새 local 규칙은 기존대로 HP에 의존하지 않음 |
+| 완료 명단 확정 | 실제 renderer 함수 harness에서 `ending_pending` 응답 후 상대 선택 화면에 남음 | ending/ack 화면으로 전환하고 실제 packaged renderer smoke에서 검증 |
+| reset/ack 오류·응답 유실 | commit 후 reset 응답 유실 때 GET play는 새 generation인데 화면/연결 불일치. 미commit 오류 뒤 기존 active turn 복구와 ack 유실 복구 누락 | GET play 권위 상태로 roster/active/ending 화면과 연결 복구. reset 반복 전송·사용자 자료 삭제 없음 |
+| 초기화 뒤 오래된 응답 | 지연된 이전 generation start 응답이 reset 후 새 roster 화면/연결을 덮는 것을 harness로 재현 | start/confirm/ack 및 화면 load를 generation+request token으로 검증. busy 상태와 별개로 강제 순서 회귀 |
+
+보완 전 legacy DB reset/settlement와 HP=0 API 실패를 기록했고, frontend harness에서 ending/reset/stale
+start 불일치를 재현했다. 수정 후 backend·dialogue·frontend 검사와 Windows packaged smoke가 통과했다.
+기존 성공 이력 run `38702603775` / artifact `11956942201`은 보존했다. 보완 전 성공만으로 위 결함이
+해소됐다고 간주하지 않았다.
+
+### 최종 검토와 exact-SHA 증거
+
+최종 검증 source는 `300892a93d923e0565c9c668ffb8a1a7b635cfd6`이다. 제품 수정은 기존
+`9bab63ecdfe7775130f98791f44b306e8eaac429`와 같고, 검토에서 desktop smoke만 보강했다.
+기존 smoke는 미commit reset 뒤 화면을 즉시 검사하고 renderer를 reload했으므로 복구된 socket의
+실제 행동 성공을 충분히 입증하지 못했다. 주입 실행·busy 해제·행동 가능 상태를 기다리고,
+reload 없이 다음 행동을 완료한 후 기존 전체 대국/재기동 검사를 이어가도록 바꿨다.
+
+- Windows Server 2022 W05 [push run 38808520631](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38808520631),
+  [PR run 38808528623](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38808528623),
+  W04 [run 38808528770](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/38808528770) 모두 success.
+- 다운로드한 push artifact `12007637653`(203,293,872 bytes, 2026-10-29 만료)의 `source-sha.txt`가
+  위 SHA와 일치한다. API digest와 다운로드 archive SHA256은
+  `7e720ec8322b41dd65face8ac2a0bd3e713e4bfbbeb9d737b058f4b47bafb8d9`;
+  내부 Windows ZIP SHA256은 `c71f7abc7f942a353b14cf95ba6d2701e51913e68bc2bbf44654d451153705a7`.
+- artifact unittest 94개/73.997초, dialogue pytest 10개/0.15초 통과. frontend 및 Electron build 통과.
+  renderer `passed: true`, 19 checks 중 `next action completed after reset failure recovery without renderer reload`를 확인했다.
+  reset/ack 응답 유실, stale confirm/start 차단, 완료 명단 ending 화면, 정상 전체 대국,
+  active/completed 재기동·정산 중복 없음도 통과했다. 일반 모드 종료와 같은 data root 재실행의
+  engine 종료→창 파괴→host 종료 순서를 JSON에서 대조했다.
+- Linux에서도 unittest 94개, dialogue pytest 10개, frontend production build 및 Node 종료 회귀 3개가 통과했다.
+- 이전 `9bab63e` run `38778254234`/artifact `11994663467`, 문서 head `cf197c7` run `38780085847`/
+  artifact `11995014249`와 최초 run `38702603775`/artifact `11956942201`은 검증 이력으로 보존한다.
+  `778970f`의 일반 대국 실패와 이후 reload 우회는 위의 무reload 검사 성공으로 다시 검증했다.
+
+테스트는 사용자 LocalAppData가 아닌 소유 임시 root를 사용했다. 개인 Windows PC, OS 전원 차단
+내구성, 실제 ending CG/음악 재생은 미검증이다. 실제 사운드/엔딩 리소스 연결은 W06-C에 남긴다.
+Release/tag는 수행하지 않았다. 이 source 뒤 문서만 변경한 commit은 PR/Git으로 확인한다.
+
+## 기준
+
+- 확인일: 2026-10-15. W05 보완 기준 main `4f09869`; PR #63 수정 source SHA는 `7d9a20b97f7ef60b5dda4a43a24d3cbf08723ffb`.
+- W04 제품 코드 검증 SHA는 `455d400c4a8ddf11eaa0e3d676317c80b9a553b2`이다. PR #61은 main에 병합됐다. W05 PR #63은 최종 검토와 Windows 검증을 마쳤다. 최신 병합 상태/SHA는 PR #63 및 Git을 따른다.
+- PR #56(W00)·#57(W01)·#58(인계)는 main에 병합됐다. 열린 #35는 기존 Docker 문서이며 건드리지 않는다.
+- W01 baseline 이후 W04는 local runtime·DB 연결/권한 경계·관련 회귀만 추가/수정했다.
   CPU/규칙/정산 핵심·legacy fixture·기존 frontend는 보존했다.
 - W02 PR #59를 병합했다. 검증 code SHA 이후 변경은 기준 문서 4개뿐이며,
   CI job/다운로드 artifact의 source SHA·내외 ZIP hash·browser/frozen/renderer 증거를 다시 대조했다.
