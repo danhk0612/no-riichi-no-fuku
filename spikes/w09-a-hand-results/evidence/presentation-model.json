@@ -1,0 +1,16 @@
+{
+  "scope": "pure synthetic proposal, not existing product persistence/UI coverage",
+  "checks": [
+    "restart preserves all unshown hands before match and ending",
+    "cannot acknowledge match before final hand",
+    "ack response loss is idempotent: s1:hand:0",
+    "ack never changes stage/content: s1:hand:0",
+    "ack response loss is idempotent: s1:hand:1",
+    "ack never changes stage/content: s1:hand:1",
+    "ack response loss is idempotent: s1:match",
+    "ack never changes stage/content: s1:match",
+    "ack response loss is idempotent: ending-existing-id",
+    "ack never changes stage/content: ending-existing-id",
+    "reset rejects late prior generation ack"
+  ]
+}

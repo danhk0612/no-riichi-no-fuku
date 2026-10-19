@@ -1,0 +1,87 @@
+/tmp/w08d-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+test_last_unfinished_cpu_fourth_place_completes_and_ack_is_idempotent (tests.test_local_play.LocalPlayTests.test_last_unfinished_cpu_fourth_place_completes_and_ack_is_idempotent) ... /tmp/w08d-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0009 -> 20261018_0010, Add optional character measurements without changing existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261018_0010 -> 20261018_0011, Add shared clothing-state and pose prompt management.
+ok
+test_completed_cpu_last_dialogue_is_persisted_once (tests.test_local_play.LocalPlayTests.test_completed_cpu_last_dialogue_is_persisted_once) ... /tmp/w08d-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0009 -> 20261018_0010, Add optional character measurements without changing existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261018_0010 -> 20261018_0011, Add shared clothing-state and pose prompt management.
+ok
+test_omake_keeps_final_stage_defeat_dialogue_without_progress_or_cg (tests.test_local_play.LocalPlayTests.test_omake_keeps_final_stage_defeat_dialogue_without_progress_or_cg) ... /tmp/w08d-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0009 -> 20261018_0010, Add optional character measurements without changing existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261018_0010 -> 20261018_0011, Add shared clothing-state and pose prompt management.
+ok
+test_reset_rejects_delayed_legacy_settlement_even_when_cached (tests.test_local_play.LocalPlayTests.test_reset_rejects_delayed_legacy_settlement_even_when_cached) ... /tmp/w08d-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0009 -> 20261018_0010, Add optional character measurements without changing existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261018_0010 -> 20261018_0011, Add shared clothing-state and pose prompt management.
+ok
+test_local_settlement_commit_failure_rolls_back_and_old_completed_game_is_stale_after_reset (tests.test_local_play.LocalPlayTests.test_local_settlement_commit_failure_rolls_back_and_old_completed_game_is_stale_after_reset) ... /tmp/w08d-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  util.warn_deprecated(
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260829_0001, Create the initial application schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0001 -> 20260829_0002, Set the initial player maximum HP.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_0002 -> 20260830_0003, Persist authoritative game session action logs.
+INFO  [alembic.runtime.migration] Running upgrade 20260830_0003 -> 20260912_0004, Allow empty result CG metadata slots.
+INFO  [alembic.runtime.migration] Running upgrade 20260912_0004 -> 20261015_0005, Add the Windows local play generation and fixed roster.
+INFO  [alembic.runtime.migration] Running upgrade 20261015_0005 -> 20261016_0006, Add local media, sound effect sets, and background tracks.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0006 -> 20261016_0007, Add pack registry without applying or migrating existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0007 -> 20261016_0008, Store explicit character prompt edits without applying pack revisions.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0008 -> 20261016_0009, Add per-character voice pack selection links.
+INFO  [alembic.runtime.migration] Running upgrade 20261016_0009 -> 20261018_0010, Add optional character measurements without changing existing content.
+INFO  [alembic.runtime.migration] Running upgrade 20261018_0010 -> 20261018_0011, Add shared clothing-state and pose prompt management.
+ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 2.338s
+
+OK

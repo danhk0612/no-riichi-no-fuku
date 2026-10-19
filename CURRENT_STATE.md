@@ -1,5 +1,32 @@
 # 현재 상태
 
+## W09-A — 국 결과 진단 완료, 점수 경로 채택 차단
+
+기준main `d90cc4dcb78c2f5ffa24e2a9a5b2fd32e36603b4`(PR #98 병합), 열린별도PR #35 확인.
+GitHub tracked blob과 실행사본을 전수대조해 차이0/전체tree `99732c978df7757a28c332efafc8b1d5bd963393`.
+제품/migration/UI·의존성·규칙/CPU/음향·사용자자료 변경 없이 spike와 세 기준문서만 추가/수정했다.
+
+- Linux Python3.12.14/RiichiEnv0.4.8, 고정seed701..704×Tier0/2×수집전후16대국10.546초.
+  8쌍 trace/steps/scores/ranks/log digest동일. 전체실행window354.886초/600초(verification.json).
+- 고유8표본46국/hora40개/ryukyoku7개. 중간화료경계32번 모두win_results소실,
+  observation의hora139관측. 원본log의국offset과전원화료자보존을 권고하며 pending음향ordinal은 유지한다.
+- native공식replay는최종live보다한/역이증가(한표본은band도변경)해채택중단. viewer최종화료7건의
+  한/부/역은일치했지만raw지급액은본장미포함,중간/특수화료·책임지불까지검증된경로는아니다.
+  점수불명을일반구간으로fallback하지않으며W09-B착수는점수gate해소전차단한다.
+- 공개scoreAPI경계36합성조합,공개apply_event두좌석합법RON→hora둘보존 확인.
+  첫fixture의빈legal배열IndexError는원자료보존후harness만수정. 자연표본/엔진수정없음.
+- 기존임시DB경계회귀5개2.338초통과. 새표시순서제안의순수합성모델11검사통과.
+  실제국queue/표시ack는미구현이며모델검증을제품검증으로보지않는다.
+
+[spike README](spikes/w09-a-hand-results/README.md)에후보실패/비용·원본필드/수명·DTO/원자저장/
+표시/재시작/응답유실/reset/legacy경계, TASKS/ARCHITECTURE에후속범위와지시문을기록했다.
+복수화료배경의순차/대표선택,생성정책은미확정이다. 관리/W09-B/W10~11/W11-U는미착수.
+Windows실기/CI·새package/artifact·ComfyUI·실제이미지/음향은이번진단에서실행하지않았다.
+직접병합·Release/tag를하지않았다. 제출branch/SHA/PR은Git/PR이최종기준이다.
+
+
+아래는 W09-A 진단 전 준비·기존 구현 검증 기록이다.
+
 PR #97 정책 문서는 main `b64b26e`에 병합됐다. 후속으로 플레이어 화료=기본 배경,
 엔딩 후 자유 대국도 CPU 화료 CG 표시(stage3·난이도10·단계 불변)로 사용자 결정을 확정했다.
 기존 오마케 추가 CG 금지는 새 단계 변경/패배 단계 CG·엔딩을 막는 경계이며 화료 CG는 허용한다.
@@ -73,6 +100,7 @@ W05 artifact `12133482311` / outer ZIP SHA256 `98f5084a45d48f63ce2f25c1119b6801c
 현재 PR #93은 main에 병합됐다. 개인 Windows PC 실기는 미검증이다.
 
 아래 절은 W08-M 이전의 시점별 이력으로 보존한다.
+
 
 ## W-DIFF-B — 10단계 로컬 난이도 구현·회귀, 최종 Windows 증거는 PR 참조
 

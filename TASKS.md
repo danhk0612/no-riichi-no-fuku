@@ -4,35 +4,105 @@
 W00은 초기 분석·기준 문서 준비(완료); 본 파일은 후속 개발 명세다.
 Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결정 후 갱신한다.
 
-## 다음 Work — W09-A 국 결과·화료 등급·표시 순서 진단
+## W09-A — 진단 완료·점수 경로 채택 차단
 
-W08-D PR #96과 화료 CG 정책 PR #97이 병합됐다. 플레이어 화료는 기본 배경,
-엔딩 후 자유 대국도 CPU 화료 CG 표시(stage3/난이도10/단계 불변)로 확정됐다.
-공유 대사 풀이 아닌 캐릭터 고정 문구 정책을 유지한다. 제품 국 결과창/생성은 아직 미구현이다.
-현재 엔진의 중간 국 결과·점수 수명과 순서/복구 경계를 먼저 확인한 뒤 구현 단위를 고정한다.
-계약은 `docs/W09_A_HAND_RESULT_DIAGNOSTIC.md`, 권장 환경은 **고성능 Work**다.
+기준 main `d90cc4d`(PR #98 병합). 제품 코드 변경 없이
+[진단 결과](spikes/w09-a-hand-results/README.md)와 작은 재현 근거를 추가했다.
+16대국/10.546초, 수집 전후8쌍 trace·최종 점수/순위 동일. 중간 국 WinResult 소실,
+observation hora 중복, 복수 론 가능을 확인했다. native replay는 live와 한/역이 달라 채택 중단.
+viewer는 최종 화료7건의 한/부/역 일치만 확인했고 본장·특수 화료를 포함한 전체 정확성은 미입증이다.
+점수 unknown을 일반 구간으로 처리하지 않는다. 기존 경계 회귀5개 통과, 제안 표시 모델11검사 통과.
+Windows/새 국 결과 queue/생성은 미구현·미검증이다. source/hash/예산은 spike evidence 참조.
+
+### 현재 다음 단계 — 별도 승인 전 실행하지 않음
+
+- 점수 gate: 기존0.4.8 공개API의 정확한 중간 국 판정값 보존 경로를 별도 한정 진단해야 한다.
+  native/viewer 실패를 고친 것으로 가정하지 않는다. 공개API로 불가능하면 엔진 변경/업그레이드의
+  별도 사용자 결정을 요청하며 이번 승인으로 우회하지 않는다. 추가 자연 표본 실행 예산도 별도다.
+- 복수 화료 배경은 전원 원본순 순차 표시(A, 권고)와 첫 화료자 대표(B) 중 미확정이다.
+  어느 쪽도 화료자를 버리거나 게임 정산을 변경하지 않는다.
+- 생성 입력/후보 선택/캐시/대기·실패 정책과 ComfyUI 실제 기술 확인은 W10/W11 선행이며 미응답을 유지한다.
+- W09-A 완료는 진단 제출물 완료다. **W09-B/기존 W09 전체 또는 점수 수집 성공으로 표시하지 않는다.**
+
+## W09-A 진단 후 구현 분해 — 실행 승인 아님
+
+### 관리 — 3점수구간 P/N·캐릭터 고정 문구 (저성능 Work)
 
 ```text
-danhk0612/no-riichi-no-fuku의 W09-A만 수행해.
-최신 main·현재 branch·열린 PR·AGENTS.md와 루트 기준 문서를 확인해.
-PR #96/#97 및 W09-A 진단 준비 문서 PR 병합을 확인하고,
-TASKS와 docs/W09_A_HAND_RESULT_DIAGNOSTIC.md 전체를 따라.
-task/w09-a-hand-result-diagnostic에서 격리 진단을 수행해.
+최신 main·열린PR·AGENTS·루트 문서와 W09-A spike README를 읽어.
+이 지시문이 별도 승인된 경우에만 관리 부분을 독립 branch에서 수행해.
+만관 미만/만관·하네만/배만 이상3구간의 포즈·배경 상황P/N과 캐릭터 고정 문구 편집을 분리해.
+대사 소유자는 캐릭터이며 공유 문장풀/무작위 문장 후보를 만들지 마.
+파일 범위는 기존 CharacterContent/SharedPrompt 관리 model/schema/service/local API와
+CharacterContentSettings·types/api, 필요한 최소 additive migration 및 관련 테스트야.
+기존 외모/속옷/단계구도 P/N·voice 연결/override/빈 값·pack revision 보존을 유지해.
+공유 상황과 Level·후보의 구체 관계/D05-c 중 미응답은 임의 채택하지 말고 차단으로 남겨.
+캐릭터 고정 패배 문구는 defeat_stage_1..3, win 문구와 분리하고 character_name 변수만1회
+평문 치환해. 저장 검증/원문·표시snapshot을 구분하며 W06 ending 평문에는 적용하지 마.
+기존 cpu_dialogues의 여러 행 중 하나를 몰래 골라 이전하지 말고 원본/완료presentation을 보존해.
+기존 행 대응/새 고정문구 초기 연결(Q-LEGACY)은 승인된 범위에서만 수행해.
+새 실제 문구/P/N/이미지 seed·생성·게임event 연결은 제외해.
+수정/빈문자열·미편집값/voice 독립·삭제/이동 영향·revision 충돌·reset/restart 보존을 검증해.
+backend/build/관련 browser와 정확한 SHA의 W04/W05 Windows CI·artifact source/ZIP hash를 확인해.
+CURRENT_STATE/TASKS/ARCHITECTURE를 갱신하고 commit/push·PR만 제출해.
+직접 병합·Release/tag·W09-B/생성/결과UI 착수는 하지 마.
+```
 
-매 국 화료자/점수 등급/현재 단계·유국/복수 화료와 마지막 국을 신뢰할 수 있게 얻는 경로,
-기존 seed/action replay를 보존하는 수집·snapshot 지점과 결과 표시/복구 순서를 검증해.
-점수 증감 delta를 화료 등급으로 추정하거나 다음 국에 사라진 상태를 그대로 읽지 마.
-계약의 최대16대국·전체10분·5,000step/대국·30초/대국과 실패 중단 조건을 지켜.
-원본 log·RNG·행동 trace 불변과 두 실행 재현, 필요한 격리 fixture·미검증을 구분해.
+### W09-B — 국 결과 영속·텍스트·표시 순서/복구 (점수/표시 정책 gate 후 저성능 Work)
 
-고정된3구간/현재 복장, 플레이어 기본 배경, 오마케 화료 CG 허용, 마지막 국 후 결산과
-4위 단계 변경 후 해당 단계 CG/캐릭터 고정 패배 문구 정책을 유지해.
-근거와 최소 권고 DTO/저장·표시 순서를 기록하고 관리/W09-B/W10~11/W11-U 구현 지시문을 준비해.
-제품 코드·migration/UI·규칙/CPU/정산/음향·기존 사용자 자료는 변경하지 마.
-ComfyUI/모델·실제 콘텐츠 생성·새 의존성/엔진 수정으로 문제를 우회하지 마.
+```text
+최신 main·열린PR·AGENTS·루트 문서와 W09-A README 전체를 확인해.
+점수 경로 검증과 복수 화료 표시 정책의 사용자 결정이 선행이야. 실패/미응답이면 제품 구현을 멈춰.
+기존0.4.8 및 규칙/CPU/seed/actions/policy1/2/3·pending 음향 ordinal을 보존해.
+파일 범위는 mahjong adapter/session의 별도 결과수집, game_registry·game API,
+최소 result DTO/영속model·additive migration, types/api/main의 최소 텍스트결과 queue와 회귀야.
+MJAI start/end log offset으로 모든 국/화료자를 고정해. 같은국 복수hora/ryukyoku를 함께 보존하고
+다음 국 observation의 현재stage/oya를 종료국에 쓰지 마. delta로 등급을 추정하지 마.
+대국시작 cpu_choices→actor/CPU/stage/name과 당시content revision·고정문구를 snapshot해.
+create/start와 각 action transaction에 새 국 결과를 함께 고정하고 실패하면 rollback/cache evict해.
+최종action→기존별도정산 경계는 유지하며 표시ack가 정산/stage 변경을 다시 실행하지 않게 해.
+모든 미확인 국→마지막 국→최종 결산·stage_after CG/패배문구→기존ending ack→자유대국 순서야.
+표시cursor/ack는 generation/session/event로 멱등·건너뛰기 거절·응답유실/재시작 복구를 지원해.
+시작 시 ending_pending보다 미확인 결과queue를 우선하고 다음대국이 queue를 건너뛰지 않게 해.
+reset/stale socket/응답은 기존세대로 격리하고 과거snapshot/파일은 보존해.
+legacy queue 없는 active/completed는 원형식으로 복구하고 현재content로 과거결과를 생성하지 마.
+플레이어/유국은 기본배경, omake는stage3/난이도10·기존대사/음성·화료CG 허용이야.
+CG는 mock/미등록 상태로만 연결하고 생성/새리소스/ComfyUI·시각연출은 제외해.
+매국/복수화료·본장/리치봉·친자/론쯔모·구간경계·특수화료와 기존policy replay,
+복수pending·마지막화료/유국→결산→엔딩·action/정산 commit실패·ack응답유실·reset·legacy를 검사해.
+회귀·build/browser·정확한SHA Windows W04/W05·artifact source/hash와 packaged재시작을 확인해.
+문서 갱신·commit/push·PR 제출만 하며 직접 병합·Release/tag·W10/W11 구현은 하지 마.
+```
 
-spikes의 재현 스크립트·작은 근거·README와 CURRENT_STATE/TASKS/ARCHITECTURE를 갱신해.
-문서/진단 commit/push·PR 제출까지 진행하되 직접 병합·Release/tag·후속 제품 구현은 하지 마.
+### W10/W11 — 독립 생성 경계 (정책/실제 기술 확인 후 별도 Task)
+
+```text
+최신 main/열린PR/AGENTS/루트 문서와 W09-A·W09-B 결과를 확인해.
+W10은 adapter/설정·소유job/status/result 및 mock계약, W11은 W09 snapshot→선택/P/N/생성파일
+연동으로 나눠 별도 승인/branch/PR에서 수행해. Q-IMAGE/Q-FRAME/D07~09 미응답은 임의 확정하지 마.
+실제 사용자의 ComfyUI object_info/workflow/node/model·LoRA 지원과 결과수신 기술을 먼저 확인해.
+게임정산/RNG와 독립, 외부submit은 writer/lock 밖, snapshot/독립seed/cache identity 고정,
+unknown submit/응답유실·재시작·늦은job·새대국/reset을 구분하고 원본/과거파일을 보존해.
+화료 현재stage/점수3구간과 최종패배 stage_after CG를 혼동하지 마.
+기본대국은 미연결/실패/무이미지에서도 계속돼야 해. 자동모델다운로드/전역interrupt/무단삭제 금지야.
+mock와 실제로 승인된 Windows/ComfyUI 검증·정확한SHA artifact를 구분하고 문서/PR에 남겨.
+직접병합·Release/tag·후속UI/추가콘텐츠 제작은 하지 마.
+```
+
+### W11-U — 국 결과 배경·최종 단계 CG 연출 (W09-B/W11 후 저성능 Work)
+
+```text
+최신 main/열린PR/AGENTS/루트 문서와 W09-A/B·W11 DTO를 확인해.
+파일 범위는 main/MahjongTable/types/api/style와 최소결과/뷰어 컴포넌트야.
+서버의 저장 표시순서와 승인된 복수화료 정책을 따르고 renderer가 승자/점수/정산을 계산하지 마.
+각국 화료자 현재복장+점수구간 배경, 마지막국 결과 후 최종결산·변경후stage CG/고정패배문구,
+그뒤 기존엔딩을 표시해. 플레이어/유국은 기본배경, omake는화료CG만 같은규칙으로 연결해.
+미등록/로딩/깨진이미지는 진행/표시ack를 막지 않고 자동ack하지도 않게 해.
+CG전용/복귀/줌팬·reload/재조회가 재정산/추첨/submit을 만들지 않게 해.
+stale image/job·generation/session/selection token·다음대국/reset·ack응답유실/재시작과
+마지막국→결산→엔딩 순서를 browser/정확한SHA Windows packaged흐름으로 검증해.
+실제이미지 없는검증과 제공리소스실측을 구분하고 문서·commit/push·PR만 제출해.
+직접병합·Release/tag·갤러리/추가연출·새생성정책 구현은 하지 마.
 ```
 
 ## 수행 이력 — W08-D 공유 복장 상태·포즈 관리
@@ -131,7 +201,7 @@ commit/push·PR 제출까지 진행하되 직접 병합·Release/tag·후속 Tas
 | W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / 완료(PR #83 병합, 최종 검증은 PR 참조) | W07 팩/event 계약, W08-A/B/C 병합, Q-PACK/Q-AUDIO/D-WIN/Q-OMAKE-VOICE | 저성능 Work |
 | W-DIFF-A | 난이도 1~10 설계·격리 기술 검증·구현 인계 | P1 / 공개1수 선읽기 격리검증 완료·강도 개선/10구간 미입증 | PR #83/#84 병합, 2026-10-18 사용자 승인 | 고성능 Work |
 | W-DIFF-B | 단계+게임 설정의 최종 난이도·저장·설정 UI 적용 | P1 / 정책·독립 재검증·구현·Linux 회귀 완료, 최종 Windows 근거는 제품 PR 참조 | W-DIFF-A 검토 | 저성능 Work(판단 구현 복잡 시 고성능 Work) |
-| W09-A | 국 결과/화료 등급/표시 순서·복구 기술 진단 | P1 / 진단 계약·인계 준비, 미완료 | PR #96/#97 및 진단 준비 문서 | 고성능 Work |
+| W09-A | 국 결과/화료 등급/표시 순서·복구 기술 진단 | 진단 완료 / 점수 경로 채택 차단 | PR #96/#97 및 진단 준비 문서 | 고성능 Work |
 | W09 | 국 결과·캐릭터 고정 대사·변수 연결(최신 요구) | P1 / 대기 | W08 | 저성능 Work |
 | W10 | 독립 ComfyUI·Anima adapter | P1 / 대기 | W03, W07 | 저성능 Work |
 | W11 | 이벤트 랜덤 조합·생성/파일 연동 | P1 / 대기 | W06, W09, W10 | 저성능 Work |
