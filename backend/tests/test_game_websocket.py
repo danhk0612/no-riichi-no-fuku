@@ -380,6 +380,43 @@ class GameWebSocketApiTest(unittest.TestCase):
                                  'action_version': first['action_version']})
             self.assertEqual(websocket.receive_json()['action_version'], 1)
 
+    def test_cold_active_restore_reports_score_failure_without_changing_saved_actions(self) -> None:
+        from app.mahjong.hand_scores import HandScoreCaptureError
+        created = self.create_game()
+        registered = self.registry._games[created["session_id"]]
+        with self.session_factory() as session:
+            for _ in range(1000):
+                turn = registered.game.human_turn()
+                self.assertIsNotNone(turn)
+                self.registry.submit_action(
+                    session, registered, choose_human_action_index(list(turn.legal_actions)),
+                    registered.action_version,
+                )
+                session.commit()
+                if any(e['type'] == 'hora' for e in registered.game._adapter._env.mjai_log):
+                    break
+            else:
+                self.fail("fixed match did not reach a winning boundary")
+            record = session.get(GameSessionRecord, created['session_id'])
+            saved_actions = list(record.human_action_indices)
+        self.registry.evict(created['session_id'])
+        headers = {"Authorization": f"Bearer {self.member_token}"}
+        with patch('app.mahjong.riichienv_adapter.capture_hand_scores',
+                   side_effect=HandScoreCaptureError('injected cold restore mismatch')):
+            response = self.client.get('/api/game/sessions/active', headers=headers)
+        self.assertEqual(response.status_code, 503, response.text)
+        self.assertEqual(response.json()['detail']['code'], 'hand_score_failed')
+        self.assertNotIn(created['session_id'], self.registry._games)
+        with self.session_factory() as session:
+            record = session.get(GameSessionRecord, created['session_id'])
+            self.assertEqual(record.human_action_indices, saved_actions)
+            self.assertEqual(record.status, 'active')
+            self.assertIsNone(record.scores)
+        recovered = self.client.get('/api/game/sessions/active', headers=headers)
+        self.assertEqual(recovered.status_code, 200, recovered.text)
+        self.assertEqual(recovered.json()['session_id'], created['session_id'])
+        self.assertEqual(self.registry._games[created['session_id']].action_version, len(saved_actions))
+
     def test_restart_after_final_action_before_settlement_settles_once(self) -> None:
         created = self.create_game()
         with self.session_factory() as session:

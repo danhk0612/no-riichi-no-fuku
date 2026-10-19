@@ -129,6 +129,10 @@ def get_active_game_session(
 ) -> RegisteredGame | None:
     try:
         return registry.get_active(session, user.id)
+    except HandScoreCaptureError:
+        raise HTTPException(status_code=503, detail={
+            "code": "hand_score_failed", "message": "saved winning hand could not be verified",
+        }) from None
     except (DifficultyError, GameSetupError, GameRegistryError) as error:
         raise HTTPException(status_code=409, detail={"code": "invalid_cpu_snapshot", "message": str(error)}) from None
 
