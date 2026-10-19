@@ -1,31 +1,22 @@
 # 개발 Task
 
-## 현재 다음 Work — 국 결과 표시·확인 계약 설계
+## 국 결과 표시·확인 계약 설계 — 검토 수용
 
-권장: **고성능 Work**. W09-B2 PR #104는 main3341d4e에 병합됐고 검토 head3bb3307과 tree가 같다.
-국 결과 사실 저장·복구는 수용했다. 아래는 후속 표시의 설계 작업이며 제품 구현 지시가 아니다.
+main `c197029`/B2 PR #104 수용과 실제 복구 흐름을 확인하고
+[표시·확인 계약](docs/W09_C_RESULT_DELIVERY_CONTRACT.md)을 작성했다.
+C1 전달·확인과 C2 콘텐츠 snapshot/문구 관리/공유 상황/생성을 분리했다.
+PR #107 검토에서 사실 전체↔표시 entry의 완전 대응과 마지막/ack된 entry 누락 검사를 보강했다.
+실제 API/DB/UI/gate는 미구현이며 설계 검토만 완료다. 병합 상태는 PR #107/Git을 따른다. 이전 통합 W09-B 지시문은
+본 계약의 C1/C2 선행·허용 범위로 대체하며 일괄 구현 지시로 사용하지 않는다.
 
-```text
-danhk0612/no-riichi-no-fuku의 국 결과 표시·확인 계약 설계만 수행해.
-최신 main·열린 PR·AGENTS와 루트 문서를 확인하고 W09-B2 PR #104의 수용 결과,
-docs/W09_B2_HAND_RESULTS_CONTRACT.md 및 실제 model/registry/API/frontend 복구 흐름을 읽어.
+## 현재 다음 Work — W09-C1 국 결과 전달·확인 (별도 승인 후)
 
-B2 사실 rows를 변형하지 않는 표시 snapshot/도입 경계·순서/cursor/ack의 소유와 수명을 설계해.
-모든 미확인 국→마지막 국→최종 결산의 stage_after CG/패배 문구→기존 ending→자유 대국의
-전달·복구 순서, 다음 행동/새 대국 gate, 응답 유실·동시 socket·reset 세대 격리를 정리해.
-복수 화료자는 독립 RNG로 무작위 표시순서를 한 번 고정하며 전환으로 모두 표시해.
-원본 화료/정산 순서·CPU RNG·음향 ordinal·기존 최종 action/별도 정산 transaction은 보존해.
-B2 기간의 사실/NULL legacy 저장을 현재 콘텐츠로 소급하여 표시 snapshot으로 만들지 마.
-
-문구 고정 데이터 관리·기존 행 이전, 공유 상황 연결, prompt/content/media snapshot 및 CG 생성과
-단순 표시 전달/확인 중 어떤 부분을 독립 구현할 수 있는지 의존성을 구분해.
-Q-LEGACY/D05-c/Q-IMAGE/Q-FRAME 등 미응답은 임의 채택하지 말고, 설계에 꼭 필요한 결정만
-짧은 질문·권고안으로 남겨. 기존 확정 정책을 다시 질문하지 마.
-실제 API/DB/UI는 만들지 않고 additive schema/API 계약·불변조건·실패/복구 검사·허용 파일을
-정리해 저성능 Work가 독립 수행할 수 있는 구현 지시문을 준비해.
-CURRENT_STATE/TASKS/ARCHITECTURE를 실제 설계 상태로 갱신하고 문서 commit/push·PR까지 진행해.
-직접 병합·Release/tag·제품 코드/사용자 자료 변경·CG/음향/프롬프트 생성·후속 구현은 하지 마.
-```
+권장: **저성능 Work**. 선행은 B2 수용 및 이 설계 PR의 검토·병합이다.
+이번 문서 작업의 승인은 C1 구현 승인이 아니다. 다음 구현을 명시 지시받은 경우
+[계약 §8의 구현 지시문](docs/W09_C_RESULT_DELIVERY_CONTRACT.md#8-저성능-work-구현-지시문허용-파일)
+전체와 §1~7을 따른다. 새 local 대국만 content_mode=unbound 전달을 도입하고 과거 사실에
+현재 콘텐츠를 소급 결합하지 않는다. source SHA Windows/packaged 확인은 C1 수용 조건이다.
+문구 이전/공유 상황/P/N·CG/생성은 §6의 미응답 정책과 M/S/C2 선행 후 별도 Task다.
 
 ## W09-B2 — 최종 검토·병합 완료
 
