@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db.models import GameSessionRecord, LocalPlayState, User, UserCpuProgress
+from app.mahjong.hand_scores import HandScoreCaptureError
 from app.mahjong.riichienv_adapter import MatchResult
 from app.mahjong.session import AuthoritativeGameSession, CPU_SEATS, HUMAN_SEAT
 from app.services.game_result import MatchSettlement, settle_completed_match
@@ -237,7 +238,13 @@ class GameRegistry:
                 raise StaleGameActionError("game action version is stale")
             if registered.game is None:
                 raise GameRegistryError("active game state is unavailable")
-            registered.game.submit_human_action(legal_action_index)
+            try:
+                registered.game.submit_human_action(legal_action_index)
+            except HandScoreCaptureError:
+                # Even a pre-step failure may have advanced agent RNG. Rebuild from DB.
+                registered.game = None
+                self.evict(registered.session_id)
+                raise
             record.human_action_indices = [
                 *record.human_action_indices,
                 legal_action_index,

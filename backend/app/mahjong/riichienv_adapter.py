@@ -5,7 +5,9 @@ from importlib.metadata import version
 from types import MappingProxyType
 from typing import Mapping
 
-from riichienv import Action, GameRule, Observation, RiichiEnv
+from riichienv import Action, ActionType, GameRule, Observation, RiichiEnv
+
+from app.mahjong.hand_scores import HandScoreCaptureError, HandWin, capture_hand_scores
 
 
 EXPECTED_RIICHIENV_VERSION = "0.4.8"
@@ -41,6 +43,12 @@ class RiichiEnvAdapter:
         )
         self._observations: dict[int, Observation] = {}
         self._started = False
+        self._last_hand_wins: tuple[HandWin, ...] = ()
+
+    @property
+    def last_hand_wins(self) -> tuple[HandWin, ...]:
+        """Verified wins from the last step only; not a persistent display queue."""
+        return self._last_hand_wins
 
     @property
     def started(self) -> bool:
@@ -85,7 +93,22 @@ class RiichiEnvAdapter:
             if action.to_dict() not in legal_action_values:
                 raise IllegalActionError(f"illegal action for seat {seat}")
 
-        self._observations = self._env.step(dict(actions))
+        self._last_hand_wins = ()
+        winning = any(
+            action.action_type in (ActionType.RON, ActionType.TSUMO)
+            for action in actions.values()
+        )
+        try:
+            captured = capture_hand_scores(self._env, actions) if winning else None
+            self._observations = self._env.step(dict(actions))
+            if captured is not None:
+                self._last_hand_wins = captured.verify(self._env)
+        except HandScoreCaptureError:
+            raise
+        except Exception as error:
+            if not winning:
+                raise
+            raise HandScoreCaptureError("winning step score capture failed") from error
         return self.pending_observations
 
     def result(self) -> MatchResult:

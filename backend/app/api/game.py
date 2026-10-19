@@ -27,6 +27,7 @@ from app.core.config import Settings
 from app.core.security import decode_access_token
 from app.db.models import GameSessionRecord, LocalPlayState, User
 from app.db.session import mark_write_intent
+from app.mahjong.hand_scores import HandScoreCaptureError
 from app.mahjong.session import GameSessionStateError
 from app.schemas.game import (
     CpuChoiceResponse,
@@ -452,6 +453,15 @@ async def game_session_websocket(
             await websocket.close(code=4404)
             return
 
+        except HandScoreCaptureError:
+            await send_websocket_error(
+                websocket, "hand_score_failed", "saved winning hand could not be verified",
+                generation=requested_generation if isinstance(requested_generation, str) else None,
+                session_id=session_id if local_runtime is not None else None,
+            )
+            await websocket.close(code=1011)
+            return
+
         except (DifficultyError, GameSetupError, GameRegistryError) as error:
             await send_websocket_error(websocket, "invalid_cpu_snapshot", str(error),
                 generation=requested_generation if isinstance(requested_generation, str) else None,
@@ -535,6 +545,13 @@ async def game_session_websocket(
                 await send_websocket_error(websocket, "play_generation_stale", "play state changed; reload the current play",
                                            generation=registered.play_generation, session_id=session_id if local_runtime is not None else None)
                 await websocket.close(code=4409)
+                return
+            except HandScoreCaptureError:
+                await send_websocket_error(
+                    websocket, "hand_score_failed", "winning hand could not be verified",
+                    generation=registered.play_generation, session_id=session_id if local_runtime is not None else None,
+                )
+                await websocket.close(code=1011)
                 return
             except SQLAlchemyError:
                 registry.evict(registered.session_id)

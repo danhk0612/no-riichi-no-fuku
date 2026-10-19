@@ -1,5 +1,14 @@
 # 개발 Task
 
+## W09-B1 — 구현·검증 진행
+
+[계약](docs/W09_B1_HAND_SCORE_ADAPTER.md)의 adapter/최근 step 화료 결과와 오류 rollback/복구만 구현했다.
+영속 queue·캐릭터 문구·CG/UI·migration은 범위 밖이다. 아래 B1 지시문은 수행 기준 이력이다.
+정확한 수정 SHA의 전체 회귀·Windows W04/W05 및 artifact 확인 뒤 검토한다.
+다음은 B1 검토 후 국 결과 영속 queue의 독립 계약 구체화다. 고정 문구 관리/이전과 생성 정책의
+기존 미확정 사항은 임의 채택하지 않는다.
+
+
 ## 현재 다음 작업 — W09-B1 점수 수집 adapter (저성능 Work)
 
 W09-A2 진단은 완료했으며 [근거/한계](spikes/w09-a2-hand-score/README.md)에 따라 후보를 채택한다.

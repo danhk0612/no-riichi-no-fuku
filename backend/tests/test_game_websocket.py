@@ -344,6 +344,42 @@ class GameWebSocketApiTest(unittest.TestCase):
             })
             self.assertEqual(websocket.receive_json()["action_version"], 1)
 
+    def test_hand_score_failure_rolls_back_and_evicts_advanced_engine(self) -> None:
+        from app.mahjong.hand_scores import HandScoreCaptureError
+        from app.mahjong.session import AuthoritativeGameSession
+        created = self.create_game()
+        path = f"/api/game/sessions/{created['session_id']}/ws"
+        retained = self.registry._games[created["session_id"]]
+        original = AuthoritativeGameSession.submit_human_action
+
+        def advance_then_fail(game, index):
+            original(game, index)
+            raise HandScoreCaptureError("injected after original engine advanced")
+
+        with self.client.websocket_connect(path) as websocket:
+            self.authenticate(websocket)
+            first = websocket.receive_json()
+            with patch.object(AuthoritativeGameSession, 'submit_human_action', new=advance_then_fail):
+                websocket.send_json({'type': 'action', 'legal_action_index': 0,
+                                     'action_version': first['action_version']})
+                self.assertEqual(websocket.receive_json()['code'], 'hand_score_failed')
+                with self.assertRaises(WebSocketDisconnect) as closed:
+                    websocket.receive_json()
+                self.assertEqual(closed.exception.code, 1011)
+        self.assertNotIn(created['session_id'], self.registry._games)
+        self.assertIsNone(retained.game)
+        with self.session_factory() as session:
+            record = session.get(GameSessionRecord, created['session_id'])
+            self.assertEqual(record.human_action_indices, [])
+            self.assertEqual(record.status, 'active')
+            self.assertIsNone(record.scores)
+        with self.client.websocket_connect(path) as websocket:
+            self.authenticate(websocket)
+            self.assertEqual(websocket.receive_json(), first)
+            websocket.send_json({'type': 'action', 'legal_action_index': 0,
+                                 'action_version': first['action_version']})
+            self.assertEqual(websocket.receive_json()['action_version'], 1)
+
     def test_restart_after_final_action_before_settlement_settles_once(self) -> None:
         created = self.create_game()
         with self.session_factory() as session:
