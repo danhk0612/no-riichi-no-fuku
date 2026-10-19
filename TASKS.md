@@ -1,34 +1,49 @@
 # 개발 Task
 
-## W09-B1 — 구현·검증 진행
+## 현재 다음 Work — W09-B2 국 결과 사실 저장·복구
 
-[계약](docs/W09_B1_HAND_SCORE_ADAPTER.md)의 adapter/최근 step 화료 결과와 오류 rollback/복구만 구현했다.
-영속 queue·캐릭터 문구·CG/UI·migration은 범위 밖이다. 아래 B1 지시문은 수행 기준 이력이다.
-정확한 수정 SHA의 전체 회귀·Windows W04/W05 및 artifact 확인 뒤 검토한다.
-다음은 B1 검토 후 국 결과 영속 queue의 독립 계약 구체화다. 고정 문구 관리/이전과 생성 정책의
-기존 미확정 사항은 임의 채택하지 않는다.
-
-
-## 현재 다음 작업 — W09-B1 점수 수집 adapter (저성능 Work)
-
-W09-A2 진단은 완료했으며 [근거/한계](spikes/w09-a2-hand-score/README.md)에 따라 후보를 채택한다.
-아래 과거의 추가 진단 대기는 대체한다. W09-B 전체 완료/Windows 검증 완료는 아니다.
+권장: **저성능 Work**. 준비 main `67c4335`(PR #102 병합).
+[W09-B2 계약](docs/W09_B2_HAND_RESULTS_CONTRACT.md) 전체가 아래 지시문과 함께 적용된다.
+표시 queue/ack·문구/CG는 후속으로 남기고 사실 누적·원자 저장·복구를 먼저 구현한다.
 
 ```text
-최신 main/열린 PR/AGENTS/루트 문서와 W09-A2 README·PLAN·evidence를 확인해.
-W09-B1만 별도 branch에서 수행해. 기존0.4.8의 clone→복제본 scores 음수→동일 winning action map
-step→WinResult 보존 adapter와 관련 회귀를 구현해. 실제 점수/정산/규칙/CPU/RNG를 바꾸지 마.
-전체 국 queue/DB migration/문구/UI/CG/생성은 이번 범위에서 제외해.
-원본 불변, 실제 hora와 전원 actor/target/deltas/ura 및 WinResult 승자 대응을 검사해.
-중간국 결과 clear/최종 결과 보존/더블론/트리플론 유국을 구분하고 오프셋별 소유권을 보존해.
-오류를 delta/일반band fallback으로 숨기지 마. writer rollback/cache evict 경계와 맞춰 실패를 처리해.
-일반 친자 론/쯔모, 본장/공탁, 만관·하네만·배만 경계, 역만, 책임지불·영상/창깡·해저/하저의
-합법 독립 fixture를 보강해. 불가능한 fixture는 엔진 변경으로 우회하지 말고 차단 근거를 남겨.
-seed/actions/점수/순위/log와 기존 replay/policy1/2/3·음향ordinal 보존을 검사해.
-필요 회귀와 정확한 수정 SHA Windows W04/W05·artifact source/hash를 확인해.
-문서에 구현/미검증을 구분하고 commit/push·PR 제출까지 해. 직접 병합·Release/tag는 하지 마.
+danhk0612/no-riichi-no-fuku의 W09-B2만 수행해.
+최신 main/현재 branch/열린 PR, AGENTS와 루트 기준 문서를 읽어.
+준비 main67c4335의 PR #102 병합과 B1 최종 source315409c 검증을 확인하고
+문서 W09_B2_HAND_RESULTS_CONTRACT.md 전체를 따라.
+task/w09-b2-hand-results에서 별도 내부 국 결과 collector와 새 로컬 대국의 사실 영속을 구현해.
+
+B1 last_hand_wins를 매 engine step 직후 대응하고 원본 start/end log offset으로
+전체 화료자·유국을 묶어 사람 차례 사이의 모든 종료국을 별도 누적해.
+기존 pending_events/음향 ordinal을 재사용하거나 callback/CPU RNG를 바꾸지 마.
+새 marker1 로컬 대국만 수집하며 NULL 구 저장/웹의 동작과 기존 completed 읽기를 유지해.
+최신 migration head를 확인해 다음 additive revision과 GameHandResult/최소 marker를 추가해.
+참가자/당시 이름/stage는 저장된 players/cpu_choices에서 가져오고 현재 진행값으로 덮지 마.
+create 시작 batch 및 action indices와 사실 rows를 같은 writer transaction에 저장해.
+중복 identity는 완전 동일할 때만 유지하고 충돌/점수 누락을 fallback/upsert로 숨기지 마.
+flush/commit/수집 실패에는 rollback·cache 폐기·저장 턴 복구를 유지해.
+active replay는 저장된 사실 전체와 대조 후 과거 batch를 비우고 GET에서 backfill하지 마.
+completed는 replay/재정산 없이 읽고 마지막 action→별도 정산의 기존 경계를 보존해.
+reset은 old generation 사실/사용자 파일을 보존해.
+
+문구·prompt/content/media snapshot/무작위 표시순서/ack·새 API/WS/화면·새 행동 gate는 추가하지 마.
+설정/규칙/CPU/오디오·ComfyUI·이미지/사운드 생성·사용자 자료 삭제는 제외해.
+원본 trace/policy1/2/3·복수 pending/유국/트리플론/특수 화료·중복/변조/누락,
+create/action 저장 실패·재시작/정산 전 crash·reset/legacy를 계약 검사표대로 검증해.
+고정seed701 Tier0/2×수집전후4대국의 로그/점수/행동 동일성과 수집 비용을 기록해.
+전체 backend/대사·기존 build/browser, 최종 SHA Windows W04/W05 및 artifact source/hash를 확인해.
+packaged renderer 종료 후 소유 game.db를 read-only로 검사해 새 marker/국 사실/terminal 근거를
+artifact에 기록하되 production 진단 endpoint는 만들지 마.
+CURRENT_STATE/TASKS/ARCHITECTURE를 실제 구현/미검증대로 갱신하고 commit/push·PR을 제출해.
+직접 병합·Release/tag·후속 표시/생성 Task 착수는 하지 마.
 ```
 
+## W09-B1 — 검토·병합 완료
+
+PR #102/main67c4335, 검토 head315409c/tree841298b 일치.
+Linux165개·대사10개와 동일 source Windows W04/W05·두 artifact/내부 ZIP hash를 확인했다.
+[구현 계약](docs/W09_B1_HAND_SCORE_ADAPTER.md)의 점수 adapter·controlled failure/복구까지 완료다.
+국 사실 저장·표시/CG는 이 완료에 포함하지 않는다. 상세 수용 근거는 CURRENT_STATE를 따른다.
 
 모든 미착수 Task는 계획이며 실행 승인이 아니다. 상태는 구현/검증 사실로만 변경한다.
 W00은 초기 분석·기준 문서 준비(완료); 본 파일은 후속 개발 명세다.
@@ -233,7 +248,9 @@ commit/push·PR 제출까지 진행하되 직접 병합·Release/tag·후속 Tas
 | W08-S | 폴더 음향팩·단일 선택·fallback·캐릭터 음성 연결 | P1 / 완료(PR #83 병합, 최종 검증은 PR 참조) | W07 팩/event 계약, W08-A/B/C 병합, Q-PACK/Q-AUDIO/D-WIN/Q-OMAKE-VOICE | 저성능 Work |
 | W-DIFF-A | 난이도 1~10 설계·격리 기술 검증·구현 인계 | P1 / 공개1수 선읽기 격리검증 완료·강도 개선/10구간 미입증 | PR #83/#84 병합, 2026-10-18 사용자 승인 | 고성능 Work |
 | W-DIFF-B | 단계+게임 설정의 최종 난이도·저장·설정 UI 적용 | P1 / 정책·독립 재검증·구현·Linux 회귀 완료, 최종 Windows 근거는 제품 PR 참조 | W-DIFF-A 검토 | 저성능 Work(판단 구현 복잡 시 고성능 Work) |
-| W09-A | 국 결과/화료 등급/표시 순서·복구 기술 진단 | 진단 완료 / 점수 경로 채택 차단 | PR #96/#97 및 진단 준비 문서 | 고성능 Work |
+| W09-A | 국 결과/화료 등급/표시 순서·복구 기술 진단 | 진단 완료 / 후속 B1 경로 수용 | PR #96/#97 및 진단 준비 문서 | 고성능 Work |
+| W09-B1 | 검증된 화료 점수 adapter | 완료 / PR #102 병합 | W09-A2 | 저성능 Work |
+| W09-B2 | 국 결과 사실 누적·원자 저장·복구 | 계약 준비 / 구현 전 | W09-B1 | 저성능 Work |
 | W09 | 국 결과·캐릭터 고정 대사·변수 연결(최신 요구) | P1 / 대기 | W08 | 저성능 Work |
 | W10 | 독립 ComfyUI·Anima adapter | P1 / 대기 | W03, W07 | 저성능 Work |
 | W11 | 이벤트 랜덤 조합·생성/파일 연동 | P1 / 대기 | W06, W09, W10 | 저성능 Work |

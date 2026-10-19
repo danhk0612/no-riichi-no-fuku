@@ -1,5 +1,15 @@
 # 구조와 전환 검토
 
+## W09-B2 구현 계약 — 국 결과 사실 영속
+
+선행 B1은 PR #102/main67c4335에서 수용했다. 다음 구현은
+[W09-B2 계약](docs/W09_B2_HAND_RESULTS_CONTRACT.md)을 따른다. 엔진 step별 국 경계를 모아
+새 로컬 대국의 action transaction에 사실 rows를 함께 저장하고, active replay는 DB와 대조 후
+과거 batch를 비우며 completed는 저장값만 읽는다. marker NULL인 구 저장/웹은 그대로 유지한다.
+별도 source offset과 sequence를 사용하며 pending 음향 ordinal·규칙/CPU/RNG는 보존한다.
+사실 row는 표시 snapshot과 구분한다. 표시순서/ack·문구/CG·action gate는 이번 B2에 넣지 않는다.
+현재 B2 collector/schema/API는 미구현이다. 과거 W09-B 통합 제안보다 이 독립 범위가 우선한다.
+
 ## W09-B1 구현 — 점수 수집
 
 [제품 adapter 계약](docs/W09_B1_HAND_SCORE_ADAPTER.md)을 따른다. 합법 검증 뒤 winning map만

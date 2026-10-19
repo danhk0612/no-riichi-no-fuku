@@ -1,17 +1,29 @@
 # 현재 상태
 
-## W09-B1 — 점수 수집 구현·검증 진행
+## W09-B1 검토·병합 완료 / 다음 B2 계약
 
-기준main711b537(PR #101). [구현 계약](docs/W09_B1_HAND_SCORE_ADAPTER.md)에 따라
-0.4.8 clone 점수 수집과 원본 화료 대조·최근 step 불변 결과를 adapter에 연결했다.
-실패 시 action rollback/cache 폐기·저장된 턴 복구를 연결했다. 규칙/CPU/음향·DB/UI는 변경하지 않았다.
-친자 론/일반 쯔모·본장/공탁·복수론·역만/구간·책임지불·영상/창깡·해저/하저 검사를 추가했다.
-재개 시 미push 임시 작업/로그가 소실되어 작업을 복원하고 검증을 다시 실행했다.
-PR #102 자동 리뷰의 콜드 REST 복구 예외 누락을 실제 화료 저장 replay로 재현하고503으로 보완했다.
-stale action 거절 뒤 재복구의 동일 누락도 수정 전후 재현·저장 턴 보존 검사로 보완했다.
-첫 source3739201의 Linux163개/대사10개는 통과했다. 보완 뒤 정확한 수정 SHA의 최종 회귀·
-Windows W04/W05 및 artifact source/hash는 PR #102의 검증 기록을 따른다.
-현재 국 결과 queue/대사·CG 표시/ack는 미구현이며 B1 수집 구현과 구분한다.
+PR #102는 main `67c43356351b1cc320f107d2993679f3c9650eef`에 병합됐다.
+검토 head `315409cf3b902c8c3368dcc80547e58db42e923e`와 병합 tree
+`841298bbbbcf4757f9774789870c78b1ec4c0417`가 같다. 원본과 복제본 화료 대조·최근 step 불변 점수,
+action 실패 rollback/cache 폐기, 콜드 REST·WS 최초/stale 복구의 controlled failure를 구현했다.
+Linux165개(71.508초)·대사10개 통과. 동일 source Windows W04 run39198176244와
+W05 run39198176276에서 각각165개·대사10개, W05 브라우저4종/renderer30·일반 종료/재시작을 확인했다.
+두 artifact 내부 source 및 API digest/실제 다운로드 SHA256, W05 내부 package ZIP hash가 일치했다.
+
+| 근거 | ID / SHA256 |
+|---|---|
+| W04 artifact | 12163450101 / d4bdec759130e6fd59f005a00ae7b1936dc04f0c28ec8d86367f618969e64623 |
+| W05 artifact | 12162896741 / 5397c8b34c31b11cb27f518e2ac37d4d8aa1bd6beff157415b46fdfa2c377b3b |
+| W05 내부 ZIP | 58ec3197d8e4dec58dbcb1fb05577b2c225aac25a4b98e5480288c291a0f5672 |
+
+책임지불은 공개 setter 합성 상태이며 책임 성립 전체 대국/개인 Windows PC 실기는 미검증이다.
+국 결과 영속/화면·ack·문구/CG 연결은 B1 완료 범위가 아니다.
+
+다음 [W09-B2 계약](docs/W09_B2_HAND_RESULTS_CONTRACT.md)은 국 결과 사실의 별도 누적,
+새 로컬 대국에서 action과 원자 저장·replay 대조/완료 읽기·reset 보존까지만 구체화했다.
+아직 제품 collector/새 DB schema는 만들지 않았다. 문구 이전/생성 미확정 정책은 확정하지 않았으며
+표시 순서·ack·UI/다음 행동 gate는 후속 범위다. B2 동안 현재 대국 흐름은 유지한다.
+이번 추가 작업은 문서/검토다. 새 자연 대국/Windows CI·이미지·오디오 생성은 실행하지 않았다.
 
 
 ## W09-A2 — 복제본 점수 경로 진단 완료
