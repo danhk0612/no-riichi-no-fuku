@@ -1,0 +1,775 @@
+{
+  "kind": "synthetic public API; not natural sample",
+  "score_api": [
+    {
+      "han": 3,
+      "fu": 60,
+      "is_oya": false,
+      "tsumo": false,
+      "expected_band": 1,
+      "score_without_bonus": {
+        "total": 7700,
+        "pay_ron": 7700,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 8600,
+        "pay_ron": 8600,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 3,
+      "fu": 70,
+      "is_oya": false,
+      "tsumo": false,
+      "expected_band": 2,
+      "score_without_bonus": {
+        "total": 8000,
+        "pay_ron": 8000,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 8900,
+        "pay_ron": 8900,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 4,
+      "fu": 30,
+      "is_oya": false,
+      "tsumo": false,
+      "expected_band": 1,
+      "score_without_bonus": {
+        "total": 7700,
+        "pay_ron": 7700,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 8600,
+        "pay_ron": 8600,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 4,
+      "fu": 40,
+      "is_oya": false,
+      "tsumo": false,
+      "expected_band": 2,
+      "score_without_bonus": {
+        "total": 8000,
+        "pay_ron": 8000,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 8900,
+        "pay_ron": 8900,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 5,
+      "fu": 30,
+      "is_oya": false,
+      "tsumo": false,
+      "expected_band": 2,
+      "score_without_bonus": {
+        "total": 8000,
+        "pay_ron": 8000,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 8900,
+        "pay_ron": 8900,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 7,
+      "fu": 30,
+      "is_oya": false,
+      "tsumo": false,
+      "expected_band": 2,
+      "score_without_bonus": {
+        "total": 12000,
+        "pay_ron": 12000,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 12900,
+        "pay_ron": 12900,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 8,
+      "fu": 30,
+      "is_oya": false,
+      "tsumo": false,
+      "expected_band": 3,
+      "score_without_bonus": {
+        "total": 16000,
+        "pay_ron": 16000,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 16900,
+        "pay_ron": 16900,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 11,
+      "fu": 30,
+      "is_oya": false,
+      "tsumo": false,
+      "expected_band": 3,
+      "score_without_bonus": {
+        "total": 24000,
+        "pay_ron": 24000,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 24900,
+        "pay_ron": 24900,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 13,
+      "fu": 30,
+      "is_oya": false,
+      "tsumo": false,
+      "expected_band": 3,
+      "score_without_bonus": {
+        "total": 32000,
+        "pay_ron": 32000,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 32900,
+        "pay_ron": 32900,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 3,
+      "fu": 60,
+      "is_oya": false,
+      "tsumo": true,
+      "expected_band": 1,
+      "score_without_bonus": {
+        "total": 7900,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 3900,
+        "pay_tsumo_ko": 2000
+      },
+      "with_3_honba": {
+        "total": 8800,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 4200,
+        "pay_tsumo_ko": 2300
+      }
+    },
+    {
+      "han": 3,
+      "fu": 70,
+      "is_oya": false,
+      "tsumo": true,
+      "expected_band": 2,
+      "score_without_bonus": {
+        "total": 8000,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 4000,
+        "pay_tsumo_ko": 2000
+      },
+      "with_3_honba": {
+        "total": 8900,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 4300,
+        "pay_tsumo_ko": 2300
+      }
+    },
+    {
+      "han": 4,
+      "fu": 30,
+      "is_oya": false,
+      "tsumo": true,
+      "expected_band": 1,
+      "score_without_bonus": {
+        "total": 7900,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 3900,
+        "pay_tsumo_ko": 2000
+      },
+      "with_3_honba": {
+        "total": 8800,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 4200,
+        "pay_tsumo_ko": 2300
+      }
+    },
+    {
+      "han": 4,
+      "fu": 40,
+      "is_oya": false,
+      "tsumo": true,
+      "expected_band": 2,
+      "score_without_bonus": {
+        "total": 8000,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 4000,
+        "pay_tsumo_ko": 2000
+      },
+      "with_3_honba": {
+        "total": 8900,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 4300,
+        "pay_tsumo_ko": 2300
+      }
+    },
+    {
+      "han": 5,
+      "fu": 30,
+      "is_oya": false,
+      "tsumo": true,
+      "expected_band": 2,
+      "score_without_bonus": {
+        "total": 8000,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 4000,
+        "pay_tsumo_ko": 2000
+      },
+      "with_3_honba": {
+        "total": 8900,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 4300,
+        "pay_tsumo_ko": 2300
+      }
+    },
+    {
+      "han": 7,
+      "fu": 30,
+      "is_oya": false,
+      "tsumo": true,
+      "expected_band": 2,
+      "score_without_bonus": {
+        "total": 12000,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 6000,
+        "pay_tsumo_ko": 3000
+      },
+      "with_3_honba": {
+        "total": 12900,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 6300,
+        "pay_tsumo_ko": 3300
+      }
+    },
+    {
+      "han": 8,
+      "fu": 30,
+      "is_oya": false,
+      "tsumo": true,
+      "expected_band": 3,
+      "score_without_bonus": {
+        "total": 16000,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 8000,
+        "pay_tsumo_ko": 4000
+      },
+      "with_3_honba": {
+        "total": 16900,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 8300,
+        "pay_tsumo_ko": 4300
+      }
+    },
+    {
+      "han": 11,
+      "fu": 30,
+      "is_oya": false,
+      "tsumo": true,
+      "expected_band": 3,
+      "score_without_bonus": {
+        "total": 24000,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 12000,
+        "pay_tsumo_ko": 6000
+      },
+      "with_3_honba": {
+        "total": 24900,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 12300,
+        "pay_tsumo_ko": 6300
+      }
+    },
+    {
+      "han": 13,
+      "fu": 30,
+      "is_oya": false,
+      "tsumo": true,
+      "expected_band": 3,
+      "score_without_bonus": {
+        "total": 32000,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 16000,
+        "pay_tsumo_ko": 8000
+      },
+      "with_3_honba": {
+        "total": 32900,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 16300,
+        "pay_tsumo_ko": 8300
+      }
+    },
+    {
+      "han": 3,
+      "fu": 60,
+      "is_oya": true,
+      "tsumo": false,
+      "expected_band": 1,
+      "score_without_bonus": {
+        "total": 11600,
+        "pay_ron": 11600,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 12500,
+        "pay_ron": 12500,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 3,
+      "fu": 70,
+      "is_oya": true,
+      "tsumo": false,
+      "expected_band": 2,
+      "score_without_bonus": {
+        "total": 12000,
+        "pay_ron": 12000,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 12900,
+        "pay_ron": 12900,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 4,
+      "fu": 30,
+      "is_oya": true,
+      "tsumo": false,
+      "expected_band": 1,
+      "score_without_bonus": {
+        "total": 11600,
+        "pay_ron": 11600,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 12500,
+        "pay_ron": 12500,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 4,
+      "fu": 40,
+      "is_oya": true,
+      "tsumo": false,
+      "expected_band": 2,
+      "score_without_bonus": {
+        "total": 12000,
+        "pay_ron": 12000,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 12900,
+        "pay_ron": 12900,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 5,
+      "fu": 30,
+      "is_oya": true,
+      "tsumo": false,
+      "expected_band": 2,
+      "score_without_bonus": {
+        "total": 12000,
+        "pay_ron": 12000,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 12900,
+        "pay_ron": 12900,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 7,
+      "fu": 30,
+      "is_oya": true,
+      "tsumo": false,
+      "expected_band": 2,
+      "score_without_bonus": {
+        "total": 18000,
+        "pay_ron": 18000,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 18900,
+        "pay_ron": 18900,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 8,
+      "fu": 30,
+      "is_oya": true,
+      "tsumo": false,
+      "expected_band": 3,
+      "score_without_bonus": {
+        "total": 24000,
+        "pay_ron": 24000,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 24900,
+        "pay_ron": 24900,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 11,
+      "fu": 30,
+      "is_oya": true,
+      "tsumo": false,
+      "expected_band": 3,
+      "score_without_bonus": {
+        "total": 36000,
+        "pay_ron": 36000,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 36900,
+        "pay_ron": 36900,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 13,
+      "fu": 30,
+      "is_oya": true,
+      "tsumo": false,
+      "expected_band": 3,
+      "score_without_bonus": {
+        "total": 48000,
+        "pay_ron": 48000,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      },
+      "with_3_honba": {
+        "total": 48900,
+        "pay_ron": 48900,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 0
+      }
+    },
+    {
+      "han": 3,
+      "fu": 60,
+      "is_oya": true,
+      "tsumo": true,
+      "expected_band": 1,
+      "score_without_bonus": {
+        "total": 11700,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 3900
+      },
+      "with_3_honba": {
+        "total": 12600,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 300,
+        "pay_tsumo_ko": 4200
+      }
+    },
+    {
+      "han": 3,
+      "fu": 70,
+      "is_oya": true,
+      "tsumo": true,
+      "expected_band": 2,
+      "score_without_bonus": {
+        "total": 12000,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 4000
+      },
+      "with_3_honba": {
+        "total": 12900,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 300,
+        "pay_tsumo_ko": 4300
+      }
+    },
+    {
+      "han": 4,
+      "fu": 30,
+      "is_oya": true,
+      "tsumo": true,
+      "expected_band": 1,
+      "score_without_bonus": {
+        "total": 11700,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 3900
+      },
+      "with_3_honba": {
+        "total": 12600,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 300,
+        "pay_tsumo_ko": 4200
+      }
+    },
+    {
+      "han": 4,
+      "fu": 40,
+      "is_oya": true,
+      "tsumo": true,
+      "expected_band": 2,
+      "score_without_bonus": {
+        "total": 12000,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 4000
+      },
+      "with_3_honba": {
+        "total": 12900,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 300,
+        "pay_tsumo_ko": 4300
+      }
+    },
+    {
+      "han": 5,
+      "fu": 30,
+      "is_oya": true,
+      "tsumo": true,
+      "expected_band": 2,
+      "score_without_bonus": {
+        "total": 12000,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 4000
+      },
+      "with_3_honba": {
+        "total": 12900,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 300,
+        "pay_tsumo_ko": 4300
+      }
+    },
+    {
+      "han": 7,
+      "fu": 30,
+      "is_oya": true,
+      "tsumo": true,
+      "expected_band": 2,
+      "score_without_bonus": {
+        "total": 18000,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 6000
+      },
+      "with_3_honba": {
+        "total": 18900,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 300,
+        "pay_tsumo_ko": 6300
+      }
+    },
+    {
+      "han": 8,
+      "fu": 30,
+      "is_oya": true,
+      "tsumo": true,
+      "expected_band": 3,
+      "score_without_bonus": {
+        "total": 24000,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 8000
+      },
+      "with_3_honba": {
+        "total": 24900,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 300,
+        "pay_tsumo_ko": 8300
+      }
+    },
+    {
+      "han": 11,
+      "fu": 30,
+      "is_oya": true,
+      "tsumo": true,
+      "expected_band": 3,
+      "score_without_bonus": {
+        "total": 36000,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 12000
+      },
+      "with_3_honba": {
+        "total": 36900,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 300,
+        "pay_tsumo_ko": 12300
+      }
+    },
+    {
+      "han": 13,
+      "fu": 30,
+      "is_oya": true,
+      "tsumo": true,
+      "expected_band": 3,
+      "score_without_bonus": {
+        "total": 48000,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 0,
+        "pay_tsumo_ko": 16000
+      },
+      "with_3_honba": {
+        "total": 48900,
+        "pay_ron": 0,
+        "pay_tsumo_oya": 300,
+        "pay_tsumo_ko": 16300
+      }
+    }
+  ],
+  "double_ron": {
+    "offered": {
+      "1": [
+        {
+          "type": 4,
+          "tile": 104,
+          "consume_tiles": [],
+          "actor": 1
+        },
+        {
+          "type": 7,
+          "tile": null,
+          "consume_tiles": [],
+          "actor": 1
+        }
+      ],
+      "0": [],
+      "3": [],
+      "2": [
+        {
+          "type": 4,
+          "tile": 104,
+          "consume_tiles": [],
+          "actor": 2
+        },
+        {
+          "type": 7,
+          "tile": null,
+          "consume_tiles": [],
+          "actor": 2
+        }
+      ]
+    },
+    "chosen": {
+      "1": {
+        "type": 4,
+        "tile": 104,
+        "consume_tiles": [],
+        "actor": 1
+      },
+      "2": {
+        "type": 4,
+        "tile": 104,
+        "consume_tiles": [],
+        "actor": 2
+      }
+    },
+    "hora": [
+      {
+        "actor": 1,
+        "deltas": [
+          -12000,
+          12000,
+          0,
+          0
+        ],
+        "target": 0,
+        "type": "hora",
+        "ura_markers": []
+      },
+      {
+        "actor": 2,
+        "deltas": [
+          -2600,
+          0,
+          2600,
+          0
+        ],
+        "target": 0,
+        "type": "hora",
+        "ura_markers": []
+      }
+    ],
+    "win_results": {},
+    "sanchaho_is_draw": true
+  },
+  "standalone_evaluator_yakuman": {
+    "is_win": true,
+    "yakuman": true,
+    "han": 26,
+    "fu": 0,
+    "ron_agari": 96000,
+    "pao_payer": null
+  },
+  "yakuman_scope": "standalone evaluator defaults; not default_tenhou end-to-end verification",
+  "elapsed_s": 0.0007071600002745981
+}

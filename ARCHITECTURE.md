@@ -14,6 +14,33 @@
 W11 독립 생성·W11-U 화료 결과창을 구체화한다. 현재는 설계 대기이며 구현 기능이 아니다.
 
 
+## W09-A 진단 결과·후속 경계 (2026-10-19)
+
+main `d90cc4d` 동일tree에서 제품 변경 없이 진단했다. 상세 원본/후보 비용·한계와 DTO/순서는
+[W09-A spike](spikes/w09-a-hand-results/README.md)를 따른다. live `win_results`는 중간 국에
+소실되고 observation은 동일hora를 중복 관측한다. 결과 전용 국identity는 누적MJAI의
+start_kyoku log offset, 화료자는 해당 국의 모든hora offset으로 제안한다. 기존 pending batch의
+음향ordinal·action_version·CPU/규칙/RNG는 재정의하지 않는다.
+
+native replay는 live의 한/역과 달라 채택 중단했다. viewer는 최종화료7건의 한/부/역만 일치했으며
+본장 지급액/특수화료·책임지불 전체 검증이 부족하다. **정확한 중간국 점수 경로는 미채택**이다.
+별도 승인된 추가진단에서 gate를 해소하기 전 W09-B를 구현하지 않는다. 점수불명을 일반band로
+바꾸거나 delta에서 등급을 추정하지 않는다. 복수론은 실제가능하며 전원보존, 배경순차/대표는 사용자결정 대기다.
+
+최소DTO는 version/generation/session/국start·end offset/전체화료자/당시CPU·stage·name/
+검증된점수·band/콘텐츠revision·고정문구·선택snapshot/표시sequence를 가진다. human은CPU/stage null,
+최종정산의stage_after와 화료stage_at_hand를 분리한다. schema/API는 이번에 만들지 않았다.
+create/action writer에서 결과snapshot을 action과 원자저장→commit 후발행, 별도최종정산을 보존하는
+방식을 제안한다. 저장결과 재resolve/재추첨 금지, ack는 정산과독립·generation/session/event 멱등이다.
+표시순서는 모든미확인국→마지막국→최종결산·변경후CG/고정패배문구→기존ending→자유대국이다.
+기동시ending_pending이 미확인국/결산을 건너뛰지 않아야 하며 reset은 세대격리·자료보존을 유지한다.
+구queue없는저장은 기존형식으로 복구하며 현재콘텐츠로 과거표시를 새로만들지 않는다.
+
+관리(P/N3구간/캐릭터고정문구), W09-B(결과/텍스트·queue), W10/W11(정책확정·실제기술확인 후생성),
+W11-U(저장순서·화료배경/증가후CG연출)의 독립지시문/파일범위·선행·회귀/Windows기준은 TASKS를 따른다.
+아래 과거의 공유대사풀/화료CG금지·오마케추가CG일괄억제/표시저장제안은 최신요구와 이 절이 우선한다.
+현재 제품에 새국queue/CG생성·표시ack가 구현됐다는 뜻이 아니다.
+
 ## W08-D 구현 — 공유 복장 상태·포즈 관리
 
 복장 상태/포즈 원문과 명시 후보·지정 기본값, 영향 확인 후 삭제/Level 이동의 구현 계약은

@@ -1,0 +1,514 @@
+{
+  "natural_pairs": 8,
+  "trace_equal": true,
+  "rounds": 46,
+  "horas": 40,
+  "draw_events": 7,
+  "intermediate_win_results_missing": 32,
+  "final_win_results_present": 7,
+  "observation_hora_copies": 139,
+  "native_final_semantic_mismatches": [
+    {
+      "seed": 701,
+      "tier": 0,
+      "live": {
+        "2": {
+          "is_win": true,
+          "han": 4,
+          "fu": 30,
+          "yakuman": false,
+          "ron_agari": 0,
+          "tsumo_agari_oya": 4000,
+          "tsumo_agari_ko": 2100,
+          "pao_payer": null,
+          "yaku": [
+            31,
+            32,
+            9
+          ]
+        }
+      },
+      "replay": {
+        "2": {
+          "is_win": true,
+          "han": 5,
+          "fu": 30,
+          "yakuman": false,
+          "ron_agari": 0,
+          "tsumo_agari_oya": 4000,
+          "tsumo_agari_ko": 2000,
+          "pao_payer": null,
+          "yaku": [
+            5,
+            31,
+            32,
+            9
+          ]
+        }
+      }
+    },
+    {
+      "seed": 701,
+      "tier": 2,
+      "live": {
+        "1": {
+          "is_win": true,
+          "han": 1,
+          "fu": 30,
+          "yakuman": false,
+          "ron_agari": 1000,
+          "tsumo_agari_oya": 0,
+          "tsumo_agari_ko": 0,
+          "pao_payer": null,
+          "yaku": [
+            7
+          ]
+        }
+      },
+      "replay": {
+        "1": {
+          "is_win": true,
+          "han": 2,
+          "fu": 30,
+          "yakuman": false,
+          "ron_agari": 2000,
+          "tsumo_agari_oya": 0,
+          "tsumo_agari_ko": 0,
+          "pao_payer": null,
+          "yaku": [
+            6,
+            7
+          ]
+        }
+      }
+    },
+    {
+      "seed": 702,
+      "tier": 0,
+      "live": {
+        "1": {
+          "is_win": true,
+          "han": 3,
+          "fu": 25,
+          "yakuman": false,
+          "ron_agari": 3500,
+          "tsumo_agari_oya": 0,
+          "tsumo_agari_ko": 0,
+          "pao_payer": null,
+          "yaku": [
+            25,
+            2
+          ]
+        }
+      },
+      "replay": {
+        "1": {
+          "is_win": true,
+          "han": 4,
+          "fu": 25,
+          "yakuman": false,
+          "ron_agari": 6400,
+          "tsumo_agari_oya": 0,
+          "tsumo_agari_ko": 0,
+          "pao_payer": null,
+          "yaku": [
+            25,
+            2,
+            6
+          ]
+        }
+      }
+    },
+    {
+      "seed": 703,
+      "tier": 0,
+      "live": {
+        "0": {
+          "is_win": true,
+          "han": 4,
+          "fu": 25,
+          "yakuman": false,
+          "ron_agari": 9600,
+          "tsumo_agari_oya": 0,
+          "tsumo_agari_ko": 0,
+          "pao_payer": null,
+          "yaku": [
+            25,
+            12,
+            2
+          ]
+        }
+      },
+      "replay": {
+        "0": {
+          "is_win": true,
+          "han": 5,
+          "fu": 25,
+          "yakuman": false,
+          "ron_agari": 12000,
+          "tsumo_agari_oya": 0,
+          "tsumo_agari_ko": 0,
+          "pao_payer": null,
+          "yaku": [
+            25,
+            12,
+            2,
+            6
+          ]
+        }
+      }
+    },
+    {
+      "seed": 704,
+      "tier": 0,
+      "live": {
+        "0": {
+          "is_win": true,
+          "han": 4,
+          "fu": 30,
+          "yakuman": false,
+          "ron_agari": 0,
+          "tsumo_agari_oya": 3900,
+          "tsumo_agari_ko": 2000,
+          "pao_payer": null,
+          "yaku": [
+            31,
+            9,
+            27
+          ]
+        }
+      },
+      "replay": {
+        "0": {
+          "is_win": true,
+          "han": 5,
+          "fu": 30,
+          "yakuman": false,
+          "ron_agari": 0,
+          "tsumo_agari_oya": 4000,
+          "tsumo_agari_ko": 2000,
+          "pao_payer": null,
+          "yaku": [
+            5,
+            31,
+            9,
+            27
+          ]
+        }
+      }
+    },
+    {
+      "seed": 704,
+      "tier": 2,
+      "live": {
+        "1": {
+          "is_win": true,
+          "han": 4,
+          "fu": 40,
+          "yakuman": false,
+          "ron_agari": 0,
+          "tsumo_agari_oya": 4000,
+          "tsumo_agari_ko": 2000,
+          "pao_payer": null,
+          "yaku": [
+            21,
+            22
+          ]
+        }
+      },
+      "replay": {
+        "1": {
+          "is_win": true,
+          "han": 5,
+          "fu": 40,
+          "yakuman": false,
+          "ron_agari": 0,
+          "tsumo_agari_oya": 4000,
+          "tsumo_agari_ko": 2000,
+          "pao_payer": null,
+          "yaku": [
+            5,
+            21,
+            22
+          ]
+        }
+      }
+    }
+  ],
+  "viewer_final_bonus_differences": [
+    {
+      "seed": 701,
+      "tier": 0,
+      "live": {
+        "2": {
+          "is_win": true,
+          "han": 4,
+          "fu": 30,
+          "yakuman": false,
+          "ron_agari": 0,
+          "tsumo_agari_oya": 4000,
+          "tsumo_agari_ko": 2100,
+          "pao_payer": null,
+          "yaku": [
+            31,
+            32,
+            9
+          ]
+        }
+      },
+      "viewer": [
+        {
+          "is_win": true,
+          "han": 4,
+          "fu": 30,
+          "yakuman": false,
+          "ron_agari": 0,
+          "tsumo_agari_oya": 3900,
+          "tsumo_agari_ko": 2000,
+          "pao_payer": null,
+          "yaku": [
+            31,
+            32,
+            9
+          ]
+        }
+      ]
+    },
+    {
+      "seed": 702,
+      "tier": 0,
+      "live": {
+        "1": {
+          "is_win": true,
+          "han": 3,
+          "fu": 25,
+          "yakuman": false,
+          "ron_agari": 3500,
+          "tsumo_agari_oya": 0,
+          "tsumo_agari_ko": 0,
+          "pao_payer": null,
+          "yaku": [
+            25,
+            2
+          ]
+        }
+      },
+      "viewer": [
+        {
+          "is_win": true,
+          "han": 3,
+          "fu": 25,
+          "yakuman": false,
+          "ron_agari": 3200,
+          "tsumo_agari_oya": 0,
+          "tsumo_agari_ko": 0,
+          "pao_payer": null,
+          "yaku": [
+            25,
+            2
+          ]
+        }
+      ]
+    }
+  ],
+  "viewer_final_semantics_equal": 7,
+  "candidates": {
+    "live_win_results_after_step": "not sufficient: intermediate results already cleared",
+    "native_replay": "adoption stopped at first evaluated sample: extra yaku/han; no repair/tuning",
+    "viewer_raw_win_result": "not a drop-in: honba/riichi excluded, no winner seat field; conditional scoring recheck required",
+    "viewer_han_fu_plus_official_score": "not adopted: final semantic agreement is limited evidence; intermediate/special scoring not independently proven",
+    "mjai_log_identity": "recommend only as result identity/source ordering, not score inference"
+  },
+  "samples": [
+    {
+      "seed": 701,
+      "tier": 0,
+      "steps": 440,
+      "elapsed_s": 0.7050765359999787,
+      "native_s": 0.004040833000544808,
+      "viewer_s": 0.04712958300024184,
+      "trace": "128819bc012b893fe3215263a888a6dbfe88139c6fb96fe341b3686bd355b774",
+      "counts": {
+        "chi": 23,
+        "dahai": 350,
+        "end_game": 1,
+        "end_kyoku": 7,
+        "hora": 6,
+        "pon": 16,
+        "reach": 3,
+        "reach_accepted": 3,
+        "ryukyoku": 1,
+        "start_game": 1,
+        "start_kyoku": 7,
+        "tsumo": 313
+      },
+      "log_digest": "a43ced3c482c049fb2c2e2864b7a6f3a38a6111f1838d54eb8837ffc74f8eca7"
+    },
+    {
+      "seed": 701,
+      "tier": 2,
+      "steps": 280,
+      "elapsed_s": 0.4308758189999935,
+      "native_s": 0.0029576899996754946,
+      "viewer_s": 0.038746735000131594,
+      "trace": "ff9ab9e1db51e272177c5fcecc9a0fbb12d4fc26bc7b5e86d117ea487d986498",
+      "counts": {
+        "chi": 20,
+        "dahai": 222,
+        "end_game": 1,
+        "end_kyoku": 5,
+        "hora": 4,
+        "pon": 8,
+        "reach": 2,
+        "reach_accepted": 2,
+        "ryukyoku": 1,
+        "start_game": 1,
+        "start_kyoku": 5,
+        "tsumo": 194
+      },
+      "log_digest": "b2f07a83931fbe65a6e39d33039b4ae92101d24249beae6513892103b1ef187c"
+    },
+    {
+      "seed": 702,
+      "tier": 0,
+      "steps": 758,
+      "elapsed_s": 1.4892071920003218,
+      "native_s": 0.006217423999260063,
+      "viewer_s": 0.045823323000149685,
+      "trace": "6fe76469d9bcb5f441504cc06e2ff52c427d9a67a21f504290c33ec372edfa6f",
+      "counts": {
+        "chi": 28,
+        "dahai": 620,
+        "end_game": 1,
+        "end_kyoku": 11,
+        "hora": 9,
+        "pon": 27,
+        "reach": 5,
+        "reach_accepted": 5,
+        "ryukyoku": 3,
+        "start_game": 1,
+        "start_kyoku": 11,
+        "tsumo": 565
+      },
+      "log_digest": "8cd8d21f0fbf57897775ad1e5be5c9880464395f01546cda25faba89bc1b0b8f"
+    },
+    {
+      "seed": 702,
+      "tier": 2,
+      "steps": 296,
+      "elapsed_s": 0.5353524299998753,
+      "native_s": 0.002680361999409797,
+      "viewer_s": 0.039493684000262874,
+      "trace": "ba60f307953eae9d23b3978284e8a3dc9ebdad394c78635843f101c7a084b03f",
+      "counts": {
+        "chi": 5,
+        "dahai": 238,
+        "end_game": 1,
+        "end_kyoku": 4,
+        "hora": 3,
+        "pon": 8,
+        "reach": 2,
+        "reach_accepted": 2,
+        "ryukyoku": 1,
+        "start_game": 1,
+        "start_kyoku": 4,
+        "tsumo": 225
+      },
+      "log_digest": "17430b54ef56355c4ff967f2e991c19eaa4124604bf0e71eb6dbe01e2f6e79bd"
+    },
+    {
+      "seed": 703,
+      "tier": 0,
+      "steps": 394,
+      "elapsed_s": 0.6041592190003939,
+      "native_s": 0.0033839469997474225,
+      "viewer_s": 0.03987120799956756,
+      "trace": "515c9cec0e98dbda3be5430437c488051052a56ec47301190eeef4a8980813e8",
+      "counts": {
+        "chi": 19,
+        "dahai": 310,
+        "end_game": 1,
+        "end_kyoku": 7,
+        "hora": 6,
+        "pon": 15,
+        "reach": 4,
+        "reach_accepted": 4,
+        "ryukyoku": 1,
+        "start_game": 1,
+        "start_kyoku": 7,
+        "tsumo": 277
+      },
+      "log_digest": "7c63b08016b4151dafeb18a886fead51108f8ae226ce7ff196baee4aa8ea3bc1"
+    },
+    {
+      "seed": 703,
+      "tier": 2,
+      "steps": 225,
+      "elapsed_s": 0.3528235389994734,
+      "native_s": 0.0022996529996817117,
+      "viewer_s": 0.03721310900073149,
+      "trace": "dace3d86ad15f991aca79a0f875c7d93ada6b9e43bd468615a7664d91505a474",
+      "counts": {
+        "chi": 9,
+        "dahai": 172,
+        "end_game": 1,
+        "end_kyoku": 4,
+        "hora": 4,
+        "pon": 4,
+        "reach": 3,
+        "reach_accepted": 3,
+        "start_game": 1,
+        "start_kyoku": 4,
+        "tsumo": 160
+      },
+      "log_digest": "193f32de5af3950c3a3e2021023dc1c42c52de57d811b5256e4ef76cca7a86fa"
+    },
+    {
+      "seed": 704,
+      "tier": 0,
+      "steps": 232,
+      "elapsed_s": 0.3300129609997384,
+      "native_s": 0.0022430189992519445,
+      "viewer_s": 0.03695292599968525,
+      "trace": "5d330ff3d5417af79ea6ba609257acd4c1036cc926569f450cb1eccc07d52d52",
+      "counts": {
+        "chi": 10,
+        "dahai": 187,
+        "end_game": 1,
+        "end_kyoku": 4,
+        "hora": 4,
+        "pon": 8,
+        "reach": 2,
+        "reach_accepted": 2,
+        "start_game": 1,
+        "start_kyoku": 4,
+        "tsumo": 170
+      },
+      "log_digest": "153afa704dc45aeec4375cd1582f81e7805ee35455bdc1d1df58a0922ec5924d"
+    },
+    {
+      "seed": 704,
+      "tier": 2,
+      "steps": 276,
+      "elapsed_s": 0.501193045999571,
+      "native_s": 0.0026895259998127585,
+      "viewer_s": 0.041924698000002536,
+      "trace": "24e84f39d15a4a8cd03da3ced67851b9c371bc1b2bd4754266a04bf45a60c2d9",
+      "counts": {
+        "chi": 9,
+        "dahai": 221,
+        "end_game": 1,
+        "end_kyoku": 4,
+        "hora": 4,
+        "pon": 8,
+        "reach": 2,
+        "reach_accepted": 2,
+        "start_game": 1,
+        "start_kyoku": 4,
+        "tsumo": 206
+      },
+      "log_digest": "df7435a8abf1ae18073f40d3ec1b92b5dc51cf7b3ea0f582b7f6386f8bece266"
+    }
+  ],
+  "candidate_policy": "fixed batch completed before offline candidate comparison; rejection does not discard later archived evidence"
+}

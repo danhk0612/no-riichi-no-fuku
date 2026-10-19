@@ -1,0 +1,28 @@
+{
+  "source": "d90cc4dcb78c2f5ffa24e2a9a5b2fd32e36603b4",
+  "verified_source_tree": "99732c978df7757a28c332efafc8b1d5bd963393",
+  "tracked_blob_differences_vs_GitHub_main": 0,
+  "execution_window_s": 354.88613653182983,
+  "window_budget_s": 600,
+  "within_budget": true,
+  "scope": "natural16 + synthetic fixtures/model + existing synthetic local_play regressions; documentation preparation excluded",
+  "sha256": {
+    "diagnose.py": "469419535ffc2da764cb8cda9943290d9e7f8a7d83fa1d8588a6a55bdbd2e7b2",
+    "fixtures.py": "0fb1663b183329e196d425499813fdaeab9f20e0eba50e59a43963342e917fe7",
+    "presentation_model.py": "d103ea566a2428c5b174293acc228ab6d0d083b9ec81c6dc667b83e4db5161fe",
+    "analyze.py": "270d6220b626b86be6c5b16107200872e2210dcf77ed9575480fe83b91857608"
+  },
+  "dependency_sha256": {
+    "visualizer/viewer.py": "e102a645ad551b779098886da8935c7c0cc487b42ec68e29c6368bb832fcce5f",
+    "hand.py": "c3a5507a4b0d221104bc0bd6c56a2f7858adbc73dbbdd17d01528b9b39edf017",
+    "_riichienv.pyi": "576cb37fe68b9fa5fd1cd1ff1ca2568de43d48d4c47879f87b3099e33d9fefe4",
+    "_riichienv.cpython-312-x86_64-linux-gnu.so": "e202f0ff42238e01592ddbab9feb894694eaafd65d4be3c64bf271d176a36dab"
+  },
+  "existing_regressions": {
+    "passed": 5,
+    "elapsed_s": 2.338
+  },
+  "windows": "not run",
+  "new_product_hand_queue": "not implemented",
+  "candidate_adoption": "blocked"
+}
