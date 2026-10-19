@@ -2,8 +2,8 @@
 
 ## W09-B2 PR #104 보완 — 코드·로컬 검증 완료, Windows exact-head 증거 대기
 
-PR #105가 main `ed48f39`에 병합된 뒤 같은 구현 branch에 merge commit `b118809`로 기준 변경과
-`docs/W09_B2_REVIEW_FINDINGS.md`를 반영했다. PR #104는 open이며 직접 병합하지 않았다.
+PR #105가 main `ed48f39`에 병합된 뒤 GitHub merge commit `8852ea3`로 최신 main과
+`docs/W09_B2_REVIEW_FINDINGS.md`를 기존 구현 branch에 반영했다. PR #104는 open이며 직접 병합하지 않았다.
 R1은 collector prefix를 deep copy하여 원본 event의 scalar/nested list in-place 변경도 차단한다.
 R2는 저장 row의 sequence가 start offset 순서와 일치하는지 검증하고, batch 순서·동일 identity의
 sequence/end/action version/payload를 비교한다. 수정 전 두 회귀는 각각 prefix 변경 미검출과
@@ -19,13 +19,24 @@ unknown marker/payload version은 controlled failure다. 신규 웹 record는 ma
 
 Linux Python3.12.14/RiichiEnv0.4.8 전체 backend unittest **177개 통과(89.682초)**,
 대사 pytest **10개 통과(0.13초)**, frontend `npm ci`·production build 통과.
-W09-B2 focused + 기존 웹 marker 검사 **12개 통과**. 로컬 routed browser는 Playwright module은 있으나
+W09-B2 focused + 기존 웹 marker 검사 **13개 통과**. 로컬 routed browser는 Playwright module은 있으나
 Chromium 실행 파일이 없어 미실행이다. `git diff --check` 통과. Windows W04/W05 exact-head run 및
 artifact source/hash·내부 ZIP·packaged read-only JSON은 최종 source에서 실행 후 아래에 기록한다.
 개인 Windows PC와 전원 차단 내구성은 미검증이다. 표시/API/ack/UI/gate·문구/CG/생성 후속 작업은 시작하지 않는다.
 
 검사 대응은 [W09-B2 검토 보완](docs/W09_B2_REVIEW_FINDINGS.md) R1/R2/R3 표와 본문을 따른다.
 아래 B1 및 최초 B2 구현 시 기록은 이력이다.
+
+| 회귀 검사 | 계약/검토 항목 | 검증 내용 |
+|---|---|---|
+| `test_rejects_in_place_prefix_mutation_without_aliasing_input`, `test_allows_append_but_rejects_replaced_and_shortened_prefix` | B2 §3.1, R1 | scalar·중첩 score list의 in-place 변경, event 교체/단축 거절, append 허용 |
+| `test_preserves_multiple_hora_mixed_draw_triple_ron_and_repeated_round_number_offsets` | B2 §3.3–3.5, R3 수집 | 같은 국 복수 hora의 B1 offset 대조, mixed win/draw, triple-ron reason, 같은 kyoku 번호의 서로 다른 log offset |
+| `test_append_facts_rejects_rows_whose_sequence_disagrees_with_source_order`, `test_append_facts_accepts_identical_retry_and_new_suffix_but_rejects_conflicts` | B2 §5 identity, R2 | DB sequence/source offset 순서, batch 순서, 동일 재시도+새 suffix와 end/action version/payload 충돌 |
+| `test_create_start_facts_are_version_zero_and_result_failure_leaves_no_parent_or_cache` | B2 §5 create, §6 active replay, R3 start/create/mode | 시작 batch version0·복구 대조, result 저장 실패 rollback/cache 제거, omake marker1 및 Tier2 snapshot |
+| `test_result_commit_failure_rolls_back_facts_and_websocket_restores_saved_turn` | B2 §5 action, §6 active replay, R3 action | 결과가 있는 action의 commit 및 serialization 실패, row rollback/cache 폐기와 같은 저장 turn 복구 |
+| `test_new_local_match_persists_and_replays_closed_hands_without_reset_deletion` | B2 §5 action, §6 active replay/reset, R3 persistence/snapshot | 파일 SQLite cold restore에서 payload 변조·누락을 거절하고 GET이 backfill/수정하지 않음; 현재 이름/stage 변경 후 snapshot 보존 및 reset generation 격리 |
+| `test_completed_v1_reconnect_reads_terminal_rows_without_engine_replay` | B2 §6 completed/settlement, R3 final boundary/version | terminal 사실 보존, 정산 commit 실패 뒤 cold 복구·재시도 exactly-once, completed engine 미호출, unknown marker/payload 거절, read-only artifact JSON |
+| `test_session_creation_enforces_single_unfinished_game` | B2 §5 legacy/web, §6 marker NULL, R3 compatibility | 신규 웹 대국은 marker NULL이고 hand fact row를 생성하지 않음 |
 
 ## W09-B1 검토·병합 완료 / 다음 B2 계약
 
