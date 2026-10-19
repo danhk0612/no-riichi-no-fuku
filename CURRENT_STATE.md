@@ -1,5 +1,22 @@
 # 현재 상태
 
+W08-D PR #96은 main `dd45d1c`에 병합됐다. 최종 검토 source `53d70f7`와 병합 tree가 같다.
+이전 재현에서 이동 후 숨은 후보 ID가 남아422였으나 최신 재현은 유효 후보만 저장하고 오류0이었다.
+독립 build·브라우저4종도 통과했다. backend는 이전 독립검증152개/대사10개 이후 변경 없으며,
+최종 source의 Windows W04 run39177315219/artifact12154891329 및 W05 run39177315144/artifact12154328963에서
+각152개·대사10개를 확인했다. artifact source SHA와 API digest/다운로드 SHA256 일치를 대조했다.
+W04 outer `b350a24bf366098f2dfd55e3fffe3458229f6cf6440bf083070110fdab7c1cf6`,
+W05 outer `4a0149957311c42445e8cd9c52a6a951f7f7ec34accaeafe17c38a94574f9307`,
+inner ZIP `c23eeddccb6e899ca7008ef2990fd0d51e02a4917419b6c800dfc10ebcb9e197`다.
+renderer30검사와 종료/재시작 lifecycle도 확인했다. 개인 Windows PC 실기는 미검증이다.
+
+2026-10-19 후속 요구는 매 국 화료 결과 배경 CG(3점수구간×현재 복장), 마지막 국 후 동풍전 결산과
+최종4위 단계 변경 CG/패배 대사, 캐릭터 고정 대사 텍스트다. REQUIREMENTS 최신 절이 과거 화료 CG
+금지/공유 문장 후보 설계보다 우선한다. 플레이어 화료·오마케 범위 확인과 실제 국 결과 event/점수
+기술 진단 뒤 다음 계약을 준비한다. 새 결과창/이미지/대사 시스템은 아직 구현하지 않았다.
+
+아래는 이전 제출/검토 시점 기록이다.
+
 W08-D 제품 구현은 준비 main `7fcc8bf`에서 `task/w08-d-shared-prompts-impl`로 제출한다.
 `20261018_0011` additive migration, 공유 복장 상태/포즈 CRUD, CPU·Level·종류별 명시 후보와
 기본값, 영향 미리보기 digest 후 참조 해제·논리 삭제/Level 이동, 기존 설정의 관리 탭을 구현했다.
