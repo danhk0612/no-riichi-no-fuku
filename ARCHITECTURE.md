@@ -1,5 +1,14 @@
 # 구조와 전환 검토
 
+## W09-B1 구현 — 점수 수집
+
+[제품 adapter 계약](docs/W09_B1_HAND_SCORE_ADAPTER.md)을 따른다. 합법 검증 뒤 winning map만
+clone에 제출하고 원본 step hora 전원/지급/ura와 비교한 불변 HandWin/HandScore를
+`last_hand_wins`에 최근 step 한 번만 보유한다. 원본만 정산하며 clone 종료/순위는 사용하지 않는다.
+누락/불일치는 rollback·game 참조 폐기/evict·저장 replay 복구로 처리하며 기존 완료 저장은 재계산하지 않는다.
+queue·표시 snapshot/순서/ack·대사/CG는 미연결이다. 규칙/CPU/음향 ordinal은 유지한다.
+
+
 ## W09-A2 채택 경계
 
 [복제본 진단](spikes/w09-a2-hand-score/README.md)의 고정0.4.8 경로를 후속 구현 후보로 채택한다.
