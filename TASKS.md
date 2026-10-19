@@ -1,5 +1,26 @@
 # 개발 Task
 
+## 현재 다음 작업 — W09-B1 점수 수집 adapter (저성능 Work)
+
+W09-A2 진단은 완료했으며 [근거/한계](spikes/w09-a2-hand-score/README.md)에 따라 후보를 채택한다.
+아래 과거의 추가 진단 대기는 대체한다. W09-B 전체 완료/Windows 검증 완료는 아니다.
+
+```text
+최신 main/열린 PR/AGENTS/루트 문서와 W09-A2 README·PLAN·evidence를 확인해.
+W09-B1만 별도 branch에서 수행해. 기존0.4.8의 clone→복제본 scores 음수→동일 winning action map
+step→WinResult 보존 adapter와 관련 회귀를 구현해. 실제 점수/정산/규칙/CPU/RNG를 바꾸지 마.
+전체 국 queue/DB migration/문구/UI/CG/생성은 이번 범위에서 제외해.
+원본 불변, 실제 hora와 전원 actor/target/deltas/ura 및 WinResult 승자 대응을 검사해.
+중간국 결과 clear/최종 결과 보존/더블론/트리플론 유국을 구분하고 오프셋별 소유권을 보존해.
+오류를 delta/일반band fallback으로 숨기지 마. writer rollback/cache evict 경계와 맞춰 실패를 처리해.
+일반 친자 론/쯔모, 본장/공탁, 만관·하네만·배만 경계, 역만, 책임지불·영상/창깡·해저/하저의
+합법 독립 fixture를 보강해. 불가능한 fixture는 엔진 변경으로 우회하지 말고 차단 근거를 남겨.
+seed/actions/점수/순위/log와 기존 replay/policy1/2/3·음향ordinal 보존을 검사해.
+필요 회귀와 정확한 수정 SHA Windows W04/W05·artifact source/hash를 확인해.
+문서에 구현/미검증을 구분하고 commit/push·PR 제출까지 해. 직접 병합·Release/tag는 하지 마.
+```
+
+
 모든 미착수 Task는 계획이며 실행 승인이 아니다. 상태는 구현/검증 사실로만 변경한다.
 W00은 초기 분석·기준 문서 준비(완료); 본 파일은 후속 개발 명세다.
 Task 목적·금지 범위·완료 기준 변경이 필요하면 사용자 결정 후 갱신한다.

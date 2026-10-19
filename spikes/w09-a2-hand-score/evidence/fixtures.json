@@ -1,0 +1,486 @@
+{
+  "kind": "public API synthetic legal actions; not natural games",
+  "cases": [
+    {
+      "name": "low-[1]-False-False",
+      "winners": [
+        1
+      ],
+      "tsumo": false,
+      "honba": 0,
+      "sticks": 0,
+      "horas": [
+        {
+          "actor": 1,
+          "deltas": [
+            -1000,
+            1000,
+            0,
+            0
+          ],
+          "target": 0,
+          "type": "hora",
+          "ura_markers": []
+        }
+      ],
+      "results": {
+        "1": {
+          "is_win": true,
+          "han": 1,
+          "fu": 30,
+          "yakuman": false,
+          "yaku": [
+            14
+          ],
+          "ron_agari": 1000,
+          "tsumo_agari_oya": 0,
+          "tsumo_agari_ko": 0,
+          "pao_payer": null
+        }
+      },
+      "bands": {
+        "1": 1
+      },
+      "live_present": false,
+      "elapsed_s": 0.0001659640001889784
+    },
+    {
+      "name": "low-[0]-False-False",
+      "winners": [
+        0
+      ],
+      "tsumo": false,
+      "honba": 0,
+      "sticks": 0,
+      "horas": [
+        {
+          "actor": 0,
+          "deltas": [
+            1500,
+            -1500,
+            0,
+            0
+          ],
+          "target": 1,
+          "type": "hora",
+          "ura_markers": []
+        }
+      ],
+      "results": {
+        "0": {
+          "is_win": true,
+          "han": 1,
+          "fu": 30,
+          "yakuman": false,
+          "yaku": [
+            14
+          ],
+          "ron_agari": 1500,
+          "tsumo_agari_oya": 0,
+          "tsumo_agari_ko": 0,
+          "pao_payer": null
+        }
+      },
+      "bands": {
+        "0": 1
+      },
+      "live_present": false,
+      "elapsed_s": 7.11150005372474e-05
+    },
+    {
+      "name": "low-[1]-True-False",
+      "winners": [
+        1
+      ],
+      "tsumo": true,
+      "honba": 0,
+      "sticks": 0,
+      "horas": [
+        {
+          "actor": 1,
+          "deltas": [
+            -16000,
+            32000,
+            -8000,
+            -8000
+          ],
+          "target": 1,
+          "tsumo": true,
+          "type": "hora",
+          "ura_markers": []
+        }
+      ],
+      "results": {
+        "1": {
+          "is_win": true,
+          "han": 13,
+          "fu": 0,
+          "yakuman": true,
+          "yaku": [
+            36
+          ],
+          "ron_agari": 0,
+          "tsumo_agari_oya": 16000,
+          "tsumo_agari_ko": 8000,
+          "pao_payer": null
+        }
+      },
+      "bands": {
+        "1": 3
+      },
+      "live_present": false,
+      "elapsed_s": 6.439499884436373e-05
+    },
+    {
+      "name": "low-[0]-True-False",
+      "winners": [
+        0
+      ],
+      "tsumo": true,
+      "honba": 0,
+      "sticks": 0,
+      "horas": [
+        {
+          "actor": 0,
+          "deltas": [
+            48000,
+            -16000,
+            -16000,
+            -16000
+          ],
+          "target": 0,
+          "tsumo": true,
+          "type": "hora",
+          "ura_markers": []
+        }
+      ],
+      "results": {
+        "0": {
+          "is_win": true,
+          "han": 13,
+          "fu": 0,
+          "yakuman": true,
+          "yaku": [
+            35
+          ],
+          "ron_agari": 0,
+          "tsumo_agari_oya": 0,
+          "tsumo_agari_ko": 16000,
+          "pao_payer": null
+        }
+      },
+      "bands": {
+        "0": 3
+      },
+      "live_present": false,
+      "elapsed_s": 6.203100019774865e-05
+    },
+    {
+      "name": "low-[1]-False-True",
+      "winners": [
+        1
+      ],
+      "tsumo": false,
+      "honba": 3,
+      "sticks": 2,
+      "horas": [
+        {
+          "actor": 1,
+          "deltas": [
+            -1900,
+            3900,
+            0,
+            0
+          ],
+          "target": 0,
+          "type": "hora",
+          "ura_markers": []
+        }
+      ],
+      "results": {
+        "1": {
+          "is_win": true,
+          "han": 1,
+          "fu": 30,
+          "yakuman": false,
+          "yaku": [
+            14
+          ],
+          "ron_agari": 1900,
+          "tsumo_agari_oya": 0,
+          "tsumo_agari_ko": 0,
+          "pao_payer": null
+        }
+      },
+      "bands": {
+        "1": 1
+      },
+      "live_present": false,
+      "elapsed_s": 6.500600102299359e-05
+    },
+    {
+      "name": "low-[0]-True-True",
+      "winners": [
+        0
+      ],
+      "tsumo": true,
+      "honba": 3,
+      "sticks": 2,
+      "horas": [
+        {
+          "actor": 0,
+          "deltas": [
+            50900,
+            -16300,
+            -16300,
+            -16300
+          ],
+          "target": 0,
+          "tsumo": true,
+          "type": "hora",
+          "ura_markers": []
+        }
+      ],
+      "results": {
+        "0": {
+          "is_win": true,
+          "han": 13,
+          "fu": 0,
+          "yakuman": true,
+          "yaku": [
+            35
+          ],
+          "ron_agari": 0,
+          "tsumo_agari_oya": 300,
+          "tsumo_agari_ko": 16300,
+          "pao_payer": null
+        }
+      },
+      "bands": {
+        "0": 3
+      },
+      "live_present": false,
+      "elapsed_s": 6.143999962660018e-05
+    },
+    {
+      "name": "low-[1, 2]-False-True",
+      "winners": [
+        1,
+        2
+      ],
+      "tsumo": false,
+      "honba": 3,
+      "sticks": 2,
+      "horas": [
+        {
+          "actor": 1,
+          "deltas": [
+            -1900,
+            3900,
+            0,
+            0
+          ],
+          "target": 0,
+          "type": "hora",
+          "ura_markers": []
+        },
+        {
+          "actor": 2,
+          "deltas": [
+            -1000,
+            0,
+            1000,
+            0
+          ],
+          "target": 0,
+          "type": "hora",
+          "ura_markers": []
+        }
+      ],
+      "results": {
+        "1": {
+          "is_win": true,
+          "han": 1,
+          "fu": 30,
+          "yakuman": false,
+          "yaku": [
+            14
+          ],
+          "ron_agari": 1900,
+          "tsumo_agari_oya": 0,
+          "tsumo_agari_ko": 0,
+          "pao_payer": null
+        },
+        "2": {
+          "is_win": true,
+          "han": 1,
+          "fu": 30,
+          "yakuman": false,
+          "yaku": [
+            14
+          ],
+          "ron_agari": 1000,
+          "tsumo_agari_oya": 0,
+          "tsumo_agari_ko": 0,
+          "pao_payer": null
+        }
+      },
+      "bands": {
+        "1": 1,
+        "2": 1
+      },
+      "live_present": false,
+      "elapsed_s": 7.821500003046822e-05
+    },
+    {
+      "name": "low-[1, 2, 3]-False-False",
+      "winners": [
+        1,
+        2,
+        3
+      ],
+      "tsumo": false,
+      "honba": 0,
+      "sticks": 0,
+      "horas": [],
+      "results": {},
+      "bands": {},
+      "live_present": false,
+      "elapsed_s": 6.761899931007065e-05
+    },
+    {
+      "name": "mangan",
+      "winners": [
+        1
+      ],
+      "tsumo": false,
+      "honba": 0,
+      "sticks": 0,
+      "horas": [
+        {
+          "actor": 1,
+          "deltas": [
+            -8000,
+            8000,
+            0,
+            0
+          ],
+          "target": 0,
+          "type": "hora",
+          "ura_markers": []
+        }
+      ],
+      "results": {
+        "1": {
+          "is_win": true,
+          "han": 5,
+          "fu": 40,
+          "yakuman": false,
+          "yaku": [
+            11,
+            17,
+            15
+          ],
+          "ron_agari": 8000,
+          "tsumo_agari_oya": 0,
+          "tsumo_agari_ko": 0,
+          "pao_payer": null
+        }
+      },
+      "bands": {
+        "1": 2
+      },
+      "live_present": false,
+      "elapsed_s": 9.06530003703665e-05
+    },
+    {
+      "name": "baiman-or-above",
+      "winners": [
+        1
+      ],
+      "tsumo": false,
+      "honba": 0,
+      "sticks": 0,
+      "horas": [
+        {
+          "actor": 1,
+          "deltas": [
+            -16000,
+            16000,
+            0,
+            0
+          ],
+          "target": 0,
+          "type": "hora",
+          "ura_markers": []
+        }
+      ],
+      "results": {
+        "1": {
+          "is_win": true,
+          "han": 10,
+          "fu": 30,
+          "yakuman": false,
+          "yaku": [
+            14,
+            28,
+            29
+          ],
+          "ron_agari": 16000,
+          "tsumo_agari_oya": 0,
+          "tsumo_agari_ko": 0,
+          "pao_payer": null
+        }
+      },
+      "bands": {
+        "1": 3
+      },
+      "live_present": false,
+      "elapsed_s": 7.257700053742155e-05
+    },
+    {
+      "name": "yakuman",
+      "winners": [
+        1
+      ],
+      "tsumo": false,
+      "honba": 0,
+      "sticks": 0,
+      "horas": [
+        {
+          "actor": 1,
+          "deltas": [
+            -32000,
+            32000,
+            0,
+            0
+          ],
+          "target": 0,
+          "type": "hora",
+          "ura_markers": []
+        }
+      ],
+      "results": {
+        "1": {
+          "is_win": true,
+          "han": 13,
+          "fu": 0,
+          "yakuman": true,
+          "yaku": [
+            49
+          ],
+          "ron_agari": 32000,
+          "tsumo_agari_oya": 0,
+          "tsumo_agari_ko": 0,
+          "pao_payer": null
+        }
+      },
+      "bands": {
+        "1": 3
+      },
+      "live_present": true,
+      "elapsed_s": 5.928700011281762e-05
+    }
+  ],
+  "elapsed_s": 0.00523747000079311
+}

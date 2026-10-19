@@ -1,0 +1,9 @@
+{
+  "type": "fixture expectation error",
+  "case": "low-[1]-True-False",
+  "expected_band": 1,
+  "actual_band": 3,
+  "cause": "fixture is a first-turn tsumo; engine evaluates chiihou/tenhou, not an ordinary low hand",
+  "candidate_hora_payment_comparison": "passed before fixture band assertion",
+  "candidate_code_unchanged": true
+}
