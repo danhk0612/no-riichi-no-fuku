@@ -1,5 +1,28 @@
 # 개발 Task
 
+## 현재 다음 Work — W09-B2 PR #104 수용 전 보완
+
+권장: **저성능 Work**. 새 구현/후속 Task가 아니라 기존 `task/w09-b2-hand-results`의 PR #104 보완이다.
+검토 head `3574586`, 준비 main `8f041fc`; 시작 시 최신 Git을 다시 확인한다.
+[기존 계약](docs/W09_B2_HAND_RESULTS_CONTRACT.md)과
+[검토 보완 R1~R3](docs/W09_B2_REVIEW_FINDINGS.md) 전체를 따른다.
+
+```text
+danhk0612/no-riichi-no-fuku의 PR #104(W09-B2)만 보완해.
+최신 main·열린 PR·AGENTS와 루트 문서를 확인하고
+docs/W09_B2_HAND_RESULTS_CONTRACT.md 및 docs/W09_B2_REVIEW_FINDINGS.md 전체를 따라.
+기존 task/w09-b2-hand-results branch/PR을 이어가며 다른 작업을 덮지 마.
+R1 prefix alias와 R2 중복 sequence 검증을 수정 전 실패 회귀로 고정한 뒤 최소 수정해.
+R3 표의 start/version0·원자 저장 실패·파일 DB cold 복구·최종 action/정산 실패·모드/legacy
+검사를 실제 B2 경로로 보강하고 검사별 계약 대응을 기록해.
+전체 backend/대사·기존 build/browser, 최종 source SHA W04/W05 및 다운로드 artifact
+source/hash·내부 ZIP·packaged read-only 국 결과 JSON을 확인해.
+CURRENT_STATE/TASKS/PR을 실제 검증/미검증대로 갱신하고 commit/push·기존 PR 제출까지 진행해.
+직접 병합·Release/tag·표시/ack/UI/gate·문구/CG/생성 후속 Task는 하지 마.
+```
+
+아래 최초 구현 지시문은 이력이며 현재는 위 보완이 우선한다.
+
 ## 현재 다음 Work — W09-B2 국 결과 사실 저장·복구
 
 권장: **저성능 Work**. 준비 main `67c4335`(PR #102 병합).

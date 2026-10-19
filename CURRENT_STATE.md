@@ -1,5 +1,16 @@
 # 현재 상태
 
+## W09-B2 PR #104 검토 — 수용 전 보완
+
+구현 PR #104 head `3574586f255593df4173437c8158e9a5fe712b4b`를 독립 검토했다.
+Linux backend171개/76.581초·대사10개/0.11초 통과, 최신 head Windows W04 run39203736892와
+W05 run39203736828 success를 확인했다. 정상 경로 성공과 별개로 shallow prefix snapshot의
+in-place 변조 미검출, 중복 identity의 sequence 자기 비교를 helper에서 재현했다.
+시작 자동 결과/version0·B2 최종 action/정산 실패 재시작 등 기존 계약의 필수 회귀도 부족하다.
+[보완 지시](docs/W09_B2_REVIEW_FINDINGS.md)에 재현·수정 범위·검사 대응을 정리했다.
+현재 main에는 B2 제품 구현을 병합하지 않았다. 다음은 저성능 Work의 기존 PR #104 보완이며,
+표시/ack/문구/CG/생성 후속 Task로 넘어가지 않는다. 아래 B1 및 최초 B2 계약 당시 기록은 이력이다.
+
 ## W09-B1 검토·병합 완료 / 다음 B2 계약
 
 PR #102는 main `67c43356351b1cc320f107d2993679f3c9650eef`에 병합됐다.
