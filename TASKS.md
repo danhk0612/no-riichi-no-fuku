@@ -1,8 +1,8 @@
 # 개발 Task
 
-## W09-B2 — 구현·검증 제출 중
+## W09-B2 — 구현·검증 완료 / PR #104 open
 
-`task/w09-b2-hand-results`에서 구현했고 PR 제출 후 정확한 source의 Windows W04/W05·artifact를 확인한다.
+`task/w09-b2-hand-results`에서 구현해 PR #104로 제출했다. source `f9d2754`의 Windows W04/W05, artifact source/hash와 packaged read-only 국 사실 검사를 통과했다.
 [계약](docs/W09_B2_HAND_RESULTS_CONTRACT.md)을 따른다. 국 사실만 저장하며 표시 queue/ack·문구/CG·화면/
 후속 action gate 및 후속 표시/생성 Task는 이번 범위가 아니다. PR 병합 전 다음 Task를 시작하지 않는다.
 
@@ -218,7 +218,7 @@ commit/push·PR 제출까지 진행하되 직접 병합·Release/tag·후속 Tas
 | W-DIFF-B | 단계+게임 설정의 최종 난이도·저장·설정 UI 적용 | P1 / 정책·독립 재검증·구현·Linux 회귀 완료, 최종 Windows 근거는 제품 PR 참조 | W-DIFF-A 검토 | 저성능 Work(판단 구현 복잡 시 고성능 Work) |
 | W09-A | 국 결과/화료 등급/표시 순서·복구 기술 진단 | 진단 완료 / 후속 B1 경로 수용 | PR #96/#97 및 진단 준비 문서 | 고성능 Work |
 | W09-B1 | 검증된 화료 점수 adapter | 완료 / PR #102 병합 | W09-A2 | 저성능 Work |
-| W09-B2 | 국 결과 사실 누적·원자 저장·복구 | 구현 완료 / Windows 검증·PR 대기 | W09-B1 | 저성능 Work |
+| W09-B2 | 국 결과 사실 누적·원자 저장·복구 | 구현·Windows 검증 완료 / PR #104 open | W09-B1 | 저성능 Work |
 | W09 | 국 결과·캐릭터 고정 대사·변수 연결(최신 요구) | P1 / 대기 | W08 | 저성능 Work |
 | W10 | 독립 ComfyUI·Anima adapter | P1 / 대기 | W03, W07 | 저성능 Work |
 | W11 | 이벤트 랜덤 조합·생성/파일 연동 | P1 / 대기 | W06, W09, W10 | 저성능 Work |
