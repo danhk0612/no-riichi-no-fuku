@@ -98,6 +98,7 @@ def create_registered_game_session(
                 session.commit()
             except Exception:
                 session.rollback()
+                registered.game = None
                 registry.evict(registered.session_id)
                 raise
             return registered
@@ -108,6 +109,11 @@ def create_registered_game_session(
         raise HTTPException(status_code=409, detail=str(error)) from None
     except CpuTierUnavailableError as error:
         raise HTTPException(status_code=503, detail=str(error)) from None
+    except HandScoreCaptureError:
+        session.rollback()
+        raise HTTPException(status_code=503, detail={
+            "code": "hand_score_failed", "message": "saved winning hand could not be verified",
+        }) from None
     except GameSetupError as error:
         raise HTTPException(status_code=409, detail=str(error)) from None
     except DifficultyError as error:
@@ -324,6 +330,7 @@ async def send_registered_game_state(
                                 "event_key": f"defeat_stage_{stage}", "source_kind": "result", **voice}
             except Exception:
                 session.rollback()
+                registered.game = None
                 registry.evict(registered.session_id)
                 raise
 
@@ -564,6 +571,7 @@ async def game_session_websocket(
                 await websocket.close(code=1011)
                 return
             except SQLAlchemyError:
+                registered.game = None
                 registry.evict(registered.session_id)
                 await send_websocket_error(
                     websocket,

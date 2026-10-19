@@ -62,6 +62,17 @@ class RiichiEnvAdapter:
     def pending_observations(self) -> Mapping[int, Observation]:
         return MappingProxyType(self._observations)
 
+    @property
+    def mjai_log(self) -> list[dict[str, object]]:
+        """Read-only-by-convention source log used by internal persistence capture."""
+        return self._env.mjai_log
+
+    def scores(self) -> tuple[int, int, int, int]:
+        values = tuple(self._env.scores())
+        if len(values) != 4 or any(type(value) is not int for value in values):
+            raise AdapterStateError("engine scores are invalid")
+        return values
+
     def start(self) -> Mapping[int, Observation]:
         if self._started:
             raise AdapterStateError("match already started")

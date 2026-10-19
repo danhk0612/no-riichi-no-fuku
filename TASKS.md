@@ -1,11 +1,13 @@
 # 개발 Task
 
-## 현재 다음 Work — W09-B2 PR #104 수용 전 보완
+## 현재 상태 — W09-B2 PR #104 보완 제출 완료, 검토 대기
 
-권장: **저성능 Work**. 새 구현/후속 Task가 아니라 기존 `task/w09-b2-hand-results`의 PR #104 보완이다.
-검토 head `3574586`, 준비 main `8f041fc`; 시작 시 최신 Git을 다시 확인한다.
-[기존 계약](docs/W09_B2_HAND_RESULTS_CONTRACT.md)과
-[검토 보완 R1~R3](docs/W09_B2_REVIEW_FINDINGS.md) 전체를 따른다.
+기존 `task/w09-b2-hand-results`와 PR #104에서 보완했다. 최신 main의 PR #105 검토 문서를 병합했다.
+R1/R2 최소 수정과 회귀, R3 저장·복구 회귀를 추가했다. Linux backend 177개, 대사 pytest 10개,
+frontend production build, W09-B2 핵심 13개, exact source SHA의 Windows W04/W05·packaged read-only
+JSON 검증이 통과했다. 상세 run/artifact/hash는 CURRENT_STATE를 따른다. PR #104는 open이며 직접 병합하지 않았다.
+로컬 Chromium 미설치로 routed browser는 Windows W05 artifact에서 검증했다.
+[기존 계약](docs/W09_B2_HAND_RESULTS_CONTRACT.md)과 [검토 보완 R1~R3](docs/W09_B2_REVIEW_FINDINGS.md)을 따른다.
 
 ```text
 danhk0612/no-riichi-no-fuku의 PR #104(W09-B2)만 보완해.

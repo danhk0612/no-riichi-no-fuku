@@ -23,6 +23,10 @@ class GameSessionRecord(TimestampMixin, Base):
             "status IN ('active', 'completed', 'cancelled')",
             name="ck_game_sessions_status",
         ),
+        CheckConstraint(
+            "hand_results_version IS NULL OR hand_results_version = 1",
+            name="ck_game_sessions_hand_results_version",
+        ),
         Index(
             "uq_game_sessions_active_user",
             "user_id",
@@ -47,3 +51,4 @@ class GameSessionRecord(TimestampMixin, Base):
     play_generation: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     rules_snapshot: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     presentation: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    hand_results_version: Mapped[int | None] = mapped_column(nullable=True)

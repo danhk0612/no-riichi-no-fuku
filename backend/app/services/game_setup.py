@@ -187,6 +187,7 @@ def create_game_session_from_choices(
     *,
     seed: int | None = None,
     agent_factory: CpuAgentFactory = create_production_cpu_agent,
+    capture_hand_results: bool = False,
 ) -> AuthoritativeGameSession:
     cpu_character_ids = tuple(choice.id for choice in choices)
     if len(set(cpu_character_ids)) != 3:
@@ -203,6 +204,7 @@ def create_game_session_from_choices(
         cpu_character_ids=cpu_character_ids,
         cpu_agents=cpu_agents,
         seed=seed,
+        capture_hand_results=capture_hand_results,
     )
     game.start()
     return game

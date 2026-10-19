@@ -12,6 +12,7 @@ from app.mahjong.riichienv_adapter import (
     MatchResult,
     RiichiEnvAdapter,
 )
+from app.mahjong.hand_results import HandResultCollector, HandResultFact
 
 
 HUMAN_SEAT = 0
@@ -44,6 +45,7 @@ class AuthoritativeGameSession:
         cpu_agents: Mapping[int, MahjongAgent],
         seed: int | None = None,
         max_steps: int = 5_000,
+        capture_hand_results: bool = False,
     ) -> None:
         if len(set(cpu_character_ids)) != 3:
             raise ValueError("three distinct CPU characters are required")
@@ -59,6 +61,7 @@ class AuthoritativeGameSession:
         self._steps = 0
         self._result_settled = False
         self._pending_events: list[dict[str, object] | str] = []
+        self._hand_result_collector = HandResultCollector() if capture_hand_results else None
 
     @property
     def started(self) -> bool:
@@ -85,8 +88,18 @@ class AuthoritativeGameSession:
         self._pending_events.clear()
         return PendingGameEvents(events=events)
 
+    def pending_hand_results(self) -> tuple[HandResultFact, ...]:
+        """Consume only closed hand facts; independent of dialogue/audio events."""
+        if self._hand_result_collector is None:
+            return ()
+        return self._hand_result_collector.drain()
+
     def start(self) -> None:
         self._adapter.start()
+        if self._hand_result_collector is not None:
+            self._hand_result_collector.consume(
+                self._adapter.mjai_log, (), self._adapter.scores(), self.done
+            )
         self._advance_until_human_turn()
 
     def human_turn(self) -> HumanTurn | None:
@@ -159,6 +172,13 @@ class AuthoritativeGameSession:
 
     def _step(self, actions: Mapping[int, Action]) -> None:
         self._adapter.step(actions)
+        if self._hand_result_collector is not None:
+            self._hand_result_collector.consume(
+                self._adapter.mjai_log,
+                self._adapter.last_hand_wins,
+                self._adapter.scores(),
+                self.done,
+            )
         self._steps += 1
         if self._steps > self._max_steps:
             raise GameSessionStateError("match exceeded the step limit")
