@@ -25,7 +25,13 @@ start_kyoku log offset, 화료자는 해당 국의 모든hora offset으로 제�
 native replay는 live의 한/역과 달라 채택 중단했다. viewer는 최종화료7건의 한/부/역만 일치했으며
 본장 지급액/특수화료·책임지불 전체 검증이 부족하다. **정확한 중간국 점수 경로는 미채택**이다.
 별도 승인된 추가진단에서 gate를 해소하기 전 W09-B를 구현하지 않는다. 점수불명을 일반band로
-바꾸거나 delta에서 등급을 추정하지 않는다. 복수론은 실제가능하며 전원보존, 배경순차/대표는 사용자결정 대기다.
+바꾸거나 delta에서 등급을 추정하지 않는다. 복수론은 실제 가능하며 원본 화료자를 전부 보존한다.
+2026-10-19 사용자 결정으로 배경은 무작위 순서·전환 효과로 모든 화료자를 표시한다.
+원본 winners 배열/점수/정산 순서는 유지하고, 별도 winner_display_order에 hora identity들의 순열을
+표시 snapshot과 함께 한 번 고정·저장한다. renderer가 재추첨하지 않으며 복구에도 저장 순서를 쓴다.
+독립 표시 RNG를 사용해 CPU/규칙/정산/음향 RNG를 소비하지 않는다. 플레이어 슬롯은 기본 배경이다.
+전환은 표시 연출만이며 화료 음성/SFX 재발행·진행 정산·ack를 호출하지 않는다.
+전환 시간/효과 구현과 표시 cursor의 세부 수명은 W11-U 계약에서 정한다.
 
 최소DTO는 version/generation/session/국start·end offset/전체화료자/당시CPU·stage·name/
 검증된점수·band/콘텐츠revision·고정문구·선택snapshot/표시sequence를 가진다. human은CPU/stage null,
