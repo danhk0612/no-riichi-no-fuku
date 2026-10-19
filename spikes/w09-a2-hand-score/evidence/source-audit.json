@@ -1,0 +1,13 @@
+{
+  "upstream_commit": "0c1e575a3bf678e30e068149cd0fffa635d001a9",
+  "sha256": {
+    "riichienv-python/src/env.rs": "75e7e8bd6caa483cb61f68030511af84d11ef7beaef6e44b683e0773c86d44f9",
+    "riichienv-core/src/state/mod.rs": "38934d1885617c4098ecd4f55a933e0d737826262a9baf8c40e6b821dc5dbbc2",
+    "riichienv-core/src/state/legal_actions.rs": "b5e25fd86fd772b84b99957d0f6baa97861a75a590b7aeffa2ed8dce02de4423",
+    "riichienv-core/src/replay/mjai_replay.rs": "d7a004400c3616c48e2b7bc9b7408ad653cb717202f6d3c01b9408937ebc5a18",
+    "riichienv-core/src/replay/mod.rs": "7f0554863058c5371914766f1c534cd962580913275a1879205923046f9dbfee"
+  },
+  "installed_binary_sha256": {
+    "_riichienv.cpython-312-x86_64-linux-gnu.so": "e202f0ff42238e01592ddbab9feb894694eaafd65d4be3c64bf271d176a36dab"
+  }
+}

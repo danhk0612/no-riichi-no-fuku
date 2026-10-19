@@ -1,0 +1,52 @@
+"""Small legal-action public-API fixtures; no natural-seed expansion."""
+import json,time
+from pathlib import Path
+from riichienv import RiichiEnv,GameRule,ActionType,parse_hand,convert
+from diagnose import capture,results,fingerprint
+HERE=Path(__file__).resolve().parent
+
+def fixture(name,winners,hand,win_tile,tsumo=False,honba=0,sticks=0,expected_band=None):
+ pool=[convert.tid_to_mjai(i) for i in range(136)];waiting=[convert.tid_to_mjai(t) for t in parse_hand(hand)[0]]
+ hands=[None]*4
+ for s in winners:
+  player_hand=waiting if len(winners)!=3 or s!=winners[-1] else [convert.tid_to_mjai(t) for t in parse_hand('123456m66789p34s')[0]]
+  hands[s]=list(player_hand)
+  for tile in player_hand:pool.remove(tile)
+ pool.remove(win_tile)
+ for s in range(4):
+  if hands[s] is None:hands[s]=[pool.pop(0) for _ in range(13)]
+ start=dict(type='start_kyoku',bakaze='E',kyoku=1,honba=honba,kyotaku=sticks,oya=0,scores=[25000]*4,dora_marker=pool.pop(0),tehais=hands)
+ env=RiichiEnv(game_mode='4p-red-east',rule=GameRule.default_tenhou(),seed=701);env.reset();env.apply_event(start)
+ actor=winners[0] if tsumo else next(s for s in range(4) if s not in winners)
+ env.apply_event(dict(type='tsumo',actor=actor,pai=win_tile))
+ if not tsumo:env.apply_event(dict(type='dahai',actor=actor,pai=win_tile,tsumogiri=True))
+ obs=env.get_observations();actions={}
+ for s,o in obs.items():
+  legal=o.legal_actions()
+  if not legal:continue
+  wanted=ActionType.TSUMO if tsumo and s in winners else ActionType.RON if s in winners else ActionType.PASS
+  picked=next((a for a in legal if a.action_type==wanted),None)
+  if s in winners:assert picked is not None,(name,s,'winning action not legal')
+  actions[s]=picked if picked is not None else legal[0]
+ before=len(env.mjai_log);shadow=capture(env,actions);env.step(actions)
+ horas=[e for e in env.mjai_log[before:] if e['type']=='hora']
+ assert horas==shadow['horas'],name
+ if len(winners)==3:assert not horas and not shadow['win_results'],'triple ron should draw under current rule'
+ else:
+  assert {e['actor'] for e in horas}==set(winners),name
+  if expected_band is not None:assert all(b==expected_band for b in shadow['bands'].values()),(name,shadow['bands'])
+ live=results(env)
+ if live:assert live==shadow['win_results'],name
+ return dict(name=name,winners=winners,tsumo=tsumo,honba=honba,sticks=sticks,horas=horas,results=shadow['win_results'],bands=shadow['bands'],live_present=bool(live),elapsed_s=shadow['elapsed_s'])
+
+def main():
+ start=time.monotonic();cases=[]
+ low='123456m789p2234s';medium='123m123p123s111z9s';high='1122334455667m';yakuman='19m19p19s1234567z'
+ for winners,tsumo,bonus in [([1],False,False),([0],False,False),([1],True,False),([0],True,False),([1],False,True),([0],True,True),([1,2],False,True),([1,2,3],False,False)]:
+  cases.append(fixture(f'low-{winners}-{tsumo}-{bonus}',winners,low,'5s',tsumo,3 if bonus else 0,2 if bonus else 0,3 if tsumo else 1))
+ cases.append(fixture('mangan', [1],medium,'9s',False,expected_band=2))
+ cases.append(fixture('baiman-or-above',[1],high,'7m',False,expected_band=3))
+ cases.append(fixture('yakuman',[1],yakuman,'1m',False,expected_band=3))
+ out=dict(kind='public API synthetic legal actions; not natural games',cases=cases,elapsed_s=time.monotonic()-start)
+ (HERE/'evidence/fixtures.json').write_text(json.dumps(out,indent=2)+'\n');print('passed',len(cases),'fixtures')
+if __name__=='__main__':main()

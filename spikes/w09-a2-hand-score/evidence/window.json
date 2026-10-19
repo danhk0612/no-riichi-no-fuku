@@ -1,0 +1,7 @@
+{
+  "first_worker_file_mtime": 1792371069.5387313,
+  "analysis_closed_at": 1792371400.3815498,
+  "estimated_window_s": 360.84281849861145,
+  "method": "first saved worker mtime to analysis close + 30s per-match cap; estimated, not monotonic whole-window measurement",
+  "budget_s": 600
+}

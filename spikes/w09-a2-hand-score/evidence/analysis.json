@@ -1,0 +1,24 @@
+{
+  "source": "2291583f1614fde08c397550d34746d0db5d466b",
+  "riichienv": "0.4.8",
+  "natural_matches": 16,
+  "pairs": 8,
+  "horas": 40,
+  "captured_boundaries": 39,
+  "intermediate_boundaries": 32,
+  "live_final_boundaries": 7,
+  "all_trace_equal": true,
+  "matches_prior_a_baseline": true,
+  "candidate_mismatches": 0,
+  "clone_capture_mean_ms": 1.387058794698066,
+  "clone_capture_max_ms": 4.344547000073362,
+  "synthetic_fixtures": 11,
+  "fixture_setup_expectation_failures": 2,
+  "production": "unchanged",
+  "windows": "not run",
+  "harness_sha256": {
+    "PLAN.md": "152827e857e464d49d8bf8c161884ab879fc375894694a1fc07f6726de5bd2be",
+    "diagnose.py": "a563814b0a79757b1f8840c5dc05ee82838d54e6b39f27db8ba81d290a9201de",
+    "fixtures.py": "be096e87691ca2a134cd1feede2c7a76653327f012ea8cc82afbe72560b188cf"
+  }
+}

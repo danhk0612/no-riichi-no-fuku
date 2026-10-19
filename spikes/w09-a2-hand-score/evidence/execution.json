@@ -1,0 +1,9 @@
+{
+  "source": "2291583f1614fde08c397550d34746d0db5d466b",
+  "status": "passed-natural-gate",
+  "budget_s": 600,
+  "max_steps": 5000,
+  "per_match_s": 30,
+  "completed_matches": 16,
+  "elapsed_s": 12.582453740998972
+}

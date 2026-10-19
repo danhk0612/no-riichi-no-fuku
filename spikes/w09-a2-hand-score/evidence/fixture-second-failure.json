@@ -1,0 +1,6 @@
+{
+  "type": "fixture tile inventory error",
+  "case": "three copies of a hand with the same paired tile",
+  "cause": "six physical copies required for the shared pair; fixture setup rejects before engine actions",
+  "candidate_code_unchanged": true
+}
