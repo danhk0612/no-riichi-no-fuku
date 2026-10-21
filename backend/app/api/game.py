@@ -367,6 +367,8 @@ async def send_registered_game_state(
                     return False
                 await websocket.send_json({"type": "result_delivery", **envelope})
                 if envelope["route"] != "human_turn":
+                    if result_voice_message is not None:
+                        await websocket.send_json(result_voice_message)
                     return True
     if is_done:
         result = registered.result

@@ -16,6 +16,7 @@ B2와 계약 설계 선행은 main에 반영되어 있다. [전달·확인 계�
 §1~8 전체를 적용했고 PR #108을 main에 제출했다. 현재 검증/상태는 CURRENT_STATE와 GitHub PR을 따른다.
 content_mode=unbound 및 새 local 대국 opt-in 경계를 지키며 기존 대국에 전달 snapshot을
 소급하지 않는다. Windows W04/W05·packaged source SHA 검증을 PR 제출 후 확인한다.
+PR review에서 나온 defeat voice 순서·정산 참가자 이름 이슈를 수정해 최신 source로 재검증한다.
 문구/P/N·CG·생성 후속 작업은 이 범위에 포함하지 않는다.
 
 ## W09-B2 — 최종 검토·병합 완료

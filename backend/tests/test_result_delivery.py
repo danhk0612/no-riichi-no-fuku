@@ -98,6 +98,12 @@ class ResultDeliveryTests(unittest.TestCase):
                 self.assertEqual(first_ack.status_code, 200, first_ack.text)
                 self.assertEqual(first_ack.json()["head"]["kind"], "settlement")
                 self.assertEqual(first_ack.json()["acked_ordinal"], 1)
+                self.assertEqual(first_ack.json()["head"]["payload"]["participants"], [
+                    {"seat": 0, "name": "플레이어", "is_human": True},
+                    {"seat": 1, "name": "CPU A", "is_human": False},
+                    {"seat": 2, "name": "CPU B", "is_human": False},
+                    {"seat": 3, "name": "CPU C", "is_human": False},
+                ])
                 repeated = client.post(
                     f"/api/local/play/sessions/{session_id}/results/ack", headers=headers,
                     json={"generation": generation, "event_id": envelope["head"]["event_id"],

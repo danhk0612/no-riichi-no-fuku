@@ -16,7 +16,8 @@ def main(database: Path, output: Path) -> None:
         if version != "20261021_0013":
             raise RuntimeError(f"unexpected packaged database revision: {version}")
         sessions = connection.execute(
-            "SELECT id, status, hand_results_version, result_delivery_version FROM game_sessions "
+            "SELECT id, status, hand_results_version, result_delivery_version, players, scores, ranks, "
+            "settlement, presentation FROM game_sessions "
             "WHERE status='completed' AND hand_results_version=1 AND result_delivery_version=1 ORDER BY updated_at DESC"
         ).fetchall()
         if not sessions:
@@ -70,6 +71,13 @@ def main(database: Path, output: Path) -> None:
                     or entries[-1]["kind"] != "settlement"
                     or delivery["acked_ordinal"] != delivery["terminal_ordinal"] - 1):
                 raise RuntimeError("packaged renderer did not leave every hand acknowledged and settlement pending")
+            settlement_payload = json.loads(entries[-1]["payload"])
+            if (settlement_payload.get("participants") != json.loads(session["players"])
+                    or settlement_payload.get("scores") != json.loads(session["scores"])
+                    or settlement_payload.get("ranks") != json.loads(session["ranks"])
+                    or settlement_payload.get("settlement") != json.loads(session["settlement"])
+                    or settlement_payload.get("presentation") != json.loads(session["presentation"])):
+                raise RuntimeError("packaged settlement entry differs from saved participant/result snapshots")
             hand_entries = [row for row in entries if row["kind"] == "hand"]
             expected_hands = 0
             for fact in rows:

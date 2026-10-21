@@ -119,7 +119,8 @@ def append_settlement_entry(db: Session, record: GameSessionRecord) -> None:
         payload={
             "version": 1, "kind": "settlement", "scores": deepcopy(record.scores),
             "ranks": deepcopy(record.ranks), "settlement": deepcopy(record.settlement),
-            "presentation": deepcopy(record.presentation), "content_mode": "unbound",
+            "presentation": deepcopy(record.presentation), "participants": deepcopy(record.players),
+            "content_mode": "unbound",
         },
     ))
     delivery.terminal_ordinal = ordinal
@@ -330,7 +331,8 @@ def _validated(db: Session, record: GameSessionRecord) -> GameResultDelivery:
         expected_settlement = {
             "version": 1, "kind": "settlement", "scores": record.scores,
             "ranks": record.ranks, "settlement": record.settlement,
-            "presentation": record.presentation, "content_mode": "unbound",
+            "presentation": record.presentation, "participants": record.players,
+            "content_mode": "unbound",
         }
         if trailing[0].payload != expected_settlement:
             raise ResultDeliveryError("settlement entry differs from completed session snapshot")

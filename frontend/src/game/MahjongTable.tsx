@@ -41,7 +41,8 @@ function ResultDeliveryCard({ delivery, onAcknowledge }: {
   const entry = delivery.head
   const payload = entry?.payload ?? {}
   const fact = payload.fact_snapshot as Record<string, any> | undefined
-  const participants = Array.isArray(fact?.participants) ? fact.participants as Record<string, any>[] : []
+  const participantSnapshot = fact?.participants ?? payload.participants
+  const participants = Array.isArray(participantSnapshot) ? participantSnapshot as Record<string, any>[] : []
   const nameFor = (seat: unknown) => participants.find((player) => player.seat === seat)?.name ?? `좌석 ${Number(seat) + 1}`
   const winners = Array.isArray(fact?.winners) ? fact.winners as Record<string, any>[] : []
   const winnerOffset = payload.displayed_hora_log_offset
