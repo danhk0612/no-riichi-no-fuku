@@ -676,8 +676,28 @@ function App() {
         setError(errorMessage(caught))
         try {
           const current = await getLocalResultDelivery(accessToken, delivery.session_id, generation)
-          if (isCurrentLocalRequest(requestToken, generation) && current.route === 'result') {
-            setGameState({ status: 'result_delivery', delivery: current })
+          if (isCurrentLocalRequest(requestToken, generation)) {
+            if (current.route === 'result') {
+              setError(null)
+              setGameState({ status: 'result_delivery', delivery: current })
+            } else if (current.route === 'settlement_wait') {
+              setGameState({ status: 'settlement_wait', delivery: current })
+              const active = await getActiveGameSession(accessToken)
+              if (isCurrentLocalRequest(requestToken, generation) && active?.generation === generation) {
+                setPlayers(active.players)
+                connectGame(active.session_id, accessToken, active.players, generation)
+              }
+              setError(null)
+            } else {
+              socketRef.current?.close(1000)
+              socketRef.current = null
+              const play = await getLocalPlay(accessToken)
+              if (isCurrentLocalRequest(requestToken, generation) && play.generation === generation) {
+                storeLocalPlay(play, requestToken)
+                await restoreLocalPlay(accessToken, play, requestToken)
+                setError(null)
+              }
+            }
           }
         } catch { /* Keep the explicit retry visible when reconciliation is unavailable. */ }
       }
