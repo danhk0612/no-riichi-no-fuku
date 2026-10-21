@@ -7,6 +7,12 @@ const browser = await chromium.launch({ headless: true, executablePath: process.
 try {
   const page = await browser.newPage()
   page.setDefaultTimeout(5000)
+  const resultDeliveryRequests = []
+  page.on('request', (request) => {
+    if (request.url().includes('/api/local/play/sessions/session-c1/results')) {
+      resultDeliveryRequests.push({ method: request.method(), url: request.url() })
+    }
+  })
   let currentServerEnvelope = null
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname
@@ -96,8 +102,11 @@ try {
   const reconciliation = page.waitForResponse((response) => response.url().includes('/api/local/play/sessions/session-c1/results?')
     && response.request().method() === 'GET').then(() => true).catch(() => false)
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...conflicting }))
+  const alert = page.getByRole('alert')
+  await alert.waitFor()
+  assert.match(await alert.textContent(), /결과 확인 상태가 일치하지 않습니다/)
   const reconciled = await reconciliation
-  assert.equal(reconciled, true, `same-revision head conflict did not re-fetch; displayed event=${await displayedEvent.getAttribute('data-event-id')}`)
+  assert.equal(reconciled, true, `same-revision head conflict did not re-fetch; displayed event=${await displayedEvent.getAttribute('data-event-id')}; requests=${JSON.stringify(resultDeliveryRequests)}`)
   await page.getByRole('alert').waitFor({ state: 'detached' })
   assert.equal(await page.getByText('등록된 결과 CG가 없습니다.').count(), 1)
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...hand }))
