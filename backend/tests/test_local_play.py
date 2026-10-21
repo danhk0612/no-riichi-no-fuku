@@ -369,6 +369,9 @@ class LocalPlayTests(unittest.TestCase):
                     "generation": play["generation"],
                 })
                 turn = websocket.receive_json()
+                self.assertEqual(turn["type"], "result_delivery")
+                self.assertEqual(turn["route"], "human_turn")
+                turn = websocket.receive_json()
                 self.assertEqual(turn["type"], "human_turn")
                 reset = client.post("/api/local/play/reset", headers=headers, json={
                     "generation": play["generation"], "confirm": True,

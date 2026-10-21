@@ -2,7 +2,7 @@ name: W04 Local storage regression
 
 on:
   push:
-    branches: [task/w04-local-storage]
+    branches: [task/w04-local-storage, task/w09-c1-result-delivery]
   pull_request:
     branches: [main]
     paths:

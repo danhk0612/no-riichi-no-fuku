@@ -70,6 +70,25 @@ export type GameSessionCreated = {
   cpu_difficulties?: CpuDifficulty[] | null
 }
 
+export type ResultDeliveryEntry = {
+  ordinal: number
+  event_id: string
+  kind: 'hand' | 'settlement'
+  payload: Record<string, unknown>
+}
+
+export type ResultDeliveryEnvelope = {
+  version: 1
+  generation: string
+  session_id: string
+  delivery_revision: number
+  acked_ordinal: number
+  head: ResultDeliveryEntry | null
+  terminal_ordinal: number | null
+  route: 'result' | 'human_turn' | 'settlement_wait' | 'ending' | 'selection'
+  action_version: number | null
+}
+
 export type GameScreenState =
   | { status: 'waiting' }
   | {
@@ -93,6 +112,8 @@ export type GameScreenState =
       resultDialogues?: ResultDialogue[]
       endingEventId?: string | null
     }
+  | { status: 'result_delivery'; delivery: ResultDeliveryEnvelope }
+  | { status: 'settlement_wait'; delivery: ResultDeliveryEnvelope }
   | { status: 'ending'; generation: string; eventId: string; payload: { version: number; cg_asset_id: string | null; music_asset_id: string | null; dialogue_text: string | null } | null }
 
 export type MatchSettlement = {
@@ -139,6 +160,7 @@ export type DialogueEvent = {
 }
 
 export type GameServerMessage =
+  | ({ type: 'result_delivery' } & ResultDeliveryEnvelope)
   | { type: 'human_turn'; cpu_difficulties?: CpuDifficulty[] | null; action_version: number; turn: HumanTurn; generation?: string | null; session_id?: string }
   | {
       type: 'match_complete'

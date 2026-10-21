@@ -9,6 +9,8 @@ import {
   confirmLocalRoster,
   resetLocalPlay,
   acknowledgeLocalEnding,
+  getLocalResultDelivery,
+  acknowledgeLocalResult,
   gameWebSocketUrl,
   getActiveGameSession,
   getProfile,
@@ -34,6 +36,7 @@ import type {
   GameScreenState,
   GameServerMessage,
   PlayerSeat,
+  ResultDeliveryEnvelope,
 } from './game/types'
 import './style.css'
 
@@ -194,6 +197,28 @@ function App() {
   async function restoreLocalPlay(token: string, play: LocalPlayState, requestToken: number) {
     const generation = play.generation
     if (!storeLocalPlay(play, requestToken)) return
+    if (play.result_resume) {
+      const delivery = await getLocalResultDelivery(token, play.result_resume.session_id, generation)
+      if (!isCurrentLocalRequest(requestToken, generation)) return
+      setAccessToken(token)
+      setCpus(null)
+      setPlayers([])
+      setActionPending(delivery.route === 'settlement_wait')
+      if (delivery.route === 'result') {
+        setGameState({ status: 'result_delivery', delivery })
+        return
+      }
+      if (delivery.route === 'settlement_wait') {
+        setGameState({ status: 'settlement_wait', delivery })
+        const active = await getActiveGameSession(token)
+        if (!isCurrentLocalRequest(requestToken, generation)) return
+        if (active?.generation === generation) {
+          setPlayers(active.players)
+          connectGame(active.session_id, token, active.players, generation)
+        }
+        return
+      }
+    }
     const activeGame = await getActiveGameSession(token)
     if (!isCurrentLocalRequest(requestToken, generation)) return
     if (activeGame && activeGame.generation === generation) {
@@ -356,6 +381,28 @@ function App() {
           : current)
         return
       }
+      if (message.type === 'result_delivery') {
+        if (message.route === 'result') {
+          setGameState({ status: 'result_delivery', delivery: message })
+          setActionPending(false)
+        } else if (message.route === 'settlement_wait') {
+          setGameState({ status: 'settlement_wait', delivery: message })
+          setActionPending(true)
+        } else if (message.route === 'ending' || message.route === 'selection') {
+          completed = true
+          socket.close(1000)
+          socketRef.current = null
+          if (isDesktop) {
+            void getLocalPlay(token).then((play) => {
+              if (isCurrentLocalRequest(requestToken, message.generation) && play.generation === message.generation) {
+                storeLocalPlay(play, requestToken)
+                void restoreLocalPlay(token, play, requestToken)
+              }
+            }).catch((caught) => setError(errorMessage(caught)))
+          }
+        }
+        return
+      }
       if (message.type === 'sound_effect') {
         const identity = `${message.generation}:${message.session_id}:${message.action_version}:${message.event_index}:${message.event_key}`
         if (playedSoundEventsRef.current.has(identity)) return
@@ -509,7 +556,7 @@ function App() {
     })
     socket.addEventListener('close', (event) => {
       if (socketRef.current !== socket || (isDesktop && requestToken !== localRequestTokenRef.current)) return
-      if (!completed) {
+      if (!completed && event.code !== 1000) {
         setActionPending(true)
         const recovery = isDesktop
           ? '새로고침 후 저장된 대국에 복귀할 수 있습니다.'
@@ -594,6 +641,48 @@ function App() {
       if (!isDesktop || requestToken === localRequestTokenRef.current) setError(errorMessage(caught))
     } finally {
       if (!isDesktop || requestToken === localRequestTokenRef.current) setBusy(false)
+    }
+  }
+
+  async function acknowledgeResult(delivery: ResultDeliveryEnvelope) {
+    if (!accessToken || !isDesktop || !delivery.head) return
+    const requestToken = beginLocalRequest()
+    const generation = delivery.generation
+    setBusy(true)
+    setError(null)
+    try {
+      const updated = await acknowledgeLocalResult(accessToken, delivery)
+      if (!isCurrentLocalRequest(requestToken, generation)) return
+      if (updated.route === 'result') {
+        setGameState({ status: 'result_delivery', delivery: updated })
+      } else if (updated.route === 'settlement_wait') {
+        setGameState({ status: 'settlement_wait', delivery: updated })
+        const active = await getActiveGameSession(accessToken)
+        if (isCurrentLocalRequest(requestToken, generation) && active?.generation === generation) {
+          setPlayers(active.players)
+          connectGame(active.session_id, accessToken, active.players, generation)
+        }
+      } else {
+        socketRef.current?.close(1000)
+        socketRef.current = null
+        const play = await getLocalPlay(accessToken)
+        if (isCurrentLocalRequest(requestToken, generation) && play.generation === generation) {
+          storeLocalPlay(play, requestToken)
+          await restoreLocalPlay(accessToken, play, requestToken)
+        }
+      }
+    } catch (caught) {
+      if (isCurrentLocalRequest(requestToken, generation)) {
+        setError(errorMessage(caught))
+        try {
+          const current = await getLocalResultDelivery(accessToken, delivery.session_id, generation)
+          if (isCurrentLocalRequest(requestToken, generation) && current.route === 'result') {
+            setGameState({ status: 'result_delivery', delivery: current })
+          }
+        } catch { /* Keep the explicit retry visible when reconciliation is unavailable. */ }
+      }
+    } finally {
+      if (requestToken === localRequestTokenRef.current) setBusy(false)
     }
   }
 
@@ -732,6 +821,7 @@ function App() {
             actionsDisabled={actionPending}
             allowGameOverContinue={isDesktop}
             onAction={submitAction}
+            onAcknowledgeResult={busy ? undefined : acknowledgeResult}
             onNextGame={busy ? undefined : nextGame}
             state={gameState}
           />}

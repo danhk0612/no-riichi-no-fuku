@@ -1,24 +1,18 @@
 # 현재 상태
 
-## 국 결과 표시·확인 계약 — 설계 검토 수용
+## W09-C1 국 결과 전달·확인 — 구현/PR 검증 상태
 
-PR #107의 최초 head `b8e112b`를 검토하고 전달 entry와 B2 사실 전체의 완전한 대응 검증을
-명확히 보강했다. 마지막/ack된 entry 또는 국 전체 누락도 오류이며, completed settlement는
-저장 parent 결과와 일치해야 한다. 실제 필드명 `result_delivery_version`/`hand_results_version`도
-통일했다. 최종 source/tree·병합 상태는 PR #107/Git을 따른다. 문서만 검토했으며 제품 구현 검증은 없다.
+prepared main `f1671a6`에서 `task/w09-c1-result-delivery`로 작업 중이다. 선행 B2와 전달 계약 PR은
+main에 수용되어 있다. [계약](docs/W09_C_RESULT_DELIVERY_CONTRACT.md) 전체를 따라 새 local 대국만
+marker/version 1·`content_mode=unbound`를 저장하고, 기존 NULL/marker1/web 대국은 전달 대상으로
+바꾸지 않는다. 전달 state/불변 entry, winner별 저장 순서, GET/ack API·WS envelope, resume·action/create/
+ending gate, renderer 확인 카드, packaged smoke/읽기 전용 DB 증거 검사를 추가했다.
 
-기준 main `c197029`(PR #106), B2 수용 main `3341d4e`를 확인했다. 열린 PR은 #35로
-현재 범위의 동시 구현 PR은 없었다. 실제 DB model·registry·game/local play API·renderer 복구를
-대조해 [전달·확인 계약](docs/W09_C_RESULT_DELIVERY_CONTRACT.md)을 작성했다.
-서버 cursor/멱등 ack·두 socket·응답 유실·reset 세대 격리와 미확인 국→마지막 국→결산→ending→
-자유 대국 순서, 새 대국 도입 경계·원자 저장·파일 범위·실패 검사·C1 인계 지시문을 정리했다.
-C1 사실 전달은 독립 구현 가능하도록 분리했으며 새 문구/CG는 unbound 상태로 남긴다.
-Q-LEGACY/D05-c/Q-FRAME·D07-a/Q-IMAGE·D08 및 W10 정책은 미승인 상태다.
-
-검증은 소스/기존 B2 수용 근거 대조·문서 링크/범위·diff 검사다. 제품 코드·migration·UI·사용자
-자료 변경은 없고 backend/build/browser/Windows CI·artifact 재검증은 수행하지 않았다.
-아래 B2의 실측 결과는 기존 수용 근거이며 이번 표시 기능의 검증 결과가 아니다.
-후속 C1은 본 설계 PR 검토/병합과 별도 구현 지시 후 진행한다. C2/CG/생성은 선행 결정 대기다.
+Linux Python 3.12 전체 backend unittest **180개 통과(91.068초)**, 대사 pytest **10개 통과(0.15초)**,
+frontend production build 및 desktop syntax/quit tests(3개) 통과. C1/저장·복구 영향 focused 8개도
+통과했다. 복수 승자 저장 회귀에서 신규 entry와 사전 저장 entry를 구분하도록 수정했다.
+`git diff --check` 통과. 이제 commit/push/PR을 진행하며 Windows W04/W05 exact source SHA·artifact/
+packaged 검증은 PR run 완료를 기다린다. C2 콘텐츠 snapshot, 문구/P/N·CG·생성은 수행하지 않는다.
 
 ## W09-B2 — 최종 검토·병합 완료
 
