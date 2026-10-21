@@ -66,7 +66,7 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
   if (!entry) return null
 
   return (
-    <section className={`${settlementPayload ? 'match-result ' : ''}result-delivery-card`} data-result-kind={settlementPayload ? 'settlement' : 'hand'} data-ordinal={entry?.ordinal} aria-live="polite" aria-label={settlementPayload ? '최종 정산 결과' : '국 결과'}>
+    <section className={`${settlementPayload ? 'match-result ' : ''}result-delivery-card`} data-result-kind={settlementPayload ? 'settlement' : 'hand'} data-ordinal={entry?.ordinal} data-event-id={entry?.event_id} aria-live="polite" aria-label={settlementPayload ? '최종 정산 결과' : '국 결과'}>
       <p className="eyebrow">{settlementPayload ? 'MATCH SETTLEMENT' : 'HAND RESULT'}</p>
       <h2>{settlementPayload ? '동풍전 정산' : `국 결과 · ${String(start?.bakaze ?? '')}${String(start?.kyoku ?? 0)}국`}</h2>
       {settlementPayload ? (

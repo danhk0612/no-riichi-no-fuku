@@ -10,7 +10,9 @@ try {
   let currentServerEnvelope = null
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname
-    if (path === '/api/local/play/sessions/session-c1/results') return route.fulfill({ json: currentServerEnvelope })
+    if (path === '/api/local/play/sessions/session-c1/results') {
+      return route.fulfill({ json: currentServerEnvelope })
+    }
     if (path === '/api/auth/login') return route.fulfill({ json: { access_token: 'result-delivery-test-token' } })
     if (path === '/api/game/result-assets/99/file') return route.fulfill({
       status: 200, contentType: 'image/png', body: Buffer.from('test-image-bytes'),
@@ -89,10 +91,13 @@ try {
   await page.getByText('등록된 결과 CG가 없습니다.').waitFor()
   const conflicting = structuredClone(noImage)
   conflicting.head.event_id = 'same-revision-conflict'
+  const displayedEvent = page.locator('.result-delivery-card')
+  assert.equal(await displayedEvent.getAttribute('data-event-id'), 'settlement-no-image')
   const reconciliation = page.waitForResponse((response) => response.url().includes('/api/local/play/sessions/session-c1/results?')
-    && response.request().method() === 'GET')
+    && response.request().method() === 'GET').then(() => true).catch(() => false)
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...conflicting }))
-  await reconciliation
+  const reconciled = await reconciliation
+  assert.equal(reconciled, true, `same-revision head conflict did not re-fetch; displayed event=${await displayedEvent.getAttribute('data-event-id')}`)
   await page.getByRole('alert').waitFor({ state: 'detached' })
   assert.equal(await page.getByText('등록된 결과 CG가 없습니다.').count(), 1)
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...hand }))
