@@ -1,5 +1,25 @@
 # 개발 Task
 
+## 현재 다음 Work — W09-C1 PR #108 수용 전 보완
+
+권장: **저성능 Work**. 검토 head0edc3d2/mainf1671a6이며 시작 시 최신 Git을 다시 확인한다.
+새 구현/후속 Task가 아니라 기존 `task/w09-c1-result-delivery`와 PR #108을 보완한다.
+
+```text
+danhk0612/no-riichi-no-fuku의 W09-C1 PR #108만 보완해.
+최신 main·열린 PR·AGENTS와 기준 문서를 확인하고,
+docs/W09_C_RESULT_DELIVERY_CONTRACT.md와 docs/W09_C1_REVIEW_FINDINGS.md 전체를 따라.
+R1~R5 수정 전 실패를 회귀로 고정한 뒤 기존 CG 표시·연결 종료 잠금·MJAI 국 번호,
+전달 실패의 기존 controlled error와 renderer revision 조정을 최소 수정해.
+계약의 C1 고유 원자성/동시성/손상·세대 복구 검사와 관련 browser를 보강해.
+전체 backend/대사·build·관련 browser, 최종 source Windows W04/W05와 다운로드 artifact
+source/hash·내부 ZIP·packaged DB/renderer/종료/재시작을 확인해.
+CURRENT_STATE/TASKS/ARCHITECTURE·기존 PR을 실제 검증/미검증대로 갱신하고 commit/push까지 진행해.
+직접 병합·Release/tag·C2/문구/새 CG·음향 생성·후속 Task는 하지 마.
+```
+
+아래 최초 C1 지시문/설계 기록은 이력이며 위 보완이 우선한다.
+
 ## 국 결과 표시·확인 계약 설계 — 검토 수용
 
 main `c197029`/B2 PR #104 수용과 실제 복구 흐름을 확인하고
