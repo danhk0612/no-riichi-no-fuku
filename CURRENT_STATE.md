@@ -1,5 +1,17 @@
 # 현재 상태
 
+## W09-C1 PR #108 검토 — 수용 전 보완
+
+검토 head `0edc3d2f8d0d2aa4255108a0b57a721cda26f435`, main `f1671a6`.
+독립 Linux backend180개/99.037초·대사10개/0.13초와 frontend build·diff 검사는 통과했다.
+같은 head의 Windows W04 run39574241877/W05 run39574241870 success도 확인했다.
+별도 재현에서 C1 정산의 기존 CG 표시 누락, code1000 미완료 연결 종료 잠금 회귀,
+MJAI 국 번호+1 오류와 전달 구성 실패의 WS uncontrolled 예외를 확인했다. renderer revision
+역행 입력도 거절하지 않으며 C1 고유 원자성/동시성/손상 복구 검사가 부족하다.
+[보완 지시](docs/W09_C1_REVIEW_FINDINGS.md)에 재현·필수 회귀·기존 PR 인계를 정리했다.
+Chromium 다운로드 실패로 로컬 UI 증거는 SSR/소스 callback 실행이며 실제 browser로 주장하지 않는다.
+현재 B2/계약은 main에 있으나 C1 제품 PR은 미병합이다. 다음은 기존 PR #108 보완이다.
+
 ## 국 결과 표시·확인 계약 — 설계 검토 수용
 
 PR #107의 최초 head `b8e112b`를 검토하고 전달 entry와 B2 사실 전체의 완전한 대응 검증을
