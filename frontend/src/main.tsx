@@ -140,7 +140,7 @@ function App() {
       && (generation === undefined || localGenerationRef.current === generation)
   }
 
-  function applyDeliverySnapshot(delivery: ResultDeliveryEnvelope): boolean {
+  function applyDeliverySnapshot(delivery: ResultDeliveryEnvelope, token = accessToken): boolean {
     const previous = resultDeliveryRef.current
     if (previous?.generation === delivery.generation && previous.session_id === delivery.session_id) {
       if (delivery.delivery_revision < previous.delivery_revision) return false
@@ -149,7 +149,7 @@ function App() {
         const nextHead = delivery.head ? JSON.stringify(delivery.head) : null
         if (previous.acked_ordinal !== delivery.acked_ordinal || previousHead !== nextHead) {
           setError('결과 확인 상태가 일치하지 않습니다. 저장된 결과를 다시 불러오세요.')
-          if (accessToken) void getLocalResultDelivery(accessToken, delivery.session_id, delivery.generation).then((fresh) => {
+          void getLocalResultDelivery(token ?? '', delivery.session_id, delivery.generation).then((fresh) => {
             if (fresh.delivery_revision >= previous.delivery_revision
               && (fresh.delivery_revision > previous.delivery_revision
                 || (fresh.acked_ordinal === previous.acked_ordinal
@@ -256,7 +256,7 @@ function App() {
     if (play.result_resume) {
       const delivery = await getLocalResultDelivery(token, play.result_resume.session_id, generation)
       if (!isCurrentLocalRequest(requestToken, generation)) return
-      if (!applyDeliverySnapshot(delivery)) return
+      if (!applyDeliverySnapshot(delivery, token)) return
       setAccessToken(token)
       setCpus(null)
       setPlayers([])
@@ -439,7 +439,7 @@ function App() {
         return
       }
       if (message.type === 'result_delivery') {
-        if (!applyDeliverySnapshot(message)) return
+        if (!applyDeliverySnapshot(message, token)) return
         if (message.route === 'result') {
           setGameState({ status: 'result_delivery', delivery: message })
           setActionPending(false)
