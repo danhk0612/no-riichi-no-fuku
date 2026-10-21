@@ -351,8 +351,32 @@ async function clickHumanAction() {
       evidence.w09AckResponseLossInjected = true
       writeEvidence()
     }
-    await window.webContents.executeJavaScript("document.querySelector('.result-delivery-card[data-result-kind=hand] .primary-button')?.click()")
-    await waitForRenderer(`(() => { const card = document.querySelector('.result-delivery-card[data-result-kind=hand]'); return !card || card.dataset.ordinal !== '${ordinal}' })()`, 90000)
+    const clickState = await window.webContents.executeJavaScript(`(() => {
+      const card = document.querySelector('.result-delivery-card[data-result-kind=hand]')
+      const button = card?.querySelector('.primary-button')
+      if (!button || button.disabled) return { clicked: false, ordinal: card?.dataset.ordinal ?? null, text: card?.innerText ?? '' }
+      button.click()
+      return { clicked: true, ordinal: card.dataset.ordinal }
+    })()`)
+    if (!clickState.clicked) throw new Error(`hand result acknowledgement button was unavailable: ${JSON.stringify(clickState)}`)
+    try {
+      await waitForRenderer(`(() => { const card = document.querySelector('.result-delivery-card[data-result-kind=hand]'); return !card || card.dataset.ordinal !== '${ordinal}' })()`, 90000)
+    } catch (error) {
+      const rendererState = await window.webContents.executeJavaScript(`(() => {
+        const card = document.querySelector('.result-delivery-card[data-result-kind=hand]')
+        return { ordinal: card?.dataset.ordinal ?? null, text: card?.innerText ?? '', hasButton: Boolean(card?.querySelector('.primary-button')), error: document.querySelector('.form-error')?.innerText ?? '' }
+      })()`)
+      let savedDelivery = null
+      try {
+        const play = await fetch(`${origin}/api/local/play`, { headers: { 'X-Local-Capability': capability } }).then(response => response.json())
+        if (play.result_resume) {
+          savedDelivery = await fetch(`${origin}/api/local/play/sessions/${play.result_resume.session_id}/results?generation=${play.generation}`, {
+            headers: { 'X-Local-Capability': capability },
+          }).then(response => response.json())
+        }
+      } catch (diagnosticError) { savedDelivery = { diagnostic_error: diagnosticError.message } }
+      throw new Error(`${error.message}; acknowledgement renderer=${JSON.stringify(rendererState)}; saved delivery=${JSON.stringify(savedDelivery)}`)
+    }
   }
   if (evidence.w09AckResponseLossInjected && !evidence.checks.some(check => check.name === 'result acknowledgement recovered after committed response loss')) {
     const injected = await window.webContents.executeJavaScript("window.__w09AckResponseLossInjected === true")
