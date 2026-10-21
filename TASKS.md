@@ -9,11 +9,11 @@ PR #107 검토에서 사실 전체↔표시 entry의 완전 대응과 마지막/
 이 기록은 PR #107 당시의 설계 검토 상태다. 병합 상태는 PR #107/Git을 따른다. 이전 통합 W09-B 지시문은
 본 계약의 C1/C2 선행·허용 범위로 대체하며 일괄 구현 지시로 사용하지 않는다.
 
-## W09-C1 국 결과 전달·확인 — 구현 중
+## W09-C1 국 결과 전달·확인 — PR #108 검증 중
 
 사용자 지시로 prepared main `f1671a6`에서 `task/w09-c1-result-delivery`를 진행한다.
 B2와 계약 설계 선행은 main에 반영되어 있다. [전달·확인 계약](docs/W09_C_RESULT_DELIVERY_CONTRACT.md)
-§1~8 전체를 적용하며 현재 검증·PR 상태는 CURRENT_STATE와 GitHub PR을 따른다.
+§1~8 전체를 적용했고 PR #108을 main에 제출했다. 현재 검증/상태는 CURRENT_STATE와 GitHub PR을 따른다.
 content_mode=unbound 및 새 local 대국 opt-in 경계를 지키며 기존 대국에 전달 snapshot을
 소급하지 않는다. Windows W04/W05·packaged source SHA 검증을 PR 제출 후 확인한다.
 문구/P/N·CG·생성 후속 작업은 이 범위에 포함하지 않는다.

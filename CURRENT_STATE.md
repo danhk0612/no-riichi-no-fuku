@@ -2,7 +2,8 @@
 
 ## W09-C1 국 결과 전달·확인 — 구현/PR 검증 상태
 
-prepared main `f1671a6`에서 `task/w09-c1-result-delivery`로 작업 중이다. 선행 B2와 전달 계약 PR은
+prepared main `f1671a6`에서 `task/w09-c1-result-delivery`로 작업 중이며 PR #108을 열었다.
+PR은 open/unmerged이고 Windows exact-source CI가 PR에서 진행된다. 선행 B2와 전달 계약 PR은
 main에 수용되어 있다. [계약](docs/W09_C_RESULT_DELIVERY_CONTRACT.md) 전체를 따라 새 local 대국만
 marker/version 1·`content_mode=unbound`를 저장하고, 기존 NULL/marker1/web 대국은 전달 대상으로
 바꾸지 않는다. 전달 state/불변 entry, winner별 저장 순서, GET/ack API·WS envelope, resume·action/create/
@@ -11,8 +12,9 @@ ending gate, renderer 확인 카드, packaged smoke/읽기 전용 DB 증거 검�
 Linux Python 3.12 전체 backend unittest **180개 통과(91.068초)**, 대사 pytest **10개 통과(0.15초)**,
 frontend production build 및 desktop syntax/quit tests(3개) 통과. C1/저장·복구 영향 focused 8개도
 통과했다. 복수 승자 저장 회귀에서 신규 entry와 사전 저장 entry를 구분하도록 수정했다.
-`git diff --check` 통과. 이제 commit/push/PR을 진행하며 Windows W04/W05 exact source SHA·artifact/
-packaged 검증은 PR run 완료를 기다린다. C2 콘텐츠 snapshot, 문구/P/N·CG·생성은 수행하지 않는다.
+`git diff --check` 통과. Windows W04/W05 exact source SHA·artifact/packaged 검증의 최종 결과는
+PR #108 checks와 artifacts를 따른다. 이 PR은 직접 병합하지 않는다. C2 콘텐츠 snapshot, 문구/P/N·CG·
+생성은 수행하지 않는다.
 
 ## W09-B2 — 최종 검토·병합 완료
 
