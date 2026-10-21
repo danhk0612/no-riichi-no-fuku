@@ -99,7 +99,9 @@ human slot은 기본 배경이다. 유국/nagashimangan/triple ron은 facts대�
 호출하지 않는다. crash/commit 실패 후에는 공개된 순서가 없으므로 재시도 선택 가능하지만,
 commit된 row는 replay/재기동/재렌더로 재추첨하지 않는다. 표시 seed를 게임 seed에 끼워 넣지 않는다.
 
-settlement payload v1은 저장할 최종 scores/ranks/settlement 및 기존 presentation v2의 깊은 복사다.
+settlement payload v1은 저장할 최종 scores/ranks/settlement 및 기존 presentation v2, 당시
+참가자 이름/seat의 깊은 복사다. 마지막 값은 `GameSessionRecord.players`에서 가져오며 카드의
+최종 순위 이름에 사용한다. 현재 CPU 이름/명단을 조회하지 않는다.
 최종 국의 stage_at_hand와 stage_after(기존 defeat_stage)를 다른 필드로 유지한다. C1은 stage를
 추가 계산하지 않는다. 정산 결과에 stage_changed=true이면 변경 후 CG, 완료 CPU/omake의 stage3
 불변이면 새 단계 CG 없음이라는 기존 경계를 유지한다. 최종4위 패배 문구/음성은 유지한다.

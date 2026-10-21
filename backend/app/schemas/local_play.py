@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictInt
 
 
 class LocalPlayStateResponse(BaseModel):
@@ -10,6 +10,7 @@ class LocalPlayStateResponse(BaseModel):
     active_session_id: str | None
     recent_session_id: str | None
     legacy_active: bool
+    result_resume: dict[str, object] | None = None
 
 
 class LocalRosterRequest(BaseModel):
@@ -25,3 +26,10 @@ class LocalResetRequest(BaseModel):
 class LocalEndingAckRequest(BaseModel):
     generation: str
     ending_event_id: str
+
+
+class LocalResultAckRequest(BaseModel):
+    generation: str
+    event_id: str
+    ordinal: StrictInt = Field(ge=1)
+    expected_delivery_revision: StrictInt = Field(ge=0)

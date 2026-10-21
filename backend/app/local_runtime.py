@@ -327,6 +327,7 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
                     GameSessionRecord.user_id == user.id,
                     GameSessionRecord.status == "completed",
                     GameSessionRecord.play_generation == (state.generation if state else ""),
+                    GameSessionRecord.result_delivery_version.is_(None),
                 )
                 .order_by(desc(GameSessionRecord.updated_at), desc(GameSessionRecord.id))
                 .limit(1)

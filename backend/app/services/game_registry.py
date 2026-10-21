@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.db.models import GameSessionRecord, LocalPlayState, User, UserCpuProgress
+from app.db.models import GameSessionRecord, GameResultDeliveryEntry, LocalPlayState, User, UserCpuProgress
 from app.mahjong.hand_scores import HandScoreCaptureError
 from app.mahjong.hand_results import HandResultCaptureError
 from app.mahjong.riichienv_adapter import MatchResult
@@ -33,6 +33,10 @@ from app.services.dialogue_service import DialogueSelector
 from app.services.result_assets import get_unlocked_result_asset, result_asset_metadata
 from app.services.difficulty import DifficultyError, summaries, validate_snapshot
 from app.services.hand_results import append_facts, load_rows, verify_completed_rows, verify_replay_batch
+from app.services.result_delivery import (
+    ResultDeliveryError, append_hand_entries, append_settlement_entry,
+    assert_action_delivery_clear, assert_generation_delivery_clear, create_delivery,
+)
 
 
 class GameRegistryError(RuntimeError):
@@ -48,6 +52,10 @@ class RegisteredGameNotFoundError(GameRegistryError):
 
 
 class StaleGameActionError(GameRegistryError):
+    pass
+
+
+class ResultDeliveryPendingError(GameRegistryError):
     pass
 
 
@@ -124,6 +132,12 @@ class GameRegistry:
                 local_state = db_session.get(LocalPlayState, user.id)
                 if local_state is None or local_state.generation != generation:
                     raise LocalPlayConflict("play_generation_stale", "play state changed")
+                try:
+                    assert_generation_delivery_clear(db_session, user.id, generation)
+                except ResultDeliveryError as error:
+                    if str(error) == "result_pending":
+                        raise LocalPlayConflict("result_pending", "confirm pending match results first") from None
+                    raise GameRegistryError(f"result delivery invalid: {error}") from error
                 choices = effective_choices(db_session, user.id, cpu_character_ids, local_state)
                 rules_mode = "omake" if local_state.phase == "omake" else "progress"
             else:
@@ -174,6 +188,7 @@ class GameRegistry:
                     play_generation=generation,
                     rules_snapshot={"version": 2, "mode": rules_mode} if rules_mode else None,
                     hand_results_version=1 if capture_results else None,
+                    result_delivery_version=1 if capture_results else None,
                 )
             )
             try:
@@ -186,8 +201,11 @@ class GameRegistry:
             self._games[registered.session_id] = registered
             if capture_results:
                 try:
-                    append_facts(db_session, db_session.get(GameSessionRecord, registered.session_id), game.pending_hand_results(), 0)
+                    record = db_session.get(GameSessionRecord, registered.session_id)
+                    append_facts(db_session, record, game.pending_hand_results(), 0)
                     db_session.flush()
+                    create_delivery(db_session, record)
+                    append_hand_entries(db_session, record, load_rows(db_session, record))
                 except Exception:
                     db_session.rollback()
                     registered.game = None
@@ -246,6 +264,12 @@ class GameRegistry:
             )
             if record is None or record.status != "active":
                 raise RegisteredGameNotFoundError("active game session not found")
+            try:
+                assert_action_delivery_clear(db_session, record)
+            except ResultDeliveryError as error:
+                if str(error) == "result_pending":
+                    raise ResultDeliveryPendingError("confirm pending match results first") from None
+                raise GameRegistryError(f"result delivery invalid: {error}") from error
             persisted_version = len(record.human_action_indices)
             if (
                 action_version != registered.action_version
@@ -268,6 +292,15 @@ class GameRegistry:
                         db_session, record, registered.game.pending_hand_results(),
                         registered.action_version,
                     )
+                    db_session.flush()
+                    if record.result_delivery_version == 1:
+                        persisted = load_rows(db_session, record)
+                        existing = set(db_session.scalars(select(GameResultDeliveryEntry.hand_start_log_offset).where(
+                            GameResultDeliveryEntry.session_id == record.id,
+                            GameResultDeliveryEntry.kind == "hand",
+                        )).all())
+                        new_facts = [fact for fact in persisted if fact.hand_start_log_offset not in existing]
+                        append_hand_entries(db_session, record, new_facts)
                     record.human_action_indices = [
                         *record.human_action_indices, legal_action_index,
                     ]
@@ -331,6 +364,8 @@ class GameRegistry:
             if registered.rules_mode is not None:
                 record.presentation = registered.presentation
                 registered.presentation = None
+            if record.result_delivery_version == 1:
+                append_settlement_entry(db_session, record)
             db_session.flush()
             return settlement
 

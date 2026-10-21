@@ -2,7 +2,7 @@ name: W05 Windows shell regression
 
 on:
   push:
-    branches: [task/w05-windows-shell, task/w06-b-progression, task/w06-c-sound-ending]
+    branches: [task/w05-windows-shell, task/w06-b-progression, task/w06-c-sound-ending, task/w09-c1-result-delivery]
   pull_request:
     branches: [main]
     paths:
@@ -61,7 +61,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npm run build
           exit $LASTEXITCODE
-      - name: Run local sound and content browser regressions
+      - name: Run local content, connection, and result browser regressions
         working-directory: frontend
         run: |
           $playwrightRoot = Join-Path $env:RUNNER_TEMP 'nrnf-playwright'
@@ -75,7 +75,7 @@ jobs:
             for ($attempt = 0; $attempt -lt 60; $attempt++) {
               try { Invoke-WebRequest 'http://127.0.0.1:5173/' -TimeoutSec 2 | Out-Null; $ready = $true; break } catch { Start-Sleep -Seconds 1 }
             }
-            if (-not $ready) { throw 'Vite did not become ready for the local sound browser regression' }
+            if (-not $ready) { throw 'Vite did not become ready for the browser regressions' }
             $env:PLAYWRIGHT_MODULE_PATH = Join-Path $playwrightRoot 'node_modules/playwright'
             $env:TEST_BASE_URL = 'http://127.0.0.1:5173'
             node tests/local-sound.browser.mjs *> ../out/w05-evidence/local-sound-browser.txt
@@ -87,6 +87,15 @@ jobs:
             node tests/audio-packs.browser.mjs *> ../out/w05-evidence/audio-packs-browser.txt
             if ($LASTEXITCODE -ne 0) { Get-Content ../out/w05-evidence/audio-packs-browser.txt; exit $LASTEXITCODE }
             Get-Content ../out/w05-evidence/audio-packs-browser.txt
+            node tests/connection.browser.mjs *> ../out/w05-evidence/connection-browser.txt
+            if ($LASTEXITCODE -ne 0) { Get-Content ../out/w05-evidence/connection-browser.txt; exit $LASTEXITCODE }
+            Get-Content ../out/w05-evidence/connection-browser.txt
+            node tests/result-asset.browser.mjs *> ../out/w05-evidence/result-asset-browser.txt
+            if ($LASTEXITCODE -ne 0) { Get-Content ../out/w05-evidence/result-asset-browser.txt; exit $LASTEXITCODE }
+            Get-Content ../out/w05-evidence/result-asset-browser.txt
+            node tests/result-delivery.browser.mjs *> ../out/w05-evidence/result-delivery-browser.txt
+            if ($LASTEXITCODE -ne 0) { Get-Content ../out/w05-evidence/result-delivery-browser.txt; exit $LASTEXITCODE }
+            Get-Content ../out/w05-evidence/result-delivery-browser.txt
             node tests/difficulty.browser.mjs *> ../out/w05-evidence/difficulty-browser.txt
             if ($LASTEXITCODE -ne 0) { Get-Content ../out/w05-evidence/difficulty-browser.txt; exit $LASTEXITCODE }
             Get-Content ../out/w05-evidence/difficulty-browser.txt
@@ -146,7 +155,10 @@ jobs:
             'renderer fixed participant roster before opponent selection',
             'active match restored after engine shutdown/restart at committed turn',
             'real renderer completed a normal local match',
+            'result acknowledgement recovered after committed response loss',
+            'renderer acknowledged every hand result and stopped at settlement',
             'completed result reconnected after engine restart without duplicate settlement',
+            'packaged renderer restored pending settlement result after engine restart',
             'window close gracefully stopped the owned local engine'
           )
           $actual = @($report.checks | ForEach-Object { $_.name })

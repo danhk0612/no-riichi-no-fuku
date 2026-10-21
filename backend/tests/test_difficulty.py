@@ -16,6 +16,22 @@ from app.local_runtime import create_local_runtime
 from app.services.difficulty import KEY, DifficultyError, resolve, validate_snapshot
 from app.services.game_setup import CpuChoice, create_production_cpu_agent
 from app.services.game_registry import GameRegistry
+from app.db.models import GameResultDelivery, GameResultDeliveryEntry
+from app.services.result_delivery import acknowledge_result
+
+
+def _ack_all_results(db, session_id):
+    record = db.get(GameSessionRecord, session_id)
+    delivery = db.get(GameResultDelivery, session_id)
+    if delivery is None:
+        return
+    entries = db.scalars(select(GameResultDeliveryEntry).where(
+        GameResultDeliveryEntry.session_id == session_id
+    ).order_by(GameResultDeliveryEntry.ordinal)).all()
+    while delivery.acked_ordinal < len(entries):
+        entry = entries[delivery.acked_ordinal]
+        acknowledge_result(db, record, generation=delivery.generation, event_id=entry.event_id,
+                           ordinal=entry.ordinal, expected_revision=delivery.revision)
 
 
 class DifficultyTests(unittest.TestCase):
@@ -146,6 +162,7 @@ class LocalDifficultyTests(unittest.TestCase):
             registered = runtime.registry.get_owned(session, session_id, runtime.member_id)
             original_choices = copy.deepcopy(session.get(GameSessionRecord,session_id).cpu_choices)
             for _ in range(12):
+                _ack_all_results(session, session_id)
                 runtime.registry.submit_action(session, registered, 0, registered.action_version)
                 session.commit()
             before = asdict(registered.game.human_turn())
@@ -159,6 +176,7 @@ class LocalDifficultyTests(unittest.TestCase):
             while not registered.game.done:
                 self.assertEqual(registered.game.human_turn(),restored.game.human_turn())
                 registered.game.submit_human_action(0)
+                _ack_all_results(session, session_id)
                 runtime.registry.submit_action(session,restored,0,restored.action_version)
                 session.commit()
             self.assertEqual(registered.game.result(),restored.game.result())

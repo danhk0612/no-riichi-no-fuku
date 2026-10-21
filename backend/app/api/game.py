@@ -43,6 +43,7 @@ from app.services.game_registry import (
     RegisteredGame,
     RegisteredGameNotFoundError,
     StaleGameActionError,
+    ResultDeliveryPendingError,
     get_game_registry,
 )
 from app.services.dialogue_service import DialogueSelector, _map_event_type_to_key, extract_game_events
@@ -55,6 +56,7 @@ from app.services.game_setup import (
 )
 from app.services.local_play import LocalPlayConflict
 from app.services.difficulty import DifficultyError
+from app.services.result_delivery import ResultDeliveryError, result_envelope
 from app.services.local_sound import selected_effect_clip
 from app.services.audio_packs import resolve_audio_pack_slot, resolve_voice_slot
 from app.services.result_assets import (
@@ -122,6 +124,20 @@ def create_registered_game_session(
     except LocalPlayConflict as error:
         session.rollback()
         raise HTTPException(status_code=409, detail={"code": error.code, "message": str(error)}) from None
+    except GameRegistryError as error:
+        session.rollback()
+        code = "result_delivery_invalid" if "result delivery" in str(error) else "game_session_invalid"
+        raise HTTPException(status_code=503, detail={"code": code, "message": str(error)}) from None
+    except ResultDeliveryError:
+        session.rollback()
+        raise HTTPException(status_code=503, detail={
+            "code": "result_delivery_invalid", "message": "saved result delivery could not be verified",
+        }) from None
+    except SQLAlchemyError:
+        session.rollback()
+        raise HTTPException(status_code=503, detail={
+            "code": "persistence_failed", "message": "game session could not be saved",
+        }) from None
 
 
 @router.get(
@@ -328,6 +344,26 @@ async def send_registered_game_state(
                                 "session_id": registered.session_id, "action_version": registered.action_version,
                                 "event_index": 0, "actor_seat": presentation.get("settlement", {}).get("last_place_seat"),
                                 "event_key": f"defeat_stage_{stage}", "source_kind": "result", **voice}
+            except ResultDeliveryError:
+                session.rollback()
+                registered.game = None
+                registry.evict(registered.session_id)
+                await send_websocket_error(
+                    websocket, "result_delivery_invalid", "saved result delivery could not be verified",
+                    generation=registered.play_generation, session_id=registered.session_id,
+                )
+                await websocket.close(code=1011)
+                return False
+            except SQLAlchemyError:
+                session.rollback()
+                registered.game = None
+                registry.evict(registered.session_id)
+                await send_websocket_error(
+                    websocket, "persistence_failed", "game action could not be saved",
+                    generation=registered.play_generation, session_id=registered.session_id,
+                )
+                await websocket.close(code=1011)
+                return False
             except Exception:
                 session.rollback()
                 registered.game = None
@@ -346,6 +382,24 @@ async def send_registered_game_state(
         await websocket.send_json(dialogue)
     for sound in sound_messages:
         await websocket.send_json(sound)
+    if local_runtime is not None and registered.play_generation is not None:
+        with session_factory() as session:
+            record = session.get(GameSessionRecord, registered.session_id)
+            if record is not None and record.result_delivery_version == 1:
+                try:
+                    envelope = result_envelope(session, record)
+                except ResultDeliveryError:
+                    await send_websocket_error(
+                        websocket, "result_delivery_invalid", "saved result delivery could not be verified",
+                        generation=registered.play_generation, session_id=registered.session_id,
+                    )
+                    await websocket.close(code=1011)
+                    return False
+                await websocket.send_json({"type": "result_delivery", **envelope})
+                if envelope["route"] != "human_turn":
+                    if result_voice_message is not None:
+                        await websocket.send_json(result_voice_message)
+                    return True
     if is_done:
         result = registered.result
         if result is None:
@@ -557,6 +611,15 @@ async def game_session_websocket(
                     websocket, registered, session_factory, registry, local_runtime=local_runtime
                 )
                 continue
+            except ResultDeliveryPendingError:
+                await send_websocket_error(
+                    websocket, "result_pending", "confirm pending match results first",
+                    generation=registered.play_generation, session_id=session_id if local_runtime is not None else None,
+                )
+                await send_registered_game_state(
+                    websocket, registered, session_factory, registry, local_runtime=local_runtime
+                )
+                continue
             except LocalPlayConflict:
                 registry.evict(registered.session_id)
                 await send_websocket_error(websocket, "play_generation_stale", "play state changed; reload the current play",
@@ -566,6 +629,23 @@ async def game_session_websocket(
             except HandScoreCaptureError:
                 await send_websocket_error(
                     websocket, "hand_score_failed", "winning hand could not be verified",
+                    generation=registered.play_generation, session_id=session_id if local_runtime is not None else None,
+                )
+                await websocket.close(code=1011)
+                return
+            except ResultDeliveryError:
+                registered.game = None
+                registry.evict(registered.session_id)
+                await send_websocket_error(
+                    websocket, "result_delivery_invalid", "saved result delivery could not be verified",
+                    generation=registered.play_generation, session_id=session_id if local_runtime is not None else None,
+                )
+                await websocket.close(code=1011)
+                return
+            except GameRegistryError as error:
+                await send_websocket_error(
+                    websocket, "result_delivery_invalid" if "result delivery" in str(error) else "game_session_invalid",
+                    "saved game state could not be verified",
                     generation=registered.play_generation, session_id=session_id if local_runtime is not None else None,
                 )
                 await websocket.close(code=1011)

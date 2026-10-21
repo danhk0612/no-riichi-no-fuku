@@ -331,6 +331,58 @@ async function rendererSnapshot() {
 }
 
 async function clickHumanAction() {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const ordinal = await window.webContents.executeJavaScript("document.querySelector('.result-delivery-card[data-result-kind=hand]')?.dataset.ordinal ?? null")
+    if (!ordinal) break
+    if (!evidence.w09AckResponseLossInjected) {
+      await window.webContents.executeJavaScript(`(() => {
+        const originalFetch = window.fetch.bind(window)
+        window.fetch = async (input, init) => {
+          const response = await originalFetch(input, init)
+          const path = new URL(typeof input === 'string' ? input : input.url, window.location.href).pathname
+          if (path.endsWith('/results/ack') && response.ok) {
+            window.fetch = originalFetch
+            window.__w09AckResponseLossInjected = true
+            throw new TypeError('injected result acknowledgement response loss after commit')
+          }
+          return response
+        }
+      })()`)
+      evidence.w09AckResponseLossInjected = true
+      writeEvidence()
+    }
+    const clickState = await window.webContents.executeJavaScript(`(() => {
+      const card = document.querySelector('.result-delivery-card[data-result-kind=hand]')
+      const button = card?.querySelector('.primary-button')
+      if (!button || button.disabled) return { clicked: false, ordinal: card?.dataset.ordinal ?? null, text: card?.innerText ?? '' }
+      button.click()
+      return { clicked: true, ordinal: card.dataset.ordinal }
+    })()`)
+    if (!clickState.clicked) throw new Error(`hand result acknowledgement button was unavailable: ${JSON.stringify(clickState)}`)
+    try {
+      await waitForRenderer(`(() => { const card = document.querySelector('.result-delivery-card[data-result-kind=hand]'); return !card || card.dataset.ordinal !== '${ordinal}' })()`, 90000)
+    } catch (error) {
+      const rendererState = await window.webContents.executeJavaScript(`(() => {
+        const card = document.querySelector('.result-delivery-card[data-result-kind=hand]')
+        return { ordinal: card?.dataset.ordinal ?? null, text: card?.innerText ?? '', hasButton: Boolean(card?.querySelector('.primary-button')), error: document.querySelector('.form-error')?.innerText ?? '' }
+      })()`)
+      let savedDelivery = null
+      try {
+        const play = await fetch(`${origin}/api/local/play`, { headers: { 'X-Local-Capability': capability } }).then(response => response.json())
+        if (play.result_resume) {
+          savedDelivery = await fetch(`${origin}/api/local/play/sessions/${play.result_resume.session_id}/results?generation=${play.generation}`, {
+            headers: { 'X-Local-Capability': capability },
+          }).then(response => response.json())
+        }
+      } catch (diagnosticError) { savedDelivery = { diagnostic_error: diagnosticError.message } }
+      throw new Error(`${error.message}; acknowledgement renderer=${JSON.stringify(rendererState)}; saved delivery=${JSON.stringify(savedDelivery)}`)
+    }
+  }
+  if (evidence.w09AckResponseLossInjected && !evidence.checks.some(check => check.name === 'result acknowledgement recovered after committed response loss')) {
+    const injected = await window.webContents.executeJavaScript("window.__w09AckResponseLossInjected === true")
+    if (injected) addCheck('result acknowledgement recovered after committed response loss')
+  }
+  if (await window.webContents.executeJavaScript("Boolean(document.querySelector('.match-result'))")) return
   await waitForRenderer("document.querySelector('.human-controls .hand button:not([disabled])') || document.querySelector('.human-controls .action-bar button:not([disabled])')", 90000)
   const before = await rendererSnapshot()
   await window.webContents.executeJavaScript("(document.querySelector('.human-controls .hand button:not([disabled])') || document.querySelector('.human-controls .action-bar button:not([disabled])'))?.click()")
@@ -993,6 +1045,15 @@ async function smokeRun() {
     if (!(await window.webContents.executeJavaScript("Boolean(document.querySelector('.match-result h2'))"))) {
       throw new Error('real renderer match did not complete')
     }
+    const pendingSettlement = await fetch(`${origin}/api/local/play`, { headers: { 'X-Local-Capability': capability } }).then(response => response.json())
+    const deliveryResume = pendingSettlement.result_resume
+    if (!deliveryResume || deliveryResume.route !== 'result') throw new Error('completed match did not resume at an unconfirmed result entry')
+    const delivery = await fetch(`${origin}/api/local/play/sessions/${deliveryResume.session_id}/results?generation=${pendingSettlement.generation}`, { headers: { 'X-Local-Capability': capability } }).then(response => response.json())
+    if (!delivery.head || delivery.head.kind !== 'settlement' || delivery.acked_ordinal !== delivery.terminal_ordinal - 1) {
+      throw new Error('renderer did not confirm every hand result before the settlement card')
+    }
+    if (!evidence.w09AckResponseLossInjected) throw new Error('renderer did not exercise acknowledgement response loss')
+    addCheck('renderer acknowledged every hand result and stopped at settlement')
     addCheck('real renderer completed a normal local match')
   }
 
@@ -1008,6 +1069,12 @@ async function smokeRun() {
   const resultAfter = await window.webContents.executeJavaScript("document.querySelector('.match-result')?.innerText ?? ''")
   if (resultBefore !== resultAfter) throw new Error('completed result changed after engine restart')
   addCheck('completed result reconnected after engine restart without duplicate settlement')
+  const resumedPlay = await fetch(`${origin}/api/local/play`, { headers: { 'X-Local-Capability': capability } }).then(response => response.json())
+  const resumedDelivery = await fetch(`${origin}/api/local/play/sessions/${resumedPlay.result_resume.session_id}/results?generation=${resumedPlay.generation}`, { headers: { 'X-Local-Capability': capability } }).then(response => response.json())
+  if (!resumedDelivery.head || resumedDelivery.head.kind !== 'settlement' || resumedDelivery.acked_ordinal !== resumedDelivery.terminal_ordinal - 1) {
+    throw new Error('packaged restart did not restore the unconfirmed settlement entry')
+  }
+  addCheck('packaged renderer restored pending settlement result after engine restart')
   evidence.passed = true
   evidence.phase = 'smoke passed; closing host'
   writeEvidence()

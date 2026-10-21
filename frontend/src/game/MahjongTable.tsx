@@ -5,6 +5,7 @@ import type {
   LegalAction,
   MatchSettlement,
   PlayerSeat,
+  ResultDeliveryEnvelope,
 } from './types'
 import { defeatStageLabel } from '../stages'
 import { roundWindLabel, seatWindLabel, tileIdToDisplay } from './tiles'
@@ -29,7 +30,70 @@ type MahjongTableProps = {
   onAction: (legalActionIndex: number) => void
   actionsDisabled?: boolean
   onNextGame?: () => void
+  onAcknowledgeResult?: (delivery: ResultDeliveryEnvelope) => void
+  resultAssetObjectUrl?: string | null
+  resultAssetLoadFailed?: boolean
   allowGameOverContinue?: boolean
+}
+
+function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, resultAssetLoadFailed }: {
+  delivery: ResultDeliveryEnvelope
+  onAcknowledge?: (delivery: ResultDeliveryEnvelope) => void
+  resultAssetObjectUrl?: string | null
+  resultAssetLoadFailed?: boolean
+}) {
+  const entry = delivery.head
+  const payload = entry?.payload ?? {}
+  const fact = payload.fact_snapshot as Record<string, any> | undefined
+  const participantSnapshot = fact?.participants ?? payload.participants
+  const participants = Array.isArray(participantSnapshot) ? participantSnapshot as Record<string, any>[] : []
+  const nameFor = (seat: unknown) => participants.find((player) => player.seat === seat)?.name ?? `좌석 ${Number(seat) + 1}`
+  const winners = Array.isArray(fact?.winners) ? fact.winners as Record<string, any>[] : []
+  const winnerOffset = payload.displayed_hora_log_offset
+  const winner = winners.find((item) => item.hora_log_offset === winnerOffset)
+  const start = fact?.start as Record<string, any> | undefined
+  const settlementPayload = payload.kind === 'settlement'
+  const scores = Array.isArray(payload.scores) ? payload.scores as number[] : []
+  const ranks = Array.isArray(payload.ranks) ? payload.ranks as number[] : []
+  const resultRows = scores.map((score, seat) => ({ seat, score, rank: ranks[seat] })).sort((a, b) => a.rank - b.rank)
+  const presentation = payload.presentation as Record<string, any> | null | undefined
+  const dialogues = Array.isArray(presentation?.result_dialogues) ? presentation.result_dialogues as Record<string, any>[] : []
+  const resultAsset = presentation?.result_asset as { id?: number; defeat_stage?: number } | null | undefined
+
+  if (delivery.route === 'settlement_wait') {
+    return <section className="result-delivery-card" data-result-kind="settlement-wait" role="status"><h2>정산 결과 저장 중</h2><p>저장된 국 결과는 유지됩니다. 연결을 다시 확인하면 정산 결과로 복구합니다.</p></section>
+  }
+  if (!entry) return null
+
+  return (
+    <section className={`${settlementPayload ? 'match-result ' : ''}result-delivery-card`} data-result-kind={settlementPayload ? 'settlement' : 'hand'} data-ordinal={entry?.ordinal} data-event-id={entry?.event_id} aria-live="polite" aria-label={settlementPayload ? '최종 정산 결과' : '국 결과'}>
+      <p className="eyebrow">{settlementPayload ? 'MATCH SETTLEMENT' : 'HAND RESULT'}</p>
+      <h2>{settlementPayload ? '동풍전 정산' : `국 결과 · ${String(start?.bakaze ?? '')}${String(start?.kyoku ?? 0)}국`}</h2>
+      {settlementPayload ? (
+        <>
+          <ol>{resultRows.map((row) => <li key={row.seat}><strong>{row.rank}위 · {nameFor(row.seat)}</strong><span>{row.score.toLocaleString()}점</span></li>)}</ol>
+          {resultAsset && resultAssetObjectUrl && <figure className="result-asset"><img src={resultAssetObjectUrl} alt={`단계 ${resultAsset.defeat_stage ?? ''} 결과 CG`} /><figcaption>단계 {resultAsset.defeat_stage ?? ''} 결과 CG</figcaption></figure>}
+          {resultAsset && !resultAssetObjectUrl && <p className="result-asset-status" role="status">{resultAssetLoadFailed ? 'CG를 불러오지 못했습니다.' : 'CG를 불러오는 중입니다.'}</p>}
+          {!resultAsset && <p className="result-asset-status">등록된 결과 CG가 없습니다.</p>}
+          {dialogues.map((dialogue, index) => <blockquote className="result-dialogue" key={`${dialogue.cpu_character_id}-${dialogue.event_key}-${index}`}><p>{String(dialogue.text ?? '')}</p></blockquote>)}
+          <p className="settlement-summary">저장된 정산 결과</p>
+        </>
+      ) : (
+        <>
+          <p className="settlement-summary">{String(start?.bakaze ?? '')}{String(start?.kyoku ?? 0)}국 · 본장 {String(start?.honba ?? 0)} · 리치봉 {String(start?.kyotaku ?? 0)}</p>
+          {winner ? (
+            <div className="settlement-summary">
+              <strong>{nameFor(winner.actor)} · {winner.win_kind === 'tsumo' ? '쯔모' : `론 · ${nameFor(winner.target)}`}</strong>
+              <p>{({ 1: '만관 미만', 2: '만관·하네만', 3: '배만 이상' } as Record<number, string>)[Number(winner.score?.band)] ?? '점수 미분류'} · {winner.score?.han ?? 0}판 {winner.score?.fu ?? 0}부</p>
+            </div>
+          ) : <p className="settlement-summary">유국 결과</p>}
+          {Array.isArray(fact?.draws) && fact.draws.length > 0 && <p className="settlement-summary">유국 정보: {fact.draws.map((draw: Record<string, any>) => draw.reason ?? '유국').join(' · ')}</p>}
+          <ol className="result-deltas">{(winner?.deltas ?? fact?.draws?.[0]?.deltas ?? []).map((delta: number, seat: number) => <li key={seat}>{nameFor(seat)} · {delta > 0 ? '+' : ''}{delta.toLocaleString()}점</li>)}</ol>
+        </>
+      )}
+      {onAcknowledge && <button className="primary-button" onClick={() => onAcknowledge(delivery)} type="button">{settlementPayload ? '정산 확인' : '확인하고 다음 결과 보기'}</button>}
+    </section>
+  )
 }
 
 function Tile({ tileId, disabled = false, onClick }: {
@@ -325,6 +389,9 @@ export function MahjongTable({
   onAction,
   actionsDisabled = false,
   onNextGame,
+  onAcknowledgeResult,
+  resultAssetObjectUrl,
+  resultAssetLoadFailed,
   allowGameOverContinue = false,
 }: MahjongTableProps) {
   if (state.status === 'waiting') {
@@ -338,6 +405,9 @@ export function MahjongTable({
   }
   if (state.status === 'complete') {
     return <CompletedTable state={state} onNextGame={onNextGame} allowGameOverContinue={allowGameOverContinue} />
+  }
+  if (state.status === 'result_delivery' || state.status === 'settlement_wait') {
+    return <ResultDeliveryCard key={`${state.delivery.generation}:${state.delivery.session_id}:${state.delivery.head?.event_id ?? 'empty'}`} delivery={state.delivery} onAcknowledge={onAcknowledgeResult} resultAssetObjectUrl={resultAssetObjectUrl} resultAssetLoadFailed={resultAssetLoadFailed} />
   }
   if (state.status === 'ending') {
     return (
