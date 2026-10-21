@@ -1,5 +1,31 @@
 # 개발 Task
 
+## W09-C1 PR #108 R1~R5 보완 — 제출 및 검증 대기
+
+기존 branch/PR #108에 최신 main `ffd21f7`의 R1~R5 검토 결과를 반영했다. 현재 변경 사항과
+실제 검증 결과는 CURRENT_STATE 및 GitHub checks/artifacts를 따른다. PR은 열린 채 유지한다.
+직접 병합·Release/tag·C2/문구/CG 생성·후속 Task는 포함하지 않는다.
+
+아래는 이번 보완의 실행 계약과 역사 기록이다.
+
+권장: **저성능 Work**. 검토 head0edc3d2/mainf1671a6이며 시작 시 최신 Git을 다시 확인한다.
+새 구현/후속 Task가 아니라 기존 `task/w09-c1-result-delivery`와 PR #108을 보완한다.
+
+```text
+danhk0612/no-riichi-no-fuku의 W09-C1 PR #108만 보완해.
+최신 main·열린 PR·AGENTS와 기준 문서를 확인하고,
+docs/W09_C_RESULT_DELIVERY_CONTRACT.md와 docs/W09_C1_REVIEW_FINDINGS.md 전체를 따라.
+R1~R5 수정 전 실패를 회귀로 고정한 뒤 기존 CG 표시·연결 종료 잠금·MJAI 국 번호,
+전달 실패의 기존 controlled error와 renderer revision 조정을 최소 수정해.
+계약의 C1 고유 원자성/동시성/손상·세대 복구 검사와 관련 browser를 보강해.
+전체 backend/대사·build·관련 browser, 최종 source Windows W04/W05와 다운로드 artifact
+source/hash·내부 ZIP·packaged DB/renderer/종료/재시작을 확인해.
+CURRENT_STATE/TASKS/ARCHITECTURE·기존 PR을 실제 검증/미검증대로 갱신하고 commit/push까지 진행해.
+직접 병합·Release/tag·C2/문구/새 CG·음향 생성·후속 Task는 하지 마.
+```
+
+아래 최초 C1 지시문/설계 기록은 이력이며 위 보완이 우선한다.
+
 ## 국 결과 표시·확인 계약 설계 — 검토 수용
 
 main `c197029`/B2 PR #104 수용과 실제 복구 흐름을 확인하고
@@ -9,7 +35,7 @@ PR #107 검토에서 사실 전체↔표시 entry의 완전 대응과 마지막/
 이 기록은 PR #107 당시의 설계 검토 상태다. 병합 상태는 PR #107/Git을 따른다. 이전 통합 W09-B 지시문은
 본 계약의 C1/C2 선행·허용 범위로 대체하며 일괄 구현 지시로 사용하지 않는다.
 
-## W09-C1 국 결과 전달·확인 — PR #108 검증 중
+## W09-C1 최초 구현 — 제출 당시 기록
 
 사용자 지시로 prepared main `f1671a6`에서 `task/w09-c1-result-delivery`를 진행한다.
 B2와 계약 설계 선행은 main에 반영되어 있다. [전달·확인 계약](docs/W09_C_RESULT_DELIVERY_CONTRACT.md)

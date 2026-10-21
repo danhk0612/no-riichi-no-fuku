@@ -1,22 +1,48 @@
 # 현재 상태
 
-## W09-C1 국 결과 전달·확인 — 구현/PR 검증 상태
+## W09-C1 PR #108 — R1~R5 보완 상태
 
-prepared main `f1671a6`에서 `task/w09-c1-result-delivery`로 작업 중이며 PR #108을 열었다.
-PR은 open/unmerged다. PR review가 기존 defeat voice 순서와 정산 카드 참가자 이름을 지적해 수정했고,
-새 source의 Windows exact-source CI를 다시 확인한다. 선행 B2와 전달 계약 PR은
-main에 수용되어 있다. [계약](docs/W09_C_RESULT_DELIVERY_CONTRACT.md) 전체를 따라 새 local 대국만
-marker/version 1·`content_mode=unbound`를 저장하고, 기존 NULL/marker1/web 대국은 전달 대상으로
-바꾸지 않는다. 전달 state/불변 entry, winner별 저장 순서, GET/ack API·WS envelope, resume·action/create/
-ending gate, renderer 확인 카드, packaged smoke/읽기 전용 DB 증거 검사를 추가했다.
+기존 `task/w09-c1-result-delivery`/PR #108에 최신 main `ffd21f7`의 review findings를 반영했다.
+R1은 저장된 settlement `result_asset` 참조를 카드에 표시하고, 로드 실패/미등록 상태에서도 확인을 허용한다.
+generation/session/event/asset 단위 로드 cleanup으로 이전 미디어 응답의 현재 카드 덮기를 막는다.
+R2는 미완료 WebSocket code1000 종료도 기존 행동 잠금·복구 안내를 유지한다. R3는 B2 원본 MJAI
+`kyoku` 값을 그대로 표시하고 세 band를 `만관 미만/만관·하네만/배만 이상`으로 표기한다.
+R4는 create/action/settlement의 전달 snapshot 검증 실패를 `result_delivery_invalid`/1011로 제어하고
+DB 오류는 기존 `persistence_failed` 경계에 둔다. R5는 같은 generation/session에서 낮은 delivery revision을
+버리고 같은 revision의 immutable head 충돌은 재조회한다. entry 전환은 기존 150ms/reduced-motion CSS를
+실제 카드 key 변경에 연결했다.
 
-Linux Python 3.12 전체 backend unittest **180개 통과(93.297초)**, 대사 pytest **10개 통과(0.15초)**,
-frontend production build 및 desktop syntax/quit tests(3개) 통과. C1/저장·복구 영향 focused 8개도
-통과했다. 복수 승자 저장 회귀에서 신규 entry와 사전 저장 entry를 구분했다. 정산 entry는 당시 참가자
-snapshot을 포함해 이름을 표시·검증하고, C1 WS는 result envelope 뒤 기존 defeat voice를 보낸다.
-`git diff --check` 통과. Windows W04/W05 exact source SHA·artifact/packaged 검증의 최종 결과는
-PR #108 checks와 artifacts를 따른다. 이 PR은 직접 병합하지 않는다. C2 콘텐츠 snapshot, 문구/P/N·CG·
-생성은 수행하지 않는다.
+전체 backend unittest **187개/97.384초**, 대사 pytest **10개/0.12초**, frontend production build가
+통과했다. file-SQLite C1 6개와 local-play 17개 회귀도 별도로 통과했다. 새 회귀는 동시 writer의 같은
+head 확인, ack commit 실패 후 cursor/revision 재시도, 마지막 settlement entry 손상 시 GET/create gate
+거절, create/action 전달 검증 실패의 controlled response 및 저장 턴 복구를 검사한다. 기존 settle commit
+실패 회귀도 전체 backend run에서 통과했다. `git diff --check`와 browser test JS syntax 검사 통과.
+
+Chromium 실행 파일이 없고 Playwright 다운로드가 ZIP 중앙 디렉터리 손상으로 실패해 로컬 routed browser는
+실행하지 못했다. R1/R2/R3/R5 browser와 기존 result asset/connection browser를 W05 Windows CI에 추가했다.
+정확한 최종 source의 W04/W05 CI 및 artifact 검사는 push 후 대기 중이며, 그 결과가 나오기 전에는
+Windows/실제 browser/packaged 검증 완료로 보지 않는다.
+PR #108은 open/unmerged로 유지한다. C2·문구·CG 생성 및 후속 Task는 수행하지 않는다.
+
+## 국 결과 표시·확인 계약 — 설계 검토 수용
+
+PR #107의 최초 head `b8e112b`를 검토하고 전달 entry와 B2 사실 전체의 완전한 대응 검증을
+명확히 보강했다. 마지막/ack된 entry 또는 국 전체 누락도 오류이며, completed settlement는
+저장 parent 결과와 일치해야 한다. 실제 필드명 `result_delivery_version`/`hand_results_version`도
+통일했다. 최종 source/tree·병합 상태는 PR #107/Git을 따른다. 문서만 검토했으며 제품 구현 검증은 없다.
+
+기준 main `c197029`(PR #106), B2 수용 main `3341d4e`를 확인했다. 열린 PR은 #35로
+현재 범위의 동시 구현 PR은 없었다. 실제 DB model·registry·game/local play API·renderer 복구를
+대조해 [전달·확인 계약](docs/W09_C_RESULT_DELIVERY_CONTRACT.md)을 작성했다.
+서버 cursor/멱등 ack·두 socket·응답 유실·reset 세대 격리와 미확인 국→마지막 국→결산→ending→
+자유 대국 순서, 새 대국 도입 경계·원자 저장·파일 범위·실패 검사·C1 인계 지시문을 정리했다.
+C1 사실 전달은 독립 구현 가능하도록 분리했으며 새 문구/CG는 unbound 상태로 남긴다.
+Q-LEGACY/D05-c/Q-FRAME·D07-a/Q-IMAGE·D08 및 W10 정책은 미승인 상태다.
+
+검증은 소스/기존 B2 수용 근거 대조·문서 링크/범위·diff 검사다. 제품 코드·migration·UI·사용자
+자료 변경은 없고 backend/build/browser/Windows CI·artifact 재검증은 수행하지 않았다.
+아래 B2의 실측 결과는 기존 수용 근거이며 이번 표시 기능의 검증 결과가 아니다.
+후속 C1은 본 설계 PR 검토/병합과 별도 구현 지시 후 진행한다. C2/CG/생성은 선행 결정 대기다.
 
 ## W09-B2 — 최종 검토·병합 완료
 

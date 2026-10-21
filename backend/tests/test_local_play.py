@@ -38,6 +38,7 @@ from app.services.game_registry import (
 )
 from app.services.game_setup import list_selectable_cpus
 from app.services.local_play import LocalPlayConflict, effective_choices, roster_candidates
+from app.services.result_delivery import ResultDeliveryError
 from app.services.game_result import MatchSettlement
 
 
@@ -51,6 +52,9 @@ class _FinishedGame:
     def result(self):
         return self._result
 
+    def pending_events(self):
+        return type("PendingEvents", (), {"events": []})()
+
     def mark_result_settled(self):
         return None
 
@@ -62,6 +66,75 @@ class LocalPlayTests(unittest.TestCase):
         client = TestClient(runtime.app)
         headers = {"X-Local-Capability": runtime.capability}
         return temporary, runtime, client, headers
+
+    def test_action_result_delivery_validation_failure_is_controlled_and_cold_restorable(self):
+        temporary, runtime, client, headers = self._runtime("nrnf-result-delivery-failure-")
+        try:
+            play = client.get("/api/local/play", headers=headers).json()
+            candidates = client.get("/api/local/play/roster-candidates", headers=headers).json()
+            ids = [cpu["id"] for cpu in candidates[:3]]
+            self.assertEqual(client.post("/api/local/play/roster", headers=headers, json={
+                "generation": play["generation"], "cpu_character_ids": ids,
+            }).status_code, 200)
+            started = client.post("/api/game/sessions", headers=headers, json={
+                "generation": play["generation"], "cpu_character_ids": ids,
+            })
+            self.assertEqual(started.status_code, 201, started.text)
+            session_id = started.json()["session_id"]
+            with client.websocket_connect(f"/api/game/sessions/{session_id}/ws") as websocket:
+                websocket.send_json({
+                    "type": "authenticate", "capability": runtime.capability,
+                    "generation": play["generation"],
+                })
+                self.assertEqual(websocket.receive_json()["type"], "result_delivery")
+                turn = websocket.receive_json()
+                self.assertEqual(turn["type"], "human_turn")
+                with patch("app.services.game_registry.append_hand_entries",
+                           side_effect=ResultDeliveryError("injected result delivery validation failure")):
+                    websocket.send_json({"type": "action", "generation": play["generation"],
+                                         "action_version": turn["action_version"],
+                                         "legal_action_index": 0})
+                    error = websocket.receive_json()
+                self.assertEqual(error["type"], "error")
+                self.assertEqual(error["code"], "result_delivery_invalid")
+                with self.assertRaises(WebSocketDisconnect) as disconnected:
+                    websocket.receive_json()
+                self.assertEqual(disconnected.exception.code, 1011)
+            with runtime.session_factory() as db:
+                record = db.get(GameSessionRecord, session_id)
+                self.assertEqual(record.human_action_indices, [])
+                self.assertEqual(record.status, "active")
+                self.assertNotIn(session_id, runtime.registry._games)
+            restored = client.get("/api/game/sessions/active", headers=headers)
+            self.assertEqual(restored.status_code, 200, restored.text)
+            self.assertEqual(restored.json()["session_id"], session_id)
+        finally:
+            client.close()
+            runtime.close()
+            temporary.cleanup()
+
+    def test_create_result_delivery_validation_failure_is_controlled_without_parent(self):
+        temporary, runtime, client, headers = self._runtime("nrnf-result-delivery-create-failure-")
+        try:
+            play = client.get("/api/local/play", headers=headers).json()
+            candidates = client.get("/api/local/play/roster-candidates", headers=headers).json()
+            ids = [cpu["id"] for cpu in candidates[:3]]
+            self.assertEqual(client.post("/api/local/play/roster", headers=headers, json={
+                "generation": play["generation"], "cpu_character_ids": ids,
+            }).status_code, 200)
+            with patch("app.services.game_registry.append_hand_entries",
+                       side_effect=ResultDeliveryError("injected create delivery validation failure")):
+                response = client.post("/api/game/sessions", headers=headers, json={
+                    "generation": play["generation"], "cpu_character_ids": ids,
+                })
+            self.assertEqual(response.status_code, 503, response.text)
+            self.assertEqual(response.json()["detail"]["code"], "result_delivery_invalid")
+            with runtime.session_factory() as db:
+                self.assertIsNone(db.query(GameSessionRecord).filter_by(user_id=runtime.member_id).first())
+            self.assertEqual(runtime.registry._games, {})
+        finally:
+            client.close()
+            runtime.close()
 
     def test_candidates_include_stage_three_and_roster_keeps_stage_without_copy(self):
         temporary, runtime, client, headers = self._runtime("nrnf-roster-")
@@ -95,6 +168,67 @@ class LocalPlayTests(unittest.TestCase):
                     LocalPlayRoster.user_id == runtime.member_id,
                     LocalPlayRoster.cpu_character_id == 1,
                 )), 1)
+        finally:
+            client.close()
+            runtime.close()
+            temporary.cleanup()
+
+    def test_create_commit_failure_returns_existing_persistence_error(self):
+        temporary, runtime, client, headers = self._runtime("nrnf-result-delivery-create-db-failure-")
+        try:
+            play = client.get("/api/local/play", headers=headers).json()
+            candidates = client.get("/api/local/play/roster-candidates", headers=headers).json()
+            ids = [cpu["id"] for cpu in candidates[:3]]
+            self.assertEqual(client.post("/api/local/play/roster", headers=headers, json={
+                "generation": play["generation"], "cpu_character_ids": ids,
+            }).status_code, 200)
+            with patch.object(Session, "commit", side_effect=SQLAlchemyError("injected create commit failure")):
+                response = client.post("/api/game/sessions", headers=headers, json={
+                    "generation": play["generation"], "cpu_character_ids": ids,
+                })
+            self.assertEqual(response.status_code, 503, response.text)
+            self.assertEqual(response.json()["detail"]["code"], "persistence_failed")
+            with runtime.session_factory() as db:
+                self.assertIsNone(db.query(GameSessionRecord).filter_by(user_id=runtime.member_id).first())
+            self.assertEqual(runtime.registry._games, {})
+        finally:
+            client.close()
+            runtime.close()
+            temporary.cleanup()
+
+    def test_settlement_delivery_validation_failure_uses_controlled_websocket_error(self):
+        temporary, runtime, client, headers = self._runtime("nrnf-result-delivery-settlement-failure-")
+        try:
+            play = client.get("/api/local/play", headers=headers).json()
+            candidates = client.get("/api/local/play/roster-candidates", headers=headers).json()
+            ids = [cpu["id"] for cpu in candidates[:3]]
+            self.assertEqual(client.post("/api/local/play/roster", headers=headers, json={
+                "generation": play["generation"], "cpu_character_ids": ids,
+            }).status_code, 200)
+            started = client.post("/api/game/sessions", headers=headers, json={
+                "generation": play["generation"], "cpu_character_ids": ids,
+            })
+            self.assertEqual(started.status_code, 201, started.text)
+            session_id = started.json()["session_id"]
+            with runtime.session_factory() as db:
+                registered = runtime.registry.get_owned(db, session_id, runtime.member_id)
+                registered.game = _FinishedGame((1, 2, 3, 4))
+            with patch("app.services.game_registry.append_settlement_entry",
+                       side_effect=ResultDeliveryError("injected settlement delivery validation failure")):
+                with client.websocket_connect(f"/api/game/sessions/{session_id}/ws") as websocket:
+                    websocket.send_json({"type": "authenticate", "capability": runtime.capability,
+                                         "generation": play["generation"]})
+                    error = websocket.receive_json()
+                    self.assertEqual(error["type"], "error")
+                    self.assertEqual(error["code"], "result_delivery_invalid")
+                    with self.assertRaises(WebSocketDisconnect) as disconnected:
+                        websocket.receive_json()
+                    self.assertEqual(disconnected.exception.code, 1011)
+            with runtime.session_factory() as db:
+                record = db.get(GameSessionRecord, session_id)
+                self.assertEqual(record.status, "active")
+                self.assertIsNone(record.scores)
+                self.assertNotIn(session_id, runtime.registry._games)
         finally:
             client.close()
             runtime.close()
@@ -523,7 +657,8 @@ class LocalPlayTests(unittest.TestCase):
                 failed_start = client.post("/api/game/sessions", headers=headers, json={
                     "generation": confirmed["generation"], "cpu_character_ids": ids,
                 })
-            self.assertEqual(failed_start.status_code, 500)
+            self.assertEqual(failed_start.status_code, 503)
+            self.assertEqual(failed_start.json()["detail"]["code"], "persistence_failed")
             self.assertFalse(runtime.registry._games)
             with runtime.session_factory() as session:
                 self.assertIsNone(session.scalar(select(GameSessionRecord.id).where(GameSessionRecord.status == "active")))

@@ -21,6 +21,7 @@ Run the check in another terminal:
 node tests/dialogue.browser.mjs
 node tests/connection.browser.mjs
 node tests/result-asset.browser.mjs
+node tests/result-delivery.browser.mjs
 node tests/local-sound.browser.mjs
 node tests/local-content.browser.mjs
 node tests/audio-packs.browser.mjs
@@ -49,6 +50,11 @@ REST/WebSocket fixtures rather than a real server restart.
 `result-asset.browser.mjs` uses metadata and HTTP 503 responses without image files. It checks
 that CG failure replaces the loading message while scores/next-match controls remain available,
 and that a failed asset response arriving after next-match selection cannot display an old error.
+
+`result-delivery.browser.mjs` sends C1 result envelopes through the React/WebSocket renderer. It
+checks MJAI East 1 numbering and the three named score bands, loads the stored settlement CG
+reference through the authenticated asset endpoint, keeps acknowledgement available without CG
+completion, and ignores a lower-revision envelope after a newer head was displayed.
 
 `local-sound.browser.mjs` uses the real desktop-mode React renderer with routed REST/WebSocket
 fixtures and mock `Audio`. It checks one-track BGM repeat, preserving the active track through

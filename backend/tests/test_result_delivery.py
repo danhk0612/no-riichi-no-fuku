@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-from sqlalchemy import select
+from sqlalchemy import delete, select
+from sqlalchemy.orm import Session
 
-from app.db.models import GameHandResult, GameSessionRecord, LocalPlayState, UserCpuProgress
+from app.db.models import GameHandResult, GameResultDeliveryEntry, GameSessionRecord, LocalPlayState, UserCpuProgress
 from app.local_runtime import create_local_runtime
 from app.services.result_delivery import (
     append_hand_entries,
@@ -44,7 +47,7 @@ class ResultDeliveryTests(unittest.TestCase):
             fact_payload = {
                 "version": 1,
                 "generation": generation,
-                "start": {"bakaze": "E", "kyoku": 0, "honba": 0, "kyotaku": 0, "oya": 0, "scores": [25000] * 4},
+                "start": {"bakaze": "E", "kyoku": 1, "honba": 0, "kyotaku": 0, "oya": 0, "scores": [25000] * 4},
                 "participants": [
                     {"seat": 0, "is_human": True, "name": "플레이어", "cpu_id": None, "stage_at_hand": None},
                     {"seat": 1, "is_human": False, "name": "CPU A", "cpu_id": 1, "stage_at_hand": 0},
@@ -55,7 +58,7 @@ class ResultDeliveryTests(unittest.TestCase):
                 "winners": [{
                     "hora_log_offset": 5, "actor": 1, "target": 0, "win_kind": "ron", "deltas": [-1000, 1000, 0, 0],
                     "ura_markers": [], "score": {"han": 1, "fu": 30, "yakuman": 0, "yaku": ["tanyao"],
-                        "ron_agari": 1000, "tsumo_agari_oya": None, "tsumo_agari_ko": None, "pao_payer": None, "band": "만관 미만"},
+                        "ron_agari": 1000, "tsumo_agari_oya": None, "tsumo_agari_ko": None, "pao_payer": None, "band": 2},
                 }],
                 "draws": [], "engine_scores_after_step": [24000, 26000, 25000, 25000], "terminal": True,
             }
@@ -147,6 +150,87 @@ class ResultDeliveryTests(unittest.TestCase):
                 current = client.get(f"/api/local/play/sessions/{session_id}/results?generation={generation}", headers=headers)
                 self.assertEqual(current.json()["acked_ordinal"], 0)
                 self.assertEqual(current.json()["head"]["ordinal"], 1)
+            finally:
+                client.close()
+                runtime.close()
+
+    def test_ack_commit_failure_keeps_cursor_and_revision_for_retry(self):
+        with tempfile.TemporaryDirectory(prefix="nrnf-c1-ack-failure-") as directory:
+            runtime = create_local_runtime(Path(directory) / "data")
+            client = TestClient(runtime.app)
+            headers = {"X-Local-Capability": runtime.capability}
+            try:
+                generation = self._build_completed(runtime)
+                before = client.get("/api/local/play", headers=headers).json()["result_resume"]
+                session_id = before["session_id"]
+                envelope = client.get(f"/api/local/play/sessions/{session_id}/results?generation={generation}", headers=headers).json()
+                with patch.object(Session, "commit", side_effect=RuntimeError("injected commit failure")):
+                    failed = client.post(f"/api/local/play/sessions/{session_id}/results/ack", headers=headers, json={
+                        "generation": generation, "event_id": envelope["head"]["event_id"],
+                        "ordinal": envelope["head"]["ordinal"], "expected_delivery_revision": envelope["delivery_revision"],
+                    })
+                self.assertEqual(failed.status_code, 503, failed.text)
+                current = client.get(f"/api/local/play/sessions/{session_id}/results?generation={generation}", headers=headers).json()
+                self.assertEqual(current["acked_ordinal"], envelope["acked_ordinal"])
+                self.assertEqual(current["delivery_revision"], envelope["delivery_revision"])
+                retried = client.post(f"/api/local/play/sessions/{session_id}/results/ack", headers=headers, json={
+                    "generation": generation, "event_id": envelope["head"]["event_id"],
+                    "ordinal": envelope["head"]["ordinal"], "expected_delivery_revision": envelope["delivery_revision"],
+                })
+                self.assertEqual(retried.status_code, 200, retried.text)
+                self.assertEqual(retried.json()["acked_ordinal"], 1)
+            finally:
+                client.close()
+                runtime.close()
+
+    def test_two_independent_writers_ack_same_head_only_once(self):
+        with tempfile.TemporaryDirectory(prefix="nrnf-c1-ack-race-") as directory:
+            runtime = create_local_runtime(Path(directory) / "data")
+            headers = {"X-Local-Capability": runtime.capability}
+            try:
+                generation = self._build_completed(runtime)
+                resume = TestClient(runtime.app).get("/api/local/play", headers=headers).json()["result_resume"]
+                session_id = resume["session_id"]
+                first = TestClient(runtime.app).get(f"/api/local/play/sessions/{session_id}/results?generation={generation}", headers=headers).json()
+                body = {"generation": generation, "event_id": first["head"]["event_id"], "ordinal": 1,
+                        "expected_delivery_revision": first["delivery_revision"]}
+
+                def ack_once(_):
+                    with TestClient(runtime.app) as client:
+                        return client.post(f"/api/local/play/sessions/{session_id}/results/ack", headers=headers, json=body)
+
+                with ThreadPoolExecutor(max_workers=2) as executor:
+                    responses = list(executor.map(ack_once, range(2)))
+                self.assertEqual([response.status_code for response in responses], [200, 200])
+                current = TestClient(runtime.app).get(f"/api/local/play/sessions/{session_id}/results?generation={generation}", headers=headers).json()
+                self.assertEqual(current["acked_ordinal"], 1)
+                self.assertEqual(current["delivery_revision"], first["delivery_revision"] + 1)
+            finally:
+                runtime.close()
+
+    def test_missing_last_delivery_entry_is_rejected_by_get_and_generation_gate(self):
+        with tempfile.TemporaryDirectory(prefix="nrnf-c1-missing-entry-") as directory:
+            runtime = create_local_runtime(Path(directory) / "data")
+            client = TestClient(runtime.app)
+            headers = {"X-Local-Capability": runtime.capability}
+            try:
+                generation = self._build_completed(runtime)
+                resume = client.get("/api/local/play", headers=headers).json()["result_resume"]
+                session_id = resume["session_id"]
+                with runtime.session_factory.begin() as db:
+                    db.execute(delete(GameResultDeliveryEntry).where(
+                        GameResultDeliveryEntry.session_id == session_id,
+                        GameResultDeliveryEntry.ordinal == 2,
+                    ))
+                response = client.get(f"/api/local/play/sessions/{session_id}/results?generation={generation}", headers=headers)
+                self.assertEqual(response.status_code, 503, response.text)
+                self.assertEqual(response.json()["detail"]["code"], "result_delivery_invalid")
+                candidates = client.get("/api/local/play/roster-candidates", headers=headers).json()
+                blocked = client.post("/api/game/sessions", headers=headers, json={
+                    "generation": generation, "cpu_character_ids": [item["id"] for item in candidates[:3]],
+                })
+                self.assertEqual(blocked.status_code, 503, blocked.text)
+                self.assertEqual(blocked.json()["detail"]["code"], "result_delivery_invalid")
             finally:
                 client.close()
                 runtime.close()

@@ -1,16 +1,19 @@
 # 구조와 전환 검토
 
-## 국 결과 표시·확인 — 설계, 제품 미구현
+## W09-C1 국 결과 전달·확인 — PR #108 구현 및 R1~R5 보완
 
 기준 main `c197029`에서 실제 model/registry/API/renderer 복구 경계를 대조했다.
 [표시·확인 계약](docs/W09_C_RESULT_DELIVERY_CONTRACT.md)이 후속 C1/C2 분해의 기준이다.
 B2 facts는 불변으로 두고 새 local create에만 별도 delivery version/state/entries를 도입한다.
 서버 소유 head/cursor/revision·독립 RNG 순서, action/facts와 전달 snapshot 원자 저장,
 기존 별도 정산과 settlement entry 원자 저장, completed/ending보다 미확인 결과 우선 복구를 설계했다.
-C1은 사실 전달·확인/최소 카드만 독립 구현 가능하며 content_mode=unbound다. 새 고정 문구·
+C1 구현은 기존 `task/w09-c1-result-delivery`/PR #108에서 진행 중이며 content_mode=unbound다.
+R1~R5 보완에서 settlement 기존 CG 참조 표시, 미완료 code1000 종료 잠금, 원본 MJAI 국 번호와
+세 등급 이름, ResultDeliveryError controlled close, generation/session별 단조 revision 수용을 유지한다.
+새 고정 문구·
 공유 상황·prompt/media snapshot·CG/생성은 정책/선행 후 C2/M/S/W10/W11로 분리한다.
 기존 NULL/B2 대국의 소급 표시·콘텐츠 보충은 금지다. 아래 과거 통합 W09-B 제안보다 본 계약을 우선한다.
-실제 schema/API/UI/gate는 아직 없으며 설계 문서만으로 구현 완료 처리하지 않는다.
+제품 구현과 수용 상태는 CURRENT_STATE 및 PR #108 검증을 따른다. 본 절의 설계 계약은 그대로 유효하다.
 
 ## W09-B2 구현 — 국 결과 사실 영속
 

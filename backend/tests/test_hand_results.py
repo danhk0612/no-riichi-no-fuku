@@ -238,7 +238,8 @@ class LocalHandResultPersistenceTests(unittest.TestCase):
                     failed_flush = failure_client.post("/api/game/sessions", headers=headers, json={
                         "generation": state["generation"], "cpu_character_ids": list(cpu_ids),
                     })
-                self.assertEqual(failed_flush.status_code, 500, failed_flush.text)
+                self.assertEqual(failed_flush.status_code, 503, failed_flush.text)
+                self.assertEqual(failed_flush.json()["detail"]["code"], "persistence_failed")
                 with runtime.session_factory() as db:
                     self.assertIsNone(db.scalar(select(GameSessionRecord.id).where(
                         GameSessionRecord.user_id == runtime.member_id,
@@ -253,7 +254,8 @@ class LocalHandResultPersistenceTests(unittest.TestCase):
                     failed_commit = failure_client.post("/api/game/sessions", headers=headers, json={
                         "generation": state["generation"], "cpu_character_ids": list(cpu_ids),
                     })
-                self.assertEqual(failed_commit.status_code, 500, failed_commit.text)
+                self.assertEqual(failed_commit.status_code, 503, failed_commit.text)
+                self.assertEqual(failed_commit.json()["detail"]["code"], "persistence_failed")
                 with runtime.session_factory() as db:
                     self.assertIsNone(db.scalar(select(GameSessionRecord.id).where(
                         GameSessionRecord.user_id == runtime.member_id,

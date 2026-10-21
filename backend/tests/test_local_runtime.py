@@ -617,16 +617,18 @@ class LocalRuntimeTests(unittest.TestCase):
                     original_commit(session)
 
                 with patch.object(Session, "commit", new=fail_only_settlement_commit):
-                    with self.assertRaisesRegex(
-                        SQLAlchemyError, "injected local settlement commit failure"
-                    ):
-                        with client.websocket_connect(
-                            f"/api/game/sessions/{session_id}/ws"
-                        ) as websocket:
-                            websocket.send_json(
-                                {"type": "authenticate", "capability": runtime.capability, "generation": generation}
-                            )
+                    with client.websocket_connect(
+                        f"/api/game/sessions/{session_id}/ws"
+                    ) as websocket:
+                        websocket.send_json(
+                            {"type": "authenticate", "capability": runtime.capability, "generation": generation}
+                        )
+                        error = websocket.receive_json()
+                        self.assertEqual(error["type"], "error")
+                        self.assertEqual(error["code"], "persistence_failed")
+                        with self.assertRaises(WebSocketDisconnect) as disconnected:
                             websocket.receive_json()
+                        self.assertEqual(disconnected.exception.code, 1011)
 
                 self.assertNotIn(session_id, runtime.registry._games)
                 with runtime.session_factory() as session:

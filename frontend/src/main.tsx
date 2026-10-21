@@ -69,12 +69,14 @@ function App() {
   const [contentSettingsOpen, setContentSettingsOpen] = useState(false)
   const [difficultySettingsOpen, setDifficultySettingsOpen] = useState(false)
   const [soundError, setSoundError] = useState<string | null>(null)
+  const [deliveryAssetState, setDeliveryAssetState] = useState<{ identity: string; url: string | null; failed: boolean } | null>(null)
   const socketRef = useRef<WebSocket | null>(null)
   const resultAssetUrlRef = useRef<string | null>(null)
   const resultAssetLoadVersionRef = useRef(0)
   const desktopStartedRef = useRef(false)
   const localGenerationRef = useRef<string | null>(null)
   const localRequestTokenRef = useRef(0)
+  const resultDeliveryRef = useRef<ResultDeliveryEnvelope | null>(null)
   const playedSoundEventsRef = useRef(new Set<string>())
   const gameAudioTokenRef = useRef(0)
   const activeSoundEffectsRef = useRef(new Map<string, { audio: HTMLAudioElement; url: string }>())
@@ -83,6 +85,14 @@ function App() {
   const isDesktop = window.nrnfDesktop?.isDesktop === true
   const difficultyPreviewToken = localRequestTokenRef.current
   const playbackAccessToken = accessToken ?? (isDesktop ? DESKTOP_SESSION : null)
+  const deliveryPresentation = gameState.status === 'result_delivery' && gameState.delivery.head?.kind === 'settlement'
+    ? gameState.delivery.head.payload.presentation as { result_asset?: { id?: number; url?: string; defeat_stage?: number } | null } | undefined
+    : undefined
+  const deliveryAsset = deliveryPresentation?.result_asset ?? null
+  const deliveryAssetIdentity = gameState.status === 'result_delivery' && deliveryAsset?.id !== undefined
+    ? `${gameState.delivery.generation}:${gameState.delivery.session_id}:${gameState.delivery.head?.event_id}:${deliveryAsset.id}`
+    : null
+  const deliveryAssetUrl = deliveryAsset?.url ?? null
 
   useEffect(() => {
     if (!isDesktop || !playbackAccessToken) { setSoundSelection(null); return }
@@ -90,6 +100,24 @@ function App() {
     void getSoundSelection(playbackAccessToken).then((selection) => { if (current) setSoundSelection(selection) }).catch(() => {})
     return () => { current = false }
   }, [playbackAccessToken, isDesktop])
+
+  useEffect(() => {
+    let current = true
+    let objectUrl: string | null = null
+    setDeliveryAssetState(null)
+    if (!accessToken || !deliveryAssetIdentity || !deliveryAssetUrl) return () => { current = false }
+    void getResultAssetObjectUrl(accessToken, deliveryAssetUrl).then((url) => {
+      if (!current) { URL.revokeObjectURL(url); return }
+      objectUrl = url
+      setDeliveryAssetState({ identity: deliveryAssetIdentity, url, failed: false })
+    }).catch(() => {
+      if (current) setDeliveryAssetState({ identity: deliveryAssetIdentity, url: null, failed: true })
+    })
+    return () => {
+      current = false
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [accessToken, deliveryAssetIdentity, deliveryAssetUrl])
 
   function stopGameAudio() {
     gameAudioTokenRef.current += 1
@@ -110,6 +138,34 @@ function App() {
   function isCurrentLocalRequest(requestToken: number, generation?: string): boolean {
     return requestToken === localRequestTokenRef.current
       && (generation === undefined || localGenerationRef.current === generation)
+  }
+
+  function applyDeliverySnapshot(delivery: ResultDeliveryEnvelope): boolean {
+    const previous = resultDeliveryRef.current
+    if (previous?.generation === delivery.generation && previous.session_id === delivery.session_id) {
+      if (delivery.delivery_revision < previous.delivery_revision) return false
+      if (delivery.delivery_revision === previous.delivery_revision) {
+        const previousHead = previous.head ? JSON.stringify(previous.head) : null
+        const nextHead = delivery.head ? JSON.stringify(delivery.head) : null
+        if (previous.acked_ordinal !== delivery.acked_ordinal || previousHead !== nextHead) {
+          setError('결과 확인 상태가 일치하지 않습니다. 저장된 결과를 다시 불러오세요.')
+          if (accessToken) void getLocalResultDelivery(accessToken, delivery.session_id, delivery.generation).then((fresh) => {
+            if (fresh.delivery_revision >= previous.delivery_revision
+              && (fresh.delivery_revision > previous.delivery_revision
+                || (fresh.acked_ordinal === previous.acked_ordinal
+                  && JSON.stringify(fresh.head) === JSON.stringify(previous.head)))) {
+              resultDeliveryRef.current = fresh
+              setError(null)
+              if (fresh.route === 'result') setGameState({ status: 'result_delivery', delivery: fresh })
+              else if (fresh.route === 'settlement_wait') setGameState({ status: 'settlement_wait', delivery: fresh })
+            }
+          }).catch(() => {})
+          return false
+        }
+      }
+    }
+    resultDeliveryRef.current = delivery
+    return true
   }
 
   function withLatestCharacterMeasurements(choices: CpuChoice[]): CpuChoice[] {
@@ -200,6 +256,7 @@ function App() {
     if (play.result_resume) {
       const delivery = await getLocalResultDelivery(token, play.result_resume.session_id, generation)
       if (!isCurrentLocalRequest(requestToken, generation)) return
+      if (!applyDeliverySnapshot(delivery)) return
       setAccessToken(token)
       setCpus(null)
       setPlayers([])
@@ -382,6 +439,7 @@ function App() {
         return
       }
       if (message.type === 'result_delivery') {
+        if (!applyDeliverySnapshot(message)) return
         if (message.route === 'result') {
           setGameState({ status: 'result_delivery', delivery: message })
           setActionPending(false)
@@ -556,7 +614,7 @@ function App() {
     })
     socket.addEventListener('close', (event) => {
       if (socketRef.current !== socket || (isDesktop && requestToken !== localRequestTokenRef.current)) return
-      if (!completed && event.code !== 1000) {
+      if (!completed) {
         setActionPending(true)
         const recovery = isDesktop
           ? '새로고침 후 저장된 대국에 복귀할 수 있습니다.'
@@ -653,6 +711,7 @@ function App() {
     try {
       const updated = await acknowledgeLocalResult(accessToken, delivery)
       if (!isCurrentLocalRequest(requestToken, generation)) return
+      if (!applyDeliverySnapshot(updated)) return
       if (updated.route === 'result') {
         setGameState({ status: 'result_delivery', delivery: updated })
       } else if (updated.route === 'settlement_wait') {
@@ -677,6 +736,7 @@ function App() {
         try {
           const current = await getLocalResultDelivery(accessToken, delivery.session_id, generation)
           if (isCurrentLocalRequest(requestToken, generation)) {
+            if (!applyDeliverySnapshot(current)) return
             if (current.route === 'result') {
               setError(null)
               setGameState({ status: 'result_delivery', delivery: current })
@@ -843,6 +903,8 @@ function App() {
             onAction={submitAction}
             onAcknowledgeResult={busy ? undefined : acknowledgeResult}
             onNextGame={busy ? undefined : nextGame}
+            resultAssetObjectUrl={deliveryAssetState?.identity === deliveryAssetIdentity ? deliveryAssetState.url : null}
+            resultAssetLoadFailed={deliveryAssetState?.identity === deliveryAssetIdentity && deliveryAssetState.failed}
             state={gameState}
           />}
         </>
