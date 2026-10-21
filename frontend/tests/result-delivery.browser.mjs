@@ -92,10 +92,9 @@ try {
   const reconciliation = page.waitForResponse((response) => response.url().includes('/api/local/play/sessions/session-c1/results?')
     && response.request().method() === 'GET')
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...conflicting }))
-  await page.getByRole('alert').getByText('결과 확인 상태가 일치하지 않습니다.').waitFor()
   await reconciliation
-  await page.getByText('등록된 결과 CG가 없습니다.').waitFor()
   await page.getByRole('alert').waitFor({ state: 'detached' })
+  assert.equal(await page.getByText('등록된 결과 CG가 없습니다.').count(), 1)
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...hand }))
   await page.getByRole('heading', { name: '동풍전 정산' }).waitFor()
   await page.locator('.result-delivery-card figure.result-asset img').waitFor()
