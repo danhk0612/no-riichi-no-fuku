@@ -10,6 +10,7 @@ try {
   let currentServerEnvelope = null
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname
+    if (path === '/api/local/play/sessions/session-c1/results') return route.fulfill({ json: currentServerEnvelope })
     if (path === '/api/auth/login') return route.fulfill({ json: { access_token: 'result-delivery-test-token' } })
     if (path === '/api/game/result-assets/99/file') return route.fulfill({
       status: 200, contentType: 'image/png', body: Buffer.from('test-image-bytes'),
@@ -21,7 +22,6 @@ try {
     if (path === '/api/game/sessions/recent') return route.fulfill({ json: null })
     return route.fulfill({ status: 404, json: { detail: 'not found' } })
   })
-  await page.route('**/api/local/play/sessions/session-c1/results?*', (route) => route.fulfill({ json: currentServerEnvelope }))
   const sockets = []
   await page.routeWebSocket('**/api/game/sessions/*/ws', (socket) => sockets.push(socket))
   await page.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
@@ -89,8 +89,11 @@ try {
   await page.getByText('등록된 결과 CG가 없습니다.').waitFor()
   const conflicting = structuredClone(noImage)
   conflicting.head.event_id = 'same-revision-conflict'
+  const reconciliation = page.waitForResponse((response) => response.url().includes('/api/local/play/sessions/session-c1/results?')
+    && response.request().method() === 'GET')
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...conflicting }))
   await page.getByRole('alert').getByText('결과 확인 상태가 일치하지 않습니다.').waitFor()
+  await reconciliation
   await page.getByText('등록된 결과 CG가 없습니다.').waitFor()
   await page.getByRole('alert').waitFor({ state: 'detached' })
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...hand }))
