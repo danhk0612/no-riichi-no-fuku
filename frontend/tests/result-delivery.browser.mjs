@@ -14,9 +14,17 @@ try {
     }
   })
   let currentServerEnvelope = null
+  let holdResult = null
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     if (path === '/api/local/play/sessions/session-c1/results') {
+      if (holdResult) {
+        const held = holdResult
+        holdResult = null
+        held.started()
+        await held.release
+        return route.fulfill({ json: held.response })
+      }
       return route.fulfill({ json: currentServerEnvelope })
     }
     if (path === '/api/auth/login') return route.fulfill({ json: { access_token: 'result-delivery-test-token' } })
@@ -113,6 +121,22 @@ try {
   assert.equal(await page.locator('.result-delivery-card figure.result-asset img').count(), 0)
   assert.equal(await page.getByText('등록된 결과 CG가 없습니다.').count(), 1)
   assert.equal(await page.getByRole('button', { name: '정산 확인' }).isEnabled(), true)
+  let releaseHeld
+  let startedHeld
+  const started = new Promise((resolve) => { startedHeld = resolve })
+  holdResult = { response: noImage, started: startedHeld, release: new Promise((resolve) => { releaseHeld = resolve }) }
+  sockets[0].send(JSON.stringify({ type: 'result_delivery', ...conflicting }))
+  await started
+  const newer = structuredClone(noImage)
+  newer.delivery_revision = 16
+  newer.head.event_id = 'newer-settlement'
+  sockets[0].send(JSON.stringify({ type: 'result_delivery', ...newer }))
+  await page.locator('[data-event-id="newer-settlement"]').waitFor()
+  const heldResponse = page.waitForResponse((response) => response.url().includes('/api/local/play/sessions/session-c1/results?'))
+  releaseHeld()
+  await heldResponse
+  await page.waitForTimeout(100)
+  assert.equal(await displayedEvent.getAttribute('data-event-id'), 'newer-settlement', 'delayed GET must not replace a newer revision')
   await page.close()
   console.log('PASS: C1 hand labels preserve MJAI kyoku/band, settlement restores saved CG, stale revision is ignored')
 } finally {
