@@ -1,5 +1,55 @@
 # W09-C1 PR #108 — 수용 전 보완
 
+## 최신 재검토 — R5 비동기 재조회 추가 보완이 우선
+
+검토 head `86c4e5079f37faa0a7b4e2daa5a7ec9fe02ac339`, main `ffd21f7`.
+R1 CG 로드·R2 code1000·R3 MJAI/band·R4 controlled failure 수정과 추가 검사는 코드에 반영됐다.
+아래 최초 재현/요구는 이력으로 보존한다. 현재 병합 차단은 R5의 **충돌 재조회 callback**이다.
+최신 head의 W04 run39591103937/W05 run39591095399 success를 API로 확인했지만,
+이번 재검토에서 전체187개/build/browser·artifact 다운로드를 다시 실행하지는 않았다.
+아래는 Node로 실제 helper 소스를 추출한 독립 재현이며 실제 브라우저 실행은 아니다.
+
+### 남은 원인과 재현
+
+`applyDeliverySnapshot`의 동일 revision/head 충돌 GET callback은 요청 당시의 `previous`에만
+fresh를 비교한다. 응답 도착 시점의 resultDeliveryRef·generation·session·request token을
+확인하지 않고 ref/화면/오류를 변경한다. 세 입력을 각각 실행한 결과는 다음과 같다.
+
+| 입력 순서 | 현재 실제 결과 | 필요한 결과 |
+|---|---|---|
+| revision10/head10 → 동일rev 충돌로 GET 대기 → WS revision11/head11 → GET이10/head10 반환 | ref/화면이10/head10으로 역행 | 최신11/head11 유지 |
+| old generation의10/head10 → 충돌 GET 대기 → 새 generation의1/new-head → old GET 반환 | 새 ref/화면을 old generation10으로 교체 | 새 세대 ref/화면·오류 유지 |
+| revision10/head10 → 충돌 GET → fresh11/head=null/route=human_turn | ref만11, 화면은 여전히 이전 결과 카드 | 기존 active 복구 흐름으로 조정 |
+
+마지막 경우 callback은 result/settlement_wait만 렌더링한다. ending/selection도 기존 복구
+경로로 이어지도록 확인한다. 추가 사용자 ack를 해야만 정상 화면으로 돌아오는 것을 수용하지 않는다.
+
+첫 두 입력은 API 응답이 지연되는 동안 다른 socket/상태 갱신이 발생하는 경우를 모델링한다.
+기존 browser 검사는 충돌 GET을 즉시 완료시킨 후 낮은 revision을 보내므로 이 경쟁을 검사하지 않는다.
+
+### 최소 수정과 회귀
+
+- 재조회 시작의 generation/session/request token을 캡처하고 완료 시 **현재** 값과 대조한다.
+  reset·새 세대·새 대국·새 요청으로 무효화된 callback은 ref/화면/오류/미디어에 영향이 없어야 한다.
+- 같은 대국이어도 응답 시점의 최신 resultDeliveryRef와 revision/head/cursor를 다시 대조한다.
+  요청 당시 previous와 비교하는 것만으로 통과시키지 않는다. 여전히 충돌하면 최신 카드를
+  보존하고 기존 오류 상태를 유지한다. 무한 재조회/자동 ack/로컬 cursor 선행은 금지한다.
+- 유효한 최신 fresh의 route 전체를 기존 복구 흐름에 반영한다. human_turn의 action_version,
+  ending/selection의 phase/request token 규약은 그대로 유지한다.
+- `frontend/tests/result-delivery.browser.mjs` 또는 기존 desktop routed browser에서 GET을
+  실제 보류한 뒤 위 세 경로를 검사한다. 추가로 새 generation/새 session 뒤 old GET,
+  valid ending/selection 재조정과 ref/화면 일치를 확인한다. 수정 전 실패를 먼저 재현한다.
+
+기존 branch/PR #108에서 `main.tsx`의 이 경계·관련 browser 회귀·상태 문서만 최소 보완한다.
+새 전달 schema/API·백엔드 정책·콘텐츠를 추가하지 않는다. R1~R4 수정과 그 검사는 보존한다.
+관련 browser/build·기존 backend/대사 및 최종 수정 source Windows W04/W05와 artifact를 검증한다.
+검토 전 source의 성공을 수정 후 성공으로 기록하지 않는다. commit/push·기존 PR 갱신까지이며
+직접 병합·Release/tag·후속 Task는 제외한다.
+
+---
+
+아래는 최초 검토 head0edc3d2의 재현/보완 계약이다.
+
 기준 main `f1671a6ecfaa62bcb95649df9253dd36b8742383`, 검토 PR #108 head
 `0edc3d2f8d0d2aa4255108a0b57a721cda26f435`. 기존 branch는
 `task/w09-c1-result-delivery`다. [표시·확인 계약](W09_C_RESULT_DELIVERY_CONTRACT.md)의
