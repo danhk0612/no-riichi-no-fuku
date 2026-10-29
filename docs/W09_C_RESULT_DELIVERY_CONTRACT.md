@@ -1,5 +1,9 @@
 # 국 결과 표시·확인 계약 — W09-C1/C2 인계
 
+> 2026-10-30 갱신: Q-LEGACY는 사용자 A 확정이다. M 관리/명시 연결은
+> [W09-M 계약](W09_M_FIXED_DIALOGUE_CONTRACT.md)이 우선하며 아래 미응답 표는 당시 이력이다.
+> C1 수용 상태와 unbound 소급 보충 금지, 나머지 S/C2/생성 선행은 유지한다.
+
 기준 main `c197029`(PR #106 병합), B2 수용 main `3341d4e`/검토 source `3bb3307`.
 이 문서는 **설계**다. 아래 테이블·DTO·endpoint·gate·UI는 아직 제품에 없다.
 B2 사실 계약과 최신 REQUIREMENTS를 유지하며 과거의 통합 W09-B 지시문보다 본 분해를 우선한다.

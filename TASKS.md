@@ -1,5 +1,15 @@
 # 개발 Task
 
+## 현재 다음 Work — W09-M 고정 대사 관리
+
+권장: **저성능 Work**. 사용자 Q-LEGACY A 확정.
+[W09-M 독립 계약](docs/W09_M_FIXED_DIALOGUE_CONTRACT.md) 전체와 §6 지시문에 따라
+`task/w09-m-fixed-dialogues`에서 관리·명시 선택 연결만 구현하고 commit/push·PR 제출한다.
+기존 여러 행/완료 결과 보존, 자동 이전 금지, 별도 revision/출처 사본·명시 빈 값·변수 검증이 필수다.
+S/C2·게임 결과 연결·CG/음향/문구 생성·직접 병합·Release/tag는 포함하지 않는다.
+아래 '후속 구현 미승인'과 Q-LEGACY 미응답 및 C1 재검토 지시는 이전 시점의 이력이다.
+M의 범위/완료 기준/허용 파일은 새 계약이 우선하며 다른 후속 정책은 여전히 별도다.
+
 ## W09-C1 — 최종 검토·병합 완료
 
 PR #108/maincd76cb6, 검토 head7d91b31/tree71fe2f7 일치.
