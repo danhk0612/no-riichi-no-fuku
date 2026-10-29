@@ -5,13 +5,14 @@ from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_member, get_session
-from app.db.models import CharacterContent, GameSessionRecord, LocalPlayRoster, User, UserCpuProgress
+from app.db.models import CharacterContent, GameSessionRecord, LocalPlayRoster, LocalPlayState, User, UserCpuProgress
 from app.schemas.game import CreateGameSessionResponse
 from app.schemas.local_play import (
     LocalEndingAckRequest,
     LocalPlayStateResponse,
     LocalResetRequest,
     LocalRosterRequest,
+    LocalResultAckRequest,
 )
 from app.services.game_registry import GameRegistry, get_game_registry
 from app.services.game_setup import InvalidCpuSelectionError
@@ -24,6 +25,8 @@ from app.services.local_play import (
     roster_candidates,
     roster_cpu_ids,
 )
+from app.services.result_delivery import ResultDeliveryError, acknowledge_result, result_envelope, unresolved_generation_sessions
+from app.db.session import mark_write_intent
 
 
 router = APIRouter(prefix="/api/local/play", tags=["local-play"])
@@ -49,12 +52,32 @@ def _state_payload(session: Session, user_id: int) -> dict[str, object]:
             GameSessionRecord.user_id == user_id,
             GameSessionRecord.status == "completed",
             GameSessionRecord.play_generation == state.generation,
+            GameSessionRecord.result_delivery_version.is_(None),
         ).order_by(desc(GameSessionRecord.updated_at), desc(GameSessionRecord.id)).limit(1))
     has_legacy_active = session.scalar(select(GameSessionRecord.id).where(
         GameSessionRecord.user_id == user_id,
         GameSessionRecord.status == "active",
         GameSessionRecord.rules_snapshot.is_(None),
     )) is not None
+    result_resume = None
+    try:
+        unresolved = unresolved_generation_sessions(session, user_id, state.generation)
+        if len(unresolved) > 1:
+            raise ResultDeliveryError("multiple unresolved result deliveries exist")
+        if unresolved:
+            record = unresolved[0]
+            envelope = result_envelope(session, record)
+            if envelope["route"] in {"result", "settlement_wait"}:
+                result_resume = {
+                    "session_id": record.id,
+                    "delivery_version": record.result_delivery_version,
+                    "route": envelope["route"],
+                    "delivery_revision": envelope["delivery_revision"],
+                }
+    except ResultDeliveryError as error:
+        raise HTTPException(status_code=503, detail={
+            "code": "result_delivery_invalid", "message": str(error),
+        }) from None
     return {
         "generation": state.generation,
         "phase": state.phase,
@@ -64,6 +87,7 @@ def _state_payload(session: Session, user_id: int) -> dict[str, object]:
         "active_session_id": active,
         "recent_session_id": recent,
         "legacy_active": has_legacy_active,
+        "result_resume": result_resume,
     }
 
 
@@ -187,3 +211,70 @@ def post_ending_ack(
         session.rollback()
         raise
     return _state_payload(session, user.id)
+
+
+@router.get("/sessions/{session_id}/results")
+def get_result_delivery(
+    session_id: str,
+    generation: str,
+    user: User = Depends(get_current_member),
+    session: Session = Depends(get_session),
+) -> dict[str, object]:
+    state = session.get(LocalPlayState, user.id)
+    if state is not None and generation != state.generation:
+        raise HTTPException(status_code=409, detail={"code": "play_generation_stale", "message": "play state changed"})
+    record = session.scalar(select(GameSessionRecord).where(
+        GameSessionRecord.id == session_id, GameSessionRecord.user_id == user.id,
+    ))
+    if record is None:
+        raise HTTPException(status_code=404, detail={"code": "session_not_found", "message": "game session not found"})
+    if record.play_generation != generation or record.status == "cancelled":
+        raise HTTPException(status_code=409, detail={"code": "play_generation_stale", "message": "play state changed"})
+    if record.result_delivery_version is None:
+        raise HTTPException(status_code=409, detail={"code": "result_delivery_unsupported", "message": "this match uses legacy result handling"})
+    try:
+        return result_envelope(session, record)
+    except ResultDeliveryError as error:
+        raise HTTPException(status_code=503, detail={"code": "result_delivery_invalid", "message": str(error)}) from None
+
+
+@router.post("/sessions/{session_id}/results/ack")
+def post_result_ack(
+    session_id: str,
+    request: LocalResultAckRequest,
+    user: User = Depends(get_current_member),
+    session: Session = Depends(get_session),
+) -> dict[str, object]:
+    try:
+        mark_write_intent(session)
+        state = session.get(LocalPlayState, user.id)
+        if state is not None and request.generation != state.generation:
+            raise HTTPException(status_code=409, detail={"code": "play_generation_stale", "message": "play state changed"})
+        record = session.scalar(select(GameSessionRecord).where(
+            GameSessionRecord.id == session_id, GameSessionRecord.user_id == user.id,
+        ).with_for_update())
+        if record is None:
+            raise HTTPException(status_code=404, detail={"code": "session_not_found", "message": "game session not found"})
+        if record.play_generation != request.generation or record.status == "cancelled":
+            raise HTTPException(status_code=409, detail={"code": "play_generation_stale", "message": "play state changed"})
+        if record.result_delivery_version is None:
+            raise HTTPException(status_code=409, detail={"code": "result_delivery_unsupported", "message": "this match uses legacy result handling"})
+        envelope = acknowledge_result(
+            session, record, generation=request.generation, event_id=request.event_id,
+            ordinal=request.ordinal, expected_revision=request.expected_delivery_revision,
+        )
+        session.commit()
+        return envelope
+    except HTTPException:
+        session.rollback()
+        raise
+    except ResultDeliveryError as error:
+        session.rollback()
+        code = str(error)
+        status_code = 409 if code in {"play_generation_stale", "result_ack_conflict"} else 503
+        if code not in {"play_generation_stale", "result_ack_conflict"}:
+            code = "result_delivery_invalid"
+        raise HTTPException(status_code=status_code, detail={"code": code, "message": str(error)}) from None
+    except Exception:
+        session.rollback()
+        raise HTTPException(status_code=503, detail={"code": "persistence_failed", "message": "result acknowledgement could not be saved"}) from None

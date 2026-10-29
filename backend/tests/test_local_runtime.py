@@ -16,9 +16,24 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 from starlette.websockets import WebSocketDisconnect
 
-from app.db.models import CpuCharacter, GameSessionRecord, User, UserCpuProgress
+from app.db.models import CpuCharacter, GameResultDelivery, GameResultDeliveryEntry, GameSessionRecord, User, UserCpuProgress
 from app.db.session import create_database_engine, mark_write_intent
 from app.local_runtime import create_local_runtime, resolve_data_paths
+from app.services.result_delivery import acknowledge_result
+
+
+def _ack_all_results(session: Session, session_id: str) -> None:
+    record = session.get(GameSessionRecord, session_id)
+    delivery = session.get(GameResultDelivery, session_id)
+    if delivery is None:
+        return
+    entries = session.scalars(select(GameResultDeliveryEntry).where(
+        GameResultDeliveryEntry.session_id == session_id
+    ).order_by(GameResultDeliveryEntry.ordinal)).all()
+    while delivery.acked_ordinal < len(entries):
+        entry = entries[delivery.acked_ordinal]
+        acknowledge_result(session, record, generation=delivery.generation, event_id=entry.event_id,
+                           ordinal=entry.ordinal, expected_revision=delivery.revision)
 
 
 class LocalRuntimeTests(unittest.TestCase):
@@ -58,7 +73,7 @@ class LocalRuntimeTests(unittest.TestCase):
                     )
                     self.assertEqual(
                         connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one(),
-                        "20261019_0012",
+                        "20261021_0013",
                     )
                 with runtime.session_factory.begin() as session:
                     member = session.get(User, runtime.member_id)
@@ -467,6 +482,9 @@ class LocalRuntimeTests(unittest.TestCase):
                     websocket.send_json(
                         {"type": "authenticate", "capability": "ignored-renderer-value", "generation": play["generation"]}
                     )
+                    envelope = websocket.receive_json()
+                    self.assertEqual(envelope["type"], "result_delivery")
+                    self.assertEqual(envelope["route"], "human_turn")
                     self.assertEqual(websocket.receive_json()["type"], "human_turn")
                 with client.websocket_connect(
                     f"/api/game/sessions/{session_id}/ws"
@@ -510,6 +528,7 @@ class LocalRuntimeTests(unittest.TestCase):
                     websocket.send_json(
                         {"type": "authenticate", "capability": runtime.capability, "generation": play["generation"]}
                     )
+                    self.assertEqual(websocket.receive_json()["type"], "result_delivery")
                     self.assertEqual(websocket.receive_json()["type"], "human_turn")
                 self.assertIsNone(runtime.websocket_member("old-run-capability"))
                 self.assertIsNotNone(runtime.websocket_member(runtime.capability))
@@ -566,6 +585,7 @@ class LocalRuntimeTests(unittest.TestCase):
                     turn = registered.game.human_turn()
                     assert turn is not None
                     with runtime.session_factory() as session:
+                        _ack_all_results(session, session_id)
                         mark_write_intent(session)
                         runtime.registry.submit_action(
                             session,
@@ -597,16 +617,18 @@ class LocalRuntimeTests(unittest.TestCase):
                     original_commit(session)
 
                 with patch.object(Session, "commit", new=fail_only_settlement_commit):
-                    with self.assertRaisesRegex(
-                        SQLAlchemyError, "injected local settlement commit failure"
-                    ):
-                        with client.websocket_connect(
-                            f"/api/game/sessions/{session_id}/ws"
-                        ) as websocket:
-                            websocket.send_json(
-                                {"type": "authenticate", "capability": runtime.capability, "generation": generation}
-                            )
+                    with client.websocket_connect(
+                        f"/api/game/sessions/{session_id}/ws"
+                    ) as websocket:
+                        websocket.send_json(
+                            {"type": "authenticate", "capability": runtime.capability, "generation": generation}
+                        )
+                        error = websocket.receive_json()
+                        self.assertEqual(error["type"], "error")
+                        self.assertEqual(error["code"], "persistence_failed")
+                        with self.assertRaises(WebSocketDisconnect) as disconnected:
                             websocket.receive_json()
+                        self.assertEqual(disconnected.exception.code, 1011)
 
                 self.assertNotIn(session_id, runtime.registry._games)
                 with runtime.session_factory() as session:
@@ -633,28 +655,52 @@ class LocalRuntimeTests(unittest.TestCase):
             try:
                 client = TestClient(restarted.app)
                 headers = {"X-Local-Capability": restarted.capability}
-                results = []
-                for _ in range(2):
-                    with client.websocket_connect(
-                        f"/api/game/sessions/{session_id}/ws"
-                    ) as websocket:
-                        websocket.send_json(
-                            {"type": "authenticate", "capability": restarted.capability, "generation": generation}
-                        )
-                        messages = []
-                        while True:
-                            message = websocket.receive_json()
-                            if message["type"] == "match_complete":
-                                results.append(message)
-                                break
-                            messages.append(message)
-                            self.assertNotEqual(message["type"], "error", message)
-                self.assertEqual(results[0], results[1])
-                self.assertEqual(results[0]["result"]["scores"], list(final_result.scores))
-                self.assertEqual(results[0]["result"]["ranks"], list(final_result.ranks))
+                with client.websocket_connect(f"/api/game/sessions/{session_id}/ws") as websocket:
+                    websocket.send_json({
+                        "type": "authenticate", "capability": restarted.capability,
+                        "generation": generation,
+                    })
+                    resumed = websocket.receive_json()
+                    self.assertEqual(resumed["type"], "result_delivery")
+                    self.assertEqual(resumed["route"], "result")
+                resume = client.get("/api/local/play", headers=headers).json()["result_resume"]
+                self.assertEqual(resume["session_id"], session_id)
+                while True:
+                    delivery = client.get(
+                        f"/api/local/play/sessions/{session_id}/results",
+                        params={"generation": generation}, headers=headers,
+                    ).json()
+                    self.assertEqual(delivery["route"], "result")
+                    head = delivery["head"]
+                    if head["kind"] == "settlement":
+                        break
+                    self.assertEqual(head["kind"], "hand")
+                    ack = client.post(
+                        f"/api/local/play/sessions/{session_id}/results/ack", headers=headers,
+                        json={"generation": generation, "event_id": head["event_id"],
+                              "ordinal": head["ordinal"],
+                              "expected_delivery_revision": delivery["delivery_revision"]},
+                    )
+                    self.assertEqual(ack.status_code, 200, ack.text)
+                settlement_payload = head["payload"]
+                cold_read = client.get(
+                    f"/api/local/play/sessions/{session_id}/results",
+                    params={"generation": generation}, headers=headers,
+                ).json()
+                self.assertEqual(cold_read["head"]["event_id"], head["event_id"])
+                self.assertEqual(settlement_payload["scores"], list(final_result.scores))
+                self.assertEqual(settlement_payload["ranks"], list(final_result.ranks))
+                settled = client.post(
+                    f"/api/local/play/sessions/{session_id}/results/ack", headers=headers,
+                    json={"generation": generation, "event_id": head["event_id"],
+                          "ordinal": head["ordinal"],
+                          "expected_delivery_revision": cold_read["delivery_revision"]},
+                )
+                self.assertEqual(settled.status_code, 200, settled.text)
+                self.assertEqual(settled.json()["route"], "selection")
                 recent = client.get("/api/game/sessions/recent", headers=headers)
                 self.assertEqual(recent.status_code, 200)
-                self.assertEqual(recent.json()["session_id"], session_id)
+                self.assertIsNone(recent.json())
                 with restarted.session_factory() as session:
                     record = session.get(GameSessionRecord, session_id)
                     self.assertEqual(record.status, "completed")
@@ -677,10 +723,10 @@ class LocalRuntimeTests(unittest.TestCase):
                             **stages_before,
                             **(
                                 {
-                                    results[0]["settlement"]["cpu_character_id"]:
-                                    results[0]["settlement"]["defeat_stage"]
+                            settlement_payload["settlement"]["cpu_character_id"]:
+                                    settlement_payload["settlement"]["defeat_stage"]
                                 }
-                                if results[0]["settlement"]["cpu_character_id"] is not None
+                                if settlement_payload["settlement"]["cpu_character_id"] is not None
                                 else {}
                             ),
                         },

@@ -13,13 +13,32 @@ from riichienv import ActionType
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.db.models import CpuCharacter, GameHandResult, GameSessionRecord, LocalPlayState, User, UserCpuProgress
+from app.db.models import CpuCharacter, GameHandResult, GameResultDelivery, GameResultDeliveryEntry, GameSessionRecord, LocalPlayState, User, UserCpuProgress
 from app.db.session import LocalRuntimeSession
 from app.local_runtime import create_local_runtime
 from app.mahjong.hand_results import HandResultCaptureError, HandResultCollector, HandResultFact
 from app.mahjong.hand_scores import HandScore, HandWin
 from app.services.game_registry import GameRegistry
 from app.services.hand_results import append_facts, fact_payload, verify_replay_batch
+from app.services.result_delivery import acknowledge_result
+
+
+def _ack_all_results(db, session_id: str, *, include_settlement: bool = True) -> None:
+    record = db.get(GameSessionRecord, session_id)
+    delivery = db.get(GameResultDelivery, session_id)
+    if delivery is None:
+        return
+    entries = db.scalars(select(GameResultDeliveryEntry).where(
+        GameResultDeliveryEntry.session_id == session_id
+    ).order_by(GameResultDeliveryEntry.ordinal)).all()
+    while delivery.acked_ordinal < len(entries):
+        entry = entries[delivery.acked_ordinal]
+        if not include_settlement and entry.kind == "settlement":
+            break
+        acknowledge_result(
+            db, record, generation=delivery.generation, event_id=entry.event_id,
+            ordinal=entry.ordinal, expected_revision=delivery.revision,
+        )
 
 
 def _win(start: int, hora: int, actor: int = 0) -> HandWin:
@@ -219,7 +238,8 @@ class LocalHandResultPersistenceTests(unittest.TestCase):
                     failed_flush = failure_client.post("/api/game/sessions", headers=headers, json={
                         "generation": state["generation"], "cpu_character_ids": list(cpu_ids),
                     })
-                self.assertEqual(failed_flush.status_code, 500, failed_flush.text)
+                self.assertEqual(failed_flush.status_code, 503, failed_flush.text)
+                self.assertEqual(failed_flush.json()["detail"]["code"], "persistence_failed")
                 with runtime.session_factory() as db:
                     self.assertIsNone(db.scalar(select(GameSessionRecord.id).where(
                         GameSessionRecord.user_id == runtime.member_id,
@@ -234,7 +254,8 @@ class LocalHandResultPersistenceTests(unittest.TestCase):
                     failed_commit = failure_client.post("/api/game/sessions", headers=headers, json={
                         "generation": state["generation"], "cpu_character_ids": list(cpu_ids),
                     })
-                self.assertEqual(failed_commit.status_code, 500, failed_commit.text)
+                self.assertEqual(failed_commit.status_code, 503, failed_commit.text)
+                self.assertEqual(failed_commit.json()["detail"]["code"], "persistence_failed")
                 with runtime.session_factory() as db:
                     self.assertIsNone(db.scalar(select(GameSessionRecord.id).where(
                         GameSessionRecord.user_id == runtime.member_id,
@@ -555,6 +576,7 @@ class LocalHandResultPersistenceTests(unittest.TestCase):
                     failed_index = next((i for i, action in enumerate(before_failed_write.legal_actions)
                                          if action["type"] == int(ActionType.DISCARD)), 0)
                     with runtime.session_factory() as db:
+                        _ack_all_results(db, session_id)
                         with patch.object(LocalRuntimeSession, "flush", new=fail_action_result_flush):
                             try:
                                 runtime.registry.submit_action(db, restored, failed_index, restored.action_version)
@@ -619,6 +641,7 @@ class LocalHandResultPersistenceTests(unittest.TestCase):
                     action_index = next((i for i, action in enumerate(turn.legal_actions)
                                          if action["type"] in (int(ActionType.PASS), int(ActionType.DISCARD))), 0)
                     with runtime.session_factory() as db:
+                        _ack_all_results(db, session_id)
                         runtime.registry.submit_action(db, registered, action_index, registered.action_version)
                         db.commit()
                 self.assertTrue(registered.game.done, "fixed-seed match did not complete")
@@ -689,6 +712,8 @@ class LocalHandResultPersistenceTests(unittest.TestCase):
                     after = [(row.hand_start_log_offset, row.hand_end_log_offset,
                               row.source_action_version, row.payload) for row in after_rows]
                     self.assertEqual(after, before)
+                with runtime.session_factory.begin() as db:
+                    _ack_all_results(db, session_id, include_settlement=False)
                 from scripts.verify_hand_result_evidence import main as verify_artifact_database
                 evidence_path = Path(directory) / "hand-results.json"
                 verify_artifact_database(runtime.paths.database, evidence_path)

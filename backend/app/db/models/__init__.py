@@ -8,6 +8,7 @@ from .cpu_result_asset import CpuResultAsset
 from .game_setting import GameSetting
 from .game_session_record import GameSessionRecord
 from .game_hand_result import GameHandResult
+from .game_result_delivery import GameResultDelivery, GameResultDeliveryEntry
 from .local_play import LocalPlayRoster, LocalPlayState
 from .local_media import BackgroundTrack, LocalMediaAsset, SoundEffectSet
 from .user import User
@@ -24,6 +25,8 @@ __all__ = [
     "GameSetting",
     "GameSessionRecord",
     "GameHandResult",
+    "GameResultDelivery",
+    "GameResultDeliveryEntry",
     "LocalPlayRoster",
     "LocalPlayState",
     "LocalMediaAsset",

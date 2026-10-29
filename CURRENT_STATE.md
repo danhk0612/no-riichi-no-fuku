@@ -1,5 +1,29 @@
 # 현재 상태
 
+## W09-C1 PR #108 — R5 비동기 재조회 보완
+
+기존 브랜치에 main `3928a21`을 반영하고 R1~R4 및 아래 검증 이력을 보존했다.
+충돌 GET은 응답 시점의 generation/session/request token과 최신 revision/head/cursor를 대조한다.
+유효 결과의 human_turn·ending·selection과 settlement_wait는 기존 로컬 복구 흐름을 이용한다.
+서버 cursor 선행 변경이나 자동 ack는 없다. 브라우저 회귀는 지연 GET과 최신 revision, 초기화 후
+현재 오류, 새 generation/새 대국, 같은 generation의 새 대국, 복구된 화면·action_version을 확인한다.
+
+수정 전 Windows W05는 최신 카드 역행 `40760445593`(head `10c764a`), 새 대국 카드 덮기
+`40796384701`(head `93117cb`), 초기화 후 오류 소거 `40796381785` 재실행(head `afb8398`)에서
+각각 의도한 assertion 실패를 재현했다. 초기화 실행의 최초 시도는 기존 사운드 테스트에서 실패해
+재실행했다. 수정 제품 source `ef4163d4fe16d2823db0269965369a3ae1385b47`의 W04
+`40796399919`와 W05 `40796399543`은 통과했다: backend unittest 187개, 대사 pytest 10개,
+frontend build·관련 routed browser 및 packaged renderer/대국/재시작/종료 검사.
+
+W04 artifact `12864376204`의 outer SHA-256은
+`e2a862c9eea1f4d8cc3914479386328892a7d49b93b595b2633a903b6930f82f`, W05 artifact
+`12864117866`은 `36ef4830cfa67fea3e2b421e54313b2da1320fa3e7dd852872622209502f9a59`이다.
+다운로드한 artifact의 SHA와 source SHA가 일치하고 W05 내부 ZIP SHA-256은 기록값과 같은
+`a01901fe4895ccf8c0f041a0a6df4df10cb72076d32e894c2df9fc3b408aeaf8`이다. packaged DB는
+revision `20261021_0013`을 read-only로 검사했다. 최종 문서 commit의 정확한 검증 상태는 PR의
+checks/artifacts를 따른다. 개인 Windows PC·전원 차단·실제 사용자 CG/오디오는 미검증이다.
+PR #108은 open/unmerged이며 직접 병합·Release/tag·후속 Task는 수행하지 않는다.
+
 ## W09-C1 PR #108 재검토 — R5 재조회 경쟁 추가 보완
 
 head86c4e507(제품04f4d007)의 R1~R4 수정/추가 검사는 코드에 반영됐다. exact-head W04
@@ -21,6 +45,39 @@ MJAI 국 번호+1 오류와 전달 구성 실패의 WS uncontrolled 예외를 �
 [보완 지시](docs/W09_C1_REVIEW_FINDINGS.md)에 재현·필수 회귀·기존 PR 인계를 정리했다.
 Chromium 다운로드 실패로 로컬 UI 증거는 SSR/소스 callback 실행이며 실제 browser로 주장하지 않는다.
 현재 B2/계약은 main에 있으나 C1 제품 PR은 미병합이다. 다음은 기존 PR #108 보완이다.
+
+## W09-C1 PR #108 — R1~R5 보완 검증 완료
+
+기존 `task/w09-c1-result-delivery`/PR #108에 최신 main `ffd21f7`의 review findings를 반영했다.
+R1은 저장된 settlement `result_asset` 참조를 카드에 표시하고, 로드 실패/미등록 상태에서도 확인을 허용한다.
+generation/session/event/asset 단위 로드 cleanup으로 이전 미디어 응답의 현재 카드 덮기를 막는다.
+R2는 미완료 WebSocket code1000 종료도 기존 행동 잠금·복구 안내를 유지한다. R3는 B2 원본 MJAI
+`kyoku` 값을 그대로 표시하고 세 band를 `만관 미만/만관·하네만/배만 이상`으로 표기한다.
+R4는 create/action/settlement의 전달 snapshot 검증 실패를 `result_delivery_invalid`/1011로 제어하고
+DB 오류는 기존 `persistence_failed` 경계에 둔다. R5는 같은 generation/session에서 낮은 delivery revision을
+버리고 같은 revision의 immutable head 충돌은 저장 결과 GET으로 재조정한다. entry 전환은 기존
+150ms/reduced-motion CSS를 실제 카드 key 변경에 연결했다.
+
+제품 코드 SHA **`04f4d0077acba3ca820ec766799ee881564375f3`**에서 Linux 전체 backend unittest 187개,
+대사 pytest 10개, frontend production build, `git diff --check`, browser test JS syntax가 통과했다.
+file-SQLite C1 6개와 local-play 17개 회귀도 통과했다. 새 회귀는 동시 writer의 같은 head 확인, ack commit
+실패 후 cursor/revision 재시도, 마지막 settlement entry 손상 시 GET/create gate 거절, create/action 전달
+검증 실패의 controlled response 및 저장 턴 복구를 검사한다. 기존 settle commit 실패도 전체 backend run에서
+통과했다.
+
+동일 제품 코드 SHA의 Windows 검증도 통과했다. W04 run **#166 / 39588030204**, artifact
+**12340883146** (outer SHA-256 `5e296748aa78c03b2cd9e9ee2cf43e40e84a9556cd631f16b1e314a7425454e7`):
+Windows backend unittest 187개/265.292초 및 대사 pytest 10개. W05 run **#207 / 39588030141**, artifact
+**12340184602** (outer SHA-256 `e1d83a3fe94675c078a7d2e53cbda6835e2a76c70269b79e5db766ce93d4fa45`):
+Windows backend unittest 187개/293.982초, 대사 pytest 10개, renderer build, routed browser 회귀 및 packaged
+renderer/match/restart/lifecycle 검사 통과. W05 artifact `source-sha.txt`는 위 제품 코드 SHA와 일치하고,
+내부 Windows ZIP 기록/실제 SHA-256은 `9c185ed7a3aaaf2f4d9cdc65b7583ad67c7d33f26b3417293dd3075c5f92294b`로
+일치한다. packaged DB는 revision `20261021_0013`을 read-only로 열어 결과 facts를 확인했다.
+
+로컬 Chromium은 제공되지 않아 로컬 routed browser는 실행하지 못했으나, 위 W05 Windows browser suite에서
+R1/R2/R3/R5 및 기존 result-asset/connection browser가 통과했다. 실제 사용자 CG·오디오 출력과 개인 PC/전원
+차단은 미검증이다. 검증 기록만 갱신하는 docs commit은 제품 코드 SHA를 바꾸지 않는다. PR #108은
+open/unmerged 상태로 유지한다. 직접 병합·Release/tag·C2·문구/CG 생성·후속 Task는 수행하지 않는다.
 
 ## 국 결과 표시·확인 계약 — 설계 검토 수용
 

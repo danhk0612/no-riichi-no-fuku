@@ -186,6 +186,13 @@ def acknowledge_ending(
 ) -> LocalPlayState:
     state = get_local_play_state(session, user_id)
     _check_generation(state, generation)
+    from app.services.result_delivery import ResultDeliveryError, assert_generation_delivery_clear
+    try:
+        assert_generation_delivery_clear(session, user_id, generation)
+    except ResultDeliveryError as error:
+        if str(error) == "result_pending":
+            raise LocalPlayConflict("result_pending", "confirm pending match results first") from None
+        raise LocalPlayConflict("result_delivery_invalid", "pending match result data could not be verified") from error
     if state.phase == "omake" and state.ending_event_id == event_id:
         return state
     if state.phase != "ending_pending" or state.ending_event_id != event_id:

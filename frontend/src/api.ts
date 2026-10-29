@@ -1,4 +1,4 @@
-import type { CpuChoice, GameSessionCreated } from './game/types'
+import type { CpuChoice, GameSessionCreated, ResultDeliveryEnvelope } from './game/types'
 
 type TokenResponse = {
   access_token: string
@@ -19,6 +19,7 @@ export type LocalPlayState = {
   active_session_id: string | null
   recent_session_id: string | null
   legacy_active: boolean
+  result_resume: { session_id: string; delivery_version: number; route: string; delivery_revision: number } | null
 }
 
 export type MediaAsset = { id: string; kind: 'image' | 'audio'; mime_type: string; byte_size: number; url: string; available: boolean | null }
@@ -178,6 +179,22 @@ export function resetLocalPlay(accessToken: string, generation: string): Promise
 export function acknowledgeLocalEnding(accessToken: string, generation: string, endingEventId: string): Promise<LocalPlayState> {
   return apiRequest('/api/local/play/ending/ack', {
     method: 'POST', body: JSON.stringify({ generation, ending_event_id: endingEventId }),
+  }, accessToken)
+}
+
+export function getLocalResultDelivery(accessToken: string, sessionId: string, generation: string): Promise<ResultDeliveryEnvelope> {
+  const query = new URLSearchParams({ generation })
+  return apiRequest(`/api/local/play/sessions/${sessionId}/results?${query}`, {}, accessToken)
+}
+
+export function acknowledgeLocalResult(accessToken: string, delivery: ResultDeliveryEnvelope): Promise<ResultDeliveryEnvelope> {
+  const { head } = delivery
+  if (!head) return Promise.resolve(delivery)
+  return apiRequest(`/api/local/play/sessions/${delivery.session_id}/results/ack`, {
+    method: 'POST', body: JSON.stringify({
+      generation: delivery.generation, event_id: head.event_id, ordinal: head.ordinal,
+      expected_delivery_revision: delivery.delivery_revision,
+    }),
   }, accessToken)
 }
 
