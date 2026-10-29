@@ -171,6 +171,12 @@ function App() {
             } else if (fresh.route === 'settlement_wait') {
               setActionPending(true)
               setGameState({ status: 'settlement_wait', delivery: fresh })
+              if (isDesktop && token) {
+                const recoveryToken = beginLocalRequest()
+                socketRef.current?.close(1000)
+                socketRef.current = null
+                void reconcileLocalPlay(token, recoveryToken)
+              }
             } else if (isDesktop && token) {
               const recoveryToken = beginLocalRequest()
               socketRef.current?.close(1000)

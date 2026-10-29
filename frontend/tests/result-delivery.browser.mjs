@@ -220,9 +220,12 @@ try {
       releaseGet()
       if (scenario === 'human_turn') {
         await desktop.locator('.hand button').waitFor()
+        const action = new Promise((resolve) => desktopSockets.at(-1).onMessage((raw) => {
+          const message = JSON.parse(String(raw))
+          if (message.type === 'action') resolve(message)
+        }))
         await desktop.locator('.hand button').click()
-        await desktop.waitForFunction(() => document.querySelector('.hand button')?.disabled)
-        assert.equal(sent.findLast((message) => message.type === 'action')?.action_version, 37)
+        assert.equal((await Promise.race([action, new Promise((_, reject) => setTimeout(() => reject(new Error('restored action was not sent')), 5000))])).action_version, 37)
       } else if (scenario === 'ending') await desktop.getByRole('region', { name: '엔딩' }).waitFor()
       else await desktop.locator('.selection-panel').waitFor()
       assert.equal(await desktop.locator('.result-delivery-card').count(), 0, `${scenario} must leave the result card`)

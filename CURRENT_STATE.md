@@ -1,5 +1,15 @@
 # 현재 상태
 
+## W09-C1 PR #108 — R5 재조회 보완 검증 중
+
+기존 브랜치에서 main `3928a21`을 반영하고 R1~R4 및 아래 기존 검증 이력을 보존했다.
+충돌 재조회 응답은 도착 시의 generation/session/request token과 최신 revision/head/cursor를
+대조하며, 유효한 재조회는 기존 로컬 복구 흐름에 연결한다. 초기화·새 대국·화면 복구 browser
+회귀를 추가했다. 수정 전 head `10c764a`의 Windows W05 run `40760445593`에서 보류 GET이
+최신 카드를 덮는 assertion 실패를 재현했고, W04 run `40760445698`은 통과했다.
+수정 후 frontend build 및 browser test 구문 검사는 통과했다. 최종 source의 browser·W04/W05와
+artifact 검증은 아직 완료되지 않았으며 PR #108은 병합 보류다.
+
 ## W09-C1 PR #108 재검토 — R5 재조회 경쟁 추가 보완
 
 head86c4e507(제품04f4d007)의 R1~R4 수정/추가 검사는 코드에 반영됐다. exact-head W04
