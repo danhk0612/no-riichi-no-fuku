@@ -136,9 +136,9 @@ try {
   releaseHeld()
   await heldResponse
   await page.waitForTimeout(100)
-  assert.equal(await displayedEvent.getAttribute('data-event-id'), 'settlement-no-image', 'pre-fix baseline must first reproduce the old card')
+  assert.equal(await displayedEvent.getAttribute('data-event-id'), 'newer-settlement', 'delayed GET must not replace a newer revision')
   await page.close()
-  for (const scenario of ['new-session']) {
+  for (const scenario of ['reset', 'new-session', 'same-generation-new-session', 'human_turn', 'ending', 'selection']) {
     const desktop = await browser.newPage()
     desktop.setDefaultTimeout(8000)
     await desktop.addInitScript(() => { window.nrnfDesktop = { isDesktop: true } })
