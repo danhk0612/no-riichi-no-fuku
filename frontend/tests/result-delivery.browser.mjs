@@ -156,6 +156,7 @@ try {
       const request = route.request()
       const path = new URL(request.url()).pathname
       if (path === '/api/profile/me') return route.fulfill({ json: { player_name: 'Tester' } })
+      if (path === '/api/local/sound-selection') return route.fulfill({ json: { effect_set_id: null, bgm_ids: [], effect_sets: [], tracks: [], effect_set_available: false, bgm_available: [] } })
       if (path === '/api/local/play/reset') {
         play = { ...play, generation: 'new-generation', phase: 'omake', active_session_id: null }
         return route.fulfill({ json: play })
