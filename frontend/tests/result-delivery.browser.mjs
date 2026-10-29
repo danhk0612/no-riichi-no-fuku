@@ -138,7 +138,7 @@ try {
   await page.waitForTimeout(100)
   assert.equal(await displayedEvent.getAttribute('data-event-id'), 'settlement-no-image', 'pre-fix baseline must first reproduce the old card')
   await page.close()
-  for (const scenario of ['reset']) {
+  for (const scenario of ['new-session']) {
     const desktop = await browser.newPage()
     desktop.setDefaultTimeout(8000)
     await desktop.addInitScript(() => { window.nrnfDesktop = { isDesktop: true } })
