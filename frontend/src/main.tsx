@@ -166,9 +166,17 @@ function App() {
             resultDeliveryRef.current = fresh
             setError(null)
             if (fresh.route === 'result') {
+              if (isDesktop && token) {
+                setAccessToken(token)
+                setCpus(null)
+              }
               setActionPending(false)
               setGameState({ status: 'result_delivery', delivery: fresh })
             } else if (fresh.route === 'settlement_wait') {
+              if (isDesktop && token) {
+                setAccessToken(token)
+                setCpus(null)
+              }
               setActionPending(true)
               setGameState({ status: 'settlement_wait', delivery: fresh })
               if (isDesktop && token) {

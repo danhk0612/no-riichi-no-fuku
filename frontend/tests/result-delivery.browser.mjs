@@ -221,6 +221,9 @@ try {
       releaseGet()
       if (scenario === 'human_turn') {
         await desktop.locator('.hand button').waitFor()
+        desktopSockets.at(-1).send(JSON.stringify({ type: 'result_delivery', ...noImage }))
+        await desktop.waitForTimeout(100)
+        assert.equal(await desktop.locator('.result-delivery-card').count(), 0, 'stale revision must not replace the recovered turn')
         const action = new Promise((resolve) => desktopSockets.at(-1).onMessage((raw) => {
           const message = JSON.parse(String(raw))
           if (message.type === 'action') resolve(message)
