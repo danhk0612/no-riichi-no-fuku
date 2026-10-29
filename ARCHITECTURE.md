@@ -1,5 +1,12 @@
 # 구조와 전환 검토
 
+## W09-C1 수용 경계
+
+PR #108/maincd76cb6에서 새 local 대국의 결과 전달·확인·gate·복구를 수용했다.
+R5 충돌 재조회는 응답 도착 시 현재 generation/session/request token 및 최신 ref/revision/head/cursor로
+다시 검증하고, 유효한 결과의 route를 기존 복구 흐름에 연결한다. 옛 GET이 새 결과·세대·대국을 덮지 않는다.
+unbound 전달은 문구/공유 상황/콘텐츠 snapshot·이미지 생성의 완료가 아니며 후속 정책/계약은 별도다.
+
 ## W09-C1 국 결과 전달·확인 — PR #108 구현 및 R1~R5 보완
 
 기준 main `c197029`에서 실제 model/registry/API/renderer 복구 경계를 대조했다.

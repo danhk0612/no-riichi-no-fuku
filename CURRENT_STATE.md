@@ -1,5 +1,32 @@
 # 현재 상태
 
+## W09-C1 — 최종 검토·병합 완료
+
+PR #108을 main `cd76cb60dd47ddf81c3e071423dabec2bc622117`에 병합했다.
+검토 head `7d91b31bd70430021a243af6705f6b80387c196e`와 병합 tree
+`71fe2f7a91d8b9011712d813c8c6ff6f89870288`가 같다. R1~R4 보존과 R5 비동기 재조회 수정을 수용했다.
+
+독립 소스 callback 실행의6사례(최신 revision, reset 세대, 새 session, human_turn/ending/selection
+복구 호출)가 통과했다. 수정 전 W05 job123070613332/123193750850/123196398977 로그에서
+새 결과 역행·새 대국 뒤 옛 카드 복원·reset 뒤 오류 제거의 assertion 실패를 직접 확인했다.
+수정 후 browser는 실제 GET을 보류해 최신 결과/reset/새 세대·동일 세대 새 session과 route 복구를 검사한다.
+
+최종 source W04 run40797965574/W05 run40797965526은 success다. 다운로드한 두 artifact의
+source-sha.txt와 GitHub digest/실제 SHA256을 대조했다. 각 backend187개·대사10개, W05 build/
+browser7종·renderer33검사·일반 종료/재시작과 read-only DB revision0013 증거가 통과했다.
+
+| 최종 근거 | ID / SHA256 |
+|---|---|
+| W04 artifact | 12864358213 / 24e92607e8a04004d540cc487d2d9fb138a150acb20cc877581790377c7a856f |
+| W05 artifact | 12864558586 / 140026e145909ac90de4b624850b3d48f7221c6ca7fd6b268bbad9f9d72a0399 |
+| 내부 Windows ZIP | 7ea3a2ea0000db5de218c80b7a5a24f56de3a880547fc24bd1ca5eb7f514ffce |
+
+독립 root 검토에서 전체 backend/build/실제 browser를 재실행하지 않았으며 위 수치는 해당 Windows
+artifact의 결과다. 실제 사용자 CG/오디오·개인 Windows PC·전원 차단은 미검증이다.
+C1은 새 local 대국의 unbound 전달·확인·복구까지만 수용하며 기존 대국의 소급 편입은 없다.
+문구 관리/공유 상황/콘텐츠 snapshot·CG 생성 후속은 미구현·미승인이다.
+아래 R5 검토 대기/수용 전 보완 지시문은 당시 이력이며 현재 차단 상태가 아니다.
+
 ## W09-C1 PR #108 — R5 비동기 재조회 보완
 
 기존 브랜치에 main `3928a21`을 반영하고 R1~R4 및 아래 검증 이력을 보존했다.
