@@ -1,5 +1,15 @@
 # 현재 상태
 
+## W09-M 다음 작업 — 정책 확정·관리 계약 작성 (2026-10-30)
+
+기준 main18abe925. 사용자 Q-LEGACY A를 반영하고 실제 CpuDialogue/selector,
+CharacterContent/팩 적용·local router·설정 UI를 대조하여
+[관리 단독 계약](docs/W09_M_FIXED_DIALOGUE_CONTRACT.md)을 작성했다.
+새 고정 대사 구현·migration·테스트/Windows 실행은 이번 작업에서 수행하지 않았다.
+W09-C1 수용 상태는 유지한다. 다음은 저성능 Work의 W09-M 구현·PR 제출이다.
+과거 Q-LEGACY 미승인 기록은 REQUIREMENTS 최신 확정 절로 대체되며,
+D05-c/Q-FRAME·D07-a/Q-IMAGE·D08 및 W10 정책은 계속 미응답이다.
+
 ## W09-C1 — 최종 검토·병합 완료
 
 PR #108을 main `cd76cb60dd47ddf81c3e071423dabec2bc622117`에 병합했다.
