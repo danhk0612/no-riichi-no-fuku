@@ -1,14 +1,28 @@
 # 현재 상태
 
-## W09-C1 PR #108 — R5 재조회 보완 검증 중
+## W09-C1 PR #108 — R5 비동기 재조회 보완
 
-기존 브랜치에서 main `3928a21`을 반영하고 R1~R4 및 아래 기존 검증 이력을 보존했다.
-충돌 재조회 응답은 도착 시의 generation/session/request token과 최신 revision/head/cursor를
-대조하며, 유효한 재조회는 기존 로컬 복구 흐름에 연결한다. 초기화·새 대국·화면 복구 browser
-회귀를 추가했다. 수정 전 head `10c764a`의 Windows W05 run `40760445593`에서 보류 GET이
-최신 카드를 덮는 assertion 실패를 재현했고, W04 run `40760445698`은 통과했다.
-수정 후 frontend build 및 browser test 구문 검사는 통과했다. 최종 source의 browser·W04/W05와
-artifact 검증은 아직 완료되지 않았으며 PR #108은 병합 보류다.
+기존 브랜치에 main `3928a21`을 반영하고 R1~R4 및 아래 검증 이력을 보존했다.
+충돌 GET은 응답 시점의 generation/session/request token과 최신 revision/head/cursor를 대조한다.
+유효 결과의 human_turn·ending·selection과 settlement_wait는 기존 로컬 복구 흐름을 이용한다.
+서버 cursor 선행 변경이나 자동 ack는 없다. 브라우저 회귀는 지연 GET과 최신 revision, 초기화 후
+현재 오류, 새 generation/새 대국, 같은 generation의 새 대국, 복구된 화면·action_version을 확인한다.
+
+수정 전 Windows W05는 최신 카드 역행 `40760445593`(head `10c764a`), 새 대국 카드 덮기
+`40796384701`(head `93117cb`), 초기화 후 오류 소거 `40796381785` 재실행(head `afb8398`)에서
+각각 의도한 assertion 실패를 재현했다. 초기화 실행의 최초 시도는 기존 사운드 테스트에서 실패해
+재실행했다. 수정 제품 source `ef4163d4fe16d2823db0269965369a3ae1385b47`의 W04
+`40796399919`와 W05 `40796399543`은 통과했다: backend unittest 187개, 대사 pytest 10개,
+frontend build·관련 routed browser 및 packaged renderer/대국/재시작/종료 검사.
+
+W04 artifact `12864376204`의 outer SHA-256은
+`e2a862c9eea1f4d8cc3914479386328892a7d49b93b595b2633a903b6930f82f`, W05 artifact
+`12864117866`은 `36ef4830cfa67fea3e2b421e54313b2da1320fa3e7dd852872622209502f9a59`이다.
+다운로드한 artifact의 SHA와 source SHA가 일치하고 W05 내부 ZIP SHA-256은 기록값과 같은
+`a01901fe4895ccf8c0f041a0a6df4df10cb72076d32e894c2df9fc3b408aeaf8`이다. packaged DB는
+revision `20261021_0013`을 read-only로 검사했다. 최종 문서 commit의 정확한 검증 상태는 PR의
+checks/artifacts를 따른다. 개인 Windows PC·전원 차단·실제 사용자 CG/오디오는 미검증이다.
+PR #108은 open/unmerged이며 직접 병합·Release/tag·후속 Task는 수행하지 않는다.
 
 ## W09-C1 PR #108 재검토 — R5 재조회 경쟁 추가 보완
 
@@ -19,6 +33,18 @@ run39591103937/W05 run39591095399 success는 확인했지만 제품 수용/병�
 ref만 바뀌고 화면은 이전 카드에 남는다. 실제 browser/전체 테스트·artifact 재실행은 이번에 하지 않았다.
 [R5 추가 보완](docs/W09_C1_REVIEW_FINDINGS.md)의 최신 절에 재현·최소 수정·지연 GET 회귀를 정리했다.
 기존 PR #108의 frontend 재조회 경계만 먼저 보완하며 R1~R4를 다시 구현하거나 후속 Task로 넘어가지 않는다.
+
+## W09-C1 PR #108 검토 — 수용 전 보완
+
+검토 head `0edc3d2f8d0d2aa4255108a0b57a721cda26f435`, main `f1671a6`.
+독립 Linux backend180개/99.037초·대사10개/0.13초와 frontend build·diff 검사는 통과했다.
+같은 head의 Windows W04 run39574241877/W05 run39574241870 success도 확인했다.
+별도 재현에서 C1 정산의 기존 CG 표시 누락, code1000 미완료 연결 종료 잠금 회귀,
+MJAI 국 번호+1 오류와 전달 구성 실패의 WS uncontrolled 예외를 확인했다. renderer revision
+역행 입력도 거절하지 않으며 C1 고유 원자성/동시성/손상 복구 검사가 부족하다.
+[보완 지시](docs/W09_C1_REVIEW_FINDINGS.md)에 재현·필수 회귀·기존 PR 인계를 정리했다.
+Chromium 다운로드 실패로 로컬 UI 증거는 SSR/소스 callback 실행이며 실제 browser로 주장하지 않는다.
+현재 B2/계약은 main에 있으나 C1 제품 PR은 미병합이다. 다음은 기존 PR #108 보완이다.
 
 ## W09-C1 PR #108 — R1~R5 보완 검증 완료
 

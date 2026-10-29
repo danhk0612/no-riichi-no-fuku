@@ -1,5 +1,12 @@
 # 개발 Task
 
+## W09-C1 PR #108 R5 추가 보완 — 검증 후 검토 대기
+
+기존 branch/PR에서 지연 GET의 최신 상태·세대 검증과 화면 복구를 보완했다. 수정 전 실패와
+제품 source `ef4163d`의 Windows W04/W05 및 artifact 검증은 [CURRENT_STATE](CURRENT_STATE.md)를
+따른다. 최종 문서 commit의 checks는 PR에서 확인하며, 직접 병합·Release/tag·후속 Task는 하지 않는다.
+아래 지시문은 이번 보완의 실행 기준이다.
+
 ## 현재 다음 Work — PR #108 R5 비동기 재조회 추가 보완
 
 권장: **저성능 Work**. 검토 head86c4e507/mainffd21f7이며 시작 시 최신 Git을 확인한다.
