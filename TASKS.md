@@ -1,5 +1,23 @@
 # 개발 Task
 
+## 현재 다음 Work — PR #108 R5 비동기 재조회 추가 보완
+
+권장: **저성능 Work**. 검토 head86c4e507/mainffd21f7이며 시작 시 최신 Git을 확인한다.
+
+```text
+기존 W09-C1 branch와 PR #108을 유지해.
+최신 main·AGENTS·기준 문서와 docs/W09_C1_REVIEW_FINDINGS.md의 최신 재검토 절을 따라.
+동일 revision/head 충돌 GET을 지연시키면 최신 결과/새 generation을 덮는 R5 경쟁을 보완해.
+응답 시점의 현재 generation/session/request token과 최신 ref/revision/head로 판정하고,
+유효 fresh의 human_turn/ending/selection도 기존 복구 흐름에 연결해.
+GET 보류→새 revision 또는 reset/새 대국→옛 응답 도착의 수정 전 실패·수정 후 통과 browser 회귀를 추가해.
+R1~R4와 기존 저장/규칙/음향 정책은 보존하고 이 frontend 경계·관련 검사만 최소 수정해.
+최종 source의 관련 browser/build·backend/대사·Windows W04/W05 및 artifact를 검증하고
+상태 문서·기존 PR 갱신/commit/push까지 진행해. 직접 병합·Release/tag·후속 Task는 하지 마.
+```
+
+아래 최초 R1~R5 지시문은 이력이며 현재는 위 R5 추가 보완이 우선한다.
+
 ## W09-C1 PR #108 R1~R5 보완 — 제출 및 검증 완료, PR 검토 대기
 
 기존 branch/PR #108에 최신 main `ffd21f7`의 R1~R5 검토 결과를 반영했다. 현재 변경 사항과

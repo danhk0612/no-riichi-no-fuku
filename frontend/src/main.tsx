@@ -77,6 +77,8 @@ function App() {
   const localGenerationRef = useRef<string | null>(null)
   const localRequestTokenRef = useRef(0)
   const resultDeliveryRef = useRef<ResultDeliveryEnvelope | null>(null)
+  const resultSessionRef = useRef<string | null>(null)
+  const deliveryRequestRef = useRef(0)
   const playedSoundEventsRef = useRef(new Set<string>())
   const gameAudioTokenRef = useRef(0)
   const activeSoundEffectsRef = useRef(new Map<string, { audio: HTMLAudioElement; url: string }>())
@@ -149,15 +151,31 @@ function App() {
         const nextHead = delivery.head ? JSON.stringify(delivery.head) : null
         if (previous.acked_ordinal !== delivery.acked_ordinal || previousHead !== nextHead) {
           setError('결과 확인 상태가 일치하지 않습니다. 저장된 결과를 다시 불러오세요.')
+          const requestToken = localRequestTokenRef.current
+          const deliveryRequest = ++deliveryRequestRef.current
           void getLocalResultDelivery(token ?? '', delivery.session_id, delivery.generation).then((fresh) => {
-            if (fresh.delivery_revision >= previous.delivery_revision
-              && (fresh.delivery_revision > previous.delivery_revision
-                || (fresh.acked_ordinal === previous.acked_ordinal
-                  && JSON.stringify(fresh.head) === JSON.stringify(previous.head)))) {
-              resultDeliveryRef.current = fresh
-              setError(null)
-              if (fresh.route === 'result') setGameState({ status: 'result_delivery', delivery: fresh })
-              else if (fresh.route === 'settlement_wait') setGameState({ status: 'settlement_wait', delivery: fresh })
+            const current = resultDeliveryRef.current
+            if (deliveryRequest !== deliveryRequestRef.current || requestToken !== localRequestTokenRef.current
+              || (isDesktop && localGenerationRef.current !== delivery.generation)
+              || resultSessionRef.current !== delivery.session_id
+              || !current || current.generation !== delivery.generation || current.session_id !== delivery.session_id
+              || fresh.generation !== delivery.generation || fresh.session_id !== delivery.session_id
+              || fresh.delivery_revision < current.delivery_revision
+              || (fresh.delivery_revision === current.delivery_revision
+                && (fresh.acked_ordinal !== current.acked_ordinal || JSON.stringify(fresh.head) !== JSON.stringify(current.head)))) return
+            resultDeliveryRef.current = fresh
+            setError(null)
+            if (fresh.route === 'result') {
+              setActionPending(false)
+              setGameState({ status: 'result_delivery', delivery: fresh })
+            } else if (fresh.route === 'settlement_wait') {
+              setActionPending(true)
+              setGameState({ status: 'settlement_wait', delivery: fresh })
+            } else if (isDesktop && token) {
+              const recoveryToken = beginLocalRequest()
+              socketRef.current?.close(1000)
+              socketRef.current = null
+              void reconcileLocalPlay(token, recoveryToken)
             }
           }).catch(() => {})
           return false
@@ -254,6 +272,7 @@ function App() {
     const generation = play.generation
     if (!storeLocalPlay(play, requestToken)) return
     if (play.result_resume) {
+      resultSessionRef.current = play.result_resume.session_id
       const delivery = await getLocalResultDelivery(token, play.result_resume.session_id, generation)
       if (!isCurrentLocalRequest(requestToken, generation)) return
       if (!applyDeliverySnapshot(delivery, token)) return
@@ -402,6 +421,7 @@ function App() {
   }
 
   function connectGame(sessionId: string, token: string, seats: PlayerSeat[], sessionGeneration?: string | null) {
+    resultSessionRef.current = sessionId
     const socket = new WebSocket(gameWebSocketUrl(sessionId))
     const requestToken = localRequestTokenRef.current
     socketRef.current = socket

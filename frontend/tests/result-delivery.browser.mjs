@@ -138,6 +138,97 @@ try {
   await page.waitForTimeout(100)
   assert.equal(await displayedEvent.getAttribute('data-event-id'), 'newer-settlement', 'delayed GET must not replace a newer revision')
   await page.close()
+  for (const scenario of ['reset', 'new-session', 'same-generation-new-session', 'human_turn', 'ending', 'selection']) {
+    const desktop = await browser.newPage()
+    desktop.setDefaultTimeout(8000)
+    await desktop.addInitScript(() => { window.nrnfDesktop = { isDesktop: true } })
+    const players = [0, 1, 2, 3].map((seat) => ({ seat, name: `Player ${seat}`, isHuman: seat === 0 }))
+    const cpus = [1, 2, 3].map((id) => ({ id, name: `CPU ${id}`, defeat_stage: 0, style: 'balanced', short_description: '', profile_image_key: null }))
+    let play = { generation: 'generation-c1', phase: 'playing', roster: cpus.map((cpu) => ({ cpu_character_id: cpu.id, defeat_stage: 0 })), ending_event_id: null, ending_payload: null, active_session_id: 'session-c1', recent_session_id: null, legacy_active: false, result_resume: null }
+    let session = 'session-c1'
+    let releaseGet
+    let startGet
+    const getStarted = new Promise((resolve) => { startGet = resolve })
+    const getRelease = new Promise((resolve) => { releaseGet = resolve })
+    let fresh = noImage
+    let resultRequests = 0
+    await desktop.route('**/api/**', async (route) => {
+      const request = route.request()
+      const path = new URL(request.url()).pathname
+      if (path === '/api/profile/me') return route.fulfill({ json: { player_name: 'Tester' } })
+      if (path === '/api/local/play/reset') {
+        play = { ...play, generation: 'new-generation', phase: 'omake', active_session_id: null }
+        return route.fulfill({ json: play })
+      }
+      if (path === '/api/local/play') return route.fulfill({ json: play })
+      if (path === '/api/local/play/roster-candidates') return route.fulfill({ json: cpus })
+      if (path === '/api/game/sessions/active') return route.fulfill({ json: play.active_session_id ? { session_id: session, generation: play.generation, players } : null })
+      if (path === '/api/game/sessions/recent') return route.fulfill({ json: null })
+      if (path === '/api/game/sessions' && request.method() === 'POST') {
+        session = 'new-session'; play = { ...play, active_session_id: session }
+        return route.fulfill({ json: { session_id: session, generation: play.generation, players } })
+      }
+      if (path === '/api/local/play/sessions/session-c1/results') {
+        resultRequests += 1
+        if (scenario === 'same-generation-new-session' && resultRequests === 2) {
+          return route.fulfill({ json: { ...noImage, delivery_revision: 16, head: null, route: 'selection' } })
+        }
+        startGet(); await getRelease
+        return route.fulfill({ json: fresh })
+      }
+      return route.fulfill({ json: {} })
+    })
+    const desktopSockets = []
+    const sent = []
+    await desktop.routeWebSocket('**/api/game/sessions/*/ws', (socket) => {
+      desktopSockets.push(socket)
+      socket.onMessage((raw) => {
+        const message = JSON.parse(String(raw)); sent.push(message)
+        if (message.type === 'authenticate') socket.send(JSON.stringify({
+          type: 'human_turn', generation: play.generation, session_id: session, action_version: 37,
+          turn: { observation: { player_id: 0, hands: [[0], [], [], []], melds: [[], [], [], []], discards: [[], [], [], []], dora_indicators: [], scores: [25000, 25000, 25000, 25000], riichi_declared: [false, false, false, false], legal_actions: [], honba: 0, riichi_sticks: 0, round_wind: 0, kyoku_index: 0, oya: 0 }, legal_actions: [{ type: 0, tile: 0, consume_tiles: [], actor: 0 }] },
+        }))
+      })
+    })
+    await desktop.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
+    await desktop.locator('.hand button').waitFor()
+    desktopSockets[0].send(JSON.stringify({ type: 'result_delivery', ...noImage }))
+    await desktop.locator('[data-event-id="settlement-no-image"]').waitFor()
+    desktopSockets[0].send(JSON.stringify({ type: 'result_delivery', ...conflicting }))
+    await getStarted
+    if (scenario === 'reset' || scenario === 'new-session' || scenario === 'same-generation-new-session') {
+      if (scenario === 'same-generation-new-session') {
+        play = { ...play, phase: 'omake', active_session_id: null }
+        desktopSockets[0].send(JSON.stringify({ type: 'result_delivery', ...conflicting }))
+      } else {
+        desktop.once('dialog', (dialog) => dialog.accept())
+        await desktop.getByRole('button', { name: '초기화' }).click()
+      }
+      await desktop.locator('.selection-panel').waitFor()
+      if (scenario !== 'reset') {
+        for (const card of await desktop.locator('button.cpu-card:not([disabled])').all()) await card.click()
+        await desktop.getByRole('button', { name: '동풍전 시작' }).click()
+        await desktop.locator('.hand button').waitFor()
+      }
+      const response = desktop.waitForResponse((item) => item.url().includes('/sessions/session-c1/results?'))
+      releaseGet(); await response; await desktop.waitForTimeout(200)
+      assert.equal(await desktop.locator('.result-delivery-card').count(), 0, `old GET after ${scenario} must not restore result`)
+    } else {
+      fresh = { ...noImage, delivery_revision: 16, head: null, route: scenario, action_version: scenario === 'human_turn' ? 37 : null }
+      if (scenario === 'ending') play = { ...play, phase: 'ending_pending', active_session_id: null, ending_event_id: 'ending-1' }
+      if (scenario === 'selection') play = { ...play, phase: 'omake', active_session_id: null }
+      releaseGet()
+      if (scenario === 'human_turn') {
+        await desktop.locator('.hand button').waitFor()
+        await desktop.locator('.hand button').click()
+        await desktop.waitForFunction(() => document.querySelector('.hand button')?.disabled)
+        assert.equal(sent.findLast((message) => message.type === 'action')?.action_version, 37)
+      } else if (scenario === 'ending') await desktop.getByRole('region', { name: '엔딩' }).waitFor()
+      else await desktop.locator('.selection-panel').waitFor()
+      assert.equal(await desktop.locator('.result-delivery-card').count(), 0, `${scenario} must leave the result card`)
+    }
+    await desktop.close()
+  }
   console.log('PASS: C1 hand labels preserve MJAI kyoku/band, settlement restores saved CG, stale revision is ignored')
 } finally {
   await browser.close()

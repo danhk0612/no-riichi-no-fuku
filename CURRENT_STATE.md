@@ -1,5 +1,15 @@
 # 현재 상태
 
+## W09-C1 PR #108 재검토 — R5 재조회 경쟁 추가 보완
+
+head86c4e507(제품04f4d007)의 R1~R4 수정/추가 검사는 코드에 반영됐다. exact-head W04
+run39591103937/W05 run39591095399 success는 확인했지만 제품 수용/병합은 보류한다.
+동일 revision 충돌 GET의 지연 응답이 최신 revision과 새 generation 화면을 덮는 것을
+실제 applyDeliverySnapshot 소스의 Node 실행으로 재현했다. fresh가 human_turn일 때는
+ref만 바뀌고 화면은 이전 카드에 남는다. 실제 browser/전체 테스트·artifact 재실행은 이번에 하지 않았다.
+[R5 추가 보완](docs/W09_C1_REVIEW_FINDINGS.md)의 최신 절에 재현·최소 수정·지연 GET 회귀를 정리했다.
+기존 PR #108의 frontend 재조회 경계만 먼저 보완하며 R1~R4를 다시 구현하거나 후속 Task로 넘어가지 않는다.
+
 ## W09-C1 PR #108 — R1~R5 보완 검증 완료
 
 기존 `task/w09-c1-result-delivery`/PR #108에 최신 main `ffd21f7`의 review findings를 반영했다.
