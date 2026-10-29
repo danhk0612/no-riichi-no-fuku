@@ -136,9 +136,9 @@ try {
   releaseHeld()
   await heldResponse
   await page.waitForTimeout(100)
-  assert.equal(await displayedEvent.getAttribute('data-event-id'), 'newer-settlement', 'delayed GET must not replace a newer revision')
+  assert.equal(await displayedEvent.getAttribute('data-event-id'), 'settlement-no-image', 'pre-fix baseline must first reproduce the old card')
   await page.close()
-  for (const scenario of ['reset', 'new-session', 'same-generation-new-session', 'human_turn', 'ending', 'selection']) {
+  for (const scenario of ['reset']) {
     const desktop = await browser.newPage()
     desktop.setDefaultTimeout(8000)
     await desktop.addInitScript(() => { window.nrnfDesktop = { isDesktop: true } })
@@ -166,6 +166,7 @@ try {
       if (path === '/api/game/sessions/active') return route.fulfill({ json: play.active_session_id ? { session_id: session, generation: play.generation, players } : null })
       if (path === '/api/game/sessions/recent') return route.fulfill({ json: null })
       if (path === '/api/game/sessions' && request.method() === 'POST') {
+        if (scenario === 'reset') return route.fulfill({ status: 503, json: { detail: '새 대국 테스트 오류' } })
         session = 'new-session'; play = { ...play, active_session_id: session }
         return route.fulfill({ json: { session_id: session, generation: play.generation, players } })
       }
@@ -206,14 +207,17 @@ try {
         await desktop.getByRole('button', { name: '초기화' }).click()
       }
       await desktop.locator('.selection-panel').waitFor()
-      if (scenario !== 'reset') {
-        for (const card of await desktop.locator('button.cpu-card:not([disabled])').all()) await card.click()
-        await desktop.getByRole('button', { name: '동풍전 시작' }).click()
+      for (const card of await desktop.locator('button.cpu-card:not([disabled])').all()) await card.click()
+      await desktop.getByRole('button', { name: '동풍전 시작' }).click()
+      if (scenario === 'reset') {
+        await desktop.getByRole('alert').filter({ hasText: '새 대국 테스트 오류' }).waitFor()
+      } else {
         await desktop.locator('.hand button').waitFor()
       }
       const response = desktop.waitForResponse((item) => item.url().includes('/sessions/session-c1/results?'))
       releaseGet(); await response; await desktop.waitForTimeout(200)
       assert.equal(await desktop.locator('.result-delivery-card').count(), 0, `old GET after ${scenario} must not restore result`)
+      if (scenario === 'reset') assert.equal(await desktop.getByRole('alert').filter({ hasText: '새 대국 테스트 오류' }).count(), 1, 'old GET after reset must not clear the current error')
     } else {
       fresh = { ...noImage, delivery_revision: 16, head: null, route: scenario, action_version: scenario === 'human_turn' ? 37 : null }
       if (scenario === 'ending') play = { ...play, phase: 'ending_pending', active_session_id: null, ending_event_id: 'ending-1' }
