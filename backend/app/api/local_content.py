@@ -60,3 +60,24 @@ def apply_pack(cpu_id: int, change: CharacterPackApplication, request: Request, 
 @character_router.get("/{cpu_id}/pack-revisions/{revision_id}")
 def read_pack_revision(cpu_id: int, revision_id: str, session=Depends(get_session)):
     return get_character_pack_revision(session, cpu_id, revision_id)
+
+
+from app.schemas.fixed_dialogue import FixedDialoguePatch
+from app.services.fixed_dialogue import read_fixed, candidates, patch_fixed
+
+
+@character_router.get('/{cpu_id}/fixed-dialogues')
+def get_fixed_dialogues(cpu_id: int, session=Depends(get_session)):
+    return read_fixed(session, cpu_id)
+
+
+@character_router.get('/{cpu_id}/fixed-dialogue-candidates')
+def get_fixed_dialogue_candidates(cpu_id: int, session=Depends(get_session)):
+    return candidates(session, cpu_id)
+
+
+@character_router.patch('/{cpu_id}/fixed-dialogues')
+def edit_fixed_dialogues(cpu_id: int, change: FixedDialoguePatch, session=Depends(get_session)):
+    session.rollback()
+    mark_write_intent(session)
+    return patch_fixed(session, cpu_id, change)

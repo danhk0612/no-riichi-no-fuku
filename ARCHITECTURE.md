@@ -1,5 +1,9 @@
 # 구조와 전환 검토
 
+## W09-M 고정 대사 관리 (검증 중)
+
+CPU별 `character_fixed_dialogues`에 다섯 슬롯과 독립 revision을 저장한다. 기존 대사는 명시 선택 시 출처 원문을 복사하며 기존 결과·게임 이벤트에 연결하지 않는다. 세부 계약은 `docs/W09_M_FIXED_DIALOGUE_CONTRACT.md`를 따른다.
+
 ## W09-M 관리 계약 — Q-LEGACY A 후속
 
 [고정 대사 관리 계약](docs/W09_M_FIXED_DIALOGUE_CONTRACT.md)을 새 독립 구현 기준으로 둔다.

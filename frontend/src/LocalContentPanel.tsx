@@ -5,6 +5,7 @@ import {
 } from './api'
 import type { CharacterContent, ContentPack } from './api'
 import { SharedPromptManager } from './SharedPromptManager'
+import { FixedDialogueManager } from './FixedDialogueManager'
 
 const GROUPS = [
   ['appearance', '외모'],
@@ -14,7 +15,7 @@ const GROUPS = [
 const KINDS = [['profile', '프로필'], ['full_body', '전신'], ['cg', 'CG']] as const
 const LEVELS = ['정상', '상의 겉옷 탈의', '속옷 세트', '전체 탈의']
 const MEASUREMENTS = [['height', '키'], ['bust', '가슴(B)'], ['waist', '허리(W)'], ['hips', '엉덩이(H)']] as const
-type Tab = 'prompts' | 'packs' | 'shared'
+type Tab = 'prompts' | 'packs' | 'shared' | 'fixed'
 
 export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasurementsUpdated }: {
   accessToken: string
@@ -23,6 +24,8 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
   onMeasurementsUpdated: (content: CharacterContent) => void
 }) {
   const [tab, setTab] = useState<Tab>('prompts')
+  const [fixedDirty, setFixedDirty] = useState(false)
+  const [fixedSaving, setFixedSaving] = useState(false)
   const [sharedMounted, setSharedMounted] = useState(false)
   const [cpus, setCpus] = useState<{ id: number; slug: string; name: string }[]>([])
   const [cpuId, setCpuId] = useState<number | null>(null)
@@ -165,11 +168,12 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
   }
 
   return <section className="sound-panel content-panel" aria-label="캐릭터 프롬프트와 팩 관리">
-    <div className="sound-panel-heading"><div><p className="eyebrow">LOCAL CONTENT</p><h2>캐릭터 프롬프트·팩</h2></div><button className="text-button" onClick={onClose} type="button">닫기</button></div>
+    <div className="sound-panel-heading"><div><p className="eyebrow">LOCAL CONTENT</p><h2>캐릭터 프롬프트·팩</h2></div><button className="text-button" disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm("저장하지 않은 고정 대사를 버리시겠습니까?")) onClose() }} type="button">닫기</button></div>
     <div className="content-tabs" role="tablist" aria-label="콘텐츠 관리">
-      <button role="tab" aria-selected={tab === 'prompts'} onClick={() => setTab('prompts')} type="button">캐릭터 편집</button>
-      <button role="tab" aria-selected={tab === 'packs'} onClick={() => setTab('packs')} type="button">팩 목록·진단</button>
-      <button role="tab" aria-selected={tab === 'shared'} onClick={() => { setSharedMounted(true); setTab('shared') }} type="button">공유 복장·포즈</button>
+      <button role="tab" aria-selected={tab === 'prompts'} disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?')) { setFixedDirty(false); setTab('prompts') } }} type="button">캐릭터 편집</button>
+      <button role="tab" aria-selected={tab === 'packs'} disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?')) { setFixedDirty(false); setTab('packs') } }} type="button">팩 목록·진단</button>
+      <button role="tab" aria-selected={tab === 'shared'} disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?')) { setFixedDirty(false); setSharedMounted(true); setTab('shared') } }} type="button">공유 복장·포즈</button>
+      <button role="tab" aria-selected={tab === 'fixed'} disabled={fixedSaving} onClick={() => setTab('fixed')} type="button">고정 대사</button>
     </div>
     {error && <p className="form-error" role="alert">{error}</p>}
     {tab === 'prompts' && <section className="sound-card content-editor">
@@ -224,6 +228,7 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
         <button className="primary-button" disabled={saving || !Object.keys(dirty).length} onClick={() => void save()} type="button">{saving ? '저장 중…' : `변경 필드 저장 (${Object.keys(dirty).length})`}</button>
       </>}
     </section>}
+    {tab === 'fixed' && <FixedDialogueManager token={accessToken} cpus={cpus} onDirty={setFixedDirty} onSaving={setFixedSaving} />}
     {tab === 'packs' && <section className="sound-card">
       <div className="content-list-heading"><h3>등록된 팩</h3><button disabled={scanning} onClick={() => void scanPacks()} type="button">{scanning ? '재검색 중…' : '폴더 다시 검색'}</button></div>
       <p className="muted">설정 진입 때 자동 검색했습니다. 목록 조회 자체는 파일을 다시 읽지 않습니다.</p>

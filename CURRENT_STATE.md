@@ -1,5 +1,9 @@
 # 현재 상태
 
+## W09-M 구현·검증 진행 중
+
+고정 대사 저장/API와 관리 UI 초안을 추가했다. 파일 SQLite의 빈 값, 변수, 명시 선택, 충돌, writer 경쟁, rollback, 재시작 회귀 5건과 frontend build, 기존 dialogue pytest 10건을 Linux에서 확인했다. 전체 회귀 재실행과 Windows W04/W05, routed browser, artifact 검증은 진행 중이다. 로컬 Chromium 다운로드가 실패했다. 게임 결과 연결과 CG/음성 생성은 후속 범위다.
+
 ## W09-M 다음 작업 — 정책 확정·관리 계약 작성 (2026-10-30)
 
 기준 main18abe925. 사용자 Q-LEGACY A를 반영하고 실제 CpuDialogue/selector,
