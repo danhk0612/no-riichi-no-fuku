@@ -194,6 +194,7 @@ try {
   await fixedPanel.getByRole('button', {name: '고정 대사 저장'}).click()
   await fixedPanel.getByText('출처 ID 92 · 당시 원문: second').waitFor()
   assert.equal(await fixedPanel.getByLabel('화료 대사').inputValue(), 'second')
+  await fixedPanel.getByLabel('패배 단계 1 대사').fill('temporary')
   await fixedPanel.getByLabel('패배 단계 1 대사').fill('')
   fixedSaveMode = 'conflict'; await fixedPanel.getByRole('button', {name: '고정 대사 저장'}).click()
   await fixedPanel.getByText('fixed-conflict').waitFor()

@@ -500,6 +500,36 @@ async function smokeCharacterMeasurements() {
   return { cpuId, value: '170.1' }
 }
 
+// W09-M packaged smoke uses a temporary data root and the real renderer.
+async function smokeFixedDialogue() {
+  const headers = { 'X-Local-Capability': capability }
+  const cpus = await fetch(`${origin}/api/admin/cpus`, { headers }).then(response => response.json())
+  const cpuId = cpus[0]?.id
+  if (!cpuId) throw new Error('packaged fixed dialogue smoke found no character')
+  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('캐릭터 프롬프트'))?.click()")
+  await waitForRenderer("Boolean(document.querySelector('.content-panel [role=tab]'))")
+  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.content-panel [role=tab]')).find(button => button.innerText === '고정 대사')?.click()")
+  await waitForRenderer("Boolean(document.querySelector('select[aria-label=\"고정 대사 캐릭터\"] option[value]:not([value=\"\"])'))")
+  await window.webContents.executeJavaScript(`(() => {
+    const select = document.querySelector('select[aria-label="고정 대사 캐릭터"]')
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(select, '${cpuId}')
+    select.dispatchEvent(new Event('change', { bubbles: true }))
+  })()`)
+  await waitForRenderer("Boolean(document.querySelector('textarea[aria-label=\"화료 대사\"]'))")
+  await window.webContents.executeJavaScript(`(() => {
+    const input = document.querySelector('textarea[aria-label="화료 대사"]')
+    Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(input, 'W09-M {{character_name}}')
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  })()`)
+  await waitForRenderer("Array.from(document.querySelectorAll('.content-panel button')).some(button => button.innerText === '고정 대사 저장' && !button.disabled)")
+  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.content-panel button')).find(button => button.innerText === '고정 대사 저장' && !button.disabled)?.click()")
+  await waitForRenderer("Array.from(document.querySelectorAll('.content-panel button')).some(button => button.innerText === '고정 대사 저장' && button.disabled)", 30000)
+  const data = await fetch(`${origin}/api/local/characters/${cpuId}/fixed-dialogues`, { headers }).then(response => response.json())
+  if (data.revision !== 1 || data.slots?.win?.text !== 'W09-M {{character_name}}') throw new Error('packaged fixed dialogue save failed')
+  await window.webContents.executeJavaScript("document.querySelector('.content-panel .sound-panel-heading .text-button')?.click()")
+  return { cpuId, data }
+}
+
 // W08-D packaged smoke: exercise the visible shared-item/default/candidate editor.
 async function smokeSharedPrompts() {
   const headers = { 'X-Local-Capability': capability }
@@ -585,6 +615,8 @@ async function smokeRun() {
   addCheck('renderer saved next-match difficulty from its settings panel')
   const measurementSmoke = await smokeCharacterMeasurements()
   addCheck('packaged renderer saved optional character measurement')
+  const fixedDialogueSmoke = await smokeFixedDialogue()
+  addCheck('packaged renderer saved fixed dialogue')
   const sharedPromptSmoke = await smokeSharedPrompts()
 
   await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('사운드'))?.click()")
@@ -753,6 +785,9 @@ async function smokeRun() {
       headers: { 'X-Local-Capability': capability },
     }).then(response => response.json())
     if (afterResetMeasurements.measurements_cm?.height !== measurementSmoke.value) throw new Error('progress reset changed saved character measurements')
+    const afterResetFixed = await fetch(`${origin}/api/local/characters/${fixedDialogueSmoke.cpuId}/fixed-dialogues`, { headers: { 'X-Local-Capability': capability } }).then(response => response.json())
+    if (JSON.stringify(afterResetFixed) !== JSON.stringify(fixedDialogueSmoke.data)) throw new Error('progress reset changed fixed dialogue')
+    addCheck('fixed dialogue survived packaged progress reset')
     addCheck('character measurement survived progress reset')
     const afterResetShared = await Promise.all([
       fetch(`${origin}/api/local/shared-prompts?kind=clothing_state&level=0`, { headers: { 'X-Local-Capability': capability } }).then(response => response.json()),
@@ -1022,6 +1057,9 @@ async function smokeRun() {
       headers: { 'X-Local-Capability': capability },
     }).then(response => response.json())
     if (afterRestartMeasurements.measurements_cm?.height !== measurementSmoke.value) throw new Error('engine restart changed saved character measurements')
+    const afterRestartFixed = await fetch(`${origin}/api/local/characters/${fixedDialogueSmoke.cpuId}/fixed-dialogues`, { headers: { 'X-Local-Capability': capability } }).then(response => response.json())
+    if (JSON.stringify(afterRestartFixed) !== JSON.stringify(fixedDialogueSmoke.data)) throw new Error('engine restart changed fixed dialogue')
+    addCheck('fixed dialogue survived packaged engine restart')
     addCheck('character measurement survived packaged engine restart')
     const afterRestartShared = await Promise.all([
       fetch(`${origin}/api/local/shared-prompts?kind=clothing_state&level=0`, { headers: { 'X-Local-Capability': capability } }).then(response => response.json()),
