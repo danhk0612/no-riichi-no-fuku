@@ -1,3 +1,4 @@
+import re
 from fastapi import HTTPException
 from sqlalchemy import select
 from app.db.models import CharacterFixedDialogue, CpuCharacter, CpuDialogue
@@ -8,7 +9,8 @@ TOKEN = '{{character_name}}'
 
 def validate_text(text):
     remainder = text.replace(TOKEN, '')
-    if '{' in remainder or '}' in remainder or '{%' in remainder or '%}' in remainder:
+    if ('{' in remainder or '}' in remainder or '<%' in remainder or '%>' in remainder
+            or re.search(r'\$[A-Za-z_][A-Za-z0-9_]*', remainder)):
         raise HTTPException(422, detail={'code': 'invalid_dialogue', 'message': '허용되지 않은 변수 문법입니다.'})
     return text
 

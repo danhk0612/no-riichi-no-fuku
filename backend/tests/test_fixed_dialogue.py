@@ -31,7 +31,7 @@ class FixedDialogueTests(unittest.TestCase):
         r = self.save(0, edits); self.assertEqual(r.status_code, 200, r.text)
         self.assertEqual(r.json()['slots']['win']['text'], '')
         self.assertEqual(render_text('{{character_name}} {{character_name}}', '{{character_name}}'), '{{character_name}} {{character_name}}')
-        for text in ['{x}', '{{other}}', '{{character_name}', '{% test %}']:
+        for text in ['{x}', '{{other}}', '{{character_name}', '{% test %}', '<%= name %>', '$character_name']:
             self.assertEqual(self.save(1, {'win': {'text': text}}).status_code, 422)
         for edits in [{}, {'bad': {'text': 'x'}}, {'win': {'text': None}}, {'win': {'text': '', 'extra': 1}}]:
             self.assertEqual(self.save(1, edits).status_code, 422)
