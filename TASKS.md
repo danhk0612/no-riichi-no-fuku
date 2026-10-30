@@ -1,5 +1,9 @@
 # 개발 Task
 
+## W09-M 진행 중
+
+고정 대사 관리 구현 초안이 준비되었다. 계약의 나머지 데이터 보존·browser·정확한 source의 Windows W04/W05 및 artifact 검증을 완료한 후 검토한다. C2 및 생성 작업은 별도다.
+
 ## 현재 다음 Work — W09-M 고정 대사 관리
 
 권장: **저성능 Work**. 사용자 Q-LEGACY A 확정.

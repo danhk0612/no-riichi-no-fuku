@@ -13,7 +13,7 @@ def main(database: Path, output: Path) -> None:
     connection.row_factory = sqlite3.Row
     try:
         version = connection.execute("SELECT version_num FROM alembic_version").fetchone()[0]
-        if version != "20261021_0013":
+        if version != "20261030_0014":
             raise RuntimeError(f"unexpected packaged database revision: {version}")
         sessions = connection.execute(
             "SELECT id, status, hand_results_version, result_delivery_version, players, scores, ranks, "
