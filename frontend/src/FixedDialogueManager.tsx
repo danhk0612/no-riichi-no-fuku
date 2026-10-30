@@ -41,9 +41,9 @@ export function FixedDialogueManager({ token, cpus, onDirty, onSaving }: { token
       const text = edit && 'text' in edit ? edit.text : selected ? selected.text : saved?.text ?? ''
       return <fieldset key={key} disabled={busy}><legend>{label}</legend><p>{saved ? saved.text === '' ? '직접 빈 값' : '설정됨' : '미설정'}</p>
         <label>대사<textarea aria-label={`${label} 대사`} value={text} onChange={e => setEdits(current => ({...current, [key]: {text: e.target.value}}))} /></label>
-        <p>미리보기: {text.replaceAll('{{character_name}}', () => name)}</p>
-        {saved?.origin && <p>출처 ID {saved.origin.legacy_dialogue_id} · 당시 원문: {saved.origin.text}</p>}
-        {!saved && <><button type="button" onClick={() => setOpen(open === key ? null : key)}>기존 문구 선택</button>{open === key && <div>{candidates.filter(c => c.event_key === key).length ? candidates.filter(c => c.event_key === key).map(c => <label key={c.id}><input type="radio" name={`candidate-${key}`} disabled={!c.active} checked={selected?.id === c.id} onChange={() => setEdits(current => ({...current, [key]: {legacy_dialogue_id: c.id, expected_source_text: c.text}}))} />ID {c.id} · {c.active ? '활성' : '비활성'} · {c.text}</label>) : <p>후보가 없습니다.</p>}</div>}</>}
+        <p style={{whiteSpace: 'pre-wrap'}}>미리보기: {text.replaceAll('{{character_name}}', () => name)}</p>
+        {saved?.origin && <p style={{whiteSpace: 'pre-wrap'}}>출처 ID {saved.origin.legacy_dialogue_id} · 당시 원문: {saved.origin.text}</p>}
+        {!saved && <><button type="button" onClick={() => setOpen(open === key ? null : key)}>기존 문구 선택</button>{open === key && <div>{candidates.filter(c => c.event_key === key).length ? candidates.filter(c => c.event_key === key).map(c => <label key={c.id} style={{whiteSpace: 'pre-wrap'}}><input type="radio" name={`candidate-${key}`} disabled={!c.active} checked={selected?.id === c.id} onChange={() => setEdits(current => ({...current, [key]: {legacy_dialogue_id: c.id, expected_source_text: c.text}}))} />ID {c.id} · {c.active ? '활성' : '비활성'} · {c.text}</label>) : <p>후보가 없습니다.</p>}</div>}</>}
       </fieldset>
     })}<button type="button" disabled={busy || !dirty} onClick={() => void save()}>{busy ? '저장 중…' : '고정 대사 저장'}</button></>}
   </section>
