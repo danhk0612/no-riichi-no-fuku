@@ -55,13 +55,15 @@ class FixedDialogueTests(unittest.TestCase):
             rows = [CpuDialogue(cpu_character_id=1, event_key='win', text='active', active=True),
                     CpuDialogue(cpu_character_id=1, event_key='win', text='inactive', active=False),
                     CpuDialogue(cpu_character_id=2, event_key='win', text='other cpu', active=True),
-                    CpuDialogue(cpu_character_id=1, event_key='match_first', text='other event', active=True)]
+                    CpuDialogue(cpu_character_id=1, event_key='match_first', text='other event', active=True),
+                    CpuDialogue(cpu_character_id=1, event_key='win', text='{{unsupported}}', active=True)]
             session.add_all(rows); session.commit(); ids = [r.id for r in rows]
         path = '/api/local/characters/1/fixed-dialogue-candidates'
         listing = self.client.get(path, headers=self.headers).json()['items']
         self.assertTrue(any(x['id'] == ids[1] and not x['active'] for x in listing))
         for ident, value, status in [(ids[0], 'changed', 409), (ids[1], 'inactive', 409), (ids[2], 'other cpu', 422), (ids[3], 'other event', 422), (999999, 'deleted', 409)]:
             self.assertEqual(self.save(0, {'win': {'legacy_dialogue_id': ident, 'expected_source_text': value}}).status_code, status)
+        self.assertEqual(self.save(0, {'win': {'legacy_dialogue_id': ids[4], 'expected_source_text': '{{unsupported}}'}}).status_code, 422)
         self.assertEqual(self.get()['slots'], {})
         self.assertEqual(self.save(0, {'win': {'text': ''}}).status_code, 200)
         self.assertEqual(self.save(1, {'win': {'legacy_dialogue_id': ids[0], 'expected_source_text': 'active'}}).status_code, 409)
