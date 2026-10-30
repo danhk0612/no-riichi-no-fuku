@@ -70,6 +70,21 @@ class FixedDialogueTests(unittest.TestCase):
     def test_two_writers(self):
         def run(value): return self.save(0, {'win': {'text': value}}).status_code
         with ThreadPoolExecutor(max_workers=2) as executor: self.assertEqual(sorted(executor.map(run, ['first','second'])), [200,409])
+
+    def test_equal_legacy_text_is_independently_selected_for_each_cpu(self):
+        with self.runtime.session_factory() as session:
+            rows = [CpuDialogue(cpu_character_id=cpu, event_key='win', text='same', active=True) for cpu in (1, 2)]
+            session.add_all(rows); session.commit(); ids = [row.id for row in rows]
+        for cpu, ident in zip((1, 2), ids):
+            response = self.client.patch(f'/api/local/characters/{cpu}/fixed-dialogues', headers=self.headers, json={
+                'expected_revision': 0, 'edits': {'win': {'legacy_dialogue_id': ident, 'expected_source_text': 'same'}}})
+            self.assertEqual(response.status_code, 200, response.text)
+            self.assertEqual(response.json()['slots']['win']['origin']['legacy_dialogue_id'], ident)
+        with self.runtime.session_factory() as session:
+            row = session.get(CpuDialogue, ids[0]); row.text = 'changed'; session.commit()
+        self.assertEqual(self.get()['slots']['win']['origin']['text'], 'same')
+        other = self.client.get('/api/local/characters/2/fixed-dialogues', headers=self.headers).json()
+        self.assertEqual(other['slots']['win']['origin']['legacy_dialogue_id'], ids[1])
     def test_commit_failure(self):
         with patch.object(Session, 'commit', side_effect=RuntimeError('commit failed')):
             with self.assertRaises(RuntimeError): self.save(0, {'win': {'text': 'not committed'}})
