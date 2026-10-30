@@ -4,9 +4,11 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 from fastapi.testclient import TestClient
-from sqlalchemy import select, func
+from sqlalchemy import select, func, text
 from sqlalchemy.orm import Session
-from app.db.models import CharacterFixedDialogue, CpuDialogue
+from alembic import command
+from alembic.config import Config
+from app.db.models import CharacterFixedDialogue, CpuDialogue, GameSessionRecord
 from app.local_runtime import create_local_runtime
 from app.services.fixed_dialogue import render_text
 
@@ -72,3 +74,25 @@ class FixedDialogueTests(unittest.TestCase):
         with patch.object(Session, 'commit', side_effect=RuntimeError('commit failed')):
             with self.assertRaises(RuntimeError): self.save(0, {'win': {'text': 'not committed'}})
         self.assertEqual(self.get()['slots'], {})
+
+    def test_upgrade_existing_database_preserves_rows_and_is_repeatable(self):
+        content = self.client.patch('/api/local/characters/1/content', headers=self.headers, json={
+            'expected_revision': 0, 'prompts': {'appearance': {'positive': 'preserved'}}})
+        self.assertEqual(content.status_code, 200, content.text)
+        with self.runtime.session_factory.begin() as session:
+            session.add(GameSessionRecord(id='fixed-migration-fixture', user_id=self.runtime.member_id,
+                match_seed=1, cpu_choices=[], players=[], human_action_indices=[], status='completed',
+                presentation={'dialogue': 'completed-before-upgrade'}))
+        backend = Path(__file__).resolve().parents[1]
+        cfg = Config(str(backend / 'alembic.ini'))
+        cfg.set_main_option('script_location', str(backend / 'alembic'))
+        tables = ('cpu_characters', 'cpu_dialogues', 'game_sessions', 'character_content', 'character_voice_links', 'local_media_assets')
+        with self.runtime.engine.connect() as connection:
+            cfg.attributes['connection'] = connection
+            command.downgrade(cfg, '20261021_0013')
+            before = {table: connection.execute(text(f'SELECT * FROM {table}')).all() for table in tables}
+            command.upgrade(cfg, 'head')
+            command.upgrade(cfg, 'head')
+            after = {table: connection.execute(text(f'SELECT * FROM {table}')).all() for table in tables}
+            self.assertEqual(before, after)
+            self.assertEqual(connection.execute(text('SELECT count(*) FROM character_fixed_dialogues')).scalar_one(), 0)

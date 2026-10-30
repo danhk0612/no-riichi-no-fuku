@@ -509,6 +509,43 @@ class PackRegistryTests(unittest.TestCase):
         self.assertEqual(self.client.get(old_url, headers=self.headers).content, image_a)
         self.assertEqual(self.application(second, expected=updated['revision']).json(), updated)  # idempotent
 
+    def test_fixed_dialogues_survive_pack_update_reset_and_restart(self):
+        fixed_path = '/api/local/characters/1/fixed-dialogues'
+        content_path = '/api/local/characters/1/content'
+        edit = self.client.patch(content_path, headers=self.headers, json={
+            'expected_revision': 0, 'prompts': {'appearance': {'positive': ''}},
+            'measurements_cm': {'height': None},
+        })
+        self.assertEqual(edit.status_code, 200, edit.text)
+        self.install(self.filled_character('first'))
+        first = self.scan()['registry']['packs'][0]
+        applied = self.application(first, expected=1)
+        self.assertEqual(applied.status_code, 200, applied.text)
+        before_voice = self.client.get('/api/local/characters/1/voice-selection', headers=self.headers).json()
+        fixed = self.client.patch(fixed_path, headers=self.headers, json={
+            'expected_revision': 0, 'edits': {'win': {'text': ''}, 'match_first': {'text': 'test'}}
+        })
+        self.assertEqual(fixed.status_code, 200, fixed.text)
+        self.assertEqual(self.client.get('/api/local/characters/1/voice-selection', headers=self.headers).json(), before_voice)
+        before_content = self.content()
+        self.install(self.filled_character('second'))
+        second = self.scan()['registry']['packs'][0]
+        self.assertEqual(self.client.get(fixed_path, headers=self.headers).json(), fixed.json())
+        updated = self.application(second, expected=before_content['revision'])
+        self.assertEqual(updated.status_code, 200, updated.text)
+        self.assertEqual(updated.json()['prompts']['appearance']['positive'], '')
+        self.assertIsNone(updated.json()['measurements_cm']['height'])
+        self.assertEqual(self.client.get(fixed_path, headers=self.headers).json(), fixed.json())
+        after_voice = self.client.get('/api/local/characters/1/voice-selection', headers=self.headers).json()
+        self.assertEqual((after_voice['selection_mode'], after_voice['selected_pack_id']), (before_voice['selection_mode'], before_voice['selected_pack_id']))
+        play = self.client.get('/api/local/play', headers=self.headers).json()
+        reset = self.client.post('/api/local/play/reset', headers=self.headers, json={'generation': play['generation'], 'confirm': True})
+        self.assertEqual(reset.status_code, 200, reset.text)
+        self.restart()
+        self.assertEqual(self.client.get(fixed_path, headers=self.headers).json(), fixed.json())
+        self.assertEqual(self.content(), updated.json())
+        self.assertEqual(self.client.get('/api/local/characters/1/voice-selection', headers=self.headers).json(), after_voice)
+
     def test_character_pack_application_failures_preserve_content(self):
         value = self.filled_character('a')
         self.install(value)
