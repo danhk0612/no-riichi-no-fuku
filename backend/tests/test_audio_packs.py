@@ -129,6 +129,17 @@ class AudioPackTests(unittest.TestCase):
             "expected_revision": initial["revision"], "selection_mode": "selected", "selected_pack_id": voice_b["id"],
         })
         self.assertEqual(selected.status_code, 200, selected.text)
+        fixed_path = '/api/local/characters/1/fixed-dialogues'
+        content_before = self.client.get('/api/local/characters/1/content', headers=self.headers).json()
+        play_before = self.client.get('/api/local/play', headers=self.headers).json()
+        difficulty_before = self.client.get('/api/local/difficulty', headers=self.headers).json()
+        fixed = self.client.patch(fixed_path, headers=self.headers, json={
+            'expected_revision': 0, 'edits': {'win': {'text': 'test'}}})
+        self.assertEqual(fixed.status_code, 200, fixed.text)
+        self.assertEqual(self.client.get('/api/local/characters/1/voice-selection', headers=self.headers).json(), selected.json())
+        self.assertEqual(self.client.get('/api/local/characters/1/content', headers=self.headers).json(), content_before)
+        self.assertEqual(self.client.get('/api/local/play', headers=self.headers).json(), play_before)
+        self.assertEqual(self.client.get('/api/local/difficulty', headers=self.headers).json(), difficulty_before)
         with self.runtime.session_factory() as session:
             self.assertIsNone(resolve_voice_slot(session, 1, "win", self.runtime.paths.media))
             self.assertEqual(resolve_voice_slot(session, 1, "chi", self.runtime.paths.media)["pack_id"], voice_b["id"])
@@ -149,6 +160,10 @@ class AudioPackTests(unittest.TestCase):
             "expected_revision": refreshed["revision"], "selection_mode": "off", "selected_pack_id": None,
         })
         self.assertEqual(off.status_code, 200, off.text)
+        edited = self.client.patch(fixed_path, headers=self.headers, json={
+            'expected_revision': 1, 'edits': {'defeat_stage_1': {'text': ''}}})
+        self.assertEqual(edited.status_code, 200, edited.text)
+        self.assertEqual(self.client.get('/api/local/characters/1/voice-selection', headers=self.headers).json(), off.json())
         with self.runtime.session_factory() as session:
             self.assertIsNone(resolve_voice_slot(session, 1, "chi", self.runtime.paths.media))
         play = self.client.get("/api/local/play", headers=self.headers).json()
@@ -158,6 +173,7 @@ class AudioPackTests(unittest.TestCase):
         persisted = self.client.get("/api/local/characters/1/voice-selection", headers=self.headers).json()
         self.assertEqual(persisted["selection_mode"], "off")
         self.assertEqual(persisted["default_pack_id"], voice_b["id"])
+        self.assertEqual(self.client.get(fixed_path, headers=self.headers).json(), edited.json())
 
     def test_audio_selection_competing_writers_use_revision_gate(self):
         base = self.client.get("/api/local/audio-pack-selection", headers=self.headers).json()
