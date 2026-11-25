@@ -67,6 +67,13 @@ function App() {
   const [soundSelection, setSoundSelection] = useState<SoundSelection | null>(null)
   const [soundSettingsOpen, setSoundSettingsOpen] = useState(false)
   const [contentSettingsOpen, setContentSettingsOpen] = useState(false)
+  const [fixedDirty, setFixedDirty] = useState(false)
+  const [fixedSaving, setFixedSaving] = useState(false)
+  function closeContentSettings() {
+    if (fixedSaving || (fixedDirty && !window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?'))) return
+    setFixedDirty(false)
+    setContentSettingsOpen(false)
+  }
   const [difficultySettingsOpen, setDifficultySettingsOpen] = useState(false)
   const [soundError, setSoundError] = useState<string | null>(null)
   const [deliveryAssetState, setDeliveryAssetState] = useState<{ identity: string; url: string | null; failed: boolean } | null>(null)
@@ -872,7 +879,7 @@ function App() {
         <p>플레이어 1명과 CPU 3명이 진행하는 동풍전</p>
         {isDesktop && accessToken && <button className="text-button" type="button" onClick={() => setDifficultySettingsOpen((open) => !open)}>난이도 설정</button>}
         {isDesktop && accessToken && <button className="text-button" type="button" onClick={() => setSoundSettingsOpen((open) => !open)}>사운드·자료 설정</button>}
-        {isDesktop && accessToken && <button className="text-button" type="button" onClick={() => setContentSettingsOpen((open) => !open)}>캐릭터 프롬프트·팩 설정</button>}
+        {isDesktop && accessToken && <button className="text-button" type="button" disabled={contentSettingsOpen && fixedSaving} onClick={() => contentSettingsOpen ? closeContentSettings() : setContentSettingsOpen(true)}>캐릭터 프롬프트·팩 설정</button>}
       </header>
       {isDesktop && accessToken && difficultySettingsOpen && <LocalDifficultyPanel accessToken={accessToken} onClose={() => setDifficultySettingsOpen(false)} onSaved={async () => {
         if (!cpus || !localPlay) return
@@ -885,7 +892,7 @@ function App() {
         setCpus(localPlay.phase === 'roster_required' ? latestChoices : latestChoices.filter((cpu) => ids.has(cpu.id)))
       }} />}
       {isDesktop && accessToken && soundSettingsOpen && <LocalSoundPanel accessToken={accessToken} onClose={() => setSoundSettingsOpen(false)} onSelectionChanged={setSoundSelection} onPlaybackChanged={stopGameAudio} />}
-      {isDesktop && accessToken && contentSettingsOpen && <LocalContentPanel accessToken={accessToken} onClose={() => setContentSettingsOpen(false)} onPackApplied={stopGameAudio} onMeasurementsUpdated={updateCharacterContent} />}
+      {isDesktop && accessToken && contentSettingsOpen && <LocalContentPanel accessToken={accessToken} onClose={closeContentSettings} fixedDirty={fixedDirty} fixedSaving={fixedSaving} setFixedDirty={setFixedDirty} setFixedSaving={setFixedSaving} onPackApplied={stopGameAudio} onMeasurementsUpdated={updateCharacterContent} />}
       {isDesktop && soundError && <p className="form-error" role="status">{soundError}</p>}
       {!isDesktop && !accessToken && (
         <AuthPanel

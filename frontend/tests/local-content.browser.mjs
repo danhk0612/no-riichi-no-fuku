@@ -12,7 +12,9 @@ function content(id) {
 try {
   const page = await browser.newPage(); page.setDefaultTimeout(8000)
   const errors = []; page.on('pageerror', (e) => errors.push(e.message))
-  page.on('dialog', (dialog) => void dialog.accept())
+  let discardDraft = true
+  const confirmMessages = []
+  page.on('dialog', (dialog) => { confirmMessages.push(dialog.message()); void (discardDraft ? dialog.accept() : dialog.dismiss()) })
   await page.addInitScript(() => { window.nrnfDesktop = { isDesktop: true } })
   const saved = { 1: content(1), 2: content(2), 3: content(3) }
   saved[1].measurements_cm = { height: '170.0', bust: null, waist: '62.5', hips: null }
@@ -192,9 +194,17 @@ try {
   await fixedPanel.getByRole('button', {name: '기존 문구 선택'}).first().click()
   assert.equal(await fixedPanel.getByRole('radio', {checked: true}).count(), 0)
   await fixedPanel.getByText('ID 92 · 활성 · second').click()
+  const headerToggle = page.getByRole('button', {name: '캐릭터 프롬프트·팩 설정', exact: true})
+  discardDraft = false
+  const countBeforeClose = confirmMessages.length
+  await headerToggle.click()
+  assert.equal(confirmMessages.length, countBeforeClose + 1)
+  assert.equal(await fixedPanel.getByRole('radio', {checked: true}).count(), 1)
+  discardDraft = true
   fixedSaveGate = gate()
   await fixedPanel.getByRole('button', {name: '고정 대사 저장'}).click()
   await fixedSaveGate.entered
+  assert.equal(await headerToggle.isDisabled(), true)
   assert.equal(await fixedSelect.isDisabled(), true)
   assert.equal(await fixedPanel.getByLabel('화료 대사').isDisabled(), true)
   assert.equal(await panel.getByRole('button', {name: '닫기', exact: true}).isDisabled(), true)
@@ -212,6 +222,14 @@ try {
   await fixedPanel.getByText('직접 빈 값').waitFor()
   await fixedPanel.getByRole('button', {name: '다시 조회'}).click()
   await fixedPanel.getByText('출처 ID 92 · 당시 원문: second').waitFor()
+  await fixedPanel.getByLabel('화료 대사').fill('discard-me')
+  await headerToggle.click()
+  await panel.waitFor({state: 'hidden'})
+  await headerToggle.click()
+  await panel.getByRole('tab', {name: '고정 대사'}).click()
+  await fixedSelect.selectOption('2')
+  await fixedPanel.getByText('출처 ID 92 · 당시 원문: second').waitFor()
+  assert.equal(await fixedPanel.getByLabel('화료 대사').inputValue(), 'second')
   await panel.getByRole('tab', {name: '캐릭터 편집'}).click()
 
   const select = panel.getByRole('combobox', { name: '캐릭터', exact: true })

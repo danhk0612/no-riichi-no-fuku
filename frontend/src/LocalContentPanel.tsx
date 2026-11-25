@@ -17,15 +17,17 @@ const LEVELS = ['정상', '상의 겉옷 탈의', '속옷 세트', '전체 탈�
 const MEASUREMENTS = [['height', '키'], ['bust', '가슴(B)'], ['waist', '허리(W)'], ['hips', '엉덩이(H)']] as const
 type Tab = 'prompts' | 'packs' | 'shared' | 'fixed'
 
-export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasurementsUpdated }: {
+export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasurementsUpdated, fixedDirty, fixedSaving, setFixedDirty, setFixedSaving }: {
   accessToken: string
   onClose: () => void
+  fixedDirty: boolean
+  fixedSaving: boolean
+  setFixedDirty: (value: boolean) => void
+  setFixedSaving: (value: boolean) => void
   onPackApplied: () => void
   onMeasurementsUpdated: (content: CharacterContent) => void
 }) {
   const [tab, setTab] = useState<Tab>('prompts')
-  const [fixedDirty, setFixedDirty] = useState(false)
-  const [fixedSaving, setFixedSaving] = useState(false)
   const [sharedMounted, setSharedMounted] = useState(false)
   const [cpus, setCpus] = useState<{ id: number; slug: string; name: string }[]>([])
   const [cpuId, setCpuId] = useState<number | null>(null)
@@ -168,7 +170,7 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
   }
 
   return <section className="sound-panel content-panel" aria-label="캐릭터 프롬프트와 팩 관리">
-    <div className="sound-panel-heading"><div><p className="eyebrow">LOCAL CONTENT</p><h2>캐릭터 프롬프트·팩</h2></div><button className="text-button" disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm("저장하지 않은 고정 대사를 버리시겠습니까?")) onClose() }} type="button">닫기</button></div>
+    <div className="sound-panel-heading"><div><p className="eyebrow">LOCAL CONTENT</p><h2>캐릭터 프롬프트·팩</h2></div><button className="text-button" disabled={fixedSaving} onClick={onClose} type="button">닫기</button></div>
     <div className="content-tabs" role="tablist" aria-label="콘텐츠 관리">
       <button role="tab" aria-selected={tab === 'prompts'} disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?')) { setFixedDirty(false); setTab('prompts') } }} type="button">캐릭터 편집</button>
       <button role="tab" aria-selected={tab === 'packs'} disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?')) { setFixedDirty(false); setTab('packs') } }} type="button">팩 목록·진단</button>
