@@ -68,7 +68,7 @@ try {
       Object.assign(item, Object.fromEntries(Object.entries(body).filter(([key]) => key !== 'expected_revision'))); item.revision++
       return route.fulfill({ json: item })
     }
-    const sharedDefaultPath = path.match(/^\/api\/local\/shared-prompt-defaults\/(\d+)\/(clothing_state|pose)$/)
+    const sharedDefaultPath = path.match(/^\/api\/local\/shared-prompt-defaults\/(\d+)\/(clothing_state|pose|situation)$/)
     if (sharedDefaultPath) {
       const level = Number(sharedDefaultPath[1]), kind = sharedDefaultPath[2], key = sharedDefaultKey(level, kind)
       if (request.method() === 'GET') { const row = sharedDefaults[key]; return route.fulfill({ json: { level, kind, revision: row?.revision ?? 0, item_id: row?.item_id ?? null, valid: !!row?.item_id, item: sharedItems.find((item) => item.id === row?.item_id) ?? null } }) }
@@ -77,7 +77,7 @@ try {
       sharedDefaults[key] = { item_id: body.item_id, revision: (row?.revision ?? 0) + 1 }
       return route.fulfill({ json: { level, kind, ...sharedDefaults[key], valid: !!body.item_id, item: sharedItems.find((item) => item.id === body.item_id) ?? null } })
     }
-    const sharedCandidatesPath = path.match(/^\/api\/local\/characters\/(\d+)\/prompt-candidates\/(\d+)\/(clothing_state|pose)$/)
+    const sharedCandidatesPath = path.match(/^\/api\/local\/characters\/(\d+)\/prompt-candidates\/(\d+)\/(clothing_state|pose|situation)$/)
     if (sharedCandidatesPath) {
       const cpuId = Number(sharedCandidatesPath[1]), level = Number(sharedCandidatesPath[2]), kind = sharedCandidatesPath[3], key = sharedKey(cpuId, level, kind)
       if (request.method() === 'GET') return route.fulfill({ json: sharedCandidate(cpuId, level, kind) })
@@ -235,12 +235,26 @@ try {
   const select = panel.getByRole('combobox', { name: '캐릭터', exact: true })
   assert.equal(await select.inputValue(), '')
   await select.selectOption('1')
-  await panel.getByRole('tab', { name: '공유 복장·포즈' }).click()
+  await panel.getByRole('tab', { name: '공유 복장·상황·포즈' }).click()
   const sharedLabel = panel.getByRole('textbox', { name: '공유 항목 표시 이름' })
+  await panel.getByLabel('종류', {exact: true}).selectOption('situation')
+  const event = panel.getByRole('checkbox', {name: '쯔모 · 배만 이상', exact: true})
+  await event.waitFor()
+  assert.equal(await event.isChecked(), false)
+  await sharedLabel.fill('situation-fixture')
+  await event.check()
+  await panel.getByRole('button', {name:'공유 항목 추가'}).click()
+  await panel.getByRole('button', {name:'situation-fixture', exact:true}).waitFor()
+  assert.deepEqual(sharedItems.find(item => item.label === 'situation-fixture').allowed_events, ['tsumo_band_3'])
+  await event.uncheck()
+  await panel.getByRole('button', {name:'공유 항목 저장'}).click()
+  await panel.getByRole('button', {name:'공유 항목 저장'}).waitFor()
+  assert.deepEqual(sharedItems.find(item => item.label === 'situation-fixture').allowed_events, [])
+  await panel.getByLabel('종류', {exact: true}).selectOption('clothing_state')
   await sharedLabel.fill('test-only-shared-prompt')
   await panel.getByRole('textbox', { name: '공유 항목 Positive' }).fill('  test-only P\n<lora:fixture:0.7>  ')
   await panel.getByRole('tab', { name: '캐릭터 편집' }).click()
-  await panel.getByRole('tab', { name: '공유 복장·포즈' }).click()
+  await panel.getByRole('tab', { name: '공유 복장·상황·포즈' }).click()
   assert.equal(await sharedLabel.inputValue(), 'test-only-shared-prompt', 'switching editor tabs must preserve a pending shared item draft')
   await panel.getByRole('button', { name: '공유 항목 추가' }).click()
   const sharedItemButton = panel.getByRole('button', { name: 'test-only-shared-prompt', exact: true })

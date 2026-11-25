@@ -35,6 +35,50 @@ class SharedPromptTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         return response.json()
 
+    def test_upgrade_preserves_populated_shared_scopes(self):
+        from alembic import command
+        from alembic.config import Config
+        backend = Path(__file__).resolve().parents[1]
+        cfg = Config(str(backend / "alembic.ini"))
+        cfg.set_main_option("script_location", str(backend / "alembic"))
+        item = self.create(kind="pose")
+        for endpoint, body in [
+            ("/api/local/shared-prompt-defaults/0/pose", {"item_id": item["id"]}),
+            ("/api/local/characters/1/prompt-candidates/0/pose", {"item_ids": [item["id"]]})
+        ]:
+            self.assertEqual(self.client.put(endpoint, headers=self.headers, json={"expected_revision": 0, **body}).status_code, 200)
+        with self.runtime.engine.begin() as conn:
+            cfg.attributes["connection"] = conn
+            tables = ("shared_prompt_items", "character_prompt_candidates", "character_prompt_candidate_entries", "shared_prompt_defaults")
+            def snapshot():
+                return [[dict(row) for row in conn.execute(text(f"select * from {table}")).mappings()] for table in tables]
+            before = snapshot()
+            command.downgrade(cfg, "20261030_0014")
+            command.upgrade(cfg, "head")
+            self.assertEqual(snapshot(), before)
+            self.assertFalse(conn.execute(text("pragma foreign_key_check")).all())
+
+    def test_situation_event_intersection_then_default(self):
+        explicit = self.create("explicit", kind="situation")
+        fallback = self.create("fallback", kind="situation")
+        path = "/api/local/shared-prompts/"
+        for item, events in [(explicit, ["tsumo_band_3"]), (fallback, ["ron_band_1"])]:
+            self.assertEqual(item["allowed_events"], [])
+            self.assertEqual(self.client.patch(path + item["id"], headers=self.headers,
+                json={"expected_revision": 1, "allowed_events": events}).status_code, 200)
+        candidates = "/api/local/characters/1/prompt-candidates/0/situation"
+        self.assertEqual(self.client.put(candidates, headers=self.headers, json={"expected_revision": 0, "item_ids": [explicit["id"]]}).status_code, 200)
+        self.assertEqual(self.client.put("/api/local/shared-prompt-defaults/0/situation", headers=self.headers, json={"expected_revision": 0, "item_id": fallback["id"]}).status_code, 200)
+        for key, expected in [("tsumo_band_3", [explicit["id"]]), ("ron_band_1", [fallback["id"]]), ("tsumo_band_1", [])]:
+            result = self.client.get(candidates, params={"event": key}, headers=self.headers).json()
+            self.assertEqual([item["id"] for item in result["effective_items"]], expected)
+        for action in [{"action": "delete"}, {"action": "move", "target_level": 2}]:
+            preview = self.client.post(path + fallback["id"] + "/change-preview", headers=self.headers,
+                json={"expected_revision": 2, **action}).json()
+            changes = [c for c in preview["event_changes"] if c["cpu_id"] == 1]
+            self.assertEqual([(c["event"], c["after_item_ids"]) for c in changes], [("ron_band_1", [])])
+        self.assertEqual(self.client.patch(path + explicit["id"], headers=self.headers, json={"expected_revision": 1, "allowed_events": []}).status_code, 409)
+
     def test_get_is_read_only_empty_defaults_and_strict_filters(self):
         path = "/api/local/shared-prompts?kind=pose&level=3"
         self.assertEqual(self.client.get(path).status_code, 401)

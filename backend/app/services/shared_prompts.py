@@ -22,7 +22,7 @@ def _error(status: int, code: str, message: str, fields: dict | None = None):
 
 
 def _item_dict(item: SharedPromptItem) -> dict:
-    return {"id": item.id, "kind": item.kind, "level": item.level,
+    return {**({"allowed_events": item.allowed_events or []} if item.kind == "situation" else {}), "id": item.id, "kind": item.kind, "level": item.level,
             "label": item.label, "positive": item.positive, "negative": item.negative,
             "revision": item.revision, "active": item.active}
 
@@ -36,7 +36,7 @@ def list_items(session: Session, kind: str, level: int) -> list[dict]:
 
 def create_item(session: Session, data) -> dict:
     item = SharedPromptItem(id=str(uuid4()), kind=data.kind, level=data.level,
-        label=data.label, positive=data.positive, negative=data.negative, revision=1, active=True)
+        allowed_events=data.allowed_events if data.kind == "situation" else None, label=data.label, positive=data.positive, negative=data.negative, revision=1, active=True)
     session.add(item)
     session.flush()
     session.commit()
@@ -49,8 +49,10 @@ def patch_item(session: Session, item_id: str, data) -> dict:
         _error(404, "not_found", "공유 프롬프트를 찾을 수 없습니다.")
     if item.revision != data.expected_revision:
         _error(409, "revision_conflict", "공유 프롬프트가 변경됐습니다. 다시 불러와 주세요.", {"expected_revision": item.revision})
+    if "allowed_events" in data.model_fields_set and item.kind != "situation":
+        _error(422, "invalid_kind", "공유 상황만 허용 이벤트를 지정할 수 있습니다.")
     changed = False
-    for field in ("label", "positive", "negative"):
+    for field in ("label", "positive", "negative", "allowed_events"):
         if field in data.model_fields_set and getattr(item, field) != getattr(data, field):
             setattr(item, field, getattr(data, field))
             changed = True
@@ -94,7 +96,9 @@ def put_default(session: Session, level: int, kind: str, data) -> dict:
     return get_default(session, level, kind)
 
 
-def get_candidates(session: Session, cpu_id: int, level: int, kind: str) -> dict:
+def get_candidates(session: Session, cpu_id: int, level: int, kind: str, event: str | None = None) -> dict:
+    if event is not None and kind != "situation":
+        _error(422, "invalid_kind", "공유 상황만 이벤트로 조회할 수 있습니다.")
     if session.get(CpuCharacter, cpu_id) is None:
         _error(404, "not_found", "캐릭터를 찾을 수 없습니다.")
     row = session.scalar(select(CharacterPromptCandidates).where(
@@ -108,9 +112,11 @@ def get_candidates(session: Session, cpu_id: int, level: int, kind: str) -> dict
     stored_ids = [entry.item_id for entry in entries]
     stored = [session.get(SharedPromptItem, item_id) for item_id in stored_ids]
     effective = [item for item in stored if item and item.active and item.level == level and item.kind == kind]
+    if event is not None:
+        effective = [item for item in effective if event in (item.allowed_events or [])]
     uses_default = not effective
     default = get_default(session, level, kind) if uses_default else None
-    if uses_default and default and default["valid"]:
+    if uses_default and default and default["valid"] and (event is None or event in default["item"]["allowed_events"]):
         effective = [session.get(SharedPromptItem, default["item_id"])]
     return {
         "cpu_id": cpu_id, "level": level, "kind": kind,
@@ -181,6 +187,21 @@ def _impact(session: Session, item: SharedPromptItem, action: str, target_level:
     cpu_ids = [cpu.id for cpu in session.scalars(select(CpuCharacter).order_by(CpuCharacter.id)).all()]
     affected = []
     direct_rows = []
+    event_changes = []
+
+    def record_event_changes(cpu, explicit):
+        if item.kind != "situation":
+            return
+        for event in item.allowed_events or []:
+            before = [x.id for x in explicit if event in (x.allowed_events or [])]
+            if not before and source_default and source_default.item_id == item.id:
+                before = [item.id]
+            if item.id not in before:
+                continue
+            after = [x for x in before if x != item.id]
+            fallback = next_default.id if not after and next_default and event in (next_default.allowed_events or []) else None
+            event_changes.append({"cpu_id": cpu.id, "cpu_name": cpu.name, "event": event,
+                "after_item_ids": after or ([fallback] if fallback else []), "fallback_item_id": fallback})
     for row in sets:
         entries = session.scalars(select(CharacterPromptCandidateEntry).where(
             CharacterPromptCandidateEntry.candidate_set_id == row.id
@@ -190,6 +211,7 @@ def _impact(session: Session, item: SharedPromptItem, action: str, target_level:
         direct = item.id in ids
         old_valid = [session.get(SharedPromptItem, x) for x in ids]
         old_valid = [x for x in old_valid if x and x.active and x.level == item.level and x.kind == item.kind]
+        record_event_changes(cpu, old_valid)
         after_valid = [x for x in old_valid if x.id != item.id] if direct else old_valid
         old_uses_default = not old_valid
         after_uses_default = not after_valid
@@ -217,6 +239,7 @@ def _impact(session: Session, item: SharedPromptItem, action: str, target_level:
             if cpu_id in set_cpu_ids:
                 continue
             cpu = session.get(CpuCharacter, cpu_id)
+            record_event_changes(cpu, [])
             implicit_default_users.append({"cpu_id": cpu_id, "cpu_name": cpu.name,
                 "cpu_slug": cpu.slug, "level": item.level, "kind": item.kind,
                 "candidate_set_id": None, "candidate_revision": 0,
@@ -226,6 +249,7 @@ def _impact(session: Session, item: SharedPromptItem, action: str, target_level:
         "item": {"id": item.id, "kind": item.kind, "level": item.level,
                  "label": item.label, "revision": item.revision},
         "action": action, "target_level": target_level,
+        **({"event_changes": event_changes} if item.kind == "situation" else {}),
         "candidate_changes": direct_rows,
         "candidate_scope_snapshot": scope_snapshot,
         "affected_cpus": sorted(affected + implicit_default_users, key=lambda x: (x["cpu_id"], x["kind"])),
