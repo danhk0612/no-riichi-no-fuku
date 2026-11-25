@@ -1,18 +1,30 @@
 # 현재 상태
 
-## W09-M 구현·검증 진행 중
+## W09-M 고정 대사 관리 — PR 검토 대기
 
-고정 대사 저장/API와 관리 UI 초안을 추가했다. 파일 SQLite의 빈 값, 변수, 명시 선택, 충돌, writer 경쟁, rollback, 재시작 회귀 5건과 frontend build, 기존 dialogue pytest 10건을 Linux에서 확인했다. 전체 회귀 재실행과 Windows W04/W05, routed browser, artifact 검증은 진행 중이다. 로컬 Chromium 다운로드가 실패했다. 게임 결과 연결과 CG/음성 생성은 후속 범위다.
+PR #113의 제품 source `bf6b862df58d5b88484db95c20204ce87e209e38`에서 CPU별 다섯 슬롯,
+독립 revision·기존 문구 명시 선택/출처 사본·빈 값 및 변수 검증을 구현했다. 기존 CpuDialogue,
+완료 presentation과 게임 이벤트는 그대로이며 새 고정 대사의 게임 연결은 C2에서 결정한다.
 
-## W09-M 다음 작업 — 정책 확정·관리 계약 작성 (2026-10-30)
+파일 SQLite의 upgrade 반복 및 기존 자료 보존, 원문 선택·변경/삭제·재연결 충돌,
+동시 writer·rollback·reset/재시작·팩 갱신과 음성 선택/끔 보존을 검사했다.
+Linux 전체 unittest 192개(이후 추가 회귀는 별도 통과), dialogue pytest 10개 및 frontend build가
+통과했다. Windows Server 2022 W04 [45717510728](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45717510728),
+W05 [45717510629](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45717510629)가
+같은 제품 source에서 통과했다. W05는 unittest 195개·dialogue pytest 10개, routed browser의
+지연 응답·명시 선택·저장 중 잠금·빈 값·충돌/실패 입력 보존, packaged renderer의 저장·reset·
+엔진 재시작과 일반 모드 종료/재시작을 검사했다. 기존 결과·DB read-only 검증도 통과했다.
 
-기준 main18abe925. 사용자 Q-LEGACY A를 반영하고 실제 CpuDialogue/selector,
-CharacterContent/팩 적용·local router·설정 UI를 대조하여
-[관리 단독 계약](docs/W09_M_FIXED_DIALOGUE_CONTRACT.md)을 작성했다.
-새 고정 대사 구현·migration·테스트/Windows 실행은 이번 작업에서 수행하지 않았다.
-W09-C1 수용 상태는 유지한다. 다음은 저성능 Work의 W09-M 구현·PR 제출이다.
-과거 Q-LEGACY 미승인 기록은 REQUIREMENTS 최신 확정 절로 대체되며,
-D05-c/Q-FRAME·D07-a/Q-IMAGE·D08 및 W10 정책은 계속 미응답이다.
+다운로드한 W04 artifact `15069844726` 외부 SHA256
+`9fb67d669de24fc25bbcb412ed06d456fdc0d1adbce15022fa80a1f75fc0196e`,
+W05 artifact `15070343612` 외부 SHA256
+`4eae363174261229157420bf7fc17ba07c378f34b0b847ed6f4ce09a5bdfcbcf`를 GitHub digest와 대조했다.
+두 source-sha 파일이 제품 source와 일치하며 W05 내부 Windows ZIP SHA256
+`69c34c16e2f1c5b422ef925a47e905eb98faf9a33652d0a0c32eadb196d80bda`와 압축 무결성을 확인했다.
+이 검증은 합성 자료와 Windows hosted runner이며 개인 PC 실기 및 실제 CG/음성 출력은 미검증이다.
+최초 W05에서 빈 textarea를 그대로 채워 이벤트가 발생하지 않은 테스트 실패를 확인했고,
+입력 후 지우는 순서로 수정하여 최종 실행에서 통과했다. 로컬 Chromium 설치는 실패했다.
+게임 결과 연결·공유 상황·CG/음성 생성은 수행하지 않았다.
 
 ## W09-C1 — 최종 검토·병합 완료
 
