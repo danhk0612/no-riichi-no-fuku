@@ -187,6 +187,21 @@ def _impact(session: Session, item: SharedPromptItem, action: str, target_level:
     cpu_ids = [cpu.id for cpu in session.scalars(select(CpuCharacter).order_by(CpuCharacter.id)).all()]
     affected = []
     direct_rows = []
+    event_changes = []
+
+    def record_event_changes(cpu, explicit):
+        if item.kind != "situation":
+            return
+        for event in item.allowed_events or []:
+            before = [x.id for x in explicit if event in (x.allowed_events or [])]
+            if not before and source_default and source_default.item_id == item.id:
+                before = [item.id]
+            if item.id not in before:
+                continue
+            after = [x for x in before if x != item.id]
+            fallback = next_default.id if not after and next_default and event in (next_default.allowed_events or []) else None
+            event_changes.append({"cpu_id": cpu.id, "cpu_name": cpu.name, "event": event,
+                "after_item_ids": after or ([fallback] if fallback else []), "fallback_item_id": fallback})
     for row in sets:
         entries = session.scalars(select(CharacterPromptCandidateEntry).where(
             CharacterPromptCandidateEntry.candidate_set_id == row.id
@@ -196,6 +211,7 @@ def _impact(session: Session, item: SharedPromptItem, action: str, target_level:
         direct = item.id in ids
         old_valid = [session.get(SharedPromptItem, x) for x in ids]
         old_valid = [x for x in old_valid if x and x.active and x.level == item.level and x.kind == item.kind]
+        record_event_changes(cpu, old_valid)
         after_valid = [x for x in old_valid if x.id != item.id] if direct else old_valid
         old_uses_default = not old_valid
         after_uses_default = not after_valid
@@ -223,6 +239,7 @@ def _impact(session: Session, item: SharedPromptItem, action: str, target_level:
             if cpu_id in set_cpu_ids:
                 continue
             cpu = session.get(CpuCharacter, cpu_id)
+            record_event_changes(cpu, [])
             implicit_default_users.append({"cpu_id": cpu_id, "cpu_name": cpu.name,
                 "cpu_slug": cpu.slug, "level": item.level, "kind": item.kind,
                 "candidate_set_id": None, "candidate_revision": 0,
@@ -232,6 +249,7 @@ def _impact(session: Session, item: SharedPromptItem, action: str, target_level:
         "item": {"id": item.id, "kind": item.kind, "level": item.level,
                  "label": item.label, "revision": item.revision},
         "action": action, "target_level": target_level,
+        **({"event_changes": event_changes} if item.kind == "situation" else {}),
         "candidate_changes": direct_rows,
         "candidate_scope_snapshot": scope_snapshot,
         "affected_cpus": sorted(affected + implicit_default_users, key=lambda x: (x["cpu_id"], x["kind"])),

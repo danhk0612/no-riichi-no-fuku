@@ -72,6 +72,11 @@ class SharedPromptTests(unittest.TestCase):
         for key, expected in [("tsumo_band_3", [explicit["id"]]), ("ron_band_1", [fallback["id"]]), ("tsumo_band_1", [])]:
             result = self.client.get(candidates, params={"event": key}, headers=self.headers).json()
             self.assertEqual([item["id"] for item in result["effective_items"]], expected)
+        for action in [{"action": "delete"}, {"action": "move", "target_level": 2}]:
+            preview = self.client.post(path + fallback["id"] + "/change-preview", headers=self.headers,
+                json={"expected_revision": 2, **action}).json()
+            changes = [c for c in preview["event_changes"] if c["cpu_id"] == 1]
+            self.assertEqual([(c["event"], c["after_item_ids"]) for c in changes], [("ron_band_1", [])])
         self.assertEqual(self.client.patch(path + explicit["id"], headers=self.headers, json={"expected_revision": 1, "allowed_events": []}).status_code, 409)
 
     def test_get_is_read_only_empty_defaults_and_strict_filters(self):

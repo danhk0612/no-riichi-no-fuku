@@ -72,6 +72,7 @@ export type SharedPromptItem = { id: string; kind: SharedPromptKind; allowed_eve
 export type SharedPromptCandidates = { cpu_id: number; level: number; kind: SharedPromptKind; revision: number; stored_item_ids: string[]; effective_items: SharedPromptItem[]; uses_default: boolean; default_revision: number; unregistered: boolean }
 export type SharedPromptDefault = { level: number; kind: SharedPromptKind; revision: number; item_id: string | null; valid: boolean; item: SharedPromptItem | null }
 export type SharedPromptImpact = {
+  event_changes?: {cpu_id: number; cpu_name: string; event: string; after_item_ids: string[]; fallback_item_id: string | null}[]
   item: { id: string; kind: SharedPromptKind; level: number; label: string; revision: number }
   action: 'move' | 'delete'; target_level: number | null; preview_digest: string
   candidate_changes: { cpu_id: number; cpu_name: string; cpu_slug: string; candidate_set_id: string; candidate_revision: number; stored_item_ids: string[]; after_item_ids: string[]; after_effective_item_ids: string[]; fallback_item_id: string | null; unregistered_after: boolean }[]
