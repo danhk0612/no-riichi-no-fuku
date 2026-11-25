@@ -12,7 +12,9 @@ function content(id) {
 try {
   const page = await browser.newPage(); page.setDefaultTimeout(8000)
   const errors = []; page.on('pageerror', (e) => errors.push(e.message))
-  page.on('dialog', (dialog) => void dialog.accept())
+  let discardDraft = true
+  const confirmMessages = []
+  page.on('dialog', (dialog) => { confirmMessages.push(dialog.message()); void (discardDraft ? dialog.accept() : dialog.dismiss()) })
   await page.addInitScript(() => { window.nrnfDesktop = { isDesktop: true } })
   const saved = { 1: content(1), 2: content(2), 3: content(3) }
   saved[1].measurements_cm = { height: '170.0', bust: null, waist: '62.5', hips: null }
@@ -31,9 +33,28 @@ try {
     return { cpu_id: cpuId, level, kind, revision: row?.revision ?? 0, stored_item_ids: stored,
       effective_items: effective, uses_default: usingDefault, default_revision: fallback?.revision ?? 0, unregistered: effective.length === 0 }
   }
+  const fixed = Object.fromEntries([1, 2, 3].map((id) => [id, { schema_version: 1, cpu_id: id, revision: 0, slots: {} }]))
+  let fixedReadGate, fixedSaveGate, fixedSaveMode = 'ok'
   const listing = { schema_version: 1, packs: [], scan_entries: [] }
   await page.route('**/api/**', async (route) => {
     const request = route.request(), path = new URL(request.url()).pathname
+    const fixedPath = path.match(/^\/api\/local\/characters\/(\d+)\/fixed-dialogues$/)
+    const fixedCandidates = path.match(/^\/api\/local\/characters\/(\d+)\/fixed-dialogue-candidates$/)
+    if (fixedCandidates) return route.fulfill({ json: {items: [{id: 91, event_key: 'win', text: 'first', active: true}, {id: 92, event_key: 'win', text: 'second', active: true}, {id: 93, event_key: 'win', text: 'inactive', active: false}]} })
+    if (fixedPath) {
+      const id = Number(fixedPath[1])
+      if (request.method() === 'GET') {
+        const snapshot = structuredClone(fixed[id]), held = id === 1 && fixedReadGate
+        if (held) { held.seen(); await held.wait }
+        return route.fulfill({ json: snapshot })
+      }
+      if (fixedSaveMode !== 'ok') return route.fulfill({ status: fixedSaveMode === 'conflict' ? 409 : 500, json: {detail: {message: `fixed-${fixedSaveMode}`}} })
+      if (fixedSaveGate) { fixedSaveGate.seen(); await fixedSaveGate.wait }
+      const body = request.postDataJSON()
+      for (const [slot, edit] of Object.entries(body.edits)) fixed[id].slots[slot] = 'text' in edit ? {text: edit.text, origin: fixed[id].slots[slot]?.origin ?? null} : {text: edit.expected_source_text, origin: {legacy_dialogue_id: edit.legacy_dialogue_id, event_key: slot, text: edit.expected_source_text}}
+      fixed[id].revision++
+      return route.fulfill({json: fixed[id]})
+    }
     if (path === '/api/local/shared-prompts') {
       const query = new URL(request.url()).searchParams
       const kind = query.get('kind'), level = Number(query.get('level'))
@@ -162,6 +183,55 @@ try {
   assert.equal(await page.locator('.cpu-card.selected').count(), 3, 'test must retain the full selected CPU list')
   await page.getByRole('button', { name: '캐릭터 프롬프트·팩 설정' }).click()
   let panel = page.getByRole('region', { name: '캐릭터 프롬프트와 팩 관리' })
+  await panel.getByRole('tab', {name: '고정 대사'}).click()
+  const fixedPanel = panel.getByRole('region', {name: '고정 대사'})
+  const fixedSelect = fixedPanel.getByRole('combobox', {name: '고정 대사 캐릭터'})
+  fixedReadGate = gate(); await fixedSelect.selectOption('1'); await fixedReadGate.entered
+  await fixedSelect.selectOption('2'); await fixedPanel.getByLabel('화료 대사').waitFor()
+  fixedReadGate.release(); fixedReadGate = undefined
+  await page.evaluate(() => new Promise(r => setTimeout(r, 100)))
+  assert.equal(await fixedSelect.inputValue(), '2')
+  await fixedPanel.getByRole('button', {name: '기존 문구 선택'}).first().click()
+  assert.equal(await fixedPanel.getByRole('radio', {checked: true}).count(), 0)
+  await fixedPanel.getByText('ID 92 · 활성 · second').click()
+  const headerToggle = page.getByRole('button', {name: '캐릭터 프롬프트·팩 설정', exact: true})
+  discardDraft = false
+  const countBeforeClose = confirmMessages.length
+  await headerToggle.click()
+  assert.equal(confirmMessages.length, countBeforeClose + 1)
+  assert.equal(await fixedPanel.getByRole('radio', {checked: true}).count(), 1)
+  discardDraft = true
+  fixedSaveGate = gate()
+  await fixedPanel.getByRole('button', {name: '고정 대사 저장'}).click()
+  await fixedSaveGate.entered
+  assert.equal(await headerToggle.isDisabled(), true)
+  assert.equal(await fixedSelect.isDisabled(), true)
+  assert.equal(await fixedPanel.getByLabel('화료 대사').isDisabled(), true)
+  assert.equal(await panel.getByRole('button', {name: '닫기', exact: true}).isDisabled(), true)
+  fixedSaveGate.release(); fixedSaveGate = undefined
+  await fixedPanel.getByText('출처 ID 92 · 당시 원문: second').waitFor()
+  assert.equal(await fixedPanel.getByLabel('화료 대사').inputValue(), 'second')
+  await fixedPanel.getByLabel('패배 단계 1 대사').fill('temporary')
+  await fixedPanel.getByLabel('패배 단계 1 대사').fill('')
+  fixedSaveMode = 'conflict'; await fixedPanel.getByRole('button', {name: '고정 대사 저장'}).click()
+  await fixedPanel.getByText('fixed-conflict').waitFor()
+  assert.equal(await fixedPanel.getByLabel('패배 단계 1 대사').inputValue(), '')
+  fixedSaveMode = 'fail'; await fixedPanel.getByRole('button', {name: '고정 대사 저장'}).click()
+  await fixedPanel.getByText('fixed-fail').waitFor()
+  fixedSaveMode = 'ok'; await fixedPanel.getByRole('button', {name: '고정 대사 저장'}).click()
+  await fixedPanel.getByText('직접 빈 값').waitFor()
+  await fixedPanel.getByRole('button', {name: '다시 조회'}).click()
+  await fixedPanel.getByText('출처 ID 92 · 당시 원문: second').waitFor()
+  await fixedPanel.getByLabel('화료 대사').fill('discard-me')
+  await headerToggle.click()
+  await panel.waitFor({state: 'hidden'})
+  await headerToggle.click()
+  await panel.getByRole('tab', {name: '고정 대사'}).click()
+  await fixedSelect.selectOption('2')
+  await fixedPanel.getByText('출처 ID 92 · 당시 원문: second').waitFor()
+  assert.equal(await fixedPanel.getByLabel('화료 대사').inputValue(), 'second')
+  await panel.getByRole('tab', {name: '캐릭터 편집'}).click()
+
   const select = panel.getByRole('combobox', { name: '캐릭터', exact: true })
   assert.equal(await select.inputValue(), '')
   await select.selectOption('1')

@@ -345,3 +345,11 @@ export function getLocalDifficulty(accessToken: string): Promise<LocalDifficulty
 export function saveLocalDifficulty(accessToken: string, setting: number, expectedRevision: number): Promise<LocalDifficulty> {
   return apiRequest('/api/local/difficulty', { method: 'PUT', body: JSON.stringify({ setting, expected_revision: expectedRevision }) }, accessToken)
 }
+
+export type FixedSlot = 'win' | 'defeat_stage_1' | 'defeat_stage_2' | 'defeat_stage_3' | 'match_first'
+export type FixedEdit = { text: string } | { legacy_dialogue_id: number; expected_source_text: string }
+export type FixedDialogue = { cpu_id: number; revision: number; slots: Partial<Record<FixedSlot, { text: string; origin: null | { legacy_dialogue_id: number; event_key: string; text: string } }>> }
+export type FixedCandidate = { id: number; event_key: FixedSlot; text: string; active: boolean }
+export function getFixedDialogues(token: string, id: number): Promise<FixedDialogue> { return apiRequest(`/api/local/characters/${id}/fixed-dialogues`, {}, token) }
+export function getFixedCandidates(token: string, id: number): Promise<{items: FixedCandidate[]}> { return apiRequest(`/api/local/characters/${id}/fixed-dialogue-candidates`, {}, token) }
+export function patchFixedDialogues(token: string, id: number, revision: number, edits: Partial<Record<FixedSlot, FixedEdit>>): Promise<FixedDialogue> { return apiRequest(`/api/local/characters/${id}/fixed-dialogues`, { method: 'PATCH', body: JSON.stringify({expected_revision: revision, edits}) }, token) }
