@@ -32,7 +32,7 @@ try {
       effective_items: effective, uses_default: usingDefault, default_revision: fallback?.revision ?? 0, unregistered: effective.length === 0 }
   }
   const fixed = Object.fromEntries([1, 2, 3].map((id) => [id, { schema_version: 1, cpu_id: id, revision: 0, slots: {} }]))
-  let fixedReadGate, fixedSaveMode = 'ok'
+  let fixedReadGate, fixedSaveGate, fixedSaveMode = 'ok'
   const listing = { schema_version: 1, packs: [], scan_entries: [] }
   await page.route('**/api/**', async (route) => {
     const request = route.request(), path = new URL(request.url()).pathname
@@ -47,6 +47,7 @@ try {
         return route.fulfill({ json: snapshot })
       }
       if (fixedSaveMode !== 'ok') return route.fulfill({ status: fixedSaveMode === 'conflict' ? 409 : 500, json: {detail: {message: `fixed-${fixedSaveMode}`}} })
+      if (fixedSaveGate) { fixedSaveGate.seen(); await fixedSaveGate.wait }
       const body = request.postDataJSON()
       for (const [slot, edit] of Object.entries(body.edits)) fixed[id].slots[slot] = 'text' in edit ? {text: edit.text, origin: fixed[id].slots[slot]?.origin ?? null} : {text: edit.expected_source_text, origin: {legacy_dialogue_id: edit.legacy_dialogue_id, event_key: slot, text: edit.expected_source_text}}
       fixed[id].revision++
@@ -191,7 +192,13 @@ try {
   await fixedPanel.getByRole('button', {name: '기존 문구 선택'}).first().click()
   assert.equal(await fixedPanel.getByRole('radio', {checked: true}).count(), 0)
   await fixedPanel.getByText('ID 92 · 활성 · second').click()
+  fixedSaveGate = gate()
   await fixedPanel.getByRole('button', {name: '고정 대사 저장'}).click()
+  await fixedSaveGate.entered
+  assert.equal(await fixedSelect.isDisabled(), true)
+  assert.equal(await fixedPanel.getByLabel('화료 대사').isDisabled(), true)
+  assert.equal(await panel.getByRole('button', {name: '닫기', exact: true}).isDisabled(), true)
+  fixedSaveGate.release(); fixedSaveGate = undefined
   await fixedPanel.getByText('출처 ID 92 · 당시 원문: second').waitFor()
   assert.equal(await fixedPanel.getByLabel('화료 대사').inputValue(), 'second')
   await fixedPanel.getByLabel('패배 단계 1 대사').fill('temporary')
