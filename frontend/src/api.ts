@@ -67,8 +67,8 @@ export type CharacterContent = {
   levels: Record<string, Record<'profile' | 'full_body' | 'cg', PromptPair & { revision: number; media: { media_id: string; url: string; digest: string } | null }>>
 }
 export type LocalCharacterChoice = { id: number; slug: string; name: string }
-export type SharedPromptKind = 'clothing_state' | 'pose'
-export type SharedPromptItem = { id: string; kind: SharedPromptKind; level: number; label: string; positive: string; negative: string; revision: number; active: boolean }
+export type SharedPromptKind = 'clothing_state' | 'pose' | 'situation'
+export type SharedPromptItem = { id: string; kind: SharedPromptKind; allowed_events?: string[]; level: number; label: string; positive: string; negative: string; revision: number; active: boolean }
 export type SharedPromptCandidates = { cpu_id: number; level: number; kind: SharedPromptKind; revision: number; stored_item_ids: string[]; effective_items: SharedPromptItem[]; uses_default: boolean; default_revision: number; unregistered: boolean }
 export type SharedPromptDefault = { level: number; kind: SharedPromptKind; revision: number; item_id: string | null; valid: boolean; item: SharedPromptItem | null }
 export type SharedPromptImpact = {
@@ -245,7 +245,7 @@ export function listSharedPrompts(accessToken: string, kind: SharedPromptKind, l
 export function createSharedPrompt(accessToken: string, value: Omit<SharedPromptItem, 'id' | 'revision' | 'active'>): Promise<SharedPromptItem> {
   return apiRequest('/api/local/shared-prompts', { method: 'POST', body: JSON.stringify(value) }, accessToken)
 }
-export function patchSharedPrompt(accessToken: string, id: string, expectedRevision: number, value: Partial<Pick<SharedPromptItem, 'label' | 'positive' | 'negative'>>): Promise<SharedPromptItem> {
+export function patchSharedPrompt(accessToken: string, id: string, expectedRevision: number, value: Partial<Pick<SharedPromptItem, 'label' | 'positive' | 'negative' | 'allowed_events'>>): Promise<SharedPromptItem> {
   return apiRequest(`/api/local/shared-prompts/${id}`, { method: 'PATCH', body: JSON.stringify({ expected_revision: expectedRevision, ...value }) }, accessToken)
 }
 export function getSharedPromptDefault(accessToken: string, level: number, kind: SharedPromptKind): Promise<SharedPromptDefault> {

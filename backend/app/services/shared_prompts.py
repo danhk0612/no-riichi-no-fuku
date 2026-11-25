@@ -22,7 +22,7 @@ def _error(status: int, code: str, message: str, fields: dict | None = None):
 
 
 def _item_dict(item: SharedPromptItem) -> dict:
-    return {"id": item.id, "kind": item.kind, "level": item.level,
+    return {**({"allowed_events": item.allowed_events or []} if item.kind == "situation" else {}), "id": item.id, "kind": item.kind, "level": item.level,
             "label": item.label, "positive": item.positive, "negative": item.negative,
             "revision": item.revision, "active": item.active}
 
@@ -36,7 +36,7 @@ def list_items(session: Session, kind: str, level: int) -> list[dict]:
 
 def create_item(session: Session, data) -> dict:
     item = SharedPromptItem(id=str(uuid4()), kind=data.kind, level=data.level,
-        label=data.label, positive=data.positive, negative=data.negative, revision=1, active=True)
+        allowed_events=data.allowed_events if data.kind == "situation" else None, label=data.label, positive=data.positive, negative=data.negative, revision=1, active=True)
     session.add(item)
     session.flush()
     session.commit()
@@ -49,8 +49,10 @@ def patch_item(session: Session, item_id: str, data) -> dict:
         _error(404, "not_found", "공유 프롬프트를 찾을 수 없습니다.")
     if item.revision != data.expected_revision:
         _error(409, "revision_conflict", "공유 프롬프트가 변경됐습니다. 다시 불러와 주세요.", {"expected_revision": item.revision})
+    if "allowed_events" in data.model_fields_set and item.kind != "situation":
+        _error(422, "invalid_kind", "공유 상황만 허용 이벤트를 지정할 수 있습니다.")
     changed = False
-    for field in ("label", "positive", "negative"):
+    for field in ("label", "positive", "negative", "allowed_events"):
         if field in data.model_fields_set and getattr(item, field) != getattr(data, field):
             setattr(item, field, getattr(data, field))
             changed = True
@@ -94,7 +96,9 @@ def put_default(session: Session, level: int, kind: str, data) -> dict:
     return get_default(session, level, kind)
 
 
-def get_candidates(session: Session, cpu_id: int, level: int, kind: str) -> dict:
+def get_candidates(session: Session, cpu_id: int, level: int, kind: str, event: str | None = None) -> dict:
+    if event is not None and kind != "situation":
+        _error(422, "invalid_kind", "공유 상황만 이벤트로 조회할 수 있습니다.")
     if session.get(CpuCharacter, cpu_id) is None:
         _error(404, "not_found", "캐릭터를 찾을 수 없습니다.")
     row = session.scalar(select(CharacterPromptCandidates).where(
@@ -108,9 +112,11 @@ def get_candidates(session: Session, cpu_id: int, level: int, kind: str) -> dict
     stored_ids = [entry.item_id for entry in entries]
     stored = [session.get(SharedPromptItem, item_id) for item_id in stored_ids]
     effective = [item for item in stored if item and item.active and item.level == level and item.kind == kind]
+    if event is not None:
+        effective = [item for item in effective if event in (item.allowed_events or [])]
     uses_default = not effective
     default = get_default(session, level, kind) if uses_default else None
-    if uses_default and default and default["valid"]:
+    if uses_default and default and default["valid"] and (event is None or event in default["item"]["allowed_events"]):
         effective = [session.get(SharedPromptItem, default["item_id"])]
     return {
         "cpu_id": cpu_id, "level": level, "kind": kind,

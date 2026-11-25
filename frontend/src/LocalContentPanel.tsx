@@ -174,7 +174,7 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
     <div className="content-tabs" role="tablist" aria-label="콘텐츠 관리">
       <button role="tab" aria-selected={tab === 'prompts'} disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?')) { setFixedDirty(false); setTab('prompts') } }} type="button">캐릭터 편집</button>
       <button role="tab" aria-selected={tab === 'packs'} disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?')) { setFixedDirty(false); setTab('packs') } }} type="button">팩 목록·진단</button>
-      <button role="tab" aria-selected={tab === 'shared'} disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?')) { setFixedDirty(false); setSharedMounted(true); setTab('shared') } }} type="button">공유 복장·포즈</button>
+      <button role="tab" aria-selected={tab === 'shared'} disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?')) { setFixedDirty(false); setSharedMounted(true); setTab('shared') } }} type="button">공유 복장·상황·포즈</button>
       <button role="tab" aria-selected={tab === 'fixed'} disabled={fixedSaving} onClick={() => setTab('fixed')} type="button">고정 대사</button>
     </div>
     {error && <p className="form-error" role="alert">{error}</p>}

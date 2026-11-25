@@ -7,10 +7,11 @@ import {
 import type { LocalCharacterChoice, SharedPromptCandidates, SharedPromptDefault, SharedPromptImpact, SharedPromptItem, SharedPromptKind } from './api'
 
 const KINDS: { id: SharedPromptKind; label: string }[] = [
-  { id: 'clothing_state', label: '복장 상태' }, { id: 'pose', label: '포즈' },
+  { id: 'clothing_state', label: '복장 상태' }, { id: 'pose', label: '포즈' }, { id: 'situation', label: '공유 상황' },
 ]
 const LEVELS = ['정상', '상의 겉옷 탈의', '속옷 세트', '전체 탈의']
-type Draft = { label: string; positive: string; negative: string }
+const EVENTS = [['chi', '치'], ['pon', '퐁'], ['kan', '깡'], ['riichi', '리치'], ['ron_band_1', '론 · 만관 미만'], ['ron_band_2', '론 · 만관·하네만'], ['ron_band_3', '론 · 배만 이상'], ['tsumo_band_1', '쯔모 · 만관 미만'], ['tsumo_band_2', '쯔모 · 만관·하네만'], ['tsumo_band_3', '쯔모 · 배만 이상'], ['defeat_stage_1', '패배 단계 1'], ['defeat_stage_2', '패배 단계 2'], ['defeat_stage_3', '패배 단계 3'], ['match_first', '보충 1위'], ['match_last', '보충 4위']] as const
+type Draft = { allowed_events?: string[]; label: string; positive: string; negative: string }
 
 export function SharedPromptManager({ accessToken, cpus }: { accessToken: string; cpus: LocalCharacterChoice[] }) {
   const [level, setLevel] = useState(0)
@@ -77,9 +78,9 @@ export function SharedPromptManager({ accessToken, cpus }: { accessToken: string
 
   const selected = items.find((item) => item.id === selectedId) ?? null
   const draftKey = selected?.id ?? `new:${level}:${kind}`
-  const draft: Draft = drafts[draftKey] ?? { label: selected?.label ?? '', positive: selected?.positive ?? '', negative: selected?.negative ?? '' }
+  const draft: Draft = drafts[draftKey] ?? { ...(kind === 'situation' ? {allowed_events: selected?.allowed_events ?? []} : {}), label: selected?.label ?? '', positive: selected?.positive ?? '', negative: selected?.negative ?? '' }
   const dirty = !!selected
-    ? draft.label !== selected.label || draft.positive !== selected.positive || draft.negative !== selected.negative
+    ? JSON.stringify(draft.allowed_events) !== JSON.stringify(selected.allowed_events) || draft.label !== selected.label || draft.positive !== selected.positive || draft.negative !== selected.negative
     : !!draft.label || !!draft.positive || !!draft.negative
   const candidateDirty = !!candidate && JSON.stringify(candidateIds) !== JSON.stringify(candidate.stored_item_ids)
   const defaultDirty = !!defaultValue && defaultChoice !== (defaultValue.item_id ?? '')
@@ -92,6 +93,7 @@ export function SharedPromptManager({ accessToken, cpus }: { accessToken: string
     try {
       const saved = selected
         ? await patchSharedPrompt(accessToken, selected.id, selected.revision, {
+          ...(kind === 'situation' && JSON.stringify(draft.allowed_events) !== JSON.stringify(selected.allowed_events) ? {allowed_events: draft.allowed_events} : {}),
           ...(draft.label !== selected.label ? { label: draft.label } : {}),
           ...(draft.positive !== selected.positive ? { positive: draft.positive } : {}),
           ...(draft.negative !== selected.negative ? { negative: draft.negative } : {}),
@@ -164,12 +166,12 @@ export function SharedPromptManager({ accessToken, cpus }: { accessToken: string
     finally { setBusy(false) }
   }
 
-  return <section className="sound-card content-editor shared-prompt-manager" aria-label="공유 복장 상태·포즈 관리">
-    <h3>공유 복장 상태·포즈</h3>
-    <p className="muted">공유 문구는 공통 항목에 한 번 저장합니다. 새 항목은 캐릭터 후보에 자동 추가되지 않습니다.</p>
+  return <section className="sound-card content-editor shared-prompt-manager" aria-label="공유 복장 상태·상황·포즈 관리">
+    <h3>공유 복장 상태·상황·포즈</h3>
+    <p className="muted">공유 프롬프트는 항목별로 한 번 저장합니다. 새 항목은 캐릭터 후보에 자동 추가되지 않습니다.</p>
     <div className="shared-prompt-controls">
       <label>Level<select value={level} disabled={busy} onChange={(event) => { setLevel(Number(event.target.value)); setImpact(null) }}>{LEVELS.map((label, index) => <option key={index} value={index}>Level {index} · {label}</option>)}</select></label>
-      <label>종류<select value={kind} disabled={busy} onChange={(event) => { setKind(event.target.value as SharedPromptKind); setImpact(null) }}>{KINDS.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}</select></label>
+      <label>종류<select aria-label="종류" value={kind} disabled={busy} onChange={(event) => { setKind(event.target.value as SharedPromptKind); setImpact(null) }}>{KINDS.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}</select></label>
       <label>캐릭터<select value={activeCpu ?? ''} disabled={busy || !cpus.length} onChange={(event) => { setCpuId(Number(event.target.value)); setImpact(null) }}>{cpus.map((cpu) => <option key={cpu.id} value={cpu.id}>{cpu.name}</option>)}</select></label>
     </div>
     {error && <p className="form-error" role="alert">{error}</p>}
@@ -181,6 +183,11 @@ export function SharedPromptManager({ accessToken, cpus }: { accessToken: string
         </section>
         <section className="shared-prompt-editor">
           <label>표시 이름<input aria-label="공유 항목 표시 이름" value={draft.label} disabled={busy} onChange={(event) => changeDraft('label', event.target.value)} /></label>
+          {kind === 'situation' && <fieldset disabled={busy}><legend>허용 이벤트</legend><p>선택하지 않으면 어느 이벤트에도 사용하지 않습니다.</p>{EVENTS.map(([key, label]) => <label key={key}><input type="checkbox" checked={draft.allowed_events?.includes(key) ?? false} onChange={event => {
+            const current = draft.allowed_events ?? []
+            const next = event.target.checked ? [...current, key].sort() : current.filter(value => value !== key)
+            setDrafts(all => ({...all, [draftKey]: {...draft, allowed_events: next}}))
+          }} />{label}</label>)}</fieldset>}
           <label>Positive<textarea aria-label="공유 항목 Positive" rows={3} value={draft.positive} disabled={busy} onChange={(event) => changeDraft('positive', event.target.value)} /></label>
           <label>Negative<textarea aria-label="공유 항목 Negative" rows={3} value={draft.negative} disabled={busy} onChange={(event) => changeDraft('negative', event.target.value)} /></label>
           <button className="primary-button" type="button" disabled={busy || !dirty || !draft.label.trim()} onClick={() => void saveItem()}>{busy ? '저장 중…' : selected ? '공유 항목 저장' : '공유 항목 추가'}</button>

@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Integer, JSON, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -9,13 +9,14 @@ class SharedPromptItem(TimestampMixin, Base):
     __tablename__ = "shared_prompt_items"
     __table_args__ = (
         CheckConstraint("level BETWEEN 0 AND 3", name="ck_shared_prompt_level"),
-        CheckConstraint("kind IN ('clothing_state','pose')", name="ck_shared_prompt_kind"),
+        CheckConstraint("kind IN ('clothing_state','pose','situation')", name="ck_shared_prompt_kind"),
         CheckConstraint("revision >= 1", name="ck_shared_prompt_revision"),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     kind: Mapped[str] = mapped_column(String(20), nullable=False)
     level: Mapped[int] = mapped_column(Integer, nullable=False)
+    allowed_events: Mapped[list[str] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
     label: Mapped[str] = mapped_column(String(160), nullable=False)
     positive: Mapped[str] = mapped_column(Text, nullable=False)
     negative: Mapped[str] = mapped_column(Text, nullable=False)
@@ -28,7 +29,7 @@ class CharacterPromptCandidates(TimestampMixin, Base):
     __table_args__ = (
         UniqueConstraint("cpu_id", "level", "kind", name="uq_prompt_candidates_scope"),
         CheckConstraint("level BETWEEN 0 AND 3", name="ck_prompt_candidates_level"),
-        CheckConstraint("kind IN ('clothing_state','pose')", name="ck_prompt_candidates_kind"),
+        CheckConstraint("kind IN ('clothing_state','pose','situation')", name="ck_prompt_candidates_kind"),
         CheckConstraint("revision >= 1", name="ck_prompt_candidates_revision"),
     )
 
@@ -52,7 +53,7 @@ class SharedPromptDefault(TimestampMixin, Base):
     __tablename__ = "shared_prompt_defaults"
     __table_args__ = (
         CheckConstraint("level BETWEEN 0 AND 3", name="ck_shared_prompt_default_level"),
-        CheckConstraint("kind IN ('clothing_state','pose')", name="ck_shared_prompt_default_kind"),
+        CheckConstraint("kind IN ('clothing_state','pose','situation')", name="ck_shared_prompt_default_kind"),
         CheckConstraint("revision >= 1", name="ck_shared_prompt_default_revision"),
     )
 

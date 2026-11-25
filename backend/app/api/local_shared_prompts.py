@@ -1,18 +1,17 @@
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query
 
 from app.api.dependencies import get_current_superadmin, get_session
 from app.db.session import mark_write_intent
 from app.schemas.shared_prompts import (
-    CandidateWrite, ChangeConfirmation, ChangePreviewRequest, DefaultWrite,
+    PromptKind as Kind, SituationEvent, CandidateWrite, ChangeConfirmation, ChangePreviewRequest, DefaultWrite,
     SharedPromptCreate, SharedPromptPatch,
 )
 from app.services import shared_prompts as service
 
 router = APIRouter(prefix="/api/local", tags=["local-shared-prompts"],
                    dependencies=[Depends(get_current_superadmin)])
-Kind = Literal["clothing_state", "pose"]
 
 
 @router.get("/shared-prompts")
@@ -47,8 +46,8 @@ def put_default(level: Annotated[int, Path(ge=0, le=3)], kind: Kind, data: Defau
 
 
 @router.get("/characters/{cpu_id}/prompt-candidates/{level}/{kind}")
-def get_candidates(cpu_id: int, level: Annotated[int, Path(ge=0, le=3)], kind: Kind, session=Depends(get_session)):
-    return service.get_candidates(session, cpu_id, level, kind)
+def get_candidates(cpu_id: int, level: Annotated[int, Path(ge=0, le=3)], kind: Kind, event: SituationEvent | None = None, session=Depends(get_session)):
+    return service.get_candidates(session, cpu_id, level, kind, event)
 
 
 @router.put("/characters/{cpu_id}/prompt-candidates/{level}/{kind}")
