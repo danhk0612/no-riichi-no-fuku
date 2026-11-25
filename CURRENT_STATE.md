@@ -1,6 +1,24 @@
 # 현재 상태
 
-## W09-M 고정 대사 관리 — PR 검토 대기
+## W09-M 고정 대사 관리 — 수용 완료
+
+[PR #113](https://github.com/danhk0612/no-riichi-no-fuku/pull/113) 병합. 검토한 제품 소스 `8a44ddf`와 main `dec01ae`의 tree가 일치한다.
+상단 설정 버튼과 패널 닫기는 고정 대사의 미저장 확인·저장 중 잠금을 공유한다. Linux Chromium에서
+수정 전에는 상단 닫기 확인 횟수가 0(기대 1)으로 실패했고, 수정 후 취소·폐기·재진입과 저장 중 잠금이 통과했다.
+같은 tree의 Linux backend 195개, 대사 pytest 10개, production build 및 content/audio/delivery browser 3종 통과.
+최종 Windows Server 2022 [W04](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45719669680)와
+[W05](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45719669600) 통과.
+다운로드한 두 artifact의 source SHA·외부 해시와 내부 ZIP 해시/무결성을 확인했다.
+W05 browser 7종, packaged renderer 검사 36개(저장·reset·engine 재시작 포함), 읽기 전용 DB revision 0014,
+일반 모드 종료·재시작 exit 0 확인. 개인 PC 실기 및 실제 사용자 CG/음성은 미검증이다.
+
+| 산출물 | SHA-256 |
+|---|---|
+| W04 15071009587 | `147fe75a0863e53efb7279707ae6e01d88b8eead216b4a6bbcdebb6261dac042` |
+| W05 15072192207 | `f46557295f8a99ff2799022d65340fe9ff841277bd61eafaa63604c29c587d23` |
+| W05 내부 Windows ZIP | `fd1461ae1a52e730d346c92de7078706d596d26921b2ab6086536aca7d20abbc` |
+
+### 최초 제출 검증
 
 PR #113의 제품 source `bf6b862df58d5b88484db95c20204ce87e209e38`에서 CPU별 다섯 슬롯,
 독립 revision·기존 문구 명시 선택/출처 사본·빈 값 및 변수 검증을 구현했다. 기존 CpuDialogue,
