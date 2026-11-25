@@ -2,7 +2,7 @@
 
 ## W09-S — 공유 상황 편집·이벤트 지정 구현
 
-D05-c A를 적용했다. 검증 상태는 CURRENT_STATE와 PR checks를 따른다. 다음은 W09-C2 콘텐츠 snapshot 계약이다. Q-FRAME/D07-a 및 Q-IMAGE/D08 미결정 항목은 별도이며 W09-C1 unbound 대국은 소급 변경하지 않는다.
+D05-c A를 적용했다. PR #115 병합·검증 근거는 CURRENT_STATE를 따른다. [C2 저장 설계](docs/W09_C2_CONTENT_SNAPSHOT_DESIGN.md)에서 신규 대국의 불변 복사, 결과별 저장과 검사 순서를 정리했다. 다음은 W09-C2 콘텐츠 snapshot 계약이다. Q-FRAME/D07-a 및 Q-IMAGE/D08 미결정 항목은 별도이며 W09-C1 unbound 대국은 소급 변경하지 않는다.
 
 ## W09-M 고정 대사 관리 구현 지시 — 이력
 
