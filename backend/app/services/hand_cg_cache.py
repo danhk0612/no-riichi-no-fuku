@@ -11,7 +11,7 @@ from threading import Lock
 from time import time
 from uuid import UUID, uuid4
 
-from app.services.anima_adapter import Comfy, Settings, graph
+from app.services.anima_adapter import Comfy, LEGACY_WORKFLOW, Settings, WORKFLOW, graph
 
 _locks = tuple(Lock() for _ in range(64))
 
@@ -60,7 +60,8 @@ class HandCG:
 
     def advance(self, frozen, endpoint, retry=None):
         settings = Settings(**frozen["settings"])
-        if frozen["workflow"] != "anima-txt2img-v1" or frozen["kind"] not in ("hand_cg", "profile", "full_body", "cg"):
+        workflow = frozen["workflow"]
+        if workflow not in (LEGACY_WORKFLOW, WORKFLOW) or frozen["kind"] not in ("hand_cg", "profile", "full_body", "cg"):
             return {"state": "unsupported"}
         if not all((settings.model, settings.encoder, settings.vae)):
             return {"state": "unconfigured"}
@@ -86,9 +87,9 @@ class HandCG:
                           "endpoint": endpoint, "started": time()}
                 save("uncertain")  # crash or lost POST reply must never cause automatic resubmission
                 client = self.client(endpoint)
-                _, output = graph(settings, frozen["positive"], frozen["negative"], record["seed"])
+                _, output = graph(settings, frozen["positive"], frozen["negative"], record["seed"], workflow=workflow)
                 try:
-                    job = client.submit(settings, frozen["positive"], frozen["negative"], record["seed"])
+                    job = client.submit(settings, frozen["positive"], frozen["negative"], record["seed"], workflow=workflow)
                 except (ValueError, KeyError, TypeError):
                     return save("failed")
                 except (OSError, HTTPException):

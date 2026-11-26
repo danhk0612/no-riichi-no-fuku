@@ -23,6 +23,7 @@ class AnimaAdapterTest(TestCase):
     def test_local_server_pending_and_owned_output(self):
         nodes, output = graph(self.settings, "", "", 1)
         spec = {n["class_type"]: {"input": {"required": {k: ["*"] for k in n["inputs"]}}} for n in nodes.values()}
+        spec["CLIPLoader"]["input"]["required"]["type"] = [["qwen_image"]]
         job, seen = str(uuid4()), []
         class Handler(BaseHTTPRequestHandler):
             def log_message(self, *args): pass
@@ -47,6 +48,8 @@ class AnimaAdapterTest(TestCase):
                 client = Comfy(f"http://127.0.0.1:{server.server_port}")
                 with self.assertRaises(KeyError): client.result(str(uuid4()))
                 self.assertEqual(client.submit(self.settings, "", "", 1), job)
+                with self.assertRaisesRegex(ValueError, "CLIPLoader.type"):
+                    client.submit(self.settings, "", "", 1, workflow="anima-txt2img-v1")
                 self.assertIsNone(client.result(job))
                 self.assertEqual(client.result(job), b"owned")
                 self.assertIn("filename=only.png", seen[-1])

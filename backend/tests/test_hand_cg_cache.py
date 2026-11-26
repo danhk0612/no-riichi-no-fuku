@@ -46,6 +46,18 @@ class HandCacheTests(TestCase):
                 self.assertEqual(submit.call_count,1)
                 self.assertEqual(service().advance(FROZEN,endpoint,missing["attempt"])["state"],"pending")
 
+    def test_workflow_revision_does_not_reuse_or_replace_old_image(self):
+        with TemporaryDirectory() as tmp, patch.object(Comfy, "submit", return_value=str(uuid4())) as submit, patch.object(Comfy, "saved_result", return_value=PNG):
+            cache = HandCG(Path(tmp))
+            endpoint = "http://127.0.0.1:8188"
+            for workflow in ("anima-txt2img-v1", "anima-txt2img-v2"):
+                frozen = {**FROZEN, "workflow": workflow}
+                self.assertEqual(cache.advance(frozen, endpoint)["state"], "pending")
+                self.assertEqual(submit.call_args.kwargs["workflow"], workflow)
+                self.assertEqual(cache.advance(frozen, endpoint)["state"], "ready")
+            self.assertEqual(cache.advance(FROZEN, endpoint)["state"], "ready")
+            self.assertEqual(submit.call_count, 2)
+
     def test_known_job_survives_disconnect_without_resubmission(self):
         with TemporaryDirectory() as tmp, patch.object(Comfy,"submit",return_value=str(uuid4())) as submit, patch.object(Comfy,"saved_result",side_effect=[TimeoutError,None,PNG]) as poll:
             cache=HandCG(Path(tmp))
@@ -70,6 +82,7 @@ class HandCacheTests(TestCase):
                     base="/api/local/play/sessions/c1-test-session/results"
                     params={"generation":generation}
                     envelope=client.get(base,params=params).json()
+                    self.assertEqual(envelope["head"]["payload"]["content"]["scene"]["generation_input"]["workflow"], "anima-txt2img-v2")
                     event=envelope["head"]["event_id"]
                     route=f"{base}/{event}/cg"
                     self.assertEqual(client.post(route,params=params).json()["state"],"pending")
@@ -92,7 +105,7 @@ class HandCacheTests(TestCase):
         from threading import Event
         from test_result_delivery import ResultDeliveryTests
         began, release = Event(), Event()
-        def delayed(*args):
+        def delayed(*args, **kwargs):
             began.set()
             if not release.wait(8):
                 raise TimeoutError

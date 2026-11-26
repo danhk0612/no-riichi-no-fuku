@@ -5,6 +5,7 @@ from random import Random
 from hashlib import sha256
 import json
 
+from app.services.anima_adapter import LEGACY_WORKFLOW, WORKFLOW
 from app.services.character_content import get_character_content, stage_image_urls
 from app.services.generation_settings import match_inputs
 from app.services.fixed_dialogue import read_fixed, render_text
@@ -48,6 +49,7 @@ def capture(db, record):
         }
         if settings is not None:
             common, overrides = settings.inputs_for(cpu)
+            seats[str(seat)]["anima_workflow"] = WORKFLOW
             seats[str(seat)]["anima"] = {
                 **asdict(common), "model": overrides["character_model"] or common.model,
                 "loras": [list(row) for row in (*common.loras, *overrides["character_loras"])],
@@ -86,7 +88,7 @@ def scene(cpu, stage, event, identity, stage_cg=False):
         result["missing_candidates"] = missing
     elif not stage_cg and "anima" in cpu:
         # Do not reinterpret older snapshots. A seed is allocated only when an artifact is requested.
-        result["generation_input"] = {"workflow": "anima-txt2img-v1", "kind": "hand_cg", "stage": stage,
+        result["generation_input"] = {"workflow": cpu.get("anima_workflow", LEGACY_WORKFLOW), "kind": "hand_cg", "stage": stage,
                                       "positive": result["positive"], "negative": result["negative"],
                                       "settings": deepcopy(cpu["anima"])}
     return result
