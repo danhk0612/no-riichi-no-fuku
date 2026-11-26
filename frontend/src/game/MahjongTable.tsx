@@ -144,8 +144,13 @@ function Tile({ tileId, disabled = false, onClick }: {
 }) {
   const tile = tileIdToDisplay(tileId)
   const className = `tile tile-${tile.suit}${tile.red ? ' tile-red' : ''}`
-  const face = <><span className="tile-value">{tile.suit === 'honor' ? tile.label : tile.label.slice(0, -1)}</span>{tile.suit !== 'honor' && <small className="tile-suit">{tile.label.slice(-1)}</small>}{tile.red && <i className="aka-mark" aria-hidden="true" />}</>
+  const faceIndex = tile.red ? 34 + Math.floor(tileId / 36) : Math.floor(tileId / 4)
   const name = (tile.red ? '적도라 ' : '') + tile.label
+  const face = <>
+    <span aria-hidden="true" className="tile-art" style={{backgroundPositionX: (faceIndex / 36 * 100) + '%'}} />
+    <small className="tile-caption">{tile.label}</small>
+    {tile.red && <i className="aka-mark" aria-hidden="true" />}
+  </>
   if (onClick) {
     return (
       <button

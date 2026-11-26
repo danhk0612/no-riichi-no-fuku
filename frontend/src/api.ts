@@ -243,6 +243,16 @@ export function getCharacterContent(accessToken: string, cpuId: number): Promise
 export function listLocalCharacters(accessToken: string): Promise<LocalCharacterChoice[]> {
   return apiRequest('/api/admin/cpus', {}, accessToken)
 }
+export function createLocalCharacter(token: string, name: string): Promise<LocalCharacterChoice> {
+  return apiRequest('/api/admin/cpus', {method: 'POST', body: JSON.stringify({
+    slug: 'custom-' + crypto.randomUUID(), name, style: 'balanced', short_description: '균형형 CPU',
+    aggression: 1, defense: 1, call_preference: 1, riichi_preference: 1,
+    hand_value_preference: 1, speed_preference: 1,
+  })}, token)
+}
+export function renameLocalCharacter(token: string, id: number, name: string): Promise<LocalCharacterChoice> {
+  return apiRequest('/api/admin/cpus/' + id, {method: 'PATCH', body: JSON.stringify({name})}, token)
+}
 export function listSharedPrompts(accessToken: string, kind: SharedPromptKind, level: number): Promise<{ items: SharedPromptItem[] }> {
   const query = new URLSearchParams({ kind, level: String(level) })
   return apiRequest(`/api/local/shared-prompts?${query}`, {}, accessToken)

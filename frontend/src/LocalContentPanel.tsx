@@ -2,9 +2,9 @@ import { StageImageEditor } from './StageImageEditor'
 import { useEffect, useRef, useState } from 'react'
 import {
   getCharacterContent, listLocalCharacters, listContentPacks, patchCharacterContent,
-  rescanContentPacks, applyCharacterPack,
+  rescanContentPacks, applyCharacterPack, createLocalCharacter, renameLocalCharacter,
 } from './api'
-import type { CharacterContent, ContentPack } from './api'
+import type { CharacterContent, ContentPack, LocalCharacterChoice } from './api'
 import { SharedPromptManager } from './SharedPromptManager'
 import { FixedDialogueManager } from './FixedDialogueManager'
 
@@ -18,7 +18,7 @@ const LEVELS = ['정상', '상의 겉옷 탈의', '속옷 세트', '전체 탈�
 const MEASUREMENTS = [['height', '키'], ['bust', '가슴(B)'], ['waist', '허리(W)'], ['hips', '엉덩이(H)']] as const
 type Tab = 'prompts' | 'packs' | 'shared' | 'fixed'
 
-export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasurementsUpdated, onImageSaved, fixedDirty, fixedSaving, setFixedDirty, setFixedSaving }: {
+export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, onPackApplied, onMeasurementsUpdated, onImageSaved, fixedDirty, fixedSaving, setFixedDirty, setFixedSaving }: {
   accessToken: string
   onClose: () => void
   fixedDirty: boolean
@@ -26,6 +26,7 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
   setFixedDirty: (value: boolean) => void
   setFixedSaving: (value: boolean) => void
   onImageSaved: (cpu:number, level:number, kind:typeof KINDS[number][0], url:string|null)=>void
+  onCharactersChanged: (characters: LocalCharacterChoice[]) => Promise<void>
   onPackApplied: () => void
   onMeasurementsUpdated: (content: CharacterContent) => void
 }) {
@@ -40,6 +41,8 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [selectedPack, setSelectedPack] = useState('')
+  const [nameMode, setNameMode] = useState<'add' | 'rename' | null>(null)
+  const [characterName, setCharacterName] = useState('')
   const mutationInFlight = useRef(false)
   const [scanning, setScanning] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -62,6 +65,34 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
       if (request === requestId.current) setError(message(caught))
     } finally {
       if (request === requestId.current) setLoading(false)
+    }
+  }
+
+  async function saveCharacterName() {
+    const name = characterName.trim()
+    if (!name || !nameMode || mutationInFlight.current) return
+    mutationInFlight.current = true
+    setSaving(true)
+    setError(null)
+    try {
+      let nextCharacters: LocalCharacterChoice[]
+      if (nameMode === 'add') {
+        const added = await createLocalCharacter(accessToken, name)
+        nextCharacters = [...cpus, added]
+        setCpus(nextCharacters)
+        await loadCharacter(added.id)
+      } else if (cpuId !== null) {
+        const updated = await renameLocalCharacter(accessToken, cpuId, name)
+        nextCharacters = cpus.map(cpu => cpu.id === updated.id ? updated : cpu)
+        setCpus(nextCharacters)
+      } else return
+      setNameMode(null)
+      await onCharactersChanged(nextCharacters)
+    } catch (caught) {
+      setError(message(caught))
+    } finally {
+      mutationInFlight.current = false
+      setSaving(false)
     }
   }
 
@@ -181,10 +212,20 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
     </div>
     {error && <p className="form-error" role="alert">{error}</p>}
     <div hidden={tab !== 'prompts'}><section className="sound-card content-editor">
-      <label>캐릭터<select aria-label="캐릭터" value={cpuId ?? ''} disabled={!cpus.length} onChange={(event) => { const id = Number(event.target.value); if (Number.isInteger(id)) void loadCharacter(id) }}>
+      <label>캐릭터<select aria-label="캐릭터" value={cpuId ?? ''} disabled={!cpus.length || !!nameMode} onChange={(event) => { const id = Number(event.target.value); if (Number.isInteger(id)) void loadCharacter(id) }}>
         <option value="" disabled>캐릭터 선택</option>
         {cpus.map((cpu) => <option key={cpu.id} value={cpu.id}>{cpu.name} · {cpu.slug}</option>)}
       </select></label>
+      {nameMode ? <form onSubmit={event => { event.preventDefault(); void saveCharacterName() }}>
+        <label>{nameMode === 'add' ? '새 캐릭터 이름' : '변경할 이름'}
+          <input autoFocus maxLength={80} value={characterName} disabled={saving} onChange={event => setCharacterName(event.target.value)} />
+        </label>
+        <button type="submit" disabled={saving || !characterName.trim()}>{nameMode === 'add' ? '추가하기' : '캐릭터 이름 저장'}</button>
+        <button type="button" disabled={saving} onClick={() => setNameMode(null)}>취소</button>
+      </form> : <div>
+        <button type="button" disabled={saving || loading || !!Object.keys(dirty).length} onClick={() => { setCharacterName(''); setNameMode('add') }}>캐릭터 추가</button>
+        {content && <button type="button" disabled={saving} onClick={() => { setCharacterName(cpus.find(cpu => cpu.id === cpuId)?.name ?? ''); setNameMode('rename') }}>이름 변경</button>}
+      </div>}
       {loading && <p className="muted" role="status">캐릭터 자료를 불러오는 중…</p>}
       {!loading && !cpus.length && <p className="muted">편집 가능한 캐릭터가 없습니다.</p>}
       {content && <>
