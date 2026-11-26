@@ -327,7 +327,9 @@ async def send_registered_game_state(
                 registry.settle(session, registered)
                 session.commit()
                 registry.publish_completed(session, registered)
-                if local_runtime is not None and registered.play_generation is not None:
+                record = session.get(GameSessionRecord, registered.session_id)
+                if (local_runtime is not None and registered.play_generation is not None
+                        and record is not None and record.result_delivery_version is None):
                     presentation = registered.presentation or {}
                     settlement = presentation.get("settlement", {})
                     cpu_id = settlement.get("cpu_character_id")
@@ -397,8 +399,6 @@ async def send_registered_game_state(
                     return False
                 await websocket.send_json({"type": "result_delivery", **envelope})
                 if envelope["route"] != "human_turn":
-                    if result_voice_message is not None:
-                        await websocket.send_json(result_voice_message)
                     return True
     if is_done:
         result = registered.result

@@ -21,7 +21,7 @@ from app.services.result_delivery import (
 
 
 class ResultDeliveryTests(unittest.TestCase):
-    def _build_completed(self, runtime, content=False, hand_defaults=False):
+    def _build_completed(self, runtime, content=False, hand_defaults=False, mode="progress", last_seat=3):
         with runtime.session_factory.begin() as db:
             if hand_defaults:
                 from app.db.models import SharedPromptDefault, SharedPromptItem
@@ -32,6 +32,8 @@ class ResultDeliveryTests(unittest.TestCase):
                     db.add(SharedPromptDefault(level=0,kind=kind,item_id=kind))
             state = db.get(LocalPlayState, runtime.member_id)
             generation = state.generation
+            ranks = [1, 2, 3, 4]
+            ranks[3], ranks[last_seat] = ranks[last_seat], ranks[3]
             record = GameSessionRecord(
                 id="c1-test-session", user_id=runtime.member_id, match_seed=1,
                 cpu_choices=[
@@ -44,9 +46,9 @@ class ResultDeliveryTests(unittest.TestCase):
                     {"seat": 3, "name": "CPU C", "is_human": False},
                 ],
                 human_action_indices=[], status="completed", scores=[40000, 30000, 20000, 10000],
-                ranks=[1, 2, 3, 4], settlement={"progression_version": 2, "mode": "progress"},
-                presentation={"version": 2, "result_asset": None, "result_dialogues": [], "settlement": {"stage_changed": True, "mode": "progress", "defeat_stage": 3}},
-                play_generation=generation, rules_snapshot={"version": 2, "mode": "progress"},
+                ranks=ranks, settlement={"progression_version": 2, "mode": mode},
+                presentation={"version": 2, "result_asset": None, "result_dialogues": [], "settlement": {"stage_changed": mode == "progress" and last_seat != 0, "mode": mode, "defeat_stage": 3 if mode == "progress" and last_seat else None}},
+                play_generation=generation, rules_snapshot={"version": 2, "mode": mode},
                 hand_results_version=1, result_delivery_version=1, result_content_version=1 if content else None,
             )
             db.add(record)
@@ -79,6 +81,61 @@ class ResultDeliveryTests(unittest.TestCase):
             append_hand_entries(db, record, [fact])
             append_settlement_entry(db, record)
             return generation
+
+    def test_defeat_voice_claim_is_settlement_only_and_survives_restart(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            data = Path(tmp) / "data"
+            runtime = create_local_runtime(data)
+            try:
+                generation = self._build_completed(runtime)
+                headers = {"X-Local-Capability": runtime.capability}
+                path = "/api/local/play/sessions/c1-test-session/results"
+                query = {"generation": generation}
+                with TestClient(runtime.app) as client:
+                    hand = client.get(path, headers=headers, params=query).json()
+                    event = hand["head"]["event_id"]
+                    self.assertEqual(client.post(f"{path}/{event}/defeat-voice", headers=headers, params=query).status_code, 409)
+                    result = client.post(f"{path}/ack", headers=headers, json={
+                        **query, "ordinal": 1, "event_id": event, "expected_delivery_revision": hand["delivery_revision"]})
+                    url = f"{path}/{result.json()['head']['event_id']}/defeat-voice"
+                    with patch("app.api.local_play.resolve_voice_slot", return_value={"url": "/clip"}) as resolver:
+                        with ThreadPoolExecutor(max_workers=2) as pool:
+                            clips = list(pool.map(lambda _: client.post(url, headers=headers, params=query).json()["url"], range(2)))
+                        self.assertCountEqual(clips, [None, "/clip"])
+                        self.assertEqual(resolver.call_args.args[1:3], (3, "defeat_stage_3"))
+                        resolver.assert_called_once()
+            finally:
+                runtime.close()
+            runtime = create_local_runtime(data)
+            try:
+                with TestClient(runtime.app) as client:
+                    self.assertEqual(client.post(url, headers={"X-Local-Capability": runtime.capability}, params=query).json(), {"url": None})
+            finally:
+                runtime.close()
+
+    def test_omake_uses_final_voice_and_human_last_place_is_silent(self):
+        for seat in (0, 2):
+            with self.subTest(seat=seat), tempfile.TemporaryDirectory() as tmp:
+                runtime = create_local_runtime(Path(tmp) / "data")
+                try:
+                    gen = self._build_completed(runtime, mode="omake", last_seat=seat)
+                    with TestClient(runtime.app) as client:
+                        headers = {"X-Local-Capability": runtime.capability}
+                        path = "/api/local/play/sessions/c1-test-session/results"
+                        hand = client.get(path, headers=headers, params={"generation": gen}).json()
+                        result = client.post(f"{path}/ack", headers=headers, json={
+                            "generation": gen, "ordinal": 1, "event_id": hand["head"]["event_id"],
+                            "expected_delivery_revision": hand["delivery_revision"]}).json()
+                        with patch("app.api.local_play.resolve_voice_slot", return_value=None) as slot:
+                            reply = client.post(f"{path}/{result['head']['event_id']}/defeat-voice",
+                                                headers=headers, params={"generation": gen})
+                            self.assertEqual(reply.json(), {"url": None})
+                            if seat:
+                                self.assertEqual(slot.call_args.args[1:3], (2, "defeat_stage_3"))
+                            else:
+                                slot.assert_not_called()
+                finally:
+                    runtime.close()
 
     def test_saved_content_survives_editor_change_and_cold_restart(self):
         with tempfile.TemporaryDirectory() as tmp:

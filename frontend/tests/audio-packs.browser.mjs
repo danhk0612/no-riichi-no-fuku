@@ -20,17 +20,20 @@ try {
   const play = { generation: 'test-generation', phase: 'omake', roster: cpus.map((cpu) => ({ cpu_character_id: cpu.id, defeat_stage: 3 })), ending_event_id: null, ending_payload: null, active_session_id: null, recent_session_id: null, legacy_active: false }
   const result = {type:'result_delivery',version:1,generation:play.generation,session_id:'test-match',acked_ordinal:0,terminal_ordinal:null,route:'result',action_version:null,delivery_revision:1,
     head:{kind:'hand',ordinal:1,event_id:'fixture-hand',payload:{kind:'hand',fact_snapshot:{start:{kyoku:1,bakaze:'E'},winners:[]}}}}
-  let resultLoads=0
+  let resultLoads=0, claims=0, defeatLoads=0
   const heldFiles = new Map(); let socket
   let finishBootstrap
   const bootstrap = new Promise((resolve) => { finishBootstrap = resolve })
   await page.route('**/api/**', async (route) => {
     const request = route.request(), path = new URL(request.url()).pathname
     if (/^\/api\/local\/media\/[^/]+\/file$/.test(path)) {
+      if (path.endsWith('/defeat/file')) defeatLoads++
       if (path.endsWith('/result-only/file')) resultLoads++
       if (heldFiles.has(path)) await heldFiles.get(path)
       return route.fulfill({ contentType: 'audio/mpeg', body: Buffer.from('test-only') })
     }
+    if (path.endsWith('/fixture-settlement/defeat-voice') && request.method() === 'POST')
+      return route.fulfill({json:{url: ++claims === 1 ? '/api/local/media/defeat/file' : null}})
     if (path === '/api/profile/me') {
       await bootstrap
       return route.fulfill({ json: { player_name: 'test', current_hp: null, max_hp: null } })
@@ -109,16 +112,22 @@ try {
   socket.send(JSON.stringify(result))
   await page.getByText('정산 결과 저장 중').waitFor()
   assert.equal(await page.evaluate(()=>window.__audios[1].paused),false)
+  assert.equal(claims,0,'no defeat voice during hand or settlement wait')
   Object.assign(result,{delivery_revision:3,route:'result',head:{kind:'settlement',ordinal:2,event_id:'fixture-settlement',payload:{kind:'settlement',scores:[],ranks:[]}}})
   socket.send(JSON.stringify(result))
   await page.getByRole('region',{name:'최종 정산 결과'}).waitFor()
   assert.equal(resultLoads,1,'result-to-result transitions must keep the same track')
+  await page.waitForFunction(()=>window.__audios.length===3 && !window.__audios[2].paused)
+  assert.equal(defeatLoads,1)
   play.result_resume={session_id:'test-match',route:'result'}
   await page.reload()
   await page.getByRole('region',{name:'최종 정산 결과'}).waitFor()
   await page.waitForFunction(()=>window.__audios.some(audio=>!audio.paused))
   await page.waitForFunction(()=>performance.getEntriesByType('resource').some(r=>r.name.endsWith('/result-only/file')))
   assert.equal(resultLoads,2,'cold resume must select the result track with no active seats')
+  await page.waitForFunction(()=>performance.getEntriesByType('resource').some(r=>r.name.includes('/defeat-voice?')))
+  assert.equal(claims,2)
+  assert.equal(defeatLoads,1,'cold resume must not replay the clip')
   assert.deepEqual(errors, [])
   console.log('PASS: startup title BGM/selection transition, voice-off/SFX pack save discard held media and queued voices, future voice queue recovers, active voice stops')
 } finally { await browser.close() }

@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -38,6 +39,7 @@ class GameResultDelivery(Base):
     content_mode: Mapped[str] = mapped_column(String(16), nullable=False, default="unbound")
     acked_ordinal: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     revision: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    defeat_voice_claimed: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     terminal_ordinal: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
