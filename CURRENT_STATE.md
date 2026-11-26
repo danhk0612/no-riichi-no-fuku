@@ -1,5 +1,9 @@
 # 현재 상태
 
+## 대국 화면 가독성
+
+PR #139는 대국의 4좌석·6열 버림패·수패 숫자와 종류·적도라 표시·행동 안내, 참가자 선택 인원과 결과 순위를 정리했다. 금색 밑줄은 각 좌석의 버림패 배열 끝을 표시한다. 소스 `232f952`의 [W04](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45776128727) 및 [W05](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45776128795) 통과. 패키지 렌더러 폭 1280·680px에서 4좌석·손패 버튼 이름·안내 문구·가로 넘침 없음, 대국/결산/종료 및 복구를 검증했다. 게임 ZIP `15095984966`, 화면 캡처 포함 증거 `15096742157`. 사용자 PC의 실제 플레이 가독성 평가는 후속이다.
+
 ## Windows 사용자 ZIP · 오프라인 대국 재개
 
 소스 `d1e6009`의 [W04](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45758298094)와 [W05](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45758298103)가 통과했다. Windows Server 2022 x64에서 같은 빌드를 한글·공백이 있는 두 폴더에 압축 해제했다. 기본 경로로 실행해 저장한 이름·CPU 3명·진행 세대·진행 중 대국 ID가 두 번째 설치에서 일치했다. 게임 종료 후 데이터 폴더 전체를 백업해 별도 LocalAppData에 복원한 뒤에도 같은 값을 확인했다. 사용자용 ZIP artifact `15088254644`, 개발 검증 자료 `15089605512`. 사용자 PC, 서로 다른 버전 간 DB 이전, 실제 이미지 생성 및 정식 배포 검증은 별도다.
