@@ -54,7 +54,7 @@ def prepare(root):
                 before = [c.defeat_stage for c in choices]
                 assert sum(before) == number - 1
                 unfinished = {seat for seat, stage in enumerate(before, 1) if stage < 3}
-                seed, turns, fourth = choose_match(choices, unfinished)
+                seed, turns, fourth = choose_match(runtime.member_id, choices, unfinished)
                 started = api.post("/api/game/sessions", json=body)
                 started.raise_for_status()
                 sid = started.json()["session_id"]
