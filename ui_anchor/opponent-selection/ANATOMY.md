@@ -53,3 +53,9 @@ Windows Electron 창에서 React·TypeScript가 선택 화면을 그린다. 참�
 격리된 Windows 11 x64 EXE에서 빈 데이터의 이미지 0장, 테스트용 로컬 생성 결과 8장을 각각 확인했다. 마우스 호버·클릭, Tab과 Shift+Tab, Enter와 Space, 세 명 미만의 시작 제한, 세 명 선택 후 추가 선택 제한, 해제·교체와 실제 대국 좌석 순서를 확인했다. 캡처는 별도 로컬 폴더의 round-01.png, round-02.png, round-03.png, final.png, compact.png, empty.png, comparison.png에 보관했다. 완료 CPU만 남은 진행 상태와 보조공학 낭독은 이 실행에서 검증하지 않았다.
 
 적용한 스킬은 [game-ux-ui-design](https://github.com/SillyToolValley/game-ux-ui-skill/tree/b13b9cb70b1b5a906c0eec6cd7054e2df4a1337b)이다. 공통 디자인 규칙은 화면 방향 승인 후 정리한다.
+
+## 파란색과 다인원 명단 반영
+
+선택 강조는 남색 #284a70, 바탕은 옅은 회백색 #f1f2ef, 게임 외곽은 어두운 파랑 #121e30을 사용한다. 게임 헤더에는 설정 버튼 하나를 두고 이름·난이도·사운드·캐릭터·이미지 생성 항목은 설정 안에서 연다.
+
+후보 행은 가용 폭에 따라 열 수를 정하고 다음 줄로 이어진다. 격리된 Windows EXE 테스트에서 참가 명단 12명을 확정하고 1500×850에서 첫 줄 9명과 다음 줄 3명을 확인했다. 카드 폭은 144px, 그림 높이는 약 102px였다. 1100×720에서도 오른쪽 끝 후보까지 가로 스크롤 없이 조작했다. 좌석은 기존대로 세 자리다.

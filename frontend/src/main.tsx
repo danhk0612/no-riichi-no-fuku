@@ -75,6 +75,8 @@ function App() {
   const [profileName, setProfileName] = useState('')
   const [profileBusy, setProfileBusy] = useState(false)
   const [soundSelection, setSoundSelection] = useState<SoundSelection | null>(null)
+  const [settingsVisible, setSettingsVisible] = useState(false)
+  const [profileMessage, setProfileMessage] = useState('')
   const [activeSettings, setActiveSettings] = useState<SettingsPage | null>(null)
   const [openSettings, setOpenSettings] = useState<Partial<Record<SettingsPage, boolean>>>({})
   const [editedCharacters, setEditedCharacters] = useState<{id: number; name: string}[]>()
@@ -474,13 +476,14 @@ function App() {
   async function savePlayerName() {
     if (!accessToken || !isDesktop) return
     setProfileBusy(true)
-    setError(null)
+    setProfileMessage('')
     try {
       const profile = await updatePlayerName(accessToken, profileName.trim())
       setDesktopProfile(profile.player_name ?? '플레이어')
       setProfileName(profile.player_name ?? '플레이어')
+      setProfileMessage('이름을 저장했습니다.')
     } catch (caught) {
-      setError(errorMessage(caught))
+      setProfileMessage(errorMessage(caught))
     } finally {
       setProfileBusy(false)
     }
@@ -963,26 +966,44 @@ function App() {
         <p className="eyebrow">4-PLAYER RIICHI MAHJONG</p>
         <h1>No Riichi No Fuku</h1>
         <p>플레이어 1명과 CPU 3명이 진행하는 동풍전</p>
-        {isDesktop && accessToken && <nav className="settings-navigation" aria-label="게임 및 편집 설정">
-          {settingsGroups.map(group => <div key={group.label} role="group" aria-label={group.label}>
-            <span className="settings-group-label" aria-hidden="true">{group.label}</span>
-            {group.items.map(([page, label]) => <button key={page} id={'settings-link-' + page} type="button"
-              aria-expanded={activeSettings === page} aria-controls={openSettings[page] ? 'settings-page-' + page : undefined}
-              disabled={activeSettings === 'content' && page === 'content' && fixedSaving}
-              onClick={() => selectSettings(page)}>{label}</button>)}
-          </div>)}
-          {activeSettings && <button type="button" className="settings-return" onClick={() => {
-            document.getElementById('settings-link-' + activeSettings)?.focus()
-            setActiveSettings(null)
-          }}>게임 화면으로</button>}
-        </nav>}
+        {isDesktop && accessToken && <button className="settings-door" id="settings-door" type="button"
+          aria-expanded={settingsVisible} aria-controls="game-settings" onClick={() => {
+            setSettingsVisible(!settingsVisible)
+            if (!settingsVisible) {
+              setActiveSettings(null)
+              requestAnimationFrame(() => document.getElementById('settings-heading')?.focus())
+            }
+          }}>{settingsVisible ? '게임 화면으로' : '설정'}</button>}
       </header>
-      {isDesktop && accessToken && openSettings.difficulty && <div id="settings-page-difficulty" hidden={activeSettings !== 'difficulty'}><LocalDifficultyPanel accessToken={accessToken} onClose={() => closeSettings('difficulty')} onSaved={refreshCharacterChoices} /></div>}
-      {isDesktop && accessToken && openSettings.generation && <div id="settings-page-generation" hidden={activeSettings !== 'generation'}><GenerationPanel key={accessToken} token={accessToken} close={()=>closeSettings('generation')}/></div>}
-      {isDesktop && accessToken && openSettings.sound && <div id="settings-page-sound" hidden={activeSettings !== 'sound'}><LocalSoundPanel editedCharacters={editedCharacters} accessToken={accessToken} onClose={() => closeSettings('sound')} onSelectionChanged={setSoundSelection} onPlaybackChanged={stopGameAudio} /></div>}
-      {isDesktop && accessToken && openSettings.content && <div id="settings-page-content" hidden={activeSettings !== 'content'}><LocalContentPanel onCharactersChanged={async characters => { setEditedCharacters(characters); await refreshCharacterChoices() }} accessToken={accessToken} onClose={() => closeSettings('content')} fixedDirty={fixedDirty} fixedSaving={fixedSaving} setFixedDirty={setFixedDirty} setFixedSaving={setFixedSaving} onPackApplied={stopGameAudio} onMeasurementsUpdated={updateCharacterContent}
-        onImageSaved={(id,level,kind,url)=>setCpus(current=>current?.map(cpu=>cpu.id===id && cpu.defeat_stage===level
-          ? {...cpu,stage_images:{profile:null,full_body:null,cg:null,...cpu.stage_images,[kind]:url}} : cpu) ?? current)} /></div>}
+      {isDesktop && accessToken && <section id="game-settings" hidden={!settingsVisible} aria-labelledby="settings-heading">
+        <h2 id="settings-heading" tabIndex={-1}>설정</h2>
+        <div className="settings-layout">
+          <nav className="settings-menu" aria-label="설정 하위 메뉴">
+            {settingsGroups.map((group, index) => <div key={group.label} role="group" aria-label={group.label}>
+              <h3>{group.label}</h3>
+              {index === 0 && <button type="button" aria-current={!activeSettings ? 'page' : undefined}
+                onClick={() => setActiveSettings(null)}>플레이어 이름</button>}
+              {group.items.map(([page, label]) => <button key={page} id={'settings-link-' + page} type="button"
+                aria-current={activeSettings === page ? 'page' : undefined}
+                disabled={activeSettings === 'content' && page === 'content' && fixedSaving}
+                onClick={() => selectSettings(page)}>{label}</button>)}
+            </div>)}
+          </nav>
+          <div className="settings-detail">
+            {!activeSettings && <section aria-label="플레이어 이름 설정"><h3>플레이어 이름</h3>
+              <ProfileEditor busy={profileBusy} name={profileName} onNameChange={value => { setProfileName(value); setProfileMessage('') }} onSave={savePlayerName} />
+              {profileMessage && <p role="status">{profileMessage}</p>}
+            </section>}
+            {openSettings.difficulty && <div id="settings-page-difficulty" hidden={activeSettings !== 'difficulty'}><LocalDifficultyPanel accessToken={accessToken} onClose={() => closeSettings('difficulty')} onSaved={refreshCharacterChoices} /></div>}
+            {openSettings.generation && <div id="settings-page-generation" hidden={activeSettings !== 'generation'}><GenerationPanel key={accessToken} token={accessToken} close={()=>closeSettings('generation')}/></div>}
+            {openSettings.sound && <div id="settings-page-sound" hidden={activeSettings !== 'sound'}><LocalSoundPanel editedCharacters={editedCharacters} accessToken={accessToken} onClose={() => closeSettings('sound')} onSelectionChanged={setSoundSelection} onPlaybackChanged={stopGameAudio} /></div>}
+            {openSettings.content && <div id="settings-page-content" hidden={activeSettings !== 'content'}><LocalContentPanel onCharactersChanged={async characters => { setEditedCharacters(characters); await refreshCharacterChoices() }} accessToken={accessToken} onClose={() => closeSettings('content')} fixedDirty={fixedDirty} fixedSaving={fixedSaving} setFixedDirty={setFixedDirty} setFixedSaving={setFixedSaving} onPackApplied={stopGameAudio} onMeasurementsUpdated={updateCharacterContent}
+              onImageSaved={(id,level,kind,url)=>setCpus(current=>current?.map(cpu=>cpu.id===id && cpu.defeat_stage===level
+                ? {...cpu,stage_images:{profile:null,full_body:null,cg:null,...cpu.stage_images,[kind]:url}} : cpu) ?? current)} /></div>}
+          </div>
+        </div>
+      </section>}
+      <div hidden={settingsVisible}>
       {isDesktop && soundError && <p className="form-error" role="status">{soundError}</p>}
       {!isDesktop && !accessToken && (
         <AuthPanel
@@ -999,7 +1020,6 @@ function App() {
       )}
       {accessToken && cpus && (
         <>
-          {isDesktop && <ProfileEditor busy={profileBusy} name={profileName} onNameChange={setProfileName} onSave={savePlayerName} />}
           <CpuSelection
             busy={busy}
             cpus={cpus}
@@ -1018,7 +1038,6 @@ function App() {
       {accessToken && !cpus && (
         <>
           <div className="game-toolbar">
-            {isDesktop && <ProfileEditor busy={profileBusy} name={profileName} onNameChange={setProfileName} onSave={savePlayerName} />}
             <span>{players.map((player) => player.name).join(' · ') || desktopProfile}</span>
             {isDesktop && <button className="text-button" disabled={busy} onClick={resetPlay} type="button">초기화</button>}
           </div>
@@ -1040,6 +1059,7 @@ function App() {
           />}
         </>
       )}
+      </div>
       {isDesktop && <BackgroundMusic accessToken={accessToken ?? DESKTOP_SESSION} selection={soundSelection} screen={musicScreen} paused={gameState.status === 'ending'} />}
     </main></ImageSettings.Provider>
   )

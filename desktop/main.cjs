@@ -406,7 +406,7 @@ async function startMatchFromRenderer() {
   await window.webContents.executeJavaScript(`(() => {
     document.querySelector('.match-result button')?.click()
   })()`)
-  await waitForRenderer("Boolean(document.querySelector('.selection-panel'))", 90000)
+  await waitForRenderer("Boolean(document.querySelector('.selection-panel, .opponent-sheet'))", 90000)
   const rosterMode = await window.webContents.executeJavaScript("document.querySelector('.selection-panel h2')?.innerText.includes('참가 CPU') ?? false")
   if (rosterMode) {
     await window.webContents.executeJavaScript(`(() => {
@@ -414,7 +414,7 @@ async function startMatchFromRenderer() {
     })()`)
     await waitForRenderer("document.querySelectorAll('button.cpu-card.selected').length >= 3 && document.querySelector('button.start-button:not([disabled])')", 30000)
     await window.webContents.executeJavaScript("document.querySelector('button.start-button:not([disabled])')?.click()")
-    await waitForRenderer("Boolean(document.querySelector('.selection-panel h2')?.innerText.includes('대국 상대'))", 30000)
+    await waitForRenderer("Boolean(document.querySelector('.opponent-sheet') !== null)", 30000)
     addCheck('renderer fixed participant roster before opponent selection')
   }
   await window.webContents.executeJavaScript(`(() => {
@@ -471,12 +471,18 @@ async function smokePreflight() {
 }
 
 // W08-M packaged smoke: save a measurement before reset/restart durability checks.
+async function openSmokeSettings(page) {
+  await window.webContents.executeJavaScript("if (document.getElementById('settings-door')?.ariaExpanded === 'false') document.getElementById('settings-door').click()")
+  await waitForRenderer("document.getElementById('game-settings')?.hidden === false")
+  if (page) await window.webContents.executeJavaScript(`document.getElementById(${JSON.stringify('settings-link-' + page)}).click()`)
+}
+
 async function smokeCharacterMeasurements() {
   const headers = { 'X-Local-Capability': capability }
   const cpus = await fetch(`${origin}/api/admin/cpus`, { headers }).then(response => response.json())
   if (!cpus.length) throw new Error('packaged measurement smoke found no character to edit')
   const cpuId = cpus[0].id
-  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('캐릭터 프롬프트'))?.click()")
+  await openSmokeSettings('content')
   await waitForRenderer(`Boolean(document.querySelector('.content-panel select[aria-label="캐릭터"]'))`)
   await waitForRenderer(`(() => { const select = document.querySelector('.content-panel select[aria-label="캐릭터"]'); return Boolean(select && !select.disabled && select.options.length > 1) })()`)
   await window.webContents.executeJavaScript(`(() => {
@@ -506,7 +512,7 @@ async function smokeFixedDialogue() {
   const cpus = await fetch(`${origin}/api/admin/cpus`, { headers }).then(response => response.json())
   const cpuId = cpus[0]?.id
   if (!cpuId) throw new Error('packaged fixed dialogue smoke found no character')
-  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('캐릭터 프롬프트'))?.click()")
+  await openSmokeSettings('content')
   await waitForRenderer("Boolean(document.querySelector('.content-panel [role=tab]'))")
   await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.content-panel [role=tab]')).find(button => button.innerText === '고정 대사')?.click()")
   await waitForRenderer("Boolean(document.querySelector('select[aria-label=\"고정 대사 캐릭터\"] option[value]:not([value=\"\"])'))")
@@ -536,7 +542,7 @@ async function smokeSharedPrompts() {
   const cpus = await fetch(`${origin}/api/admin/cpus`, { headers }).then(response => response.json())
   const cpuId = cpus[0]?.id
   if (!cpuId) throw new Error('packaged shared-prompt smoke found no character')
-  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('캐릭터 프롬프트'))?.click()")
+  await openSmokeSettings('content')
   await waitForRenderer("Boolean(document.querySelector('.content-panel select[aria-label=\"캐릭터\"]'))")
   await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.content-panel [role=tab]')).find(button => button.innerText.includes('팩 목록'))?.click()")
   await waitForRenderer("Boolean(document.querySelector('.content-panel details > button'))")
@@ -596,12 +602,12 @@ async function smokeRun() {
   addCheck('duplicate engine could not acquire the active local data root')
   makeWindow(false)
   await loadApplication()
-  await waitForRenderer("Boolean(document.querySelector('.selection-panel') || document.querySelector('.human-controls') || document.querySelector('.match-result'))")
+  await waitForRenderer("Boolean(document.querySelector('.selection-panel, .opponent-sheet') || document.querySelector('.human-controls') || document.querySelector('.match-result'))")
   if (await window.webContents.executeJavaScript("document.body.innerText.includes('로그인') || document.body.innerText.includes('새 회원으로 시작')")) {
     throw new Error('desktop renderer showed web login')
   }
   addCheck('same-origin React loaded without login')
-  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText === '난이도 설정')?.click()")
+  await openSmokeSettings('difficulty')
   await waitForRenderer("Boolean(document.querySelector('.difficulty-panel select:not([disabled])'))")
   const difficultyDefault = await window.webContents.executeJavaScript("document.querySelector('.difficulty-panel select').value")
   if (difficultyDefault !== '5') throw new Error('new local difficulty default is not five')
@@ -621,7 +627,7 @@ async function smokeRun() {
   addCheck('packaged renderer saved fixed dialogue')
   const sharedPromptSmoke = await smokeSharedPrompts()
 
-  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('사운드'))?.click()")
+  await openSmokeSettings('sound')
   await waitForRenderer("Boolean(document.querySelector('.sound-panel'))")
   const soundDefaults = await window.webContents.executeJavaScript(`Promise.all([
     fetch('/api/local/sound-selection').then(response => response.json()),
@@ -740,6 +746,7 @@ async function smokeRun() {
   if (!externalBlocked || !rendererExternalRequestBlocked) throw new Error('renderer external network request was not blocked')
   addCheck('renderer external request cancelled by host; OS-level offline was not simulated')
 
+  await openSmokeSettings()
   const profileName = 'W05 검증 플레이어'
   await window.webContents.executeJavaScript(`(() => {
     const input = document.querySelector('.profile-editor input')
@@ -753,6 +760,7 @@ async function smokeRun() {
     return profile.player_name === profileName ? profile : false
   })
   if (saved.player_name !== profileName || saved.role !== 'member') throw new Error('local profile name update failed')
+  await window.webContents.executeJavaScript("document.getElementById('settings-door').click()")
   addCheck('renderer name editor persisted the local profile')
 
   const initialRosterSelection = await window.webContents.executeJavaScript(
@@ -774,7 +782,7 @@ async function smokeRun() {
         }
         return response
       }
-      document.querySelector('.selection-actions button')?.click()
+      document.querySelector('.selection-actions button, .sheet-bottom button')?.click()
     })()`)
     await waitFor(async () => {
       const current = await fetch(`${origin}/api/local/play`, {
@@ -830,7 +838,7 @@ async function smokeRun() {
     }).then(response => response.json())
     await window.webContents.executeJavaScript(`(() => {
       window.confirm = () => true
-      const reset = document.querySelector('.selection-actions button')
+      const reset = document.querySelector('.selection-actions button, .sheet-bottom button')
       const reactProps = Object.keys(reset).find(key => key.startsWith('__reactProps$'))
       reset[reactProps].onClick()
     })()`)
@@ -867,7 +875,7 @@ async function smokeRun() {
     await waitForRenderer("document.querySelectorAll('button.cpu-card.selected').length >= 3 && document.querySelector('button.start-button:not([disabled])')", 30000)
     await window.webContents.executeJavaScript("document.querySelector('button.start-button:not([disabled])')?.click()")
     await waitForRenderer("Boolean(document.querySelector('.ending-panel'))", 30000)
-    if (await window.webContents.executeJavaScript("Boolean(document.querySelector('.selection-panel'))")) {
+    if (await window.webContents.executeJavaScript("Boolean(document.querySelector('.selection-panel, .opponent-sheet'))")) {
       throw new Error('ending-pending roster confirmation remained in opponent selection')
     }
     addCheck('renderer entered ending screen after completed-roster confirmation response')
@@ -894,12 +902,12 @@ async function smokeRun() {
       }
       document.querySelector('.ending-panel button')?.click()
     })()`)
-    await waitForRenderer("document.querySelector('.selection-panel h2')?.innerText.includes('대국 상대')", 30000)
+    await waitForRenderer("document.querySelector('.opponent-sheet') !== null", 30000)
     addCheck('renderer recovered omake selection after ending acknowledgement response loss')
 
     await window.webContents.executeJavaScript(`(() => {
       window.confirm = () => true
-      const reset = document.querySelector('.selection-actions button') || document.querySelector('.game-toolbar > button.text-button')
+      const reset = document.querySelector('.selection-actions button, .sheet-bottom button') || document.querySelector('.game-toolbar > button.text-button')
       reset?.click()
     })()`)
     const resetState = await waitFor(async () => {
@@ -919,7 +927,7 @@ async function smokeRun() {
     })()`)
     await waitForRenderer("document.querySelectorAll('button.cpu-card.selected').length === 3 && document.querySelector('button.start-button:not([disabled])')", 30000)
     await window.webContents.executeJavaScript("document.querySelector('button.start-button:not([disabled])')?.click()")
-    await waitForRenderer("document.querySelector('.selection-panel h2')?.innerText.includes('대국 상대')", 30000)
+    await waitForRenderer("document.querySelector('.opponent-sheet') !== null", 30000)
     await window.webContents.executeJavaScript(`(() => {
       Array.from(document.querySelectorAll('button.cpu-card:not([disabled])')).slice(0, 3).forEach(button => button.click())
       const originalFetch = window.fetch.bind(window)
@@ -948,7 +956,7 @@ async function smokeRun() {
     }).then(response => response.json())
     await window.webContents.executeJavaScript(`(() => {
       window.confirm = () => true
-      const reset = document.querySelector('.selection-actions button') || document.querySelector('.game-toolbar > button.text-button')
+      const reset = document.querySelector('.selection-actions button, .sheet-bottom button') || document.querySelector('.game-toolbar > button.text-button')
       if (!reset) throw new Error('could not locate reset control while start response was pending')
       const reactProps = Object.keys(reset).find(key => key.startsWith('__reactProps$'))
       if (!reactProps) throw new Error('could not locate reset handler while start response was pending')
@@ -1072,7 +1080,7 @@ async function smokeRun() {
     if (!afterRestartShared[0].items.some(item => item.id === sharedPromptSmoke.itemId && item.label === sharedPromptSmoke.label)
       || afterRestartShared[1].item_id !== sharedPromptSmoke.itemId
       || !afterRestartShared[2].stored_item_ids.includes(sharedPromptSmoke.itemId)) throw new Error('engine restart changed shared prompt resources')
-    await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('캐릭터 프롬프트'))?.click()")
+    await openSmokeSettings('content')
     await waitForRenderer("Boolean(document.querySelector('.content-panel [role=tab]'))")
     await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.content-panel [role=tab]')).find(button => button.innerText.includes('팩 목록'))?.click()")
     await waitForRenderer("Boolean(document.querySelector('.content-panel details > button'))")
@@ -1194,7 +1202,7 @@ else {
         await smokeRun()
         await finishQuit()
       } else if (lifecycleTest) {
-        await waitForRenderer("Boolean(document.querySelector('.selection-panel') || document.querySelector('.human-controls') || document.querySelector('.match-result'))")
+        await waitForRenderer("Boolean(document.querySelector('.selection-panel, .opponent-sheet') || document.querySelector('.human-controls') || document.querySelector('.match-result'))")
         addCheck('packaged general mode loaded without --smoke')
         setTimeout(() => { if (window && !window.isDestroyed()) window.close() }, 1000)
         setTimeout(() => { app.quit(); app.quit() }, 1050)

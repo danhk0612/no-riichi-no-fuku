@@ -54,6 +54,7 @@ try {
   }
   let expected
   await withGame(firstExe, initial, async page => {
+    await page.getByRole('button',{name:'설정',exact:true}).click()
     await page.getByRole('button', { name: '캐릭터 프롬프트·팩 설정', exact: true }).click()
     const editor = page.getByRole('region', { name: '캐릭터 프롬프트와 팩 관리' })
     await editor.getByRole('combobox', { name: '캐릭터', exact: true }).selectOption('1')
@@ -69,9 +70,11 @@ try {
     await editor.getByRole('button', { name: '캐릭터 이름 저장' }).click()
     await page.getByRole('button', { name: '게임 화면으로' }).click()
     await page.locator('button.cpu-card').filter({ hasText: '다시 만난 캐릭터' }).waitFor()
+    await page.getByRole('button',{name:'설정',exact:true}).click()
     await page.locator('.profile-editor input').fill('배포 복구 확인')
     await page.locator('.profile-editor button').click()
     await page.waitForFunction(async () => (await (await fetch('/api/profile/me')).json()).player_name === '배포 복구 확인')
+    await page.getByRole('button',{name:'게임 화면으로',exact:true}).click()
     await page.locator('.cpu-preview').waitFor()
     await page.screenshot({ path: join(dirname(evidence), 'selection-screen.png') })
     for (const action of ['참가 명단 확정', '동풍전 시작']) {
