@@ -1,3 +1,4 @@
+import { CharacterImage, Measurements } from '../CharacterImage'
 import { HandCG } from './HandCG'
 import type { SavedResultContent } from './types'
 import type {
@@ -154,6 +155,14 @@ function SeatPanel({
         <strong>{player.name}</strong>
         {player.isHuman && <span className="human-badge">PLAYER</span>}
       </header>
+      {!player.isHuman && player.detail && <details className="seat-details">
+        <summary aria-label={player.name+' 캐릭터 정보'}><CharacterImage url={player.detail.images.profile} label={player.name+' 프로필'} className="seat-face"/></summary>
+        <div className="seat-bio"><CharacterImage url={player.detail.images.full_body} label={player.name+' 전신'} className="seat-body"/>
+          <p>Level {player.detail.stage} · {player.detail.style}</p><Measurements values={player.detail.measurements_cm}/>
+          <p>{player.detail.description}</p><dl aria-label="마작 스펙">
+          {Object.entries({aggression:'공격 성향',defense:'수비 성향',call_preference:'부로 선호',riichi_preference:'리치 선호',hand_value_preference:'타점 선호',speed_preference:'속도 선호'}).map(([k,label])=>
+            player.detail?.stats[k]!=null && <div key={k}><dt>{label}</dt><dd>{player.detail.stats[k]}</dd></div>)}</dl></div>
+      </details>}
       <p className="score">{observation.scores[seat].toLocaleString()}점</p>
       {observation.riichi_declared[seat] && <p className="riichi">리치</p>}
       {dialogue && !player.isHuman && (

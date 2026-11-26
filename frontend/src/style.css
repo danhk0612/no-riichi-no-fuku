@@ -792,3 +792,16 @@ button.tile:disabled {
 .stage-image-editor figure { margin: .5rem 0; }
 .stage-image-editor img { max-width: min(100%, 18rem); max-height: 15rem; object-fit: contain; }
 .stage-image-editor figcaption { margin-block: .3rem; }
+
+.cpu-preview { position:relative; isolation:isolate; overflow:hidden; display:flex; align-items:end; min-height:13rem; gap:1rem; padding:1rem; background:#182422; color:white }
+.preview-cg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-1; opacity:.55 }
+.preview-cg.image-empty { text-align:right; padding:.5rem }
+.preview-body { width:30%; height:12rem; object-fit:contain }
+.preview-copy { padding:.7rem; background:#152421db; border-radius:.4rem }
+.cpu-grid .cpu-card { width:100%; height:100% }
+.roster-face,.seat-face { width:4rem; aspect-ratio:1; object-fit:cover; border-radius:.35rem }
+.image-empty { display:inline-grid; place-content:center; font-size:.75rem }
+.seat-details summary { cursor:pointer }
+.seat-body { width:7rem; max-height:12rem; object-fit:contain }
+.seat-bio dl div { display:flex; gap:.5rem }
+.seat-bio dd { margin:0 }

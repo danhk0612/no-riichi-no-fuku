@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { CharacterImage, Measurements } from './CharacterImage'
 import type { CpuChoice } from './game/types'
 import { DEFEAT_STAGE_LABELS, defeatStageLabel } from './stages'
 
@@ -28,6 +30,8 @@ export function CpuSelection({
   rosterMode = false,
   allowCompleted = false,
 }: CpuSelectionProps) {
+  const [viewId,setViewId]=useState<number|null>(null)
+  const viewed=cpus.find(c=>c.id===viewId) ?? cpus.find(c=>c.id===selectedIds.at(-1)) ?? cpus[0]
   return (
     <section className="selection-panel">
       <div className="panel-heading">
@@ -41,31 +45,30 @@ export function CpuSelection({
           {showLogout && <button className="text-button" onClick={onLogout} type="button">로그아웃</button>}
         </div>
       </div>
+      {viewed && <section className="cpu-preview" aria-label="캐릭터 미리보기">
+        <CharacterImage url={viewed.stage_images?.cg} label="단계 CG" className="preview-cg"/>
+        <CharacterImage url={viewed.stage_images?.full_body} label="전신" className="preview-body"/>
+        <div className="preview-copy"><h3>{viewed.name}</h3><p>Level {viewed.defeat_stage} · {defeatStageLabel(viewed.defeat_stage)}</p>
+          <Measurements values={viewed.measurements_cm}/></div>
+      </section>}
       <div className="cpu-grid">
         {cpus.map((cpu) => {
           const selectedIndex = selectedIds.indexOf(cpu.id)
           const unavailable = !rosterMode && cpu.defeat_stage >= 3 && !allowCompleted
           const selectionFull = !rosterMode && selectedIds.length === 3 && selectedIndex < 0
           return (
+            <div key={cpu.id} onMouseEnter={()=>setViewId(cpu.id)} onFocus={()=>setViewId(cpu.id)} tabIndex={busy || unavailable || selectionFull ? 0 : undefined}>
             <button
               className={`cpu-card${selectedIndex >= 0 ? ' selected' : ''}`}
               disabled={busy || unavailable || selectionFull}
-              key={cpu.id}
-              onClick={() => onToggle(cpu.id)}
+              onClick={() => {setViewId(cpu.id);onToggle(cpu.id)}}
               type="button"
             >
               <span className="cpu-order">
                 {selectedIndex >= 0 ? (rosterMode ? '참가 명단' : `${selectedIndex + 1}번 좌석`) : '선택 가능'}
               </span>
               <span className="cpu-profile">
-                {!cpu.profile_image_key && (
-                  <span
-                    aria-label="프로필 이미지 없음"
-                    className="profile-placeholder"
-                  >
-                    {cpu.name.slice(0, 1)}
-                  </span>
-                )}
+                <CharacterImage url={cpu.stage_images?.profile} label={cpu.name+' 프로필'} className="roster-face"/>
                 <strong>{cpu.name}</strong>
               </span>
               <span className="cpu-stage">{defeatStageLabel(cpu.defeat_stage)}</span>
@@ -74,7 +77,7 @@ export function CpuSelection({
               <span>{cpu.style}</span>
               <p>{cpu.short_description}</p>
               {unavailable && <small>최종 완료 · 현재 대국 선택 불가</small>}
-            </button>
+            </button></div>
           )
         })}
       </div>

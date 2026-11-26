@@ -130,6 +130,42 @@ class PackRegistryTests(unittest.TestCase):
                         [f"test-stage-{group}-{suffix}" for group in base] +
                         [group for group,_ in groups] + [f"test-stage-{level}-{kind}-{suffix}"])
 
+    def test_selected_stage_media_and_seat_details_survive_pack_edit_and_restart(self):
+        value = character()
+        value["levels"]["0"]["images"]["profile"] = "face.png"
+        value["levels"]["1"]["images"]["full_body"] = "other.png"
+        value["metadata"]["measurements_cm"] = {"height":"172"}
+        self.install(value, {p:b"\x89PNG\r\n\x1a\n"+p.encode() for p in ("face.png","other.png")})
+        self.application(self.scan()["registry"]["packs"][0]).raise_for_status()
+        def get(path):
+            res = self.client.get(path,headers=self.headers)
+            res.raise_for_status()
+            return res.json()
+        def roster():
+            return next(c for c in get("/api/local/play/roster-candidates") if c["id"]==1)
+        original = roster()["stage_images"]
+        self.assertTrue(original["profile"])
+        self.assertIsNone(original["full_body"])
+        body = {"generation":get("/api/local/play")["generation"], "cpu_character_ids":[2,1,3]}
+        self.client.post("/api/local/play/roster",headers=self.headers,json=body).raise_for_status()
+        res = self.client.post("/api/game/sessions",headers=self.headers,json=body)
+        res.raise_for_status()
+        players = res.json()["players"]
+        detail = players[2]["detail"]
+        self.assertEqual(detail["images"],original)
+        self.assertEqual(detail["stage"],0)
+        self.assertEqual(detail["measurements_cm"]["height"],"172.0")
+        self.assertIn("riichi_preference",detail["stats"])
+        self.assertIsNone(players[0]["detail"])
+        self.assertIsNone(players[1]["detail"]["images"]["profile"])
+        value["levels"]["0"]["images"]["profile"] = None
+        self.install(value)
+        self.application(self.scan()["registry"]["packs"][0],expected=1).raise_for_status()
+        self.assertIsNone(roster()["stage_images"]["profile"])
+        self.restart()
+        self.assertEqual(get("/api/game/sessions/active")["players"],players)
+        self.assertEqual(self.client.get(original["profile"],headers=self.headers).status_code,200)
+
     def test_stage_preview_and_explicit_save_preserve_pack_and_other_slots(self):
         from unittest.mock import patch
         from uuid import uuid4
@@ -172,6 +208,8 @@ class PackRegistryTests(unittest.TestCase):
             after = post(preview+"/save").json()
             media = after["levels"]["0"]["profile"]["media"]
             self.assertEqual(media["source"],"generated")
+            roster = self.client.get("/api/local/play/roster-candidates",headers=self.headers).json()
+            self.assertEqual(next(c for c in roster if c["id"]==1)["stage_images"]["profile"],media["url"])
             self.assertEqual(after["levels"]["1"], before["levels"]["1"])
             self.assertEqual(post(preview+"/save").json()["levels"]["0"]["profile"]["media"],media)
             live = prepare()

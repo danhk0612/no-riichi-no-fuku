@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import secrets
 from collections.abc import Callable
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from functools import lru_cache
 from threading import RLock
 from uuid import uuid4
@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.db.models import GameSessionRecord, GameResultDeliveryEntry, LocalPlayState, User, UserCpuProgress
+from app.db.models import GameSessionRecord, GameResultDelivery, GameResultDeliveryEntry, LocalPlayState, User, UserCpuProgress
 from app.mahjong.hand_scores import HandScoreCaptureError
 from app.mahjong.hand_results import HandResultCaptureError
 from app.mahjong.riichienv_adapter import MatchResult
@@ -64,6 +64,12 @@ class GamePlayer:
     seat: int
     name: str
     is_human: bool
+    detail: dict | None = None
+
+
+def table_players(players, delivery):
+    seats = (delivery.content_anchor or {}).get("seats", {}) if delivery else {}
+    return tuple(replace(player, detail=seats.get(str(player.seat), {}).get("table_detail")) for player in players)
 
 
 @dataclass
@@ -182,7 +188,7 @@ class GameRegistry:
                          if key not in {"effective_tier", "difficulty_snapshot"} or value is not None}
                         for choice in choices
                     ],
-                    players=[asdict(player) for player in players],
+                    players=[{"seat":p.seat, "name":p.name, "is_human":p.is_human} for p in players],
                     human_action_indices=[],
                     status="active",
                     play_generation=generation,
@@ -205,7 +211,7 @@ class GameRegistry:
                     record = db_session.get(GameSessionRecord, registered.session_id)
                     append_facts(db_session, record, game.pending_hand_results(), 0)
                     db_session.flush()
-                    create_delivery(db_session, record)
+                    registered.players = table_players(players, create_delivery(db_session, record))
                     append_hand_entries(db_session, record, load_rows(db_session, record))
                 except Exception:
                     db_session.rollback()
@@ -402,6 +408,8 @@ class GameRegistry:
         if record.hand_results_version is None and rows:
             raise HandResultCaptureError("legacy session unexpectedly contains hand result rows")
         players = tuple(GamePlayer(**player) for player in record.players)
+        if record.result_content_version == 1:
+            players = table_players(players, db_session.get(GameResultDelivery, record.id))
         if record.status == "completed":
             if record.hand_results_version == 1:
                 verify_completed_rows(rows)

@@ -146,6 +146,8 @@ try {
     desktop.setDefaultTimeout(8000)
     await desktop.addInitScript(() => { window.nrnfDesktop = { isDesktop: true } })
     const players = [0, 1, 2, 3].map((seat) => ({ seat, name: `Player ${seat}`, isHuman: seat === 0 }))
+    const img='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='
+    players[2].detail={stage:2,style:'테스트 성향',description:'좌석 정보',images:{profile:img,full_body:img,cg:null},measurements_cm:{height:'169.0'},stats:{riichi_preference:0}}
     const cpus = [1, 2, 3].map((id) => ({ id, name: `CPU ${id}`, defeat_stage: 0, style: 'balanced', short_description: '', profile_image_key: null }))
     let play = { generation: 'generation-c1', phase: 'playing', roster: cpus.map((cpu) => ({ cpu_character_id: cpu.id, defeat_stage: 0 })), ending_event_id: null, ending_payload: null, active_session_id: 'session-c1', recent_session_id: null, legacy_active: false, result_resume: null }
     let session = 'session-c1'
@@ -197,6 +199,16 @@ try {
     })
     await desktop.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
     await desktop.locator('.hand button').waitFor()
+    if (scenario==='human_turn') {
+      const seat=desktop.getByRole('region',{name:'Player 2 좌석'})
+      await seat.getByAltText('Player 2 프로필').waitFor()
+      await seat.locator('summary').click()
+      await seat.getByAltText('Player 2 전신').waitFor()
+      await seat.getByText('키 169.0 cm').waitFor()
+      await seat.getByText('리치 선호').waitFor()
+      assert.equal(await seat.locator('dd').innerText(),'0')
+      await seat.locator('summary').click()
+    }
     desktopSockets[0].send(JSON.stringify({ type: 'result_delivery', ...noImage }))
     await desktop.locator('[data-event-id="settlement-no-image"]').waitFor()
     desktopSockets[0].send(JSON.stringify({ type: 'result_delivery', ...conflicting }))
