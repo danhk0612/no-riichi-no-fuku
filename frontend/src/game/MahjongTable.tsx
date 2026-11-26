@@ -40,6 +40,22 @@ type MahjongTableProps = {
   allowGameOverContinue?: boolean
 }
 
+function PointChanges({ deltas, nameFor, label }: {
+  deltas: number[]
+  nameFor: (seat: number) => string
+  label: string
+}) {
+  if (!deltas.length) return null
+  return <ol className="result-deltas" aria-label={label}>
+    {deltas.map((delta, seat) => <li key={seat}>
+      <span>{nameFor(seat)}</span>
+      <strong data-change={delta > 0 ? 'gain' : delta < 0 ? 'loss' : 'even'}>
+        {delta > 0 ? '+' : ''}{delta.toLocaleString()}점
+      </strong>
+    </li>)}
+  </ol>
+}
+
 function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, resultAssetLoadFailed }: {
   delivery: ResultDeliveryEnvelope
   onAcknowledge?: (delivery: ResultDeliveryEnvelope) => void
@@ -78,7 +94,13 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
       <h2>{settlementPayload ? '동풍전 정산' : `국 결과 · ${String(start?.bakaze ?? '')}${String(start?.kyoku ?? 0)}국`}</h2>
       {settlementPayload ? (
         <>
-          <ol>{resultRows.map((row) => <li key={row.seat}><strong>{row.rank}위 · {nameFor(row.seat)}</strong><span>{row.score.toLocaleString()}점</span></li>)}</ol>
+          <ol className="result-ranking" aria-label="동풍전 최종 순위">{resultRows.map(row => (
+            <li key={row.seat} data-rank={row.rank}>
+              <span className="rank-number">{row.rank}위</span>
+              <strong>{nameFor(row.seat)}</strong>
+              <span className="rank-points">{row.score.toLocaleString()}점</span>
+            </li>
+          ))}</ol>
           {transition && content?.scene && <SettlementScene key={delivery.generation+':'+delivery.session_id+':'+entry.event_id}
             transition={transition} stage={content.scene.stage} text={defeatLine ? defeatLine.text : null}
             url={resultAssetObjectUrl} hasCG={!!resultAsset} failed={!!resultAssetLoadFailed}/>}
@@ -86,24 +108,23 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
           {!transition && resultAsset && !resultAssetObjectUrl && <p className="result-asset-status" role="status">{resultAssetLoadFailed ? 'CG를 불러오지 못했습니다.' : 'CG를 불러오는 중입니다.'}</p>}
           {!transition && !resultAsset && <p className="result-asset-status">등록된 결과 CG가 없습니다.</p>}
           {!content && dialogues.map((dialogue, index) => <blockquote className="result-dialogue" key={`${dialogue.cpu_character_id}-${dialogue.event_key}-${index}`}><p>{String(dialogue.text ?? '')}</p></blockquote>)}
-          <p className="settlement-summary">저장된 정산 결과</p>
         </>
       ) : (
         <>
-          <p className="settlement-summary">{String(start?.bakaze ?? '')}{String(start?.kyoku ?? 0)}국 · 본장 {String(start?.honba ?? 0)} · 리치봉 {String(start?.kyotaku ?? 0)}</p>
+          <p className="settlement-summary">본장 {String(start?.honba ?? 0)} · 리치봉 {String(start?.kyotaku ?? 0)}</p>
           {winners.length > 0 ? (
-            <section aria-label="화료자별 결과">
-              {winners.map(w => <div className="settlement-summary" key={w.hora_log_offset}>
+            <section className="winner-results" aria-label="화료자별 결과">
+              {winners.map(w => <div className="winner-card settlement-summary" key={w.hora_log_offset} data-current={winners.length > 1 && w === winner || undefined}>
                 <strong>{nameFor(w.actor)} · {w.win_kind === 'tsumo' ? '쯔모' : `론 · ${nameFor(w.target)}`}</strong>
                 <p>{({ 1: '만관 미만', 2: '만관·하네만', 3: '배만 이상' } as Record<number, string>)[Number(w.score?.band)] ?? '점수 미분류'} · {w.score?.han ?? 0}판 {w.score?.fu ?? 0}부</p>
                 {w.win_kind==='ron' && typeof w.score?.ron_agari==='number' && <p>론 점수 {w.score.ron_agari.toLocaleString()}점</p>}
-                <ol className="result-deltas" aria-label={nameFor(w.actor)+' 화료 점수 이동'}>{(w.deltas ?? []).map((delta:number,seat:number)=><li key={seat}>{nameFor(seat)} · {delta>0?'+':''}{delta.toLocaleString()}점</li>)}</ol>
+                <PointChanges deltas={w.deltas ?? []} nameFor={nameFor} label={nameFor(w.actor) + ' 화료 점수 이동'} />
               </div>)}
               {winners.length>1 && winner && <p aria-label="현재 배경 차례">현재 배경 차례: {nameFor(winner.actor)}</p>}
             </section>
           ) : <p className="settlement-summary">유국 결과</p>}
           {Array.isArray(fact?.draws) && fact.draws.length > 0 && <p className="settlement-summary">유국 정보: {fact.draws.map((draw: Record<string, any>) => draw.reason ?? '유국').join(' · ')}</p>}
-          {!winners.length && <ol className="result-deltas">{(fact?.draws?.[0]?.deltas ?? []).map((delta: number, seat: number) => <li key={seat}>{nameFor(seat)} · {delta > 0 ? '+' : ''}{delta.toLocaleString()}점</li>)}</ol>}
+          {!winners.length && <PointChanges deltas={fact?.draws?.[0]?.deltas ?? []} nameFor={nameFor} label="유국 점수 이동" />}
         </>
       )}
       {content?.dialogues.filter(line => line.text && line!==defeatLine).map(line => <blockquote className="result-dialogue" key={line.cpu_id + ':' + line.slot}>{line.text}</blockquote>)}
