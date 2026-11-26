@@ -1,5 +1,7 @@
 # 현재 상태
 
+**Windows 패키지 통합 검증 (2026-11-26):** 제품 #124 `89e78f3`, 검증 코드 #126 `94930b6`. [W04](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45740740037) 211 unittest·대사 10개·build, [W05](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45740740015) Windows Server 2022 x64 EXE 검사 36개·DB 0017 대국 1건·종료/재시작 성공. 별도 새 데이터 경로에서 실제 엔진으로 seed 13의 행동 51개를 미리 진행한 뒤 EXE에서 마지막 행동을 수행했다. CPU 4위 단계 2→3, CG 단독 감상, 종료/재실행 후 같은 결산, 확인→엔딩→오마케, 다시 시작한 오마케 선택을 확인했다. 기존 선택→일반 대국 smoke와 이 마지막 턴 fixture는 분리된 실험이다. 결과 API 모의·실제 ComfyUI 연결은 사용하지 않았다(추가 마지막 턴 검사 기준). artifact 15081636813 내부 ZIP SHA-256 `3c4d7969e85b8a83383c231ebf4d5c0195f912dd14772e09d3aa44ca5448cfd2` 대조 완료. Windows 11 사용자 PC·GPU 실생성과 배포 콘텐츠는 미검증.
+
 R24: 단계가 변한 CPU의 결산은 변경 후 CG·전신·프로필과 저장된 패배 대사를 표시한다. CG 단독 보기·확대·이동·복귀, 이미지 미등록 시 진행, 팩 교체 후 cold restart, 결산 확인→엔딩을 모의 검증했다. 실제 ComfyUI·Windows 배포본 검증은 보류한다.
 
 선택 화면에서 현재 단계 프로필과 포커스/호버한 CPU의 CG·전신·치수를 표시한다. 대국에서는 CPU 프로필을 눌러 대국 시작 시점의 전신·정보·마작 스펙을 볼 수 있다. 이미지 누락 및 팩 변경 뒤 cold restart를 검증했다. Linux 모의/Chromium 검증이며 Windows 배포본과 GPU 검증은 별도다.
