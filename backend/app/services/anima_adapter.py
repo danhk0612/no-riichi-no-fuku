@@ -7,6 +7,10 @@ from urllib.parse import urlencode, urlsplit
 from uuid import UUID, uuid4
 
 
+WORKFLOW = "anima-txt2img-v2"
+LEGACY_WORKFLOW = "anima-txt2img-v1"
+
+
 @dataclass(frozen=True)
 class Settings:
     model: str
@@ -23,8 +27,9 @@ class Settings:
 
 
 def graph(settings: Settings, positive: str, negative: str, seed: int, *,
-          character_model=None, character_loras=()):
+          character_model=None, character_loras=(), workflow=WORKFLOW):
     """Build from final prompt text without adding trigger words or changing weights."""
+    clip_type = {WORKFLOW: "qwen_image", LEGACY_WORKFLOW: "stable_diffusion"}[workflow]
     nodes = {}
 
     def add(kind, **inputs):
@@ -33,7 +38,7 @@ def graph(settings: Settings, positive: str, negative: str, seed: int, *,
         return [key, 0]
 
     model = add("UNETLoader", unet_name=character_model or settings.model, weight_dtype="default")
-    clip = add("CLIPLoader", clip_name=settings.encoder, type="stable_diffusion", device="default")
+    clip = add("CLIPLoader", clip_name=settings.encoder, type=clip_type, device="default")
     vae = add("VAELoader", vae_name=settings.vae)
     for name, strength in (*settings.loras, *character_loras):
         model = add("LoraLoaderModelOnly", model=model, lora_name=name, strength_model=strength)

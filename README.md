@@ -3,8 +3,7 @@
 `No Riichi No Fuku`는 1인용 4인 일본 리치마작 게임 프로젝트입니다.
 웹 서비스와 별도로 Windows x64용 Electron·로컬 SQLite 실행 경로를 구현 중이며,
 최신 packaged renderer와 미디어 설정 검증 결과는 저장소 `CURRENT_STATE.md`에 기록합니다.
-정식 Windows Release와 최소 client OS는 아직 확정되지 않았습니다. 로컬 ComfyUI 이미지
-생성 확장은 아직 구현되지 않았습니다.
+정식 Windows Release와 최소 client OS는 아직 확정되지 않았습니다. 단계별 이미지와 화료 CG는 사용자가 실행한 로컬 ComfyUI로 생성할 수 있도록 구현했습니다. 실제 GPU 생성 검증은 남아 있으며, 기본 대국에는 ComfyUI가 필요하지 않습니다.
 Windows 목표에서는 플레이어 1명과 확정 명단의 CPU 캐릭터들이 동풍전을 진행합니다.
 미완료 CPU가 최종 4위일 때 진행도가 오르며, 전체 완료 뒤에는 추가 이벤트 없는 오마케를 제공합니다.
 자세한 진행 정책은 [REQUIREMENTS.md의 D04](REQUIREMENTS.md)를 따릅니다.

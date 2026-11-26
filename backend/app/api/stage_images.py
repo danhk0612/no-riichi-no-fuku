@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.api.dependencies import get_current_superadmin, get_session
 from app.db.models import LocalMediaAsset
 from app.db.models.character_content import StageImage
+from app.services.anima_adapter import WORKFLOW
 from app.services.character_content import get_character_content
 from app.services.generation_settings import match_inputs
 from app.services.hand_cg_cache import HandCG, replace
@@ -55,7 +56,7 @@ def prepare(cpu: int, kind: Kind, expected_revision: int, level: int = Path(ge=0
     if not all(settings[k] for k in ("model", "encoder", "vae")):
         raise HTTPException(422, "먼저 모델·텍스트 인코더·VAE를 설정해 주세요.")
     ticket = str(uuid4())
-    frozen = {**parts(db, cpu, level, kind, content), "workflow":"anima-txt2img-v1", "kind":kind,
+    frozen = {**parts(db, cpu, level, kind, content), "workflow":WORKFLOW, "kind":kind,
               "stage":level, "settings":settings}
     slot = db.get(StageImage,(cpu,level,kind))
     if slot is None:
