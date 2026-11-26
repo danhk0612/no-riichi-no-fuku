@@ -44,7 +44,13 @@ async function snapshot(page) {
 try {
   for (const exe of [firstExe, secondExe]) {
     assert.equal(readFileSync(join(dirname(exe), 'BUILD-SOURCE.txt'), 'utf8').trim(), source)
-    assert.ok(existsSync(join(dirname(exe), '시작하기.txt')))
+    const product = dirname(exe)
+    const notices = join(product, 'resources', 'app', 'notices')
+    assert.ok(existsSync(join(product, '시작하기.txt')))
+    assert.ok(existsSync(join(product, 'LICENSES.chromium.html')))
+    assert.ok(existsSync(join(notices, 'Python-LICENSE.txt')))
+    assert.match(readFileSync(join(notices, 'frontend-licenses.md'), 'utf8'), /react-dom/)
+    assert.match(readFileSync(join(notices, 'engine-packages.txt'), 'utf8'), /^riichienv 0\.4\.8 \| [1-9]/m)
   }
   let expected
   await withGame(firstExe, initial, async page => {
