@@ -73,7 +73,7 @@ export type GameSessionCreated = {
 export type SavedResultContent = {
   version: 1
   dialogues: {cpu_id: number; slot: string; text: string | null}[]
-  scene: {stage: number; media: {media_id: string; url: string; digest: string} | null} | null
+  scene: {stage: number; generation_input?: unknown; media: {media_id: string; url: string; digest: string} | null} | null
 }
 export type ResultDeliveryEntry = {
   ordinal: number

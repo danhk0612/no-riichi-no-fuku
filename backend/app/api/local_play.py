@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
@@ -14,6 +14,8 @@ from app.schemas.local_play import (
     LocalRosterRequest,
     LocalResultAckRequest,
 )
+from app.services.hand_cg_cache import HandCG
+from app.services.generation_settings import read_settings
 from app.services.game_registry import GameRegistry, get_game_registry
 from app.services.game_setup import InvalidCpuSelectionError
 from app.services.local_play import (
@@ -278,3 +280,40 @@ def post_result_ack(
     except Exception:
         session.rollback()
         raise HTTPException(status_code=503, detail={"code": "persistence_failed", "message": "result acknowledgement could not be saved"}) from None
+
+
+def _hand_cg_input(session_id, generation, event_id, user, session):
+    delivery = get_result_delivery(session_id, generation, user, session)
+    head = delivery.get("head") or {}
+    if head.get("event_id") != event_id or head.get("kind") != "hand":
+        raise HTTPException(409, "현재 표시 중인 화료가 아닙니다.")
+    scene = ((head.get("payload", {}).get("content") or {}).get("scene") or {})
+    if not scene.get("generation_input"):
+        raise HTTPException(404, "저장된 생성 입력이 없습니다.")
+    return scene["generation_input"]
+
+
+@router.post("/sessions/{session_id}/results/{event_id}/cg")
+def advance_hand_cg(session_id: str, event_id: str, generation: str, request: Request,
+                    retry: str | None = None, user: User = Depends(get_current_member),
+                    session: Session = Depends(get_session)):
+    frozen = _hand_cg_input(session_id, generation, event_id, user, session)
+    config = read_settings(session)
+    endpoint = config.get("endpoint") if isinstance(config, dict) else None
+    session.rollback()  # do not hold a game DB lock across disk I/O or HTTP
+    cache = HandCG(request.app.state.local_runtime.paths.root / "generated" / "hand")
+    try:
+        return cache.advance(frozen, endpoint, retry)
+    except (OSError, ValueError, KeyError, TypeError):
+        raise HTTPException(503, "화료 CG를 준비하지 못했습니다.") from None
+
+
+@router.get("/sessions/{session_id}/results/{event_id}/cg/{attempt}")
+def read_hand_cg(session_id: str, event_id: str, attempt: str, generation: str, request: Request,
+                 user: User = Depends(get_current_member), session: Session = Depends(get_session)):
+    frozen = _hand_cg_input(session_id, generation, event_id, user, session)
+    session.rollback()
+    data = HandCG(request.app.state.local_runtime.paths.root / "generated" / "hand").image(frozen, attempt)
+    if data is None:
+        raise HTTPException(404, "화료 CG 파일이 없습니다.")
+    return Response(content=data, media_type="image/png", headers={"Cache-Control": "no-store"})

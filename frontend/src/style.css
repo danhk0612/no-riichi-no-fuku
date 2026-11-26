@@ -785,3 +785,6 @@ button.tile:disabled {
     transform: translateY(0);
   }
 }
+
+.result-delivery-card:has(.hand-cg-backdrop) { position: relative; isolation: isolate; overflow: hidden; }
+.hand-cg-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; opacity: .35; pointer-events: none; }

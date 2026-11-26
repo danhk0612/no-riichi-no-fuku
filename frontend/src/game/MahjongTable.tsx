@@ -1,3 +1,4 @@
+import { HandCG } from './HandCG'
 import type { SavedResultContent } from './types'
 import type {
   DialogueEvent,
@@ -94,7 +95,8 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
         </>
       )}
       {content?.dialogues.filter(line => line.text).map(line => <blockquote className="result-dialogue" key={line.cpu_id + ':' + line.slot}>{line.text}</blockquote>)}
-      {!settlementPayload && content?.scene && !content.scene.media && <p className="result-asset-status">화료 CG가 등록되지 않았습니다.</p>}
+      {!settlementPayload && !!content?.scene?.generation_input && window.nrnfDesktop?.isDesktop && <HandCG path={`/api/local/play/sessions/${delivery.session_id}/results/${entry.event_id}/cg`} generation={delivery.generation}/>}
+      {!settlementPayload && content?.scene && !content.scene.generation_input && !content.scene.media && <p className="result-asset-status">화료 CG가 등록되지 않았습니다.</p>}
       {onAcknowledge && <button className="primary-button" onClick={() => onAcknowledge(delivery)} type="button">{settlementPayload ? '정산 확인' : '확인하고 다음 결과 보기'}</button>}
     </section>
   )
