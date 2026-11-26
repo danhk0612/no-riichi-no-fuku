@@ -1,5 +1,9 @@
 # 현재 상태
 
+## W10 이미지젠 기반 연동 — 현재 범위
+
+Wayward 이미지젠/Sixth Sense EasyGen 패치를 참고해 게임과 독립된 W10 내부 Anima 어댑터를 추가했다. 공통/캐릭터 모델·순차 LoRA와 최종 P/N·seed를 사용하고, 노드 확인→단일 제출→해당 작업의 최종 이미지 조회를 모의 HTTP 서버에서 검증했다. 실제 GPU 생성·StabilityMatrix 호환·게임 UI/캐시 연결 미검증. 첨부 누적 패치만 열람했으며 H: 원본 폴더 전체는 확인하지 않았다.
+
 ## W09-C2 결과 콘텐츠
 
 신규 로컬 대국은 시작 시 참가 CPU 자료를 복사한다. 화료·정산 결과는 각각 확정된 대사와 프롬프트, 해당 단계 CG 참조를 저장한다. 생성 요청·캐시·재시도는 미구현이다. 기존 저장 대국에는 소급 적용하지 않는다. [PR #117](https://github.com/danhk0612/no-riichi-no-fuku/pull/117) 병합(main 5545ab8). 제품 67d015d: backend 198개·대사 10개, production build, 결과 browser 통과. 대국 생성 직후와 최초 결과 사이 편집, cold restart, 유국/사람/복수 화료 및 손상된 결과 거부를 확인했다. Windows W04 45728072097 / W05 45728072140 성공. artifact의 source 및 SHA-256, 내부 ZIP 18defad00d19b46b0bd78b26bd31732a0214f8533532b2a5307fcf43e9811af5를 대조했다. 브라우저 7종·packaged renderer 검사 36개·DB 0016와 종료/재시작 통과. 개인 Windows PC 및 실제 ComfyUI 미검증.
