@@ -34,13 +34,11 @@ export function LocalDifficultyPanel({ accessToken, onClose, onSaved }: {
   }
   return <section className="selection-panel difficulty-panel" aria-label="난이도 설정">
     <div className="panel-heading"><h2>난이도 설정</h2><button type="button" onClick={onClose}>닫기</button></div>
-    <p>새 대국부터 적용됩니다. 진행 중인 대국은 시작할 때의 난이도를 유지합니다.</p>
-    <p>완료 보충 CPU는 1, 오마케는 10입니다. 진행 초기화 후에도 설정은 유지됩니다.</p>
-    <label>게임 난이도 <select aria-label="게임 난이도" value={value} disabled={!saved || busy}
+    <div className="difficulty-choice"><label>다음 대국 난이도 <select aria-label="게임 난이도" value={value} disabled={!saved || busy}
       onChange={(e) => { setValue(Number(e.target.value)); setMessage(null) }}>
       {Array.from({ length: 10 }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
     </select></label>
-    <button type="button" disabled={!saved || busy} onClick={() => { void save() }}>{busy ? '저장 중…' : '난이도 저장'}</button>
+    <button type="button" disabled={!saved || busy} onClick={() => { void save() }}>{busy ? '저장 중…' : '난이도 저장'}</button></div>
     {message && <p role="status">{message}</p>}{error && <p className="form-error" role="alert">{error}</p>}
   </section>
 }

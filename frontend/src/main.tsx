@@ -45,6 +45,7 @@ import type {
 } from './game/types'
 import './style.css'
 import './game-interface.css'
+import './image-settings.css'
 
 declare global {
   interface Window { nrnfDesktop?: { isDesktop: true; quit: () => void } }

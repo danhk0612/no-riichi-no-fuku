@@ -1,4 +1,4 @@
-import {PromptShortcut,rememberImage} from './LiveImage'
+import {SlotImageTools,rememberImage} from './LiveImage'
 import {queueImage,pollImage,useImageQueue} from './imageQueue'
 import {situationLabels} from './SituationPrompts'
 import {useEffect, useRef, useState} from 'react'
@@ -51,13 +51,14 @@ export function StageImageEditor({token,cpu,level,kind,label,revision,slot,disab
     finally{if(id===serial.current)setBusy(false)}
   }
   return <section aria-label={label+' 이미지'} className="stage-image-editor">
-    {slot.media ? <figure><img alt={'저장된 '+label} src={slot.media.url}/><figcaption>{slot.media.source==='generated'?'직접 저장한 이미지':'캐릭터팩 이미지'}</figcaption></figure> : <p>{label} 이미지 미등록</p>}
+    <h4>{label}</h4>
+    {slot.media ? <figure><img alt={'저장된 '+label} src={slot.media.url}/></figure> : <p className="empty-slot">이미지 없음</p>}
     {kind === 'cg' && <label>CG 상황<select value={event} disabled={busy || disabled} onChange={e => setEvent(e.target.value)}>
       <option value="">기본 장면</option>
       {Object.entries(situationLabels).map(([key,text]) => <option key={key} value={key}>{text}</option>)}
     </select></label>}
-    <button type="button" disabled={disabled||busy} onClick={()=>void run(true)}>{label} {ticket || slot.media ? '재생성' : '생성'}</button>
-    <PromptShortcut cpu={cpu} level={level} kind={kind}/>
+    <SlotImageTools cpu={cpu} level={level} kind={kind} label={label} disabled={disabled||busy}
+      regenerateLabel={label+(ticket || slot.media ? ' 재생성' : ' 생성')} onGenerate={()=>void run(true)}/>
     {busy && queue.active!=='editor:'+path && <span role="status">생성 대기 중</span>}
     {ticket && state!=='ready' && state!=='saved' && !busy && <button type="button" disabled={disabled} onClick={()=>void run(false)}>{state==='disconnected'?'기존 작업 다시 조회':attempt?'다시 시도':'이전 요청 확인'}</button>}
     {ticket && state==='ready' && attempt && <figure><img alt={label+' 생성 미리보기'} src={path+'/'+ticket+'/'+attempt}/><figcaption>미리보기 · 저장하면 이 단계에 적용됩니다.</figcaption>

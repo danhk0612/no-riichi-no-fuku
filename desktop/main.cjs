@@ -426,7 +426,7 @@ async function startMatchFromRenderer() {
     document.querySelector('.match-result button')?.click()
   })()`)
   await waitForRenderer("Boolean(document.querySelector('.selection-panel, .opponent-sheet'))", 90000)
-  const rosterMode = await window.webContents.executeJavaScript("document.querySelector('.selection-panel h2')?.innerText.includes('참가 CPU') ?? false")
+  const rosterMode = await window.webContents.executeJavaScript("Boolean(document.querySelector('.opponent-selection')) ?? false")
   if (rosterMode) {
     await window.webContents.executeJavaScript(`(() => {
       Array.from(document.querySelectorAll('button.cpu-card:not([disabled])')).slice(0, 3).forEach(button => button.click())
@@ -784,7 +784,7 @@ async function smokeRun() {
   addCheck('renderer name editor persisted the local profile')
 
   const initialRosterSelection = await window.webContents.executeJavaScript(
-    "Boolean(document.querySelector('.selection-panel h2')?.innerText.includes('참가 CPU'))",
+    "Boolean(Boolean(document.querySelector('.opponent-selection')))",
   )
   if (initialRosterSelection) {
     const beforeReset = await fetch(`${origin}/api/local/play`, {
@@ -810,7 +810,7 @@ async function smokeRun() {
       }).then(response => response.json())
       return current.generation !== beforeReset.generation ? current : false
     }, 30000)
-    await waitForRenderer("document.querySelector('.selection-panel h2')?.innerText.includes('참가 CPU') && document.querySelectorAll('button.cpu-card:not([disabled])').length >= 3", 30000)
+    await waitForRenderer("Boolean(document.querySelector('.opponent-selection')) && document.querySelectorAll('button.cpu-card:not([disabled])').length >= 3", 30000)
     addCheck('renderer recovered roster selection after committed reset response loss')
     const afterResetMeasurements = await fetch(`${origin}/api/local/characters/${measurementSmoke.cpuId}/content`, {
       headers: { 'X-Local-Capability': capability },
@@ -869,7 +869,7 @@ async function smokeRun() {
       return current.generation !== generationBeforeStaleConfirm.generation ? current : false
     }, 30000)
     await window.webContents.executeJavaScript('window.__w06ReleaseRosterResponse?.()')
-    await waitForRenderer("document.querySelector('.selection-panel h2')?.innerText.includes('참가 CPU') && document.querySelectorAll('button.cpu-card:not([disabled])').length >= 3", 30000)
+    await waitForRenderer("Boolean(document.querySelector('.opponent-selection')) && document.querySelectorAll('button.cpu-card:not([disabled])').length >= 3", 30000)
     addCheck('stale roster-confirm response could not replace reset generation screen')
 
     await window.webContents.executeJavaScript(`(() => {
@@ -936,7 +936,7 @@ async function smokeRun() {
       }).then(response => response.json())
       return current.phase === 'roster_required' ? current : false
     }, 30000)
-    await waitForRenderer("document.querySelector('.selection-panel h2')?.innerText.includes('참가 CPU')", 30000)
+    await waitForRenderer("Boolean(document.querySelector('.opponent-selection'))", 30000)
     if (resetState.phase !== 'roster_required') throw new Error('ending smoke cleanup did not reset its temporary local progress')
 
     await window.webContents.executeJavaScript(`(() => {
@@ -989,7 +989,7 @@ async function smokeRun() {
       return current.generation !== generationBeforeStaleStart.generation ? current : false
     }, 30000)
     await window.webContents.executeJavaScript('window.__w06ReleaseStartResponse?.()')
-    await waitForRenderer("document.querySelector('.selection-panel h2')?.innerText.includes('참가 CPU')", 30000)
+    await waitForRenderer("Boolean(document.querySelector('.opponent-selection'))", 30000)
     const activeAfterStaleStart = await fetch(`${origin}/api/game/sessions/active`, {
       headers: { 'X-Local-Capability': capability },
     }).then(response => response.json())

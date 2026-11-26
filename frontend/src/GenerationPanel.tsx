@@ -62,7 +62,7 @@ export function GenerationPanel({token, close, characterId}: {characterId?: numb
     finally { setBusy(false) }
   }
   return <section className="selection-panel generation-editor" aria-label={person ? '캐릭터 모델·LoRA' : '이미지 생성 설정'}>
-    <div className="panel-heading"><h2>{person ? '캐릭터 모델·LoRA' : '이미지 생성 설정'}</h2>{close && <button disabled={busy} onClick={close}>닫기</button>}</div>
+    {!person && <div className="panel-heading"><h2>이미지 생성 설정</h2>{close && <button disabled={busy} onClick={close}>닫기</button>}</div>}
     {data && <fieldset disabled={busy || loading}>
       {!person && <><h3>ComfyUI 연결</h3>
       <label>ComfyUI 주소 <input value={data.endpoint} onChange={e=>{setData({...data,endpoint:e.target.value});setCatalog(null);setNote('')}} /></label></>}
@@ -75,19 +75,18 @@ export function GenerationPanel({token, close, characterId}: {characterId?: numb
           const aligned=Math.min(16384,Math.max(16,Math.round(data.common[key]/16)*16))
           if(aligned!==data.common[key]){patch({[key]:aligned});setNote(label+' 해상도를 '+aligned+'픽셀로 맞췄습니다.')}
         }}} onChange={e=>patch({[key]:Number(e.target.value)})}/></label>)}</>}
-      {!person && <p><label>모델 파일 버전 <input type="number" min="1" value={data.common.model_revision ?? 1} onChange={e=>patch({model_revision:Number(e.target.value)})}/></label> 같은 이름의 모델·LoRA 파일을 교체했다면 이 숫자를 올려 주세요.</p>}
+      {!person && <p><label>모델 파일 버전 <input title="같은 이름의 파일을 교체하면 버전을 올려 주세요." type="number" min="1" value={data.common.model_revision ?? 1} onChange={e=>patch({model_revision:Number(e.target.value)})}/></label></p>}
       </div><h3>{person ? '캐릭터 LoRA' : '공통 LoRA'} 적용 순서</h3>
-      {target.loras.map((l,i)=><p key={i}>
+      {target.loras.map((l,i)=><div key={i} className="lora-row">
         <label>LoRA {i+1} <input list={listId('lora')} value={l.name} onChange={e=>patch({loras:target.loras.map((v,n)=>n===i?{...v,name:e.target.value}:v)})}/></label>
         {person && <label>트리거 단어 <input value={l.trigger ?? ''} onChange={e=>patch({loras:target.loras.map((v,n)=>n===i?{...v,trigger:e.target.value}:v)})}/></label>}
         <label>강도 <input type="number" step="any" value={l.strength} onChange={e=>patch({loras:target.loras.map((v,n)=>n===i?{...v,strength:Number(e.target.value)}:v)})}/></label>
         <button disabled={!i} onClick={()=>{const rows=[...target.loras];[rows[i-1],rows[i]]=[rows[i],rows[i-1]];patch({loras:rows})}}>위로</button>
-        <button onClick={()=>patch({loras:target.loras.filter((_,n)=>i!==n)})}>삭제</button></p>)}
+        <button onClick={()=>patch({loras:target.loras.filter((_,n)=>i!==n)})}>삭제</button></div>)}
       <button onClick={()=>patch({loras:[...target.loras,{name:'',strength:1}]})}>LoRA 추가</button>
       <button onClick={()=>void run(false)}>설정 저장</button>
       {catalog && Object.entries(catalog.choices).map(([k,vs])=><datalist key={k} id={listId(k)}>{vs.map(v=><option key={v} value={v}/>)}</datalist>)}
     </fieldset>}
-    {!person && <p>가로와 세로는 저장 시 가장 가까운 16픽셀 단위로 맞춥니다 (16–16384).</p>}
     {note && <p role="status">{note}</p>}
     <button disabled={busy || loading} onClick={()=>setReload(reload+1)}>저장된 설정 다시 불러오기</button>
   </section>

@@ -1,3 +1,4 @@
+import {ImageTools} from '../ImageTools'
 import { useEffect, useState } from 'react'
 import {apiRequest} from '../api'
 import {pollImage,queueImage,useImageQueue} from '../imageQueue'
@@ -14,7 +15,7 @@ export function HandCG({path, generation}:{path:string; generation:string}) {
   const [status,setStatus]=useState<Status>({state:'pending'})
   const [action,setAction]=useState<{retry?:string;regenerate?:boolean}>({})
   const [image,setImage]=useState('')
-  const [draft,setDraft]=useState<string|null>(null), [previous,setPrevious]=useState(''), [note,setNote]=useState('')
+  const [previous,setPrevious]=useState('')
   const q=useImageQueue()
   const query=new URLSearchParams({generation}).toString()
   useEffect(()=>{
@@ -27,22 +28,17 @@ export function HandCG({path, generation}:{path:string; generation:string}) {
     }).catch(()=>{if(current)setStatus({state:'unavailable'})})
     return ()=>{current=false}
   },[path,query,action])
-  async function edit(){
-    try{
-      if(draft===null){
-        const data=await apiRequest<{positive:string}>(path+'/prompt?'+query)
-        setPrevious(data.positive);setDraft(data.positive);setNote('')
-      }else{
-        await apiRequest(path+'/prompt?'+query,{method:'PUT',body:JSON.stringify({positive:draft,previous})})
-        setDraft(null);setNote('저장했습니다. 재생성하면 적용됩니다.')
-      }
-    }catch(error){setNote(String(error))}
+  async function loadPrompt(){
+    const data=await apiRequest<{positive:string}>(path+'/prompt?'+query)
+    setPrevious(data.positive)
+    return data.positive
+  }
+  async function savePrompt(positive:string){
+    await apiRequest(path+'/prompt?'+query,{method:'PUT',body:JSON.stringify({positive,previous})})
   }
   return <>{image && <img className="hand-cg-backdrop" src={image} alt="화료 결과 CG" />}
-    <button type="button" disabled={q.pending.has(path)} onClick={()=>setAction({regenerate:true})}>화료 CG 재생성</button>
-    {draft!==null && <label>화료 CG 프롬프트<textarea value={draft} onChange={e=>setDraft(e.target.value)}/></label>}
-    <button type="button" onClick={()=>void edit()}>{draft===null?'프롬프트 바로 수정':'프롬프트 저장'}</button>
-    {note && <small role="status">{note}</small>}
+    <ImageTools label="화료 CG" regenerateLabel="화료 CG 재생성" disabled={q.pending.has(path)}
+      onGenerate={()=>setAction({regenerate:true})} loadPrompt={loadPrompt} savePrompt={savePrompt}/>
     {status.state!=='ready' && <p role="status" className="result-asset-status">{status.state==='pending' && q.active!==path?'생성 대기 중':labels[status.state]}
       {['failed','rejected','uncertain','missing','disconnected','unavailable'].includes(status.state) &&
         <button type="button" onClick={()=>setAction({retry:status.attempt})}>{status.state==='disconnected'?'기존 작업 다시 조회':status.state==='unavailable'?'상태 다시 확인':'다시 시도'}</button>}

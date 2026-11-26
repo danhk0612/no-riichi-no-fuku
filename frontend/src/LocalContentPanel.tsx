@@ -231,7 +231,7 @@ export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, o
     finally { setExporting(false) }
   }
   return <section className="sound-panel content-panel" aria-label="캐릭터 프롬프트와 팩 관리">
-    <div className="sound-panel-heading"><div><p className="eyebrow">LOCAL CONTENT</p><h2>캐릭터 프롬프트·팩</h2></div><button className="text-button" disabled={fixedSaving} onClick={onClose} type="button">닫기</button></div>
+    <div className="sound-panel-heading"><div><h2>캐릭터 프롬프트·팩</h2></div><button className="text-button" disabled={fixedSaving} onClick={onClose} type="button">닫기</button></div>
     <div className="content-tabs" role="tablist" aria-label="콘텐츠 관리">
       <button role="tab" aria-selected={tab === 'prompts'} disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?')) { setFixedDirty(false); setTab('prompts') } }} type="button">캐릭터 편집</button>
       <button role="tab" aria-selected={tab === 'packs'} disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?')) { setFixedDirty(false); setTab('packs') } }} type="button">팩 목록·진단</button>
@@ -261,9 +261,9 @@ export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, o
         {GROUPS.map(([key, label]) => <PromptFields source={content.pack_source?.prompts[key]} disabled={saving} key={key} title={label} positive={valueFor(`p.${key}.positive`, content.prompts[key].positive)} negative={valueFor(`p.${key}.negative`, content.prompts[key].negative)} positiveEdited={content.prompts[key].overrides.positive || Object.hasOwn(dirty, `p.${key}.positive`)} negativeEdited={content.prompts[key].overrides.negative || Object.hasOwn(dirty, `p.${key}.negative`)} onPositive={(value) => editPrompt(key, 'positive', value)} onNegative={(value) => editPrompt(key, 'negative', value)} />)}
         <details><summary>캐릭터 LoRA·트리거 단어</summary><GenerationPanel key={content.cpu_id} characterId={content.cpu_id} token={accessToken} /></details>
         <details><summary>배포용 캐릭터팩 내보내기</summary>
-          <p>저장한 단계 이미지·캐릭터 프롬프트와 연결된 음성팩을 게임 폴더의 exports에 복사합니다.</p>
+          <p>저장 위치 · 게임 폴더 / exports</p>
           <label>팩 ID (영문 소문자·숫자·하이픈)<input value={exportId} placeholder="my-character" onChange={e=>setExportId(e.target.value)}/></label>
-          <label><input type="checkbox" checked={exportAudio} onChange={e=>setExportAudio(e.target.checked)}/>사용 중인 BGM·효과음 팩도 포함</label>
+          <label className="export-audio"><input type="checkbox" checked={exportAudio} onChange={e=>setExportAudio(e.target.checked)}/>사용 중인 BGM·효과음 팩도 포함</label>
           <button type="button" disabled={exporting || saving || !!Object.keys(dirty).length || !exportId} onClick={()=>void exportPack()}>팩 폴더 만들기</button>
           {exportPath && <p role="status">내보낸 위치 · {exportPath}</p>}
         </details>
@@ -281,7 +281,7 @@ export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, o
           {targetPack && !!targetPack.issues.length && <p className="diagnostic">팩 진단: {targetPack.issues.join(', ')}</p>}
         </section>
         <h3>신체 정보</h3>
-        <p className="muted">단위 cm · 소수 첫째 자리까지 · 비워 두면 입력하지 않은 상태로 저장됩니다.</p>
+        <p className="muted">단위 cm</p>
         <div className="measurement-fields">
           {MEASUREMENTS.map(([key, label]) => {
             const dirtyKey = `m.${key}`
@@ -294,12 +294,10 @@ export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, o
             </label>
           })}
         </div>
-        <p className="muted">변경한 항목만 저장합니다. 비워 둔 프롬프트도 명시 편집값으로 기록됩니다.</p>
         <h3>단계별 이미지</h3>
-        <p className="muted">프로필은 정면 얼굴, 전신은 정면으로 선 모습입니다. CG 구도와 상황은 필요할 때만 바꾸세요.</p>
         {[0, 1, 2, 3].map((level) => <details className="framing-level" key={level} open={level === 0}>
           <summary>Level {level} · {LEVELS[level]} · {['미소', '무표정', '부끄러움', '울먹임'][level]}</summary>
-          {KINDS.map(([kind, label]) => {
+          <div className="stage-gallery">{KINDS.map(([kind, label]) => {
             const pair = content.levels[String(level)][kind]
             const posKey = `f.${level}.${kind}.positive`, negKey = `f.${level}.${kind}.negative`
             return <div key={kind}>
@@ -310,12 +308,12 @@ export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, o
                   onImageSaved(content.cpu_id,level,kind,next.media?.url ?? null)
                 }} />
               {kind === 'cg' && <PromptFields source={content.pack_source?.levels[String(level)].framing[kind]} disabled={saving} title={label} positive={valueFor(posKey, pair.positive)} negative={valueFor(negKey, pair.negative)} positiveEdited={pair.overrides.positive || Object.hasOwn(dirty, posKey)} negativeEdited={pair.overrides.negative || Object.hasOwn(dirty, negKey)} onPositive={(value) => editFraming(level, kind, 'positive', value)} onNegative={(value) => editFraming(level, kind, 'negative', value)} />}</div>
-          })}
+          })}</div>
         </details>)}
         {content.ending && <details><summary>이 캐릭터의 엔딩</summary>
           <label>엔딩 프롬프트<textarea value={valueFor('p.ending.positive',content.ending.positive)}
             onChange={e=>setDirty({...dirty,'p.ending.positive':e.target.value})}/></label>
-          <p>비워서 저장하면 기본 구도를 사용합니다. 이 캐릭터가 마지막으로 3단계가 되면 저장한 엔딩 이미지를 표시합니다.</p>
+          <p>비워 두면 기본 엔딩 구도를 사용합니다.</p>
           <StageImageEditor key={content.cpu_id+':ending:'+content.revision} token={accessToken} cpu={content.cpu_id} level={3}
             kind="ending" label="엔딩" revision={content.revision} slot={content.ending} disabled={saving || !!Object.keys(dirty).length}
             onSaved={ending=>setContent(current=>current?.cpu_id===content.cpu_id ? {...current,ending} : current)} />
@@ -346,7 +344,7 @@ function PromptFields({ source, disabled, title, positive, negative, positiveEdi
 }) {
   return <fieldset className="prompt-fields" disabled={disabled}><legend>{title}</legend>
     <label>Positive {positiveEdited && <small>편집 기록</small>}<textarea rows={2} value={positive} onChange={(event) => onPositive(event.target.value)} /></label>
-    <details><summary>제외할 요소 (Negative)</summary><label>Negative {negativeEdited && <small>편집 기록</small>}<textarea rows={2} value={negative} onChange={(event) => onNegative(event.target.value)} /></label></details>
+    <details><summary>제외할 요소 (Negative)</summary><label>{negativeEdited && <small>편집 기록</small>}<textarea aria-label="Negative" rows={2} value={negative} onChange={(event) => onNegative(event.target.value)} /></label></details>
     {source && <details><summary>적용한 팩 원본 P/N</summary><p>Positive: {source.positive || '(빈 값)'}</p><p>Negative: {source.negative || '(빈 값)'}</p></details>}
   </fieldset>
 }
