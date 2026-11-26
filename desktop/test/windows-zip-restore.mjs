@@ -48,6 +48,21 @@ try {
   }
   let expected
   await withGame(firstExe, initial, async page => {
+    await page.getByRole('button', { name: '캐릭터 프롬프트·팩 설정', exact: true }).click()
+    const editor = page.getByRole('region', { name: '캐릭터 프롬프트와 팩 관리' })
+    await editor.getByRole('combobox', { name: '캐릭터', exact: true }).selectOption('1')
+    const appearance = editor.getByRole('group', { name: '외모', exact: true }).locator('textarea').first()
+    assert.match(await appearance.inputValue(), /auburn/)
+    await editor.getByRole('button', { name: '캐릭터 추가' }).click()
+    await editor.getByLabel('새 캐릭터 이름').fill('추가 캐릭터')
+    await editor.getByRole('button', { name: '추가하기' }).click()
+    await page.waitForFunction(() => document.querySelector('select[aria-label="캐릭터"]')?.selectedOptions[0]?.textContent.includes('추가 캐릭터'))
+    assert.match(await appearance.inputValue(), /brown hair/)
+    await editor.getByRole('button', { name: '이름 변경' }).click()
+    await editor.getByLabel('변경할 이름').fill('다시 만난 캐릭터')
+    await editor.getByRole('button', { name: '캐릭터 이름 저장' }).click()
+    await page.getByRole('button', { name: '게임 화면으로' }).click()
+    await page.locator('button.cpu-card').filter({ hasText: '다시 만난 캐릭터' }).waitFor()
     await page.locator('.profile-editor input').fill('배포 복구 확인')
     await page.locator('.profile-editor button').click()
     await page.waitForFunction(async () => (await (await fetch('/api/profile/me')).json()).player_name === '배포 복구 확인')
@@ -56,7 +71,8 @@ try {
     for (const action of ['참가 명단 확정', '동풍전 시작']) {
       const start = page.getByRole('button', { name: action, exact: true })
       await start.waitFor()
-      for (let i = 0; i < 3; i++) await page.locator('button.cpu-card:not(.selected):enabled').first().click()
+      await page.locator('button.cpu-card').filter({ hasText: '다시 만난 캐릭터' }).click()
+      for (let i = 0; i < 2; i++) await page.locator('button.cpu-card:not(.selected):enabled').first().click()
       await start.click()
     }
     expected = await snapshot(page)
@@ -74,6 +90,13 @@ try {
       assert.equal(layout.overflow, false, 'page overflow at ' + width)
       assert.equal(layout.missingNames, false)
       assert.ok(layout.visibleHint)
+      const faceSize = await controls.locator('.tile-art').first().evaluate(async face => {
+        const image = new Image()
+        image.src = getComputedStyle(face).backgroundImage.slice(5, -2)
+        await image.decode()
+        return [image.naturalWidth, image.naturalHeight]
+      })
+      assert.deepEqual(faceSize, [3552, 112])
       await page.locator('.mahjong-table').screenshot({ path: join(dirname(evidence), 'table-' + width + '.png') })
       await controls.screenshot({ path: join(dirname(evidence), 'hand-' + width + '.png') })
     }
