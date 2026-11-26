@@ -208,6 +208,19 @@ jobs:
           $restartReport = Get-Content $restartEvidence -Raw | ConvertFrom-Json
           if (-not $restartReport.startup -or -not $restartReport.childClose -or -not $restartReport.hostExit) { throw 'same data-root restart evidence is incomplete' }
           'Packaged general-mode close and same-data-root restart passed.'
+      - name: Verify actual last CPU settlement, ending and omake in packaged EXE
+        run: |
+          $product = (Resolve-Path 'out/w05/package/No-Riichi-No-Fuku-win32-x64/No-Riichi-No-Fuku.exe').Path
+          $data = Join-Path (Get-Location) 'out/w05-scratch/w11-ending-data'
+          $plan = Join-Path (Get-Location) 'out/w05-evidence/w11-ending-plan.json'
+          $report = Join-Path (Get-Location) 'out/w05-evidence/w11-ending.json'
+          python desktop/test/prepare-ending.py $data $plan
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $env:PLAYWRIGHT_MODULE_PATH = Join-Path $env:RUNNER_TEMP 'nrnf-playwright/node_modules/playwright'
+          $env:W11_SOURCE_SHA = (git rev-parse HEAD).Trim()
+          node desktop/test/packaged-ending.mjs $product $data $plan $report
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-Content $report -Raw
       - name: Package ZIP and hash
         if: success()
         run: |
