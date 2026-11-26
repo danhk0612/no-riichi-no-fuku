@@ -56,4 +56,5 @@ class GameSessionRecord(TimestampMixin, Base):
     rules_snapshot: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     presentation: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     hand_results_version: Mapped[int | None] = mapped_column(nullable=True)
+    result_content_version: Mapped[int | None] = mapped_column(nullable=True)
     result_delivery_version: Mapped[int | None] = mapped_column(nullable=True)

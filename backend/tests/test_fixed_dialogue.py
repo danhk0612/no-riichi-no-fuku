@@ -107,9 +107,10 @@ class FixedDialogueTests(unittest.TestCase):
         with self.runtime.engine.connect() as connection:
             cfg.attributes['connection'] = connection
             command.downgrade(cfg, '20261021_0013')
-            before = {table: connection.execute(text(f'SELECT * FROM {table}')).all() for table in tables}
+            columns = {table: ", ".join(row[1] for row in connection.execute(text(f"PRAGMA table_info({table})"))) for table in tables}
+            before = {table: connection.execute(text(f'SELECT {columns[table]} FROM {table}')).all() for table in tables}
             command.upgrade(cfg, 'head')
             command.upgrade(cfg, 'head')
-            after = {table: connection.execute(text(f'SELECT * FROM {table}')).all() for table in tables}
+            after = {table: connection.execute(text(f'SELECT {columns[table]} FROM {table}')).all() for table in tables}
             self.assertEqual(before, after)
             self.assertEqual(connection.execute(text('SELECT count(*) FROM character_fixed_dialogues')).scalar_one(), 0)

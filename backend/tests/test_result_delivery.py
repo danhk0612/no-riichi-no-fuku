@@ -21,7 +21,7 @@ from app.services.result_delivery import (
 
 
 class ResultDeliveryTests(unittest.TestCase):
-    def _build_completed(self, runtime):
+    def _build_completed(self, runtime, content=False):
         with runtime.session_factory.begin() as db:
             state = db.get(LocalPlayState, runtime.member_id)
             generation = state.generation
@@ -38,9 +38,9 @@ class ResultDeliveryTests(unittest.TestCase):
                 ],
                 human_action_indices=[], status="completed", scores=[40000, 30000, 20000, 10000],
                 ranks=[1, 2, 3, 4], settlement={"progression_version": 2, "mode": "progress"},
-                presentation={"version": 2, "result_asset": None, "result_dialogues": [], "settlement": {"stage_changed": True}},
+                presentation={"version": 2, "result_asset": None, "result_dialogues": [], "settlement": {"stage_changed": True, "mode": "progress", "defeat_stage": 3}},
                 play_generation=generation, rules_snapshot={"version": 2, "mode": "progress"},
-                hand_results_version=1, result_delivery_version=1,
+                hand_results_version=1, result_delivery_version=1, result_content_version=1 if content else None,
             )
             db.add(record)
             db.flush()
@@ -72,6 +72,36 @@ class ResultDeliveryTests(unittest.TestCase):
             append_hand_entries(db, record, [fact])
             append_settlement_entry(db, record)
             return generation
+
+    def test_saved_content_survives_editor_change_and_cold_restart(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            data = Path(tmp) / "data"
+            runtime = create_local_runtime(data)
+            try:
+                with TestClient(runtime.app) as client:
+                    path = "/api/local/characters/1/fixed-dialogues"
+                    headers = {"X-Local-Capability": runtime.capability}
+                    def edit(revision, text):
+                        response = client.patch(path, headers=headers, json={"expected_revision": revision, "edits": {"win": {"text": text}}})
+                        self.assertEqual(response.status_code, 200, response.text)
+                    edit(0, "original")
+                    self._build_completed(runtime, content=True)
+                    edit(1, "edited")
+            finally:
+                runtime.close()
+            runtime = create_local_runtime(data)
+            try:
+                with runtime.session_factory() as db:
+                    record = db.get(GameSessionRecord, "c1-test-session")
+                    head = result_envelope(db, record)["head"]["payload"]
+                    self.assertEqual(head["content_mode"], "snapshot")
+                    self.assertEqual(head["content"]["dialogues"][0]["text"], "original")
+                    self.assertEqual(head["content"]["scene"]["event"], "ron_band_2")
+                    settlement = db.scalar(select(GameResultDeliveryEntry).where(GameResultDeliveryEntry.kind == "settlement"))
+                    self.assertEqual(settlement.result_content["scene"]["stage"], 3)
+                    self.assertEqual(settlement.result_content["dialogues"][0]["slot"], "defeat_stage_3")
+            finally:
+                runtime.close()
 
     def test_result_resume_ack_and_selection_are_server_owned(self):
         with tempfile.TemporaryDirectory(prefix="nrnf-c1-") as directory:

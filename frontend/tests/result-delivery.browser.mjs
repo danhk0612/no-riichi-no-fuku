@@ -65,9 +65,12 @@ try {
   assert.equal(await page.locator('.result-delivery-card').evaluate((node) => getComputedStyle(node).animationName), 'none')
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   const secondHand = makeHand(11, 2, 'hand-band-2', 2, 1)
+  secondHand.head.payload.content = {version: 1, dialogues: [{cpu_id: 1, slot: "win", text: "저장된 화료 대사"}], scene: {stage: 1, media: null}}
   currentServerEnvelope = secondHand
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...secondHand }))
   await page.getByText('만관·하네만').waitFor()
+  await page.getByText('저장된 화료 대사').waitFor()
+  await page.getByText('화료 CG가 등록되지 않았습니다.').waitFor()
   const thirdHand = makeHand(12, 3, 'hand-band-3', 3, 2)
   currentServerEnvelope = thirdHand
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...thirdHand }))
