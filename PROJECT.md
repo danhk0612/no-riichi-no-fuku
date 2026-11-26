@@ -6,7 +6,7 @@
 기존 저장소 `danhk0612/no-riichi-no-fuku`를 계속 사용한다. 새 저장소가 필요한 근거는 없다.
 기존 서비스는 React/FastAPI/PostgreSQL/Compose 웹 게임이다. W05에서 Electron + frozen local
 engine의 Windows x64 실행 경로를 구현하고 Windows CI renderer smoke를 준비했다. 이 빌드는
-정식 Release가 아니며 최소 client Windows 버전·사용자 PC 실기 범위는 아직 확인되지 않았다.
+Windows 11 x64를 검증 대상으로 정했다. 현재 사용자 PC의 ZIP 실행과 대국·복구 결과는 CURRENT_STATE를 따른다. 정식 Release는 별도 승인 사항이다.
 초기 분석·W01 회귀 기준·W02 격리 실행 검증과 W04 로컬 저장 전환을 마쳤고, W03에서 실행/저장/
 프로필 정책을 확정했다. W05 PR #63은 main에 병합됐다. W06의 주요 진행 정책은 2026-10-15 사용자 결정으로
 갱신됐으며 HP 없음·완료 전후 난이도·엔딩 후 계속 플레이·수동 초기화를 목표로 한다.
