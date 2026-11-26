@@ -64,7 +64,7 @@ export type CharacterContent = {
   prompts: Record<'appearance' | 'upper_underwear' | 'lower_underwear', PromptPair>
   measurements_cm: { height: string | null; bust: string | null; waist: string | null; hips: string | null }
   measurement_overrides: { height: boolean; bust: boolean; waist: boolean; hips: boolean }
-  levels: Record<string, Record<'profile' | 'full_body' | 'cg', PromptPair & { revision: number; media: { media_id: string; url: string; digest: string } | null }>>
+  levels: Record<string, Record<'profile' | 'full_body' | 'cg', PromptPair & { revision: number; generation_ticket?: string; media: { media_id: string; url: string; digest: string; source?: string } | null }>>
 }
 export type LocalCharacterChoice = { id: number; slug: string; name: string }
 export type SharedPromptKind = 'clothing_state' | 'pose' | 'situation'

@@ -36,3 +36,16 @@ class CharacterLevelFraming(TimestampMixin, Base):
     positive: Mapped[str] = mapped_column(Text, nullable=False)
     negative: Mapped[str] = mapped_column(Text, nullable=False)
     overrides: Mapped[list] = mapped_column(JSON, nullable=False)
+
+
+class StageImage(Base):
+    __tablename__ = "stage_images"
+    cpu_id: Mapped[int] = mapped_column(ForeignKey("cpu_characters.id", ondelete="CASCADE"), primary_key=True)
+    level: Mapped[int] = mapped_column(Integer, primary_key=True)
+    kind: Mapped[str] = mapped_column(String(12), primary_key=True)
+    ticket: Mapped[str] = mapped_column(String(36))
+    inputs: Mapped[dict] = mapped_column(JSON)
+    endpoint: Mapped[str] = mapped_column(String)
+    content_revision: Mapped[int] = mapped_column(Integer)
+    media_id: Mapped[str | None] = mapped_column(ForeignKey("local_media_assets.id", ondelete="RESTRICT"))
+    digest: Mapped[str | None] = mapped_column(String(64))

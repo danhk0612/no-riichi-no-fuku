@@ -60,7 +60,7 @@ class HandCG:
 
     def advance(self, frozen, endpoint, retry=None):
         settings = Settings(**frozen["settings"])
-        if frozen["workflow"] != "anima-txt2img-v1" or frozen["kind"] != "hand_cg":
+        if frozen["workflow"] != "anima-txt2img-v1" or frozen["kind"] not in ("hand_cg", "profile", "full_body", "cg"):
             return {"state": "unsupported"}
         if not all((settings.model, settings.encoder, settings.vae)):
             return {"state": "unconfigured"}

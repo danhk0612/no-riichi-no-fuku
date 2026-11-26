@@ -11,6 +11,7 @@ from app.db.models import (
     CharacterContent, CharacterLevelFraming, CpuCharacter, ContentPack,
     ContentPackRevision, ContentPackFile, ContentPackScanEntry, LocalMediaAsset,
 )
+from app.db.models.character_content import StageImage
 from app.schemas.local_content import (
     CharacterContentPatch, CharacterPackApplication, PackManifest,
     MEASUREMENT_KEYS, normalize_measurement,
@@ -81,6 +82,12 @@ def get_character_content(session: Session, cpu_id: int) -> dict:
     for level, kinds in levels.items():
         for kind, pair in kinds.items():
             pair["media"] = images.get(level, {}).get(kind)
+    for slot in session.scalars(select(StageImage).where(StageImage.cpu_id == cpu_id)):
+        frame = levels[str(slot.level)][slot.kind]
+        frame["generation_ticket"] = slot.ticket
+        if slot.media_id:
+            frame["media"] = {"media_id": slot.media_id, "url": media_url(slot.media_id),
+                              "digest": slot.digest, "source": "generated"}
     return {
         "pack_source": {
             "prompts": applied.manifest["prompts"],
