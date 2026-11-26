@@ -13,6 +13,7 @@ import {
   acknowledgeLocalEnding,
   getLocalResultDelivery,
   acknowledgeLocalResult,
+  claimDefeatVoice,
   gameWebSocketUrl,
   getActiveGameSession,
   getProfile,
@@ -106,6 +107,44 @@ function App() {
   const deliveryAssetIdentity = gameState.status === 'result_delivery' && deliveryAsset?.id !== undefined
     ? `${gameState.delivery.generation}:${gameState.delivery.session_id}:${gameState.delivery.head?.event_id}:${deliveryAsset.id}`
     : null
+  const settlement = gameState.status === 'result_delivery' && gameState.delivery.head?.kind === 'settlement'
+    ? gameState.delivery : null
+  const session = settlement?.session_id, event = settlement?.head?.event_id, generation = settlement?.generation
+  const voiceClaim = useRef<{key: string; request: Promise<{url: string | null}>} | null>(null)
+  useEffect(() => {
+    if (!isDesktop || !accessToken || !session || !event || !generation) { voiceClaim.current = null; return }
+    const key = JSON.stringify([generation, session, event])
+    if (voiceClaim.current?.key !== key) {
+      voiceClaim.current = { key, request: claimDefeatVoice(accessToken, session, event, generation) }
+    }
+    let current = true
+    const audioToken = gameAudioTokenRef.current
+    const live = () => current && audioToken === gameAudioTokenRef.current
+    void voiceClaim.current.request.then(async ({url}) => {
+      if (!url || !live()) return
+      const blob = await getLocalMediaObjectUrl(accessToken, url)
+      if (!live()) { URL.revokeObjectURL(blob); return }
+      const audio = new Audio(blob)
+      activeSoundEffectsRef.current.set(key, {audio, url: blob})
+      const release = () => {
+        if (!activeSoundEffectsRef.current.delete(key)) return
+        URL.revokeObjectURL(blob)
+      }
+      audio.addEventListener('ended', release, {once: true})
+      audio.addEventListener('error', release, {once: true})
+      await audio.play().catch(release)
+    }).catch(() => {})
+    return () => {
+      current = false
+      const item = activeSoundEffectsRef.current.get(key)
+      if (item) {
+        activeSoundEffectsRef.current.delete(key)
+        item.audio.pause()
+        URL.revokeObjectURL(item.url)
+      }
+    }
+  }, [isDesktop, accessToken, session, event, generation])
+
   const deliveryAssetUrl = deliveryAsset?.url ?? null
 
   useEffect(() => {

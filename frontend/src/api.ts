@@ -188,6 +188,10 @@ export function getLocalResultDelivery(accessToken: string, sessionId: string, g
   return apiRequest(`/api/local/play/sessions/${sessionId}/results?${query}`, {}, accessToken)
 }
 
+export function claimDefeatVoice(token: string, session: string, event: string, generation: string): Promise<{ url: string | null }> {
+  return apiRequest(`/api/local/play/sessions/${session}/results/${event}/defeat-voice?${new URLSearchParams({ generation })}`, {method: 'POST'}, token)
+}
+
 export function acknowledgeLocalResult(accessToken: string, delivery: ResultDeliveryEnvelope): Promise<ResultDeliveryEnvelope> {
   const { head } = delivery
   if (!head) return Promise.resolve(delivery)

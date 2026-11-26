@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from sqlalchemy import desc, select
+from sqlalchemy import desc, select, update
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_member, get_session
-from app.db.models import GameSessionRecord, LocalPlayRoster, LocalPlayState, User, UserCpuProgress
+from app.db.models import GameResultDelivery, GameSessionRecord, LocalPlayRoster, LocalPlayState, User, UserCpuProgress
 from app.schemas.game import CreateGameSessionResponse
 from app.schemas.local_play import (
     LocalEndingAckRequest,
@@ -14,6 +14,7 @@ from app.schemas.local_play import (
     LocalRosterRequest,
     LocalResultAckRequest,
 )
+from app.services.audio_packs import resolve_voice_slot
 from app.services.hand_cg_cache import HandCG
 from app.services.generation_settings import read_settings
 from app.services.game_registry import GameRegistry, get_game_registry
@@ -276,6 +277,29 @@ def post_result_ack(
     except Exception:
         session.rollback()
         raise HTTPException(status_code=503, detail={"code": "persistence_failed", "message": "result acknowledgement could not be saved"}) from None
+
+
+@router.post("/sessions/{session_id}/results/{event_id}/defeat-voice")
+def claim_defeat_voice(session_id: str, event_id: str, generation: str, request: Request,
+                       user: User = Depends(get_current_member), session: Session = Depends(get_session)):
+    mark_write_intent(session)
+    head = get_result_delivery(session_id, generation, user, session)["head"]
+    if not head or head["event_id"] != event_id or head["kind"] != "settlement":
+        raise HTTPException(409, "현재 표시 중인 결산이 아닙니다.")
+    claimed = session.execute(update(GameResultDelivery).where(
+        GameResultDelivery.session_id == session_id, GameResultDelivery.defeat_voice_claimed.is_(False)
+    ).values(defeat_voice_claimed=True)).rowcount
+    clip = None
+    if claimed:
+        payload = head["payload"]
+        seat = payload["ranks"].index(4)
+        if seat:
+            snapshot = payload["presentation"]["settlement"]
+            stage = 3 if snapshot["mode"] == "omake" else snapshot["defeat_stage"]
+            cpu = session.get(GameSessionRecord, session_id).cpu_choices[seat - 1]["id"]
+            clip = resolve_voice_slot(session, cpu, f"defeat_stage_{stage}", request.app.state.local_runtime.paths.media)
+    session.commit()
+    return {"url": clip["url"] if clip else None}
 
 
 def _hand_cg_input(session_id, generation, event_id, user, session):
