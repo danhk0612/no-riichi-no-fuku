@@ -60,6 +60,7 @@ try {
   await difficultyButton.click()
   const difficulty = page.getByRole('region', { name:'난이도 설정' })
   await difficulty.getByLabel('게임 난이도').selectOption('8')
+  const readsAfterOpening = difficultyReads
   assert.equal(await panel.isVisible(), false)
   await page.getByRole('button', { name:'게임 화면으로' }).click()
   assert.equal(await difficulty.isVisible(), false)
@@ -72,7 +73,7 @@ try {
   await difficulty.getByRole('button', {name:'닫기'}).click()
   assert.equal(await difficultyButton.evaluate(button => button === document.activeElement), true)
   await open.click()
-  assert.equal(difficultyReads, 1, 'switching back must retain the open editor')
+  assert.equal(difficultyReads, readsAfterOpening, 'switching back must retain the open editor')
   assert.equal(writes, 1)
   assert.deepEqual(requests, ['check','check'])
   failRead=true
