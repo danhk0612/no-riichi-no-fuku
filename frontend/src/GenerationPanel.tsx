@@ -3,7 +3,7 @@ import { apiRequest, listLocalCharacters } from './api'
 
 type Lora = { name: string; strength: number }
 type Character = { model: string; loras: Lora[] }
-type Common = Character & { encoder: string; vae: string; sampler: string; scheduler: string; width: number; height: number; steps: number; cfg: number }
+type Common = Character & { encoder: string; vae: string; sampler: string; scheduler: string; width: number; height: number; steps: number; cfg: number; model_revision?: number }
 type Saved = { endpoint: string; common: Common; characters: Record<string, Character>; revision: number }
 type Catalog = { choices: Record<string, string[]>; missing_nodes: string[] }
 const path = '/api/local/generation-settings'
@@ -57,6 +57,7 @@ export function GenerationPanel({token, close}: {token: string; close: () => voi
       <label>모델 <input list="gen-model" value={target.model} onChange={e=>patch({model:e.target.value})}/></label>
       {!person && <>{([['encoder','텍스트 인코더'],['vae','VAE'],['sampler','샘플러'],['scheduler','스케줄러']] as const).map(([key,label])=><p key={key}><label>{label} <input list={'gen-'+key} value={data.common[key]} onChange={e=>patch({[key]:e.target.value})}/></label></p>)}
         {([['width','가로'],['height','세로'],['steps','스텝'],['cfg','CFG']] as const).map(([key,label])=><label key={key}>{label} <input type="number" step={key==='cfg'?'any':key==='steps'?1:16} value={data.common[key]} onChange={e=>patch({[key]:Number(e.target.value)})}/></label>)}</>}
+      {!person && <p><label>모델 파일 버전 <input type="number" min="1" value={data.common.model_revision ?? 1} onChange={e=>patch({model_revision:Number(e.target.value)})}/></label> 같은 이름의 모델·LoRA 파일을 교체했다면 이 숫자를 올려 주세요.</p>}
       <h3>LoRA 적용 순서</h3>
       {target.loras.map((l,i)=><p key={i}>
         <label>LoRA {i+1} <input list="gen-lora" value={l.name} onChange={e=>patch({loras:target.loras.map((v,n)=>n===i?{...v,name:e.target.value}:v)})}/></label>

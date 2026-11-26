@@ -25,6 +25,7 @@ class Character(Form):
 
 
 class Common(Character):
+    model_revision: int = Field(default=1, ge=1)
     encoder: Name = ""
     vae: Name = ""
     width: int = Field(default=1024, ge=16, multiple_of=16)

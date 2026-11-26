@@ -1,6 +1,6 @@
 """Internal W10 text-to-image adapter. No game hooks or external process management."""
 from dataclasses import dataclass
-from http.client import HTTPConnection
+from http.client import HTTPConnection, HTTPException
 from ipaddress import ip_address
 import json
 from urllib.parse import urlencode, urlsplit
@@ -19,6 +19,7 @@ class Settings:
     sampler: str
     scheduler: str
     loras: tuple[tuple[str, float], ...] = ()
+    model_revision: int = 1
 
 
 def graph(settings: Settings, positive: str, negative: str, seed: int, *,
@@ -69,7 +70,13 @@ class Comfy:
             res = conn.getresponse()
             if res.status != 200:
                 raise ValueError(f"ComfyUI {method} {path.split('?')[0]}: HTTP {res.status}")
-            return res.read() if binary else json.load(res)
+            if not binary:
+                return json.load(res)
+            limit = 32 * 1024 * 1024
+            data = res.read(limit + 1)
+            if len(data) > limit:
+                raise ValueError("Generated image exceeds the local size limit")
+            return data
         finally:
             conn.close()
 
@@ -93,7 +100,10 @@ class Comfy:
 
     def submit(self, settings, positive, negative, seed, **character):
         nodes, output = graph(settings, positive, negative, seed, **character)
-        info = self._request("GET", "/object_info")
+        try:
+            info = self._request("GET", "/object_info")
+        except (OSError, HTTPException, ValueError) as exc:
+            raise ValueError("Could not inspect ComfyUI before submission") from exc
         for node in nodes.values():
             spec = info.get(node["class_type"], {}).get("input", {})
             required = spec.get("required", {})
@@ -107,14 +117,24 @@ class Comfy:
                     allowed = available[key][1].get("options")
                 if isinstance(allowed, list) and value not in allowed:
                     raise ValueError(f"Unavailable {node['class_type']}.{key}")
-        result = self._request("POST", "/prompt", {"prompt": nodes, "client_id": self.client_id})
-        job = str(UUID(result["prompt_id"]))
+        try:
+            result = self._request("POST", "/prompt", {"prompt": nodes, "client_id": self.client_id})
+            job = str(UUID(result["prompt_id"]))
+        except (OSError, HTTPException, ValueError, KeyError, TypeError, AttributeError) as exc:
+            raise ConnectionError("No confirmed prompt ID after submission") from exc
         self._outputs[job] = output
         return job
 
     def result(self, job):
         """None while pending, image bytes on success; failures never submit another job."""
-        output = self._outputs[job]
+        image = self.saved_result(job, self._outputs[job])
+        if image is not None:
+            del self._outputs[job]
+        return image
+
+    def saved_result(self, job, output):
+        """Read a prompt ID and SaveImage node previously recorded by this game."""
+        job = str(UUID(job))
         entry = self._request("GET", f"/history/{job}").get(job)
         if not entry:
             return None
@@ -131,5 +151,4 @@ class Comfy:
         image = self._request("GET", "/view?" + query, binary=True)
         if not image:
             raise ValueError("ComfyUI returned an empty image")
-        del self._outputs[job]
         return image
