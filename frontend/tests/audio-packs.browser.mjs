@@ -15,15 +15,19 @@ try {
   })
   const cpus = [1, 2, 3].map((id) => ({ id, name: `CPU ${id}`, defeat_stage: 3, style: 'balanced', short_description: 'test-only', profile_image_key: null }))
   const voices = new Map(cpus.map((cpu) => [cpu.id, { schema_version: 1, cpu_id: cpu.id, revision: 0, default_pack_id: null, selected_pack_id: null, selection_mode: 'default', packs: [] }]))
-  const audioPacks = { schema_version: 1, revision: 0, sfx_mode: 'legacy', sfx_pack_id: null, bgm_mode: 'pack', bgm_pack_id: null, defaults: { sfx: null, bgm: null }, packs: [], bgm_slots: { title: { asset_id: 'title-only', url: '/api/local/media/title-only/file' } } }
+  const audioPacks = { schema_version: 1, revision: 0, sfx_mode: 'legacy', sfx_pack_id: null, bgm_mode: 'pack', bgm_pack_id: null, defaults: { sfx: null, bgm: null }, packs: [], bgm_slots: { result:{asset_id:'result-only',url:'/api/local/media/result-only/file'}, title: { asset_id: 'title-only', url: '/api/local/media/title-only/file' } } }
   const selection = { effect_set_id: null, bgm_ids: [], effect_sets: [], tracks: [], effect_set_available: false, bgm_available: [], audio_packs: audioPacks }
   const play = { generation: 'test-generation', phase: 'omake', roster: cpus.map((cpu) => ({ cpu_character_id: cpu.id, defeat_stage: 3 })), ending_event_id: null, ending_payload: null, active_session_id: null, recent_session_id: null, legacy_active: false }
+  const result = {type:'result_delivery',version:1,generation:play.generation,session_id:'test-match',acked_ordinal:0,terminal_ordinal:null,route:'result',action_version:null,delivery_revision:1,
+    head:{kind:'hand',ordinal:1,event_id:'fixture-hand',payload:{kind:'hand',fact_snapshot:{start:{kyoku:1,bakaze:'E'},winners:[]}}}}
+  let resultLoads=0
   const heldFiles = new Map(); let socket
   let finishBootstrap
   const bootstrap = new Promise((resolve) => { finishBootstrap = resolve })
   await page.route('**/api/**', async (route) => {
     const request = route.request(), path = new URL(request.url()).pathname
     if (/^\/api\/local\/media\/[^/]+\/file$/.test(path)) {
+      if (path.endsWith('/result-only/file')) resultLoads++
       if (heldFiles.has(path)) await heldFiles.get(path)
       return route.fulfill({ contentType: 'audio/mpeg', body: Buffer.from('test-only') })
     }
@@ -32,6 +36,7 @@ try {
       return route.fulfill({ json: { player_name: 'test', current_hp: null, max_hp: null } })
     }
     if (path === '/api/local/play') return route.fulfill({ json: play })
+    if (path === '/api/local/play/sessions/test-match/results') return route.fulfill({json:result})
     if (path === '/api/game/sessions/active') return route.fulfill({ json: null })
     if (path === '/api/admin/cpus' || path === '/api/local/play/roster-candidates') return route.fulfill({ json: cpus })
     if (path === '/api/local/sound-selection') return route.fulfill({ json: selection })
@@ -96,6 +101,24 @@ try {
   await voiceRow.getByLabel('음성팩').selectOption('off')
   await voiceRow.getByRole('button', { name: '저장', exact: true }).click()
   await page.waitForFunction(() => window.__audios[0].paused)
+  socket.send(JSON.stringify(result))
+  await page.getByRole('region',{name:'국 결과'}).waitFor()
+  await page.waitForFunction(()=>window.__audios.length===2 && !window.__audios[1].paused)
+  assert.equal(resultLoads,1)
+  Object.assign(result,{delivery_revision:2,acked_ordinal:1,route:'settlement_wait',head:null})
+  socket.send(JSON.stringify(result))
+  await page.getByText('정산 결과 저장 중').waitFor()
+  assert.equal(await page.evaluate(()=>window.__audios[1].paused),false)
+  Object.assign(result,{delivery_revision:3,route:'result',head:{kind:'settlement',ordinal:2,event_id:'fixture-settlement',payload:{kind:'settlement',scores:[],ranks:[]}}})
+  socket.send(JSON.stringify(result))
+  await page.getByRole('region',{name:'최종 정산 결과'}).waitFor()
+  assert.equal(resultLoads,1,'result-to-result transitions must keep the same track')
+  play.result_resume={session_id:'test-match',route:'result'}
+  await page.reload()
+  await page.getByRole('region',{name:'최종 정산 결과'}).waitFor()
+  await page.waitForFunction(()=>window.__audios.some(audio=>!audio.paused))
+  await page.waitForFunction(()=>performance.getEntriesByType('resource').some(r=>r.name.endsWith('/result-only/file')))
+  assert.equal(resultLoads,2,'cold resume must select the result track with no active seats')
   assert.deepEqual(errors, [])
   console.log('PASS: startup title BGM/selection transition, voice-off/SFX pack save discard held media and queued voices, future voice queue recovers, active voice stops')
 } finally { await browser.close() }

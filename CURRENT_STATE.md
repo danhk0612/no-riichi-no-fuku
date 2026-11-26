@@ -1,5 +1,7 @@
 # 현재 상태
 
+화면별 BGM: 로컬 국 결과·정산 대기·최종 결산에서 result 슬롯을 사용한다. 저장된 결산을 좌석 정보 없이 복구할 때도 같은 규칙을 적용한다. 결과 사이 같은 곡 재요청 없음 및 복구 후 결과 곡 요청을 모의 Chromium에서 확인했다.
+
 CPU 화료의 복장 상태·해당 론/쯔모 점수 구간의 상황·포즈가 기본값까지 확인한 뒤에도 비면 새 결과에 누락 종류를 기록하고 생성 입력을 만들지 않는다. 복수 화료에서는 모든 화료자의 점수·좌석별 이동을 함께 표시하며 배경은 저장된 차례를 사용한다. backend unittest 212개, 대사 pytest 10개, production build 및 모의 Chromium 2종 통과. 이 변경에 대한 실제 Windows·ComfyUI 검증은 보류했다.
 
 **Windows 패키지 통합 검증 (2026-11-26):** 제품 #124 `89e78f3`, 검증 코드 #126 `94930b6`. [W04](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45740740037) 211 unittest·대사 10개·build, [W05](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45740740015) Windows Server 2022 x64 EXE 검사 36개·DB 0017 대국 1건·종료/재시작 성공. 별도 새 데이터 경로에서 실제 엔진으로 seed 13의 행동 51개를 미리 진행한 뒤 EXE에서 마지막 행동을 수행했다. CPU 4위 단계 2→3, CG 단독 감상, 종료/재실행 후 같은 결산, 확인→엔딩→오마케, 다시 시작한 오마케 선택을 확인했다. 기존 선택→일반 대국 smoke와 이 마지막 턴 fixture는 분리된 실험이다. 결과 API 모의·실제 ComfyUI 연결은 사용하지 않았다(추가 마지막 턴 검사 기준). artifact 15081636813 내부 ZIP SHA-256 `3c4d7969e85b8a83383c231ebf4d5c0195f912dd14772e09d3aa44ca5448cfd2` 대조 완료. Windows 11 사용자 PC·GPU 실생성과 배포 콘텐츠는 미검증.
