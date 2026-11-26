@@ -140,8 +140,52 @@ try {
   await heldResponse
   await page.waitForTimeout(100)
   assert.equal(await displayedEvent.getAttribute('data-event-id'), 'newer-settlement', 'delayed GET must not replace a newer revision')
+  // New saved stage change; viewer interactions must not send a result acknowledgement.
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="600" height="400" fill="green"/></svg>'
+  await page.route('**/api/test-settlement/*',route=>route.fulfill({contentType:'image/svg+xml',body:svg}))
+  const m = kind=>({media_id:kind,digest:kind,url:'/api/test-settlement/'+kind})
+  const stageChange=structuredClone(newer)
+  stageChange.delivery_revision=17
+  stageChange.head.event_id='stage-change'
+  stageChange.head.payload.content={version:1,dialogues:[{cpu_id:3,slot:'defeat_stage_2',text:'저장한 패배 대사'},
+    {cpu_id:1,slot:'match_first',text:'승리 대사'}],scene:{cpu_id:3,stage:2,media:m('cg'),
+    transition:{from_stage:1,name:'CPU C',profile:m('profile'),full_body:m('full_body')}}}
+  const commands=[]
+  page.on('request',req=>{if(req.method()==='POST')commands.push(req.url())})
+  sockets[0].send(JSON.stringify({type:'result_delivery',...stageChange}))
+  const scene=page.getByRole('region',{name:'패배 단계 변경'})
+  await scene.getByRole('heading',{name:'CPU C · 단계 1 → 2'}).waitFor()
+  await scene.getByAltText('CPU C 전신').waitFor()
+  await scene.getByAltText('CPU C 프로필').waitFor()
+  assert.equal(await page.getByText('저장한 패배 대사',{exact:true}).count(),1)
+  await page.getByText('승리 대사',{exact:true}).waitFor()
+  const open=scene.getByRole('button',{name:'CG만 보기'})
+  await open.click()
+  const viewer=page.getByRole('dialog',{name:'결과 CG 감상'})
+  const canvas=viewer.locator('.cg-canvas'), image=viewer.getByAltText('감상용 결과 CG')
+  await viewer.getByRole('button',{name:'확대',exact:true}).click({clickCount:2})
+  await viewer.getByText('200%').waitFor()
+  const box=await canvas.boundingBox()
+  await page.mouse.move(box.x+100,box.y+100);await page.mouse.down();await page.mouse.move(box.x+135,box.y+140);await page.mouse.up()
+  assert.notEqual(await image.evaluate(el=>new DOMMatrix(getComputedStyle(el).transform).m42),0)
+  await viewer.getByRole('button',{name:'원래 크기'}).click()
+  assert.equal(await image.evaluate(el=>new DOMMatrix(getComputedStyle(el).transform).m42),0)
+  await page.keyboard.press('Escape')
+  await viewer.waitFor({state:'hidden'})
+  assert.equal(await open.evaluate(el=>document.activeElement===el),true)
+  await open.click()
+  const next=structuredClone(stageChange)
+  next.delivery_revision=18;next.head.event_id='stage-missing'
+  next.head.payload.content.scene.media=null
+  next.head.payload.content.scene.transition.profile=null
+  sockets[0].send(JSON.stringify({type:'result_delivery',...next}))
+  await viewer.waitFor({state:'hidden'})
+  await scene.getByText('등록된 결과 CG가 없습니다.').waitFor()
+  await scene.getByText('CPU C 프로필 없음').waitFor()
+  assert.equal(await page.getByRole('button',{name:'정산 확인'}).isEnabled(),true)
+  assert.deepEqual(commands,[])
   await page.close()
-  for (const scenario of ['reset', 'new-session', 'same-generation-new-session', 'human_turn', 'ending', 'selection']) {
+  for (const scenario of ['reset', 'new-session', 'same-generation-new-session', 'human_turn', 'ending', 'selection', 'stage-confirm']) {
     const desktop = await browser.newPage()
     desktop.setDefaultTimeout(8000)
     await desktop.addInitScript(() => { window.nrnfDesktop = { isDesktop: true } })
@@ -156,10 +200,17 @@ try {
     const getStarted = new Promise((resolve) => { startGet = resolve })
     const getRelease = new Promise((resolve) => { releaseGet = resolve })
     let fresh = noImage
-    let resultRequests = 0
+    let resultRequests = 0, acknowledgements = 0
     await desktop.route('**/api/**', async (route) => {
       const request = route.request()
       const path = new URL(request.url()).pathname
+      if (path.startsWith('/api/test-settlement/')) return route.fulfill({contentType:'image/svg+xml',body:svg})
+      if (scenario==='stage-confirm' && path.endsWith('/results/ack')) {
+        acknowledgements++
+        assert.equal(request.postDataJSON().event_id,'stage-change')
+        play={...play,phase:'ending_pending',active_session_id:null,ending_event_id:'ending-1'}
+        return route.fulfill({json:{...stageChange,head:null,delivery_revision:18,acked_ordinal:4,route:'ending'}})
+      }
       if (path === '/api/profile/me') return route.fulfill({ json: { player_name: 'Tester' } })
       if (path === '/api/local/sound-selection') return route.fulfill({ json: { effect_set_id: null, bgm_ids: [], effect_sets: [], tracks: [], effect_set_available: false, bgm_available: [] } })
       if (path === '/api/local/play/reset') {
@@ -199,6 +250,18 @@ try {
     })
     await desktop.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
     await desktop.locator('.hand button').waitFor()
+    if (scenario==='stage-confirm') {
+      desktopSockets[0].send(JSON.stringify({type:'result_delivery',...stageChange}))
+      await desktop.getByRole('button',{name:'CG만 보기'}).click()
+      await desktop.getByRole('button',{name:'확대',exact:true}).click()
+      await desktop.getByRole('button',{name:'결산으로 돌아가기'}).click()
+      assert.equal(acknowledgements,0)
+      await desktop.getByRole('button',{name:'정산 확인'}).click()
+      await desktop.getByRole('region',{name:'엔딩'}).waitFor()
+      assert.equal(acknowledgements,1)
+      await desktop.close()
+      continue
+    }
     if (scenario==='human_turn') {
       const seat=desktop.getByRole('region',{name:'Player 2 좌석'})
       await seat.getByAltText('Player 2 프로필').waitFor()

@@ -805,3 +805,17 @@ button.tile:disabled {
 .seat-body { width:7rem; max-height:12rem; object-fit:contain }
 .seat-bio dl div { display:flex; gap:.5rem }
 .seat-bio dd { margin:0 }
+
+.stage-change h3 { animation:stage-reveal .2s both }
+.settlement-scene { position:relative; isolation:isolate; overflow:hidden; display:grid; justify-items:center; align-content:end; min-height:18rem; background:#16241e; border-radius:.75rem }
+.settlement-cg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-1; animation:stage-reveal .35s both }
+.settlement-body { width:65%; height:clamp(12rem,38vh,24rem); object-fit:contain; animation:stage-reveal .35s .35s both }
+.settlement-line { width:100%; display:flex; gap:1rem; align-items:center; padding:.75rem; background:#10251fee; animation:stage-reveal .25s .7s both }
+.settlement-profile { width:4rem; height:4rem; object-fit:cover }
+.cg-viewer { background:#101412; color:white; padding:.5rem; width:min(96vw,90rem); max-width:98vw; border:0 }
+.cg-viewer::backdrop { background:#080b0af5 }
+.cg-canvas { height:75vh; overflow:hidden; touch-action:none; cursor:grab }
+.cg-canvas img { width:100%; height:100%; object-fit:contain; pointer-events:none; user-select:none }
+.cg-tools { display:flex; align-items:center; justify-content:center; gap:.6rem; flex-wrap:wrap; padding:.5rem }
+@keyframes stage-reveal { from { opacity:0 } to { opacity:1 } }
+@media (prefers-reduced-motion:reduce) { .stage-change h3,.settlement-cg,.settlement-body,.settlement-line {animation:none} }
