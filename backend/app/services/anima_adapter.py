@@ -61,6 +61,10 @@ def _listed_options(spec):
     return options if isinstance(options, list) else None
 
 
+class PromptValidationRejected(ValueError):
+    """The server explicitly declined this prompt before queuing it."""
+
+
 class Comfy:
     """One manually started loopback server. POST is never retried on unknown outcome."""
     def __init__(self, endpoint, timeout=10):
@@ -85,6 +89,13 @@ class Comfy:
             res = conn.getresponse()
             if res.status != 200:
                 message = f"ComfyUI {method} {path.split('?')[0]}: HTTP {res.status}"
+                if method == "POST" and path == "/prompt" and res.status == 400:
+                    raw = res.read(65537)
+                    if len(raw) <= 65536:
+                        details = json.loads(raw)
+                        error = details.get("error") if isinstance(details, dict) else None
+                        if isinstance(error, dict) and error.get("type") == "prompt_outputs_failed_validation":
+                            raise PromptValidationRejected(message)
                 # A temporary read failure says nothing about the outcome of an accepted prompt.
                 if method == "GET" and res.status in (408, 429, 500, 502, 503, 504):
                     raise ConnectionError(message)
@@ -139,6 +150,8 @@ class Comfy:
         try:
             result = self._request("POST", "/prompt", {"prompt": nodes, "client_id": self.client_id})
             job = str(UUID(result["prompt_id"]))
+        except PromptValidationRejected:
+            raise
         except (OSError, HTTPException, ValueError, KeyError, TypeError, AttributeError) as exc:
             raise ConnectionError("No confirmed prompt ID after submission") from exc
         self._outputs[job] = output

@@ -1,7 +1,7 @@
 import {useEffect, useRef, useState} from 'react'
 import {apiRequest, type CharacterContent} from './api'
 
-const labels:Record<string,string>={pending:'생성 중입니다.', uncertain:'접수 여부를 확인하지 못했습니다.', failed:'생성에 실패했습니다.', missing:'생성 파일이 없습니다.',disconnected:'접수된 이미지 작업의 결과를 읽지 못했습니다.',unconfigured:'생성 설정이 필요합니다.'}
+const labels:Record<string,string>={pending:'생성 중입니다.', uncertain:'접수 여부를 확인하지 못했습니다.', rejected:'ComfyUI가 생성 입력을 검증하지 못해 요청을 거절했습니다.', failed:'생성에 실패했습니다.', missing:'생성 파일이 없습니다.',disconnected:'접수된 이미지 작업의 결과를 읽지 못했습니다.',unconfigured:'생성 설정이 필요합니다.'}
 type Slot = CharacterContent['levels'][string]['profile']
 export function StageImageEditor({token,cpu,level,kind,label,revision,slot,disabled,onSaved}:{
   token:string;cpu:number;level:number;kind:'profile'|'full_body'|'cg';label:string;revision:number;
@@ -28,7 +28,7 @@ export function StageImageEditor({token,cpu,level,kind,label,revision,slot,disab
         t=res.ticket;setTicket(t);setAttempt(undefined)
       }
       if(!t)return
-      const retry=!fresh && ['failed','missing','uncertain','disconnected'].includes(state) && attempt ? '?retry='+attempt : ''
+      const retry=!fresh && ['failed','rejected','missing','uncertain','disconnected'].includes(state) && attempt ? '?retry='+attempt : ''
       const step=async (query:string)=>{
         try {
           const s=await apiRequest<{state:string;attempt?:string}>(path+'/'+t+'/advance'+query,{method:'POST'},token)

@@ -11,7 +11,7 @@ from threading import Lock
 from time import time
 from uuid import UUID, uuid4
 
-from app.services.anima_adapter import Comfy, LEGACY_WORKFLOW, Settings, WORKFLOW, graph
+from app.services.anima_adapter import Comfy, LEGACY_WORKFLOW, PromptValidationRejected, Settings, WORKFLOW, graph
 
 _locks = tuple(Lock() for _ in range(64))
 
@@ -80,7 +80,7 @@ class HandCG:
                 if self._image(directory, record) is not None:
                     return {"state": "ready", "attempt": record["attempt"]}
                 return save("missing")
-            if record and record["state"] in ("failed", "uncertain", "missing", "disconnected") and retry != record["attempt"]:
+            if record and record["state"] in ("failed", "rejected", "uncertain", "missing", "disconnected") and retry != record["attempt"]:
                 return {"state": record["state"], "attempt": record["attempt"]}
             if not record or record["state"] not in ("pending", "disconnected"):
                 record = {"attempt": str(uuid4()), "seed": record["seed"] if record else randbits(63),
@@ -90,6 +90,8 @@ class HandCG:
                 _, output = graph(settings, frozen["positive"], frozen["negative"], record["seed"], workflow=workflow)
                 try:
                     job = client.submit(settings, frozen["positive"], frozen["negative"], record["seed"], workflow=workflow)
+                except PromptValidationRejected:
+                    return save("rejected")
                 except (ValueError, KeyError, TypeError):
                     return save("failed")
                 except (OSError, HTTPException):
