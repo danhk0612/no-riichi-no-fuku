@@ -943,7 +943,7 @@ function App() {
         const latestChoices = withLatestCharacterMeasurements(choices)
         setCpus(localPlay.phase === 'roster_required' ? latestChoices : latestChoices.filter((cpu) => ids.has(cpu.id)))
       }} />}
-      {isDesktop && accessToken && generationOpen && <GenerationPanel token={accessToken} close={()=>setGenerationOpen(false)}/>}
+      {isDesktop && accessToken && generationOpen && <GenerationPanel key={accessToken} token={accessToken} close={()=>setGenerationOpen(false)}/>}
       {isDesktop && accessToken && soundSettingsOpen && <LocalSoundPanel accessToken={accessToken} onClose={() => setSoundSettingsOpen(false)} onSelectionChanged={setSoundSelection} onPlaybackChanged={stopGameAudio} />}
       {isDesktop && accessToken && contentSettingsOpen && <LocalContentPanel accessToken={accessToken} onClose={closeContentSettings} fixedDirty={fixedDirty} fixedSaving={fixedSaving} setFixedDirty={setFixedDirty} setFixedSaving={setFixedSaving} onPackApplied={stopGameAudio} onMeasurementsUpdated={updateCharacterContent}
         onImageSaved={(id,level,kind,url)=>setCpus(current=>current?.map(cpu=>cpu.id===id && cpu.defeat_stage===level

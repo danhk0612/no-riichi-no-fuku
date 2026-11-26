@@ -7,6 +7,7 @@ try {
   page.setDefaultTimeout(6000)
   await page.addInitScript(()=>{window.nrnfDesktop={isDesktop:true}})
   const requests=[]
+  let failRead=false, writes=0
   let settings={endpoint:'http://127.0.0.1:8188',revision:0,characters:{},common:{model:'',encoder:'',vae:'',sampler:'euler',scheduler:'normal',width:1024,height:1024,steps:20,cfg:4,loras:[]}}
   await page.route('**/api/**',async route=>{
     const path=new URL(route.request().url()).pathname
@@ -16,7 +17,9 @@ try {
       return route.fulfill({status:502,json:{detail:'연결할 수 없습니다.'}})
     }
     if(path.endsWith('/generation-settings')){
+      if(failRead && route.request().method()==='GET')return route.fulfill({status:503,json:{detail:'일시적인 조회 실패'}})
       if(route.request().method()==='PUT'){
+        writes++
         const {expected_revision,...rest}=route.request().postDataJSON()
         assert.equal(expected_revision,settings.revision);settings={...rest,revision:expected_revision+1}
       }
@@ -46,5 +49,19 @@ try {
   assert.equal(settings.common.model,'base')
   assert.deepEqual(settings.characters['1'],{model:'',loras:[{name:'char',strength:0}]})
   assert.deepEqual(requests,['check','check'])
-  console.log('PASS: offline editing and saving after an explicit, failed catalog check')
+  const model=panel.getByLabel('모델',{exact:true}), reload=panel.getByRole('button',{name:'저장된 설정 다시 불러오기'})
+  await model.fill('draft-model')
+  failRead=true
+  await reload.click()
+  await panel.getByText(/일시적인 조회 실패/).waitFor()
+  assert.equal(await model.inputValue(),'draft-model')
+  assert.equal(await model.isEnabled(),true)
+  assert.equal(await panel.getByLabel('LoRA 1',{exact:true}).inputValue(),'char')
+  failRead=false
+  await reload.click()
+  await page.waitForFunction(()=>document.querySelector('input[list="gen-model"]')?.value==='')
+  assert.equal(await panel.getByLabel('적용 대상').inputValue(),'1')
+  assert.equal(writes,1,'reload must not save the draft')
+  assert.deepEqual(requests,['check','check'])
+  console.log('PASS: offline save, catalog check, failed refresh retains draft, successful refresh restores saved settings')
 } finally {await browser.close()}
