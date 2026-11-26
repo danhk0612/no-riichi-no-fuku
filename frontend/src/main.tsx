@@ -11,6 +11,7 @@ import {
   getRosterCandidates,
   confirmLocalRoster,
   resetLocalPlay,
+  resumeCurrentHand,
   acknowledgeLocalEnding,
   getLocalResultDelivery,
   acknowledgeLocalResult,
@@ -43,6 +44,7 @@ import type {
   ResultDeliveryEnvelope,
 } from './game/types'
 import './style.css'
+import './game-interface.css'
 
 declare global {
   interface Window { nrnfDesktop?: { isDesktop: true } }
@@ -61,6 +63,7 @@ const settingsGroups = [
 type SettingsPage = typeof settingsGroups[number]['items'][number][0]
 
 function App() {
+  const isDesktop = window.nrnfDesktop?.isDesktop === true
   const [accessToken, setAccessToken] = useState<string | null>(null)
   const [cpus, setCpus] = useState<CpuChoice[] | null>(null)
   const [selectedCpuIds, setSelectedCpuIds] = useState<number[]>([])
@@ -75,6 +78,7 @@ function App() {
   const [profileName, setProfileName] = useState('')
   const [profileBusy, setProfileBusy] = useState(false)
   const [soundSelection, setSoundSelection] = useState<SoundSelection | null>(null)
+  const [screen, setScreen] = useState<'title' | 'menu' | 'play'>(isDesktop ? 'title' : 'play')
   const [settingsVisible, setSettingsVisible] = useState(false)
   const [profileMessage, setProfileMessage] = useState('')
   const [activeSettings, setActiveSettings] = useState<SettingsPage | null>(null)
@@ -118,7 +122,6 @@ function App() {
   const activeSoundEffectsRef = useRef(new Map<string, { audio: HTMLAudioElement; url: string }>())
   const voiceQueueRef = useRef<Promise<void>>(Promise.resolve())
   const characterContentRef = useRef(new Map<number, Pick<CharacterContent, 'revision' | 'measurements_cm'>>())
-  const isDesktop = window.nrnfDesktop?.isDesktop === true
   const difficultyPreviewToken = localRequestTokenRef.current
   const playbackAccessToken = accessToken ?? (isDesktop ? DESKTOP_SESSION : null)
   const deliveryPresentation = gameState.status === 'result_delivery' && gameState.delivery.head?.kind === 'settlement'
@@ -449,7 +452,8 @@ function App() {
       setProfileName(profile.player_name ?? '플레이어')
       const play = await getLocalPlay(token)
       if (!isCurrentLocalRequest(requestToken)) return
-      await restoreLocalPlay(token, play, requestToken)
+      storeLocalPlay(play, requestToken)
+      setAccessToken(token)
       return
     }
     let activeGame = await getActiveGameSession(token)
@@ -792,7 +796,7 @@ function App() {
     if (
       !socket
       || socket.readyState !== WebSocket.OPEN
-      || actionPending
+      || busy || actionPending
       || gameState.status !== 'human_turn'
     ) return
     setActionPending(true)
@@ -939,6 +943,58 @@ function App() {
     }
   }
 
+  const hasProgress = !!localPlay && (localPlay.phase !== 'roster_required' || !!localPlay.active_session_id || !!localPlay.result_resume)
+
+  async function enterFromMenu(resume: boolean) {
+    if (!accessToken || !localPlay || busy) return
+    if (!resume && hasProgress && !window.confirm('진행 중인 대국과 참가 명단을 초기화하고 새로 시작할까요? 캐릭터와 설정은 보존됩니다.')) return
+    const request = beginLocalRequest()
+    setBusy(true)
+    setError(null)
+    try {
+      let play = await getLocalPlay(accessToken)
+      if (play.generation !== localPlay.generation) {
+        storeLocalPlay(play, request)
+        throw new Error('저장된 진행 상태가 바뀌었습니다. 메뉴에서 다시 선택하세요.')
+      }
+      if (!resume && hasProgress) play = await resetLocalPlay(accessToken, play.generation)
+      else if (resume && play.active_session_id && !play.result_resume) {
+        play = await resumeCurrentHand(accessToken, play.generation, play.active_session_id)
+      }
+      await restoreLocalPlay(accessToken, play, request)
+      if (isCurrentLocalRequest(request)) setScreen('play')
+    } catch (caught) {
+      setError(errorMessage(caught))
+    } finally {
+      if (isCurrentLocalRequest(request)) setBusy(false)
+    }
+  }
+
+  async function leaveToMenu() {
+    if (!accessToken || busy || actionPending) return
+    setBusy(true)
+    try {
+      const play = await getLocalPlay(accessToken)
+      const request = beginLocalRequest()
+      socketRef.current?.close(1000)
+      socketRef.current = null
+      storeLocalPlay(play, request)
+      stopGameAudio()
+      clearResultAssetUrl()
+      resultDeliveryRef.current = null
+      setSelectedCpuIds([])
+      setCpus(null)
+      setPlayers([])
+      setGameState({ status: 'waiting' })
+      setError(null)
+      setScreen('menu')
+    } catch (caught) {
+      setError(errorMessage(caught))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   function logout() {
     beginLocalRequest()
     socketRef.current?.close(1000)
@@ -958,11 +1014,11 @@ function App() {
 
   const showingResult = gameState.status === 'result_delivery'
     || gameState.status === 'settlement_wait' || gameState.status === 'complete'
-  const musicScreen = cpus ? 'selection' : showingResult ? 'result' : players.length ? 'game' : 'title'
+  const musicScreen = screen !== 'play' ? 'title' : cpus ? 'selection' : showingResult ? 'result' : players.length ? 'game' : 'title'
   return (
-    <ImageSettings.Provider value={{available:!!soundSelection?.image_slots, ready:!!soundSelection?.image_generation_ready}}><main className="shell">
+    <ImageSettings.Provider value={{available:!!soundSelection?.image_slots, ready:!!soundSelection?.image_generation_ready}}><main className={isDesktop ? "shell desktop-shell" : "shell"}>
       <ImageQueueStatus/>
-      <header className="app-header">
+      <header className="app-header" hidden={screen !== 'play' && !settingsVisible}>
         <p className="eyebrow">4-PLAYER RIICHI MAHJONG</p>
         <h1>No Riichi No Fuku</h1>
         <p>플레이어 1명과 CPU 3명이 진행하는 동풍전</p>
@@ -973,7 +1029,7 @@ function App() {
               setActiveSettings(null)
               requestAnimationFrame(() => document.getElementById('settings-heading')?.focus())
             }
-          }}>{settingsVisible ? '게임 화면으로' : '설정'}</button>}
+          }}>{settingsVisible ? (screen === 'play' ? '게임 화면으로' : '메인 메뉴로') : '설정'}</button>}
       </header>
       {isDesktop && accessToken && <section id="game-settings" hidden={!settingsVisible} aria-labelledby="settings-heading">
         <h2 id="settings-heading" tabIndex={-1}>설정</h2>
@@ -1003,7 +1059,20 @@ function App() {
           </div>
         </div>
       </section>}
-      <div hidden={settingsVisible}>
+      {screen !== 'play' && !settingsVisible && <section className={'front-page front-' + screen} aria-label={screen === 'title' ? '타이틀' : '메인 메뉴'}>
+        <div className="front-art" aria-hidden="true"><div className="front-tiles">{[27,28,29,30].map(face =>
+          <span key={face}><i className="tile-art" style={{backgroundPositionX: (face / 36 * 100) + '%'}}/></span>)}</div></div>
+        <div className="front-copy"><h1>No Riichi<br/><em>No Fuku</em></h1>
+          <p>4인 리치마작 · 동풍전</p>
+          {screen === 'title' ? <button className="primary-button" autoFocus onClick={() => setScreen('menu')}>메인 메뉴로</button> :
+            <nav aria-label="메인 메뉴"><button className="primary-button" disabled={!accessToken || busy} onClick={() => void enterFromMenu(false)}>새로 시작</button>
+              <button disabled={!hasProgress || busy} onClick={() => void enterFromMenu(true)}>이어하기</button>
+              {hasProgress && localPlay?.active_session_id && !localPlay.result_resume && <small>이어하면 중단한 국의 처음부터 시작합니다.</small>}
+              <button disabled={!accessToken || busy} onClick={() => {setActiveSettings(null);setSettingsVisible(true)}}>설정</button>
+              <button disabled={busy} onClick={() => window.close()}>게임 종료</button></nav>}
+          {error && <p className="form-error" role="alert">{error}</p>}
+        </div></section>}
+      <div className="game-view" hidden={settingsVisible || screen !== 'play'}>
       {isDesktop && soundError && <p className="form-error" role="status">{soundError}</p>}
       {!isDesktop && !accessToken && (
         <AuthPanel
@@ -1020,6 +1089,7 @@ function App() {
       )}
       {accessToken && cpus && (
         <>
+          {isDesktop && <button className="menu-return" disabled={busy} onClick={leaveToMenu}>메인 메뉴로</button>}
           <CpuSelection
             busy={busy}
             cpus={cpus}
@@ -1038,6 +1108,7 @@ function App() {
       {accessToken && !cpus && (
         <>
           <div className="game-toolbar">
+            {isDesktop && <button className="menu-return" disabled={busy || actionPending} onClick={leaveToMenu}>저장하고 나가기</button>}
             <span>{players.map((player) => player.name).join(' · ') || desktopProfile}</span>
             {isDesktop && <button className="text-button" disabled={busy} onClick={resetPlay} type="button">초기화</button>}
           </div>
@@ -1048,7 +1119,7 @@ function App() {
           {gameState.status === 'ending' ? (
             <EndingScreen accessToken={accessToken} generation={gameState.generation} eventId={gameState.eventId} fallback={gameState.payload} busy={busy} onContinue={continueFromEnding} />
           ) : <MahjongTable
-            actionsDisabled={actionPending}
+            actionsDisabled={busy || actionPending}
             allowGameOverContinue={isDesktop}
             onAction={submitAction}
             onAcknowledgeResult={busy ? undefined : acknowledgeResult}

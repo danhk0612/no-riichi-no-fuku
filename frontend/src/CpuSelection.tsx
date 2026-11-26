@@ -19,6 +19,8 @@ type CpuSelectionProps = {
   allowCompleted?: boolean
 }
 
+const styles:Record<string,string> = {balanced:'균형형', defensive:'수비형', aggressive:'공격형', 'menzen-riichi':'멘젠 리치형', 'fast-call':'속공 부로형', 'high-value':'고타점형'}
+
 export function CpuSelection({
   cpus,
   selectedIds,
@@ -36,7 +38,7 @@ export function CpuSelection({
   const [viewId,setViewId]=useState<number|null>(null)
   const viewed=cpus.find(c=>c.id===viewId) ?? cpus.find(c=>c.id===selectedIds.at(-1)) ?? cpus[0]
   if (!rosterMode) {
-    const styles:Record<string,string> = {balanced:'균형형', defensive:'수비형', aggressive:'공격형', 'menzen-riichi':'멘젠 리치형', 'fast-call':'속공 부로형', 'high-value':'고타점형'}
+
     return <section className="opponent-sheet" aria-labelledby="opponent-title">
       <header className="sheet-heading"><span className="east-mark" aria-label="동풍전">東</span><h2 id="opponent-title">대국 상대 선택</h2><span className="sheet-hint">함께할 상대 3명을 고르세요</span>
         <span className="seat-count" aria-live="polite">선택 <b>{selectedIds.length}</b> / 3</span></header>
@@ -95,10 +97,18 @@ export function CpuSelection({
         </div>
       </div>
       {viewed && <section className="cpu-preview" aria-label="캐릭터 미리보기">
-        <CharacterImage cpu={viewed.id} level={viewed.defeat_stage} kind="cg" url={viewed.stage_images?.cg} label="단계 CG" className="preview-cg"/>
-        <CharacterImage cpu={viewed.id} level={viewed.defeat_stage} kind="full_body" url={viewed.stage_images?.full_body} label="전신" className="preview-body"/>
-        <div className="preview-copy"><h3>{viewed.name}</h3><p>Level {viewed.defeat_stage} · {defeatStageLabel(viewed.defeat_stage)}</p>
-          <Measurements values={viewed.measurements_cm}/></div>
+        <div className="roster-scene">
+          <CharacterImage cpu={viewed.id} level={viewed.defeat_stage} kind="cg" url={viewed.stage_images?.cg} label="단계 CG" className="preview-cg" imageOnly/>
+        </div>
+        <div className="preview-copy"><h3>{viewed.name}</h3><p>{viewed.short_description}</p>
+          <dl><div><dt>대국 성향</dt><dd>{styles[viewed.style] ?? viewed.style}</dd></div>
+            <div><dt>의상 단계</dt><dd>{defeatStageLabel(viewed.defeat_stage)}</dd></div></dl>
+          <Measurements values={viewed.measurements_cm}/>
+          <details key={viewed.id}><summary>전신 · 이미지 관리</summary>
+            <CharacterImage cpu={viewed.id} level={viewed.defeat_stage} kind="full_body" url={viewed.stage_images?.full_body} label="전신" className="preview-body"/>
+            {settings.available && <LiveImage cpu={viewed.id} level={viewed.defeat_stage} kind="cg" controlsOnly className="" label="단계 CG"/>}
+          </details>
+        </div>
       </section>}
       <div className="cpu-grid">
         {cpus.map((cpu) => {
@@ -121,17 +131,17 @@ export function CpuSelection({
               </span>
               <span className="cpu-stage">{defeatStageLabel(cpu.defeat_stage)}</span>
               {cpu.measurements_cm && Object.entries({ height: '키', bust: '가슴(B)', waist: '허리(W)', hips: '엉덩이(H)' }).filter(([key]) => cpu.measurements_cm?.[key as keyof typeof cpu.measurements_cm]).map(([key, label]) => <span key={key}>{label} {cpu.measurements_cm?.[key as keyof typeof cpu.measurements_cm]} cm</span>)}
-              <span>{cpu.style}</span>
-              <p>{cpu.short_description}</p>
-            </button>{settings.available && <LiveImage cpu={cpu.id} level={cpu.defeat_stage} kind="profile" controlsOnly label={cpu.name+' 프로필'} className="roster-face"/>}</div>
+
+            </button>{settings.available && <details className="roster-tools"><summary aria-label={cpu.name+' 프로필 관리'}>···</summary><LiveImage cpu={cpu.id} level={cpu.defeat_stage} kind="profile" controlsOnly label={cpu.name+' 프로필'} className="roster-face"/></details>}</div>
           )
         })}
       </div>
-      <div className="stage-guide" aria-label="패배 단계 안내">
+      <details className="roster-guide"><summary>패배 단계 안내</summary><div className="stage-guide" aria-label="패배 단계 안내">
         {DEFEAT_STAGE_LABELS.map((label, stage) => (
           <span key={label}>Stage {stage}: {label}</span>
         ))}
       </div>
+      </details>
       {cpus.length === 0 && <p className="empty-message">선택 가능한 CPU가 없습니다.</p>}
       {error && <p className="form-error" role="alert">{error}</p>}
       <button

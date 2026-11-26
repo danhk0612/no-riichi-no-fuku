@@ -1,4 +1,6 @@
 import { SettlementScene } from './SettlementScene'
+import { LiveImage, ImageSettings } from '../LiveImage'
+import { useContext, useRef } from 'react'
 import { CharacterImage, Measurements } from '../CharacterImage'
 import { HandCG } from './HandCG'
 import type { SavedResultContent } from './types'
@@ -96,8 +98,9 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
       <h2>{settlementPayload ? '동풍전 정산' : `국 결과 · ${String(start?.bakaze ?? '')}${String(start?.kyoku ?? 0)}국`}</h2>
       {settlementPayload ? (
         <>
+          {scores[0] != null && ranks[0] != null && <div className="personal-result"><span>내 순위</span><strong>{ranks[0]}위</strong><b>{scores[0].toLocaleString()}점</b></div>}
           <ol className="result-ranking" aria-label="동풍전 최종 순위">{resultRows.map(row => (
-            <li key={row.seat} data-rank={row.rank}>
+            <li key={row.seat} data-rank={row.rank} data-human={row.seat === 0 || undefined}>
               <span className="rank-number">{row.rank}위</span>
               <strong>{nameFor(row.seat)}</strong>
               <span className="rank-points">{row.score.toLocaleString()}점</span>
@@ -180,6 +183,22 @@ function TileRow({ tiles, emptyText }: { tiles: number[]; emptyText: string }) {
   )
 }
 
+function DiscardRiver({ name, tiles }: { name: string; tiles: number[] }) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  return <div className="discards">
+    <button type="button" className="river-preview" disabled={!tiles.length} aria-haspopup="dialog"
+      aria-label={name + ' 버림패 전체 보기 · ' + tiles.length + '장'} onClick={() => dialog.current?.showModal()}>
+      <span className="river-heading">버림패 {tiles.length}장 {tiles.length > 0 && <small>전체 보기 ›</small>}</span>
+      <span className="tile-row">{tiles.slice(-6).map(id => <Tile key={id} tileId={id}/>)}</span>
+    </button>
+    <dialog ref={dialog} className="river-dialog" aria-label={name + ' 버림패 전체'}>
+      <header><h2>{name} · 버림패</h2><button type="button" onClick={() => dialog.current?.close()}>닫기</button></header>
+      <p>총 {tiles.length}장 · 버린 순서</p>
+      <TileRow tiles={tiles} emptyText="버림패 없음"/>
+    </dialog>
+  </div>
+}
+
 function SeatPanel({
   player,
   observation,
@@ -189,6 +208,7 @@ function SeatPanel({
   observation: HumanObservation
   dialogue?: DialogueEvent
 }) {
+  const imageSettings = useContext(ImageSettings)
   const seat = player.seat
   return (
     <section className={`seat seat-${seat}`} aria-label={`${player.name} 좌석`}>
@@ -197,11 +217,13 @@ function SeatPanel({
           {seatWindLabel(seat, observation.oya)}
         </span>
         <strong>{player.name}</strong>
-        {player.isHuman && <span className="human-badge">PLAYER</span>}
+        {player.isHuman && <span className="human-badge">나</span>}
       </header>
       {!player.isHuman && player.detail && <details className="seat-details">
-        <summary aria-label={player.name+' 캐릭터 정보'}><CharacterImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="profile" url={player.detail.images.profile} label={player.name+' 프로필'} className="seat-face"/></summary>
-        <div className="seat-bio"><CharacterImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="full_body" url={player.detail.images.full_body} label={player.name+' 전신'} className="seat-body"/>
+        <summary aria-label={player.name+' 캐릭터 정보'}><CharacterImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="profile" url={player.detail.images.profile} label={player.name+' 프로필'} className="seat-face" imageOnly/></summary>
+        <div className="seat-bio">
+          {imageSettings.available && player.detail.cpu_id != null && <LiveImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="profile" controlsOnly className="" label={player.name+' 프로필'}/>}
+          <CharacterImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="full_body" url={player.detail.images.full_body} label={player.name+' 전신'} className="seat-body"/>
           <p>Level {player.detail.stage} · {player.detail.style}</p><Measurements values={player.detail.measurements_cm}/>
           <p>{player.detail.description}</p><dl aria-label="마작 스펙">
           {Object.entries({aggression:'공격 성향',defense:'수비 성향',call_preference:'부로 선호',riichi_preference:'리치 선호',hand_value_preference:'타점 선호',speed_preference:'속도 선호'}).map(([k,label])=>
@@ -224,9 +246,7 @@ function SeatPanel({
           ))}
         </div>
       )}
-      <div className="discards" aria-label={`${player.name} 버림패`} title="각 좌석에서 마지막으로 버린 패는 아래쪽 금색 선으로 표시합니다.">
-        <TileRow tiles={observation.discards[seat]} emptyText="버림패 없음" />
-      </div>
+      <DiscardRiver name={player.name} tiles={observation.discards[seat]}/>
     </section>
   )
 }
@@ -376,7 +396,8 @@ function CompletedTable({
   return (
     <section className="match-result">
       <h2>동풍전 종료</h2>
-      <ol>
+      <div className="personal-result"><span>내 순위</span><strong>{state.result.ranks[0]}위</strong><b>{state.result.scores[0].toLocaleString()}점</b></div>
+      <ol className="legacy-ranking">
         {rows.map((row) => (
           <li key={row.rank}>
             <strong>{row.rank}위 · {row.name}</strong>

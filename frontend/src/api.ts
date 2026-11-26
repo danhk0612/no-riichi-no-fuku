@@ -169,6 +169,12 @@ export function getRosterCandidates(accessToken: string): Promise<CpuChoice[]> {
   return apiRequest('/api/local/play/roster-candidates', {}, accessToken)
 }
 
+export function resumeCurrentHand(token: string, generation: string, sessionId: string): Promise<LocalPlayState> {
+  return apiRequest('/api/local/play/resume-hand', {
+    method: 'POST', body: JSON.stringify({ generation, session_id: sessionId }),
+  }, token)
+}
+
 export function confirmLocalRoster(accessToken: string, generation: string, ids: number[]): Promise<LocalPlayState> {
   return apiRequest('/api/local/play/roster', {
     method: 'POST', body: JSON.stringify({ generation, cpu_character_ids: ids }),

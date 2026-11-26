@@ -1,3 +1,4 @@
+import { enterDesktopGame } from './desktop-menu.mjs'
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright')
@@ -66,6 +67,7 @@ try {
   await page.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
   await page.waitForFunction(() => window.__audios.length === 1 && !window.__audios[0].paused)
   finishBootstrap()
+  await enterDesktopGame(page)
   await page.locator('.opponent-sheet').waitFor()
   await page.waitForFunction(() => window.__audios[0].paused)
   await page.evaluate(() => { window.__audios = [] })
@@ -123,6 +125,7 @@ try {
   assert.equal(defeatLoads,1)
   play.result_resume={session_id:'test-match',route:'result'}
   await page.reload()
+  await enterDesktopGame(page)
   await page.getByRole('region',{name:'최종 정산 결과'}).waitFor()
   await page.waitForFunction(()=>window.__audios.some(audio=>!audio.paused))
   await page.waitForFunction(()=>performance.getEntriesByType('resource').some(r=>r.name.endsWith('/result-only/file')))

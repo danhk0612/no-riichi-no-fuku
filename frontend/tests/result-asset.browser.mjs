@@ -59,13 +59,13 @@ try {
     if (lateFailure) {
       await page.locator('.result-asset-placeholder').getByText('결과 CG를 불러오는 중입니다.', { exact: true }).waitFor()
       await page.getByRole('button', { name: '다음 대국 선택' }).click()
-      await page.locator('.selection-panel').waitFor()
+      await page.locator('.opponent-sheet').waitFor()
       releaseAsset()
       await assetFinished
       // Allow the failed fetch's microtasks and React render to finish.
       await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))))
       assert.equal(await page.getByRole('alert').count(), 0)
-      assert.equal(await page.locator('.selection-panel').count(), 1)
+      assert.equal(await page.locator('.opponent-sheet').count(), 1)
     } else {
       await assetFinished
       await page.locator('.result-asset-placeholder').getByText('결과 CG를 불러오지 못했습니다.', { exact: true }).waitFor()
@@ -73,7 +73,7 @@ try {
       assert.equal(await page.getByText('결과 CG를 불러오는 중입니다.', { exact: true }).count(), 0)
       assert.equal(await page.locator('.match-result li').count(), 4)
       await page.getByRole('button', { name: '다음 대국 선택' }).click()
-      await page.locator('.selection-panel').waitFor()
+      await page.locator('.opponent-sheet').waitFor()
     }
     assert.deepEqual(errors, [])
     await page.close()

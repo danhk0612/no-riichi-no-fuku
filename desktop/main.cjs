@@ -312,6 +312,12 @@ function makeWindow(show = true) {
 
 async function loadApplication() {
   await window.loadURL(origin)
+  if (smoke || lifecycleTest) {
+    await waitForRenderer("Boolean(document.querySelector('.front-title button'))")
+    await window.webContents.executeJavaScript("document.querySelector('.front-title button').click()")
+    await waitForRenderer("Boolean(document.querySelector('.front-menu .primary-button:enabled'))")
+    await window.webContents.executeJavaScript("(() => { const menu = document.querySelector('.front-menu nav'); (Array.from(menu.querySelectorAll('button:enabled')).find(b => b.innerText === '이어하기') || menu.querySelector('button')).click() })()")
+  }
 }
 
 async function waitForRenderer(expression, timeoutMs = 60000) {
@@ -325,6 +331,7 @@ async function rendererSnapshot() {
     table: (() => { const node = document.querySelector('.mahjong-table')?.cloneNode(true); node?.querySelectorAll('.speech-bubble').forEach(item => item.remove()); return node?.innerText ?? '' })(),
     hand: document.querySelector('.hand')?.innerText ?? '',
     round: document.querySelector('.round-status')?.innerText ?? '',
+    handLabel: document.querySelector('.round-status strong')?.innerText,
     result: document.querySelector('.match-result')?.innerText ?? '',
     error: document.querySelector('.form-error')?.innerText ?? '',
   }))()`)
@@ -1050,8 +1057,8 @@ async function smokeRun() {
     await loadApplication()
     await waitForRenderer("Boolean(document.querySelector('.human-controls'))")
     const after = await rendererSnapshot()
-    if (JSON.stringify(before) !== JSON.stringify(after)) throw new Error('active match did not restore the same renderer state')
-    addCheck('active match restored after engine shutdown/restart at committed turn')
+    if (!after.hand || before.handLabel !== after.handLabel) throw new Error('resume did not reopen the interrupted round')
+    addCheck('active match restored after engine shutdown/restart at the start of the interrupted round')
     const restoredDifficulty = await fetch(`${origin}/api/game/sessions/active`, {
       headers: { 'X-Local-Capability': capability },
     }).then(response => response.json())

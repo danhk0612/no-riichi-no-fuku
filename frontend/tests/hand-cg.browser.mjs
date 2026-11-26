@@ -1,3 +1,4 @@
+import { enterDesktopGame } from './desktop-menu.mjs'
 import assert from 'node:assert/strict'
 import {createRequire} from 'node:module'
 const {chromium}=createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright')
@@ -6,7 +7,7 @@ try {
   const page=await browser.newPage()
   page.setDefaultTimeout(6000)
   await page.addInitScript(()=>{window.nrnfDesktop={isDesktop:true}})
-  const env={version:1,generation:'g',session_id:'s',acked_ordinal:0,terminal_ordinal:null,route:'result',delivery_revision:1,head:{ordinal:1,event_id:'e',kind:'hand',payload:{kind:'hand',fact_snapshot:{start:{bakaze:'E',kyoku:1},winners:[{actor:1,target:0,hora_log_offset:1,win_kind:'ron',score:{band:1}}]},displayed_hora_log_offset:1,content:{version:1,scene:{stage:0,media:null,generation_input:{}},dialogues:[{cpu_id:1,slot:'win',text:'화료 대사'}]}}}}
+  const env={version:1,generation:'g',session_id:'s',acked_ordinal:0,terminal_ordinal:null,route:'result',delivery_revision:1,head:{ordinal:1,event_id:'e',kind:'hand',payload:{kind:'hand',fact_snapshot:{start:{bakaze:'E',kyoku:1},winners:[{actor:1,target:0,hora_log_offset:1,win_kind:'ron',score:{band:1}}]},displayed_hora_log_offset:1,content:{version:1,scene:{stage:0,media:null,generation_input:{positive:'win',settings:{model:'test',encoder:'test',vae:'test'}}},dialogues:[{cpu_id:1,slot:'win',text:'화료 대사'}]}}}}
   let cgCalls=0
   let retry=0, held, began, cached=false, disconnected=false, rejected=false
   const waiting=new Promise(resolve=>{began=resolve})
@@ -34,6 +35,7 @@ try {
     return json({})
   })
   await page.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
+  await enterDesktopGame(page)
   await page.getByText('화료 대사').waitFor()
   await page.getByRole('button',{name:'다시 시도'}).click()
   await Promise.race([waiting,page.waitForTimeout(6000).then(()=>{throw Error('image request did not start')})])
@@ -43,16 +45,19 @@ try {
   assert.equal(await page.locator('.hand-cg-backdrop').count(),0)
   cached=true
   await page.reload()
+  await enterDesktopGame(page)
   await page.getByRole('img',{name:'화료 결과 CG'}).waitFor()
   assert.equal(await page.locator('.hand-cg-backdrop').evaluate(async img=>{await img.decode();return img.naturalWidth}),1)
   assert.equal(retry,1)
   disconnected=true
   await page.reload()
+  await enterDesktopGame(page)
   await page.getByRole('button',{name:'기존 작업 다시 조회'}).click()
   await page.getByRole('img',{name:'화료 결과 CG'}).waitFor()
   disconnected=false
   rejected=true
   await page.reload()
+  await enterDesktopGame(page)
   await page.getByText(/생성 입력을 검증하지 못해 요청을 거절/).waitFor()
   assert.equal(await page.getByRole('button',{name:'확인하고 다음 결과 보기'}).isEnabled(),true)
   await page.getByRole('button',{name:'다시 시도'}).click()
@@ -61,6 +66,7 @@ try {
   env.head.payload.content.scene.missing_candidates=['situation']
   const before=cgCalls
   await page.reload()
+  await enterDesktopGame(page)
   await page.getByText('화료 CG 생략 · 미등록 후보: 화료 상황').waitFor()
   await page.getByText('화료 대사').waitFor()
   assert.equal(cgCalls,before)

@@ -1,3 +1,4 @@
+import { enterDesktopGame } from './desktop-menu.mjs'
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright')
@@ -36,6 +37,7 @@ try {
       turn:{observation:{hands:[[],[],[],[]],melds:[[],[],[],[]],discards:[[],[],[],[]],scores:[25000,25000,25000,25000],riichi_declared:[false,false,false,false],dora_indicators:[],honba:0,riichi_sticks:0,round_wind:0,kyoku_index:0,oya:0,player_id:0},legal_actions:[]}}))
   }) })
   await page.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
+  await enterDesktopGame(page)
   await page.getByText('다음 대국 난이도 3/10').first().waitFor()
   await page.locator('.cpu-card').first().click()
   await page.getByRole('button',{name:'설정',exact:true}).click()

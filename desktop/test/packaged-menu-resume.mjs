@@ -1,0 +1,143 @@
+import assert from 'node:assert/strict'
+import { createRequire } from 'node:module'
+import { mkdirSync, mkdtempSync } from 'node:fs'
+import { join } from 'node:path'
+
+const { _electron } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright')
+const [exe, evidence] = process.argv.slice(2)
+mkdirSync(evidence, {recursive:true})
+const data = mkdtempSync(join(evidence, 'campaign-'))
+let app, page, turn
+const button = name => page.getByRole('button', {name, exact:true})
+async function launch() {
+  app = await _electron.launch({executablePath:exe, args:['--data', data]})
+  page = await app.firstWindow()
+  page.setDefaultTimeout(15000)
+  await app.evaluate(({BrowserWindow}) => BrowserWindow.getAllWindows()[0].setContentSize(1280,800))
+  page.on('websocket', socket => socket.on('framereceived', frame => {
+    const event = JSON.parse(String(frame.payload))
+    if (event.type === 'human_turn') turn = event
+  }))
+}
+async function checkViewport() {
+  const layout = await page.evaluate(() => {
+    const doc = document.scrollingElement
+    const rect = selector => document.querySelector(selector)?.getBoundingClientRect()
+    const table = rect('.mahjong-table'), hand = rect('.human-controls')
+    const visible = el => el.top >= -1 && el.bottom <= innerHeight+1 && el.left >= -1 && el.right <= innerWidth+1
+    const items = [...document.querySelectorAll('.seat .river-preview,.hand button,.action-bar button')]
+    return {
+      outer:doc.scrollHeight <= innerHeight+1 && doc.scrollWidth <= innerWidth+1,
+      actions:items.every(el => visible(el.getBoundingClientRect())),
+      hand:!hand || (visible(hand) && hand.top >= table.bottom-1),
+      table:!table || visible(table),
+      width:innerWidth, height:innerHeight
+    }
+  })
+  for (const key of ['outer','actions','hand','table']) assert.ok(layout[key], JSON.stringify(layout))
+}
+async function shot(name) {
+  await checkViewport()
+  await page.screenshot({path:join(evidence,name+'.png')})
+}
+async function discardOrCall() {
+  const previous = turn.action_version
+  const win = page.locator('.action-bar button:is([data-action="4"],[data-action="6"]):enabled')
+  const discard = page.locator('.hand button:enabled')
+  const action = await win.count() ? win : await discard.count() ? discard : page.locator('.action-bar button:enabled')
+  await action.first().click()
+  const until = Date.now()+15000
+  while (previous === turn.action_version && !await page.locator('.result-delivery-card,.match-result').count()) {
+    if (Date.now()>until) throw Error('새 행동 상태를 받지 못했습니다.')
+    await page.waitForTimeout(15)
+  }
+}
+try {
+  await launch()
+  await shot('title')
+  await button('메인 메뉴로').click()
+  await button('새로 시작').waitFor()
+  assert.ok(await button('이어하기').isDisabled())
+  await shot('menu')
+  await button('설정').click()
+  await page.getByRole('heading',{name:'설정',exact:true}).waitFor()
+  await shot('settings')
+  await button('메인 메뉴로').click()
+  await button('새로 시작').click()
+  await page.locator('.cpu-grid').waitFor()
+  await shot('roster')
+  for (const action of ['참가 명단 확정','동풍전 시작']) {
+    const cards = page.locator('button.cpu-card')
+    for(let i=0;i<3;i++) await cards.nth(i).click()
+    await button(action).click()
+  }
+  let riverVerified = false
+  let verified = false
+  let start, key = ''
+  for(let step=0;step<1500;step++) {
+    const result = page.locator('.result-delivery-card[data-event-id]')
+    if(await result.count()) {
+      const settlement = await result.getAttribute('data-result-kind') === 'settlement'
+      await result.evaluate(el => Promise.all(el.getAnimations().map(a => a.finished)))
+      await shot(settlement?'settlement':'hand-result')
+      const id = await result.getAttribute('data-event-id')
+      await result.locator('button.primary-button').click()
+      await page.waitForFunction(id=>document.querySelector('.result-delivery-card')?.dataset.eventId !== id,id)
+      if (settlement) break
+      continue
+    }
+    await page.locator('.human-controls').waitFor()
+    await checkViewport()
+    const observation = turn.turn.observation
+    const current = [observation.round_wind, observation.kyoku_index, observation.honba].join('/')
+    if (current !== key) { start = structuredClone(turn); key = current }
+    const riverSeat = observation.discards.findIndex(tiles => tiles.length > 6)
+    if (!riverVerified && riverSeat >= 0) {
+      await app.evaluate(({BrowserWindow}) => BrowserWindow.getAllWindows()[0].setSize(1000,720))
+      await checkViewport()
+      console.log('최소 게임 창', await page.evaluate(()=>[innerWidth,innerHeight,document.scrollingElement.scrollHeight]))
+      const preview = page.locator('.seat-'+riverSeat+' .river-preview')
+      const before = (await page.locator('.human-controls').boundingBox()).y
+      assert.equal(await preview.locator('.tile').count(),6)
+      await preview.click()
+      const dialog = page.getByRole('dialog')
+      assert.equal(await dialog.locator('.tile').count(),observation.discards[riverSeat].length)
+      await page.screenshot({path:join(evidence,'discards.png')})
+      await dialog.getByRole('button',{name:'닫기'}).click()
+      assert.equal((await page.locator('.human-controls').boundingBox()).y,before)
+      riverVerified = true
+    }
+    if (!verified && observation.kyoku_index >= 2 && turn.action_version > start.action_version) {
+      await shot('table')
+      const oldVersion = turn.action_version
+      await button('저장하고 나가기').click()
+      await button('이어하기').waitFor()
+      // Exit via the actual main menu, then reopen the packaged application.
+      const exit = app.waitForEvent('close')
+      await button('게임 종료').click()
+      await exit
+      await launch()
+      await button('메인 메뉴로').click()
+      await button('이어하기').click()
+      await page.locator('.human-controls').waitFor()
+      assert.equal(turn.session_id,start.session_id)
+      assert.equal(turn.action_version,start.action_version)
+      assert.deepEqual(turn.turn,start.turn)
+      console.log(JSON.stringify({round:key, scores:observation.scores, restoredScores:turn.turn.observation.scores, before:oldVersion, restored:turn.action_version}))
+      verified = true
+    }
+    await discardOrCall()
+  }
+  assert.ok(riverVerified,'일곱 장 이상의 실제 버림패 확인')
+  assert.ok(verified,'두 번째 이후 국을 실제로 되감아야 합니다.')
+  await page.locator('.opponent-sheet').waitFor()
+  await button('메인 메뉴로').click()
+  page.once('dialog',d=>d.dismiss())
+  await button('새로 시작').click()
+  assert.ok(await button('이어하기').isEnabled())
+  page.once('dialog',d=>d.accept())
+  await button('새로 시작').click()
+  await page.locator('.cpu-grid').waitFor()
+  assert.equal(await page.locator('.cpu-card.selected').count(),0)
+  console.log('PASS 메뉴, 종료, 동일한 국 복원, 최종 정산, 새 게임')
+} finally { if(app) await app.close() }

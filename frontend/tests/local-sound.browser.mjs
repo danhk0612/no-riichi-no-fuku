@@ -1,3 +1,4 @@
+import { enterDesktopGame } from './desktop-menu.mjs'
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 
@@ -126,6 +127,7 @@ try {
     })
   })
   await page.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
+  await enterDesktopGame(page)
   await page.locator('.opponent-sheet').waitFor()
   await page.waitForFunction(() => window.__audioInstances.length === 1)
   await page.getByRole('button',{name:'설정',exact:true}).click()

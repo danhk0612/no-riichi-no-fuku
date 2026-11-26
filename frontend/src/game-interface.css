@@ -1,0 +1,188 @@
+/* Shared Windows game surfaces. Tile faces and action legality come from the engine. */
+:root {
+  --navy: #284a70;
+  --paper: #f1f2ef;
+  --ink: #172d45;
+  --rule: #bec9d1;
+  --gold: #cda760;
+}
+[hidden] { display:none !important }
+.shell:has(.front-page) { width:min(1520px,100%); padding:clamp(10px,2vw,32px) }
+.front-page {
+  isolation:isolate; position:relative; overflow:hidden; display:flex; align-items:center;
+  min-height:calc(100vh - clamp(20px,4vw,64px)); color:var(--ink); background:var(--paper);
+  border-top:4px solid var(--gold);
+}
+.front-art {position:absolute; inset:0 0 0 34%; z-index:-1; overflow:hidden; clip-path:polygon(24% 0,100% 0,100% 100%,0 100%);
+  background:radial-gradient(ellipse at 64% 33%,#416581,#1c3853 65%,#122637)}
+.front-art::before {content:'';position:absolute;inset:13% -20% -18% 12%;border:2px solid #9aaca9;outline:12px solid #162a3c;transform:rotate(-17deg)}
+.front-tiles {position:absolute;top:50%;left:55%;display:flex;gap:.5vw;transform:translate(-50%,-50%) rotate(-15deg)}
+.front-tiles span {display:grid;place-items:center;width:clamp(46px,7.6vw,120px);aspect-ratio:.78;background:#faf7e9;border-radius:8%;box-shadow:0 4px #c3bda7,0 9px #aaa58d,0 15px #253a50,0 20px 18px #10243499}
+.front-tiles span:first-child {transform:translateY(-19%)}
+.front-tiles .tile-art {width:87%;height:auto;aspect-ratio:96/112}
+.front-copy {padding:clamp(25px,5vw,84px);width:48%}
+.front-copy h1 {margin:0;color:var(--ink);font:600 clamp(54px,7.6vw,122px)/.9 Georgia,serif;letter-spacing:-.065em}
+.front-copy h1 em {font-weight:400;color:var(--navy)}
+.front-copy>p {margin:20px 0 40px;font-weight:650;letter-spacing:.06em}
+.front-copy nav {display:grid;max-width:320px}
+.front-copy button,.menu-return {padding:11px 15px;text-align:left;cursor:pointer;border:0;border-bottom:1px solid var(--rule);background:transparent;color:var(--ink);font-weight:700}
+.front-copy nav small {padding:3px 15px 8px;color:#4a596c}
+.front-copy .primary-button,.opponent-selection .start-button,.result-delivery-card .primary-button,.match-result .primary-button {border-radius:2px;background:var(--navy);color:white;border:1px solid var(--navy)}
+.front-copy button:disabled {opacity:.5;cursor:default}
+.front-copy button:enabled:hover {box-shadow:inset 4px 0 var(--gold)}
+:where(button,summary,input,textarea,select):focus-visible {outline:3px solid #d3a454;outline-offset:2px}
+.shell:has(.settings-door) .app-header {display:flex;align-items:center;min-height:40px;margin-bottom:10px}
+.shell:has(.settings-door) .app-header>p {display:none}
+.shell:has(.settings-door) .app-header h1 {margin:0;font:italic 650 clamp(20px,2.3vw,32px)/1 Georgia,serif;letter-spacing:-.045em}
+.menu-return {background:#233c57;color:white;border:1px solid #8095aa;border-radius:2px;padding:6px 12px;margin-bottom:6px}
+.shell:has(.opponent-selection,.mahjong-table,.match-result,.result-delivery-card) {width:min(1520px,100%);padding:10px clamp(12px,2vw,32px) 24px}
+.opponent-selection,.match-result,.result-delivery-card,.ending-panel {display:block;min-height:0;background:var(--paper);color:var(--ink);border:0;border-top:4px solid var(--gold);border-radius:0;text-align:left;padding:clamp(16px,2.2vw,36px);box-shadow:none}
+.opponent-selection .panel-heading,.result-delivery-card>h2,.match-result>h2 {border-bottom:1px solid var(--navy);padding-bottom:12px;margin-bottom:14px}
+.opponent-selection .panel-heading h2 {margin:4px 0}
+.opponent-selection .panel-heading p,.opponent-selection .text-button,.opponent-selection .selection-count {color:var(--navy)}
+.opponent-selection .cpu-preview {display:grid;grid-template-columns:1.1fr 1fr;align-items:stretch;min-height:0;padding:0;gap:0;border:0;border-radius:0;background:none;color:var(--ink)}
+.roster-scene {position:relative;min-height:180px;background:linear-gradient(135deg,#1b354e,#355877);overflow:hidden}
+.roster-scene .preview-cg {position:absolute;inset:0;z-index:auto;opacity:1;object-position:center 30%;color:white}
+.roster-scene .image-empty {display:grid;place-items:center}
+.opponent-selection .preview-copy {border-radius:0;background:transparent;padding:16px clamp(14px,2vw,32px)}
+.preview-copy h3 {font:700 clamp(28px,3.3vw,56px)/1.12 Batang,serif;margin:0}
+.preview-copy dl div {display:grid;grid-template-columns:6rem 1fr;padding:6px 0;border-top:1px solid var(--rule)}
+.preview-copy dd {margin:0;font-weight:650}
+.opponent-selection .cpu-grid {grid-template-columns:repeat(auto-fill,minmax(min(100%,148px),1fr));gap:10px;margin:15px 0}
+.cpu-grid>div {position:relative}
+.opponent-selection .cpu-card {min-height:0;padding:9px;gap:4px;border-radius:2px;background:#e0e6e9;color:var(--ink);border:2px solid transparent}
+.opponent-selection .cpu-card.selected {border-color:var(--navy);box-shadow:none;background:#cbd9e5}
+.opponent-selection .cpu-profile {display:grid;gap:3px}
+.cpu-grid .roster-face {width:100%;height:76px;border-radius:0;object-fit:cover;object-position:center 39%}
+.cpu-grid .cpu-card strong {font-size:1rem}
+.cpu-grid .cpu-order,.cpu-grid .cpu-stage,.roster-guide {color:#41546a}
+.roster-tools {align-self:end;font-size:.85rem}
+.roster-tools summary {cursor:pointer;font-weight:bold;min-width:28px;text-align:center}
+.roster-guide summary {cursor:pointer;width:fit-content}
+.opponent-selection .stage-guide span {color:white;background:var(--navy)}
+.game-toolbar {align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:12px;color:#cdd7df}
+.game-toolbar .text-button {margin-left:auto}
+.current-difficulty {font-size:.85rem;color:#c5cfda}
+.mahjong-table {background:radial-gradient(ellipse at center,#42667b,#294759 75%);border:4px solid #203445;border-radius:6px;box-shadow:inset 0 0 0 1px #7993a3}
+.mahjong-table .seat {border:1px solid #7890a0;border-radius:3px;background:#20384b;color:#f5f4ed}
+.seat .wind {border-radius:2px;color:var(--ink);background:var(--paper)}
+.seat .seat-details summary {line-height:1}
+.seat .seat-face {width:3.2rem;height:2.1rem;object-fit:cover}
+.seat-details .image-empty {font-size:.6rem;text-align:center}
+.round-status {background:var(--paper);color:var(--ink);border-radius:3px;border:0;border-bottom:4px solid var(--gold)}
+.round-status strong {color:var(--navy)}
+.human-controls {background:#20374d;border-radius:3px}
+.human-controls .hand .tile {min-height:clamp(46px,6.4vh,68px)}
+.hand button.tile:enabled:hover {transform:translateY(-3px)}
+.mahjong-table .human-badge {font-size:.85rem}
+.result-delivery-card>h2,.match-result>h2 {color:var(--ink);font-size:clamp(26px,3vw,46px)}
+.personal-result {display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 18px;color:var(--navy)}
+.personal-result strong {font:700 clamp(40px,5vw,78px)/1.15 Georgia,Batang,serif}
+.personal-result b {font-size:clamp(21px,2.5vw,40px);font-variant-numeric:tabular-nums}
+.match-result :is(.result-ranking,.legacy-ranking) {width:100%;margin:16px 0;gap:0}
+.match-result :is(.result-ranking,.legacy-ranking)>li {border-radius:0;border-bottom:1px solid var(--rule);color:var(--ink);padding:12px;background:transparent}
+.result-ranking>li[data-human] {background:#d8e3ec}
+.result-ranking .rank-number,.result-ranking [data-rank="1"] .rank-number,.result-ranking .rank-points {color:var(--navy)}
+.result-delivery-card .winner-card {background:#233c54;color:white;border-radius:3px}
+.match-result .settlement-summary,.result-delivery-card>.settlement-summary,.result-asset-status {color:#42536b}
+.result-delivery-card>.result-deltas {color:var(--ink)}
+.result-delivery-card>.result-deltas [data-change=gain] {color:#17604a}
+.result-delivery-card>.result-deltas [data-change=loss] {color:#962e24}
+.result-delivery-card>.result-deltas [data-change=even] {color:#455567}
+.settlement-line {background:#182f46ed;color:white}
+.result-dialogue {background:#e0e6eb;color:var(--ink);border:0;border-left:3px solid var(--navy);border-radius:0;max-width:100%}
+.ending-panel .ending-image {display:block;max-width:100%;max-height:55vh;object-fit:contain}
+.ending-panel .eyebrow {color:var(--navy)}
+#game-settings :is(.selection-panel,.sound-card) {background:#243b52;color:#eff3f8;border:1px solid #536b81;border-radius:3px;box-shadow:none;min-height:0}
+#game-settings .content-tabs button[aria-selected=true] {border-bottom:3px solid var(--gold)}
+.image-queue-status {background:#203b57}
+@media(max-width:650px){
+  .front-page {align-items:end}
+  .front-art {inset:0 0 49%;clip-path:none}
+  .front-copy {width:100%;padding:20px}
+  .front-copy h1 {font-size:48px}
+  .front-copy h1 br {display:none}
+  .front-copy h1 em {margin-left:.2em}
+  .front-copy>p {margin:8px 0 18px}
+  .opponent-selection .cpu-preview {grid-template-columns:1fr}
+}
+
+.opponent-selection .preview-copy {height:clamp(238px,30vh,330px);overflow:auto}
+.mahjong-table .seat-face.image-empty {width:auto;height:auto;aspect-ratio:auto;max-width:100%;font-size:.75rem;color:#c2d0da}
+
+.river-preview {width:100%;min-width:0;display:grid;align-content:start;gap:4px;padding:3px 0;border:0;text-align:left;background:none;color:#e5eaf0;cursor:pointer}
+.river-preview:disabled {cursor:default;color:#bfccd7}
+.river-heading {display:flex;gap:8px;align-items:baseline;font-size:.78rem}
+.river-heading small {color:#d7bf89;text-decoration:underline}
+.discards .river-preview .tile-row {height:38px;align-content:start}
+.river-dialog {width:min(26rem,92vw);max-height:80vh;padding:clamp(14px,3vw,28px);overflow:auto;background:var(--paper);color:var(--ink);border:0;border-top:4px solid var(--gold);box-shadow:0 20px 80px #08132270}
+.river-dialog::backdrop {background:#091421ab}
+.river-dialog header {display:flex;align-items:center;justify-content:space-between;gap:12px}
+.river-dialog h2 {margin:0;font-size:1.4rem}
+.river-dialog header button {padding:6px 12px;background:var(--navy);color:white;border:0;cursor:pointer}
+.river-dialog p {color:#4c6072;font-size:.9rem}
+.discards .river-dialog .tile-row {grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.discards .river-dialog .tile {min-height:48px}
+
+.mahjong-table .melds {margin:2px 0;gap:5px}
+.mahjong-table .speech-bubble {padding:4px 9px;margin:4px 0;justify-self:start}
+@media (max-width:430px) {.river-preview .tile-art {width:100%;height:auto;aspect-ratio:96/112}.river-preview .tile-caption {font-size:8px}}
+
+/* The desktop owns one viewport. Only lists and expanded reading surfaces scroll. */
+body:has(.desktop-shell) {overflow:clip}
+.shell.desktop-shell {height:100dvh;min-height:0;display:flex;flex-direction:column;gap:5px;padding-block:8px}
+.desktop-shell>.app-header,.desktop-shell>.front-page {flex-shrink:0;margin:0}
+.desktop-shell>.front-page {min-height:0;flex:1}
+.desktop-shell>.game-view {display:flex;flex-direction:column;min-height:0;flex:1}
+.game-view>.menu-return {align-self:flex-start;margin:0 0 4px}
+.desktop-shell #game-settings {flex:1;min-height:0;display:flex;flex-direction:column;margin:0}
+.desktop-shell .settings-layout {min-height:0;flex:1}
+.desktop-shell .settings-detail,.desktop-shell .settings-menu {overflow:auto;overscroll-behavior:contain}
+.desktop-shell .content-panel {max-height:none;overflow:visible}
+.game-view>:is(.result-delivery-card,.match-result,.waiting-panel) {min-height:0;overflow:auto;overscroll-behavior:contain}
+.game-view>:is(.result-delivery-card,.match-result)>.primary-button {position:sticky;bottom:0}
+.game-view>:is(.opponent-sheet,.opponent-selection) {min-height:0;display:flex;flex-direction:column;overflow:auto}
+.game-view :is(.cpu-grid,.opponent-line) {overflow:auto;min-height:0;padding:4px;overscroll-behavior:contain}
+.game-view .opponent-sheet>:not(.opponent-line),.game-view .opponent-selection>:not(.cpu-grid) {flex-shrink:0}
+.game-view .dossier,.game-view .cpu-preview {height:clamp(155px,33vh,340px)}
+.game-view .dossier-info,.game-view .preview-copy {height:100%;align-self:stretch;overflow:auto}
+.game-view .scene-picture,.game-view .roster-scene {min-height:0}
+.game-view .game-toolbar {margin:0;min-height:28px}
+.game-view .current-difficulty {margin:2px 0 5px}
+.game-view .human-controls {flex:none;padding:8px 12px;margin-top:4px}
+.game-view .human-controls .action-bar {margin-top:4px}
+.game-view .mahjong-table {flex:1;min-height:0;gap:5px;padding:6px 10px}
+@media(min-width:761px){
+  .game-view .mahjong-table {grid-template:"left top right" minmax(0,1fr) "left center right" auto "left bottom right" minmax(0,1fr) / minmax(0,1fr) minmax(0,1.3fr) minmax(0,1fr)}
+  .game-view .seat {align-self:center;position:relative;padding:5px 8px;grid-template-columns:minmax(0,1fr) auto auto;gap:3px 6px}
+  .game-view .seat-2 {align-self:end}
+  .game-view .seat-0 {align-self:start}
+  .game-view .seat>.seat-details {grid-column:3;grid-row:1}
+  .game-view .seat-face.image-empty {display:none}
+  .game-view .seat-details summary {font-size:.75rem;color:#dee7ed}
+  .game-view .seat-details summary:has(.image-empty)::after {content:'정보'}
+  .game-view .seat .seat-bio {position:absolute;z-index:5;right:0;top:100%;width:min(320px,100%);max-height:35vh;overflow:auto;background:#192f45;border:1px solid #7690a6;padding:12px}
+  .game-view .seat-0 .seat-bio {top:auto;bottom:100%}
+  .game-view .round-status {display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 10px;width:100%;padding:5px 9px}
+  .game-view .round-status strong {font-size:1.2rem}
+  .game-view .seat .melds {gap:3px 6px}
+  .game-view .meld {gap:0}
+  .game-view .meld .tile-row {gap:1px}
+  .game-view .meld .tile {padding:1px;min-height:22px;min-width:15px}
+  .game-view .meld .tile-art {width:14px;height:16px}
+  .game-view .meld .tile-caption {font-size:8px}
+}
+@media(max-height:760px){
+  .desktop-shell .sheet-heading {margin-bottom:5px;padding-bottom:5px}
+  .desktop-shell .game-toolbar {font-size:.83rem}
+  .desktop-shell .dossier-info {padding:5px 14px}
+  .desktop-shell .opponent-selection .panel-heading p {margin:4px 0}
+}
+
+.game-view>.opponent-selection {flex:1;justify-content:flex-start;padding:12px clamp(12px,2vw,28px)}
+.game-view .opponent-selection .panel-heading {margin-bottom:8px;padding-bottom:6px}
+.game-view .opponent-selection .panel-heading p {margin:4px 0}
+.game-view .opponent-selection .cpu-preview {height:clamp(140px,25vh,270px)}
+.game-view .opponent-selection .preview-copy {padding-block:8px}
+.game-view .opponent-selection .cpu-grid {flex:1;align-content:start;margin:6px 0}
+.game-view .opponent-selection .start-button {margin-top:6px}

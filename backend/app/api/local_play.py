@@ -196,6 +196,28 @@ def post_reset(
     return _state_payload(session, user.id)
 
 
+class ResumeHandRequest(BaseModel):
+    generation: str
+    session_id: str
+
+
+@router.post("/resume-hand", response_model=LocalPlayStateResponse)
+def resume_current_hand(request: ResumeHandRequest, raw_request: Request,
+                        user: User = Depends(get_current_member), session: Session = Depends(get_session),
+                        registry: GameRegistry = Depends(get_game_registry)) -> dict[str, object]:
+    mark_write_intent(session)
+    play = _state_payload(session, user.id)
+    if play["generation"] != request.generation or play["active_session_id"] != request.session_id:
+        raise HTTPException(status_code=409, detail="저장된 대국이 변경되었습니다.")
+    if not play["result_resume"]:
+        record = session.get(GameSessionRecord, request.session_id)
+        registry.restart_current_hand(session, record)
+        runtime = getattr(raw_request.app.state, "local_runtime", None)
+        if runtime:
+            runtime.close_generation_sockets(user.id, request.generation)
+    return play
+
+
 @router.post("/ending/ack", response_model=LocalPlayStateResponse)
 def post_ending_ack(
     request: LocalEndingAckRequest,

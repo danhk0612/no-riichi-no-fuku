@@ -1,3 +1,4 @@
+import { enterDesktopGame } from './desktop-menu.mjs'
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright')
@@ -189,15 +190,18 @@ try {
     throw new Error(`Unexpected API: ${path}`)
   })
   await page.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
+  await enterDesktopGame(page)
   await page.locator('.cpu-grid').getByText('키 170.0 cm', { exact: true }).waitFor()
   assert.equal(await page.locator('.cpu-grid').getByText('가슴(B)', { exact: true }).count(), 0, 'selection card must omit unset measurement rows')
   const preview = page.getByRole('region',{name:'캐릭터 미리보기'})
   await page.locator('.cpu-card').nth(1).hover()
   await preview.getByRole('heading',{name:'CPU 2'}).waitFor()
+  await preview.locator('summary').click()
   await preview.getByAltText('전신',{exact:true}).waitFor()
   await preview.getByAltText('단계 CG').waitFor()
   assert.equal(await page.locator('.cpu-card.selected').count(),0)
   await page.locator('.cpu-card').first().focus()
+  await preview.locator('summary').click()
   await preview.getByText('전신 없음').waitFor()
   assert.equal(await preview.getByText('키 170.0 cm').count(),1)
   const cpuCards = page.locator('.cpu-card')

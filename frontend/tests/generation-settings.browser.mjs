@@ -1,3 +1,4 @@
+import { enterDesktopGame } from './desktop-menu.mjs'
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright')
@@ -36,6 +37,7 @@ try {
     return route.fulfill({json:[]})
   })
   await page.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
+  await enterDesktopGame(page)
   const open=page.getByRole('button',{name:'이미지 생성 설정',exact:true})
   await page.getByRole('button',{name:'설정',exact:true}).click()
   await open.click()

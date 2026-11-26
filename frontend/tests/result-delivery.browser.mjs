@@ -1,3 +1,4 @@
+import { enterDesktopGame } from './desktop-menu.mjs'
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 
@@ -238,7 +239,7 @@ try {
         play = { ...play, generation: 'new-generation', phase: 'omake', active_session_id: null }
         return route.fulfill({ json: play })
       }
-      if (path === '/api/local/play') return route.fulfill({ json: play })
+      if (path === '/api/local/play' || path === '/api/local/play/resume-hand') return route.fulfill({ json: play })
       if (path === '/api/local/play/roster-candidates') return route.fulfill({ json: cpus })
       if (path === '/api/game/sessions/active') return route.fulfill({ json: play.active_session_id ? { session_id: session, generation: play.generation, players } : null })
       if (path === '/api/game/sessions/recent') return route.fulfill({ json: null })
@@ -270,6 +271,7 @@ try {
       })
     })
     await desktop.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
+    await enterDesktopGame(desktop)
     await desktop.locator('.hand button').waitFor()
     if (scenario==='stage-confirm') {
       desktopSockets[0].send(JSON.stringify({type:'result_delivery',...stageChange}))
@@ -305,7 +307,7 @@ try {
         desktop.once('dialog', (dialog) => dialog.accept())
         await desktop.getByRole('button', { name: '초기화' }).click()
       }
-      await desktop.locator('.selection-panel').waitFor()
+      await desktop.locator('.opponent-sheet').waitFor()
       for (const card of await desktop.locator('button.cpu-card:not([disabled])').all()) await card.click()
       await desktop.getByRole('button', { name: '동풍전 시작' }).click()
       if (scenario === 'reset') {
@@ -334,7 +336,7 @@ try {
         await desktop.locator('.hand button').click()
         assert.equal((await Promise.race([action, new Promise((_, reject) => setTimeout(() => reject(new Error('restored action was not sent')), 5000))])).action_version, 37)
       } else if (scenario === 'ending') await desktop.getByRole('region', { name: '엔딩' }).waitFor()
-      else await desktop.locator('.selection-panel').waitFor()
+      else await desktop.locator('.opponent-sheet').waitFor()
       assert.equal(await desktop.locator('.result-delivery-card').count(), 0, `${scenario} must leave the result card`)
     }
     await desktop.close()

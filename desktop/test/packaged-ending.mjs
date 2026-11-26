@@ -1,3 +1,4 @@
+import { enterDesktopGame } from '../../frontend/tests/desktop-menu.mjs'
 import assert from 'node:assert/strict'
 import { dirname, join } from 'node:path'
 import {readFileSync,writeFileSync} from 'node:fs'
@@ -10,15 +11,20 @@ const report={source:process.env.W11_SOURCE_SHA, fixture:plan,checks:[],passed:f
 const record=message=>{report.checks.push(message);writeFileSync(reportFile,JSON.stringify(report,null,2))}
 const noMedia = plan.no_media === true
 const mediaRequests = []
-let app,page
+let app,page,turn
 async function launch(){
   app=await _electron.launch({executablePath:exe,args:['--data',data],timeout:90000})
   page=await app.firstWindow({timeout:90000})
   page.setDefaultTimeout(30000)
+  page.on('websocket', socket => socket.on('framereceived', frame => {
+    const message = JSON.parse(String(frame.payload))
+    if (message.type === 'human_turn') turn = message
+  }))
   if (noMedia) page.on('request', req => {
     const path = new URL(req.url()).pathname
     if (req.resourceType() === 'media' || /\/cg(?:\/|$)|\/advance$|\/catalog$|\/prompt$/.test(path)) mediaRequests.push(path)
   })
+  await enterDesktopGame(page)
 }
 async function stop(){
   if(!app)return
@@ -42,7 +48,20 @@ try{
     record('eight real settlements from a fresh silent profile restored at match nine')
   } else {
     await seat.locator('img.seat-body').evaluate(i=>i.decode())
-    record('restored real final turn and decoded current-stage seat image')
+    record('restored final hand and decoded current-stage seat image')
+  }
+  // The fixture was saved before the final action. Resume now starts at the hand boundary.
+  while (turn.action_version < plan.prior_actions) {
+    const version = turn.action_version
+    const action = turn.turn.legal_actions[0]
+    const choice = action.type ? page.locator('.action-bar button').first() :
+      page.locator('.hand > *').nth(turn.turn.observation.hands[0].indexOf(action.tile))
+    await choice.click()
+    const until = Date.now()+15000
+    while (turn.action_version === version) {
+      if (Date.now() > until) throw Error('정해진 행동을 재생하지 못했습니다.')
+      await page.waitForTimeout(15)
+    }
   }
   await page.locator(plan.selector).nth(plan.index).click()
   for(let i=0;i<8;i++){
@@ -78,6 +97,7 @@ try{
   await page.getByRole('button',{name:'정산 확인'}).click()
   await page.getByRole('region',{name:'엔딩'}).waitFor()
   assert.equal((await state()).phase,'ending_pending')
+  await page.getByRole('region',{name:'엔딩'}).screenshot({path:join(dirname(reportFile),'ending-screen.png')})
   record('same settlement survived process restart and explicit acknowledgement reached real ending')
   if (noMedia) {
     await stop()
@@ -89,10 +109,10 @@ try{
     await ending.screenshot({path:join(dirname(reportFile), 'offline-ending.png')})
   }
   await page.getByRole('button',{name:'오마케로 계속하기'}).click()
-  await page.locator('.selection-panel').waitFor()
+  await page.locator('.opponent-sheet').waitFor()
   await stop()
   await launch()
-  await page.locator('.selection-panel').waitFor()
+  await page.locator('.opponent-sheet').waitFor()
   assert.equal((await state()).phase,'omake')
   if (noMedia) {
     for (let i=0;i<3;i++) await page.locator('button.cpu-card:not(.selected):enabled').first().click()

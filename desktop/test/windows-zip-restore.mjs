@@ -1,3 +1,4 @@
+import { enterDesktopGame } from '../../frontend/tests/desktop-menu.mjs'
 import assert from 'node:assert/strict'
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -21,6 +22,7 @@ async function withGame(executablePath, localAppData, check) {
   try {
     const page = await app.firstWindow({ timeout: 90000 })
     page.setDefaultTimeout(45000)
+    await enterDesktopGame(page)
     await check(page)
   } finally {
     await app.close()
