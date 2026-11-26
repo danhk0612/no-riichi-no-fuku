@@ -53,6 +53,12 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
 }
 
+const settingsGroups = [
+  { label: '플레이 설정', items: [['difficulty', '난이도 설정'], ['sound', '사운드·자료 설정']] },
+  { label: '콘텐츠 편집', items: [['content', '캐릭터 프롬프트·팩 설정'], ['generation', '이미지 생성 설정']] },
+] as const
+type SettingsPage = typeof settingsGroups[number]['items'][number][0]
+
 function App() {
   const [accessToken, setAccessToken] = useState<string | null>(null)
   const [cpus, setCpus] = useState<CpuChoice[] | null>(null)
@@ -68,17 +74,30 @@ function App() {
   const [profileName, setProfileName] = useState('')
   const [profileBusy, setProfileBusy] = useState(false)
   const [soundSelection, setSoundSelection] = useState<SoundSelection | null>(null)
-  const [generationOpen, setGenerationOpen] = useState(false)
-  const [soundSettingsOpen, setSoundSettingsOpen] = useState(false)
-  const [contentSettingsOpen, setContentSettingsOpen] = useState(false)
+  const [activeSettings, setActiveSettings] = useState<SettingsPage | null>(null)
+  const [openSettings, setOpenSettings] = useState<Partial<Record<SettingsPage, boolean>>>({})
   const [fixedDirty, setFixedDirty] = useState(false)
   const [fixedSaving, setFixedSaving] = useState(false)
-  function closeContentSettings() {
-    if (fixedSaving || (fixedDirty && !window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?'))) return
-    setFixedDirty(false)
-    setContentSettingsOpen(false)
+
+  function closeSettings(page: SettingsPage) {
+    if (page === 'content') {
+      if (fixedSaving || (fixedDirty && !window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?'))) return
+      setFixedDirty(false)
+    }
+    setOpenSettings(current => ({ ...current, [page]: false }))
+    setActiveSettings(null)
+    document.getElementById('settings-link-' + page)?.focus()
   }
-  const [difficultySettingsOpen, setDifficultySettingsOpen] = useState(false)
+
+  function selectSettings(page: SettingsPage) {
+    if (activeSettings === page) {
+      closeSettings(page)
+      return
+    }
+    setOpenSettings(current => ({ ...current, [page]: true }))
+    setActiveSettings(page)
+  }
+
   const [soundError, setSoundError] = useState<string | null>(null)
   const [deliveryAssetState, setDeliveryAssetState] = useState<{ identity: string; url: string | null; failed: boolean } | null>(null)
   const socketRef = useRef<WebSocket | null>(null)
@@ -928,12 +947,21 @@ function App() {
         <p className="eyebrow">4-PLAYER RIICHI MAHJONG</p>
         <h1>No Riichi No Fuku</h1>
         <p>플레이어 1명과 CPU 3명이 진행하는 동풍전</p>
-        {isDesktop && accessToken && <button className="text-button" type="button" onClick={() => setDifficultySettingsOpen((open) => !open)}>난이도 설정</button>}
-        {isDesktop && accessToken && <button className="text-button" onClick={()=>setGenerationOpen(!generationOpen)}>이미지 생성 설정</button>}
-        {isDesktop && accessToken && <button className="text-button" type="button" onClick={() => setSoundSettingsOpen((open) => !open)}>사운드·자료 설정</button>}
-        {isDesktop && accessToken && <button className="text-button" type="button" disabled={contentSettingsOpen && fixedSaving} onClick={() => contentSettingsOpen ? closeContentSettings() : setContentSettingsOpen(true)}>캐릭터 프롬프트·팩 설정</button>}
+        {isDesktop && accessToken && <nav className="settings-navigation" aria-label="게임 및 편집 설정">
+          {settingsGroups.map(group => <div key={group.label} role="group" aria-label={group.label}>
+            <span className="settings-group-label" aria-hidden="true">{group.label}</span>
+            {group.items.map(([page, label]) => <button key={page} id={'settings-link-' + page} type="button"
+              aria-expanded={activeSettings === page} aria-controls={openSettings[page] ? 'settings-page-' + page : undefined}
+              disabled={activeSettings === 'content' && page === 'content' && fixedSaving}
+              onClick={() => selectSettings(page)}>{label}</button>)}
+          </div>)}
+          {activeSettings && <button type="button" className="settings-return" onClick={() => {
+            document.getElementById('settings-link-' + activeSettings)?.focus()
+            setActiveSettings(null)
+          }}>게임 화면으로</button>}
+        </nav>}
       </header>
-      {isDesktop && accessToken && difficultySettingsOpen && <LocalDifficultyPanel accessToken={accessToken} onClose={() => setDifficultySettingsOpen(false)} onSaved={async () => {
+      {isDesktop && accessToken && openSettings.difficulty && <div id="settings-page-difficulty" hidden={activeSettings !== 'difficulty'}><LocalDifficultyPanel accessToken={accessToken} onClose={() => closeSettings('difficulty')} onSaved={async () => {
         if (!cpus || !localPlay) return
         const requestToken = difficultyPreviewToken
         const generation = localPlay.generation
@@ -942,12 +970,12 @@ function App() {
         const ids = new Set(localPlay.roster.map((cpu) => cpu.cpu_character_id))
         const latestChoices = withLatestCharacterMeasurements(choices)
         setCpus(localPlay.phase === 'roster_required' ? latestChoices : latestChoices.filter((cpu) => ids.has(cpu.id)))
-      }} />}
-      {isDesktop && accessToken && generationOpen && <GenerationPanel key={accessToken} token={accessToken} close={()=>setGenerationOpen(false)}/>}
-      {isDesktop && accessToken && soundSettingsOpen && <LocalSoundPanel accessToken={accessToken} onClose={() => setSoundSettingsOpen(false)} onSelectionChanged={setSoundSelection} onPlaybackChanged={stopGameAudio} />}
-      {isDesktop && accessToken && contentSettingsOpen && <LocalContentPanel accessToken={accessToken} onClose={closeContentSettings} fixedDirty={fixedDirty} fixedSaving={fixedSaving} setFixedDirty={setFixedDirty} setFixedSaving={setFixedSaving} onPackApplied={stopGameAudio} onMeasurementsUpdated={updateCharacterContent}
+      }} /></div>}
+      {isDesktop && accessToken && openSettings.generation && <div id="settings-page-generation" hidden={activeSettings !== 'generation'}><GenerationPanel key={accessToken} token={accessToken} close={()=>closeSettings('generation')}/></div>}
+      {isDesktop && accessToken && openSettings.sound && <div id="settings-page-sound" hidden={activeSettings !== 'sound'}><LocalSoundPanel accessToken={accessToken} onClose={() => closeSettings('sound')} onSelectionChanged={setSoundSelection} onPlaybackChanged={stopGameAudio} /></div>}
+      {isDesktop && accessToken && openSettings.content && <div id="settings-page-content" hidden={activeSettings !== 'content'}><LocalContentPanel accessToken={accessToken} onClose={() => closeSettings('content')} fixedDirty={fixedDirty} fixedSaving={fixedSaving} setFixedDirty={setFixedDirty} setFixedSaving={setFixedSaving} onPackApplied={stopGameAudio} onMeasurementsUpdated={updateCharacterContent}
         onImageSaved={(id,level,kind,url)=>setCpus(current=>current?.map(cpu=>cpu.id===id && cpu.defeat_stage===level
-          ? {...cpu,stage_images:{profile:null,full_body:null,cg:null,...cpu.stage_images,[kind]:url}} : cpu) ?? current)} />}
+          ? {...cpu,stage_images:{profile:null,full_body:null,cg:null,...cpu.stage_images,[kind]:url}} : cpu) ?? current)} /></div>}
       {isDesktop && soundError && <p className="form-error" role="status">{soundError}</p>}
       {!isDesktop && !accessToken && (
         <AuthPanel
