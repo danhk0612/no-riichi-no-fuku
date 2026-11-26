@@ -1,4 +1,6 @@
+import json
 import struct
+from io import BytesIO
 import zlib
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -9,7 +11,7 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 from app.local_runtime import create_local_runtime
-from app.services.anima_adapter import Comfy
+from app.services.anima_adapter import Comfy, Settings, graph
 from app.services.hand_cg_cache import HandCG
 
 def chunk(kind, body):
@@ -70,6 +72,36 @@ class HandCacheTests(TestCase):
             self.assertEqual(advance()["state"],"ready")
             self.assertEqual(submit.call_count,1)
             self.assertEqual(len(set(tuple(x.args) for x in poll.call_args_list)),1)
+
+    def test_transient_history_and_image_http_errors_keep_the_original_job(self):
+        job = str(uuid4())
+        endpoint = "http://127.0.0.1:8188"
+        _, output = graph(Settings(**FROZEN["settings"]), "p", "n", 1, workflow=FROZEN["workflow"])
+        history = json.dumps({job: {"status": {"completed": True}, "outputs": {output: {"images": [
+            {"type": "output", "filename": "owned.png", "subfolder": ""}]}}}}).encode()
+
+        def reply(status, data=b""):
+            response = BytesIO(data)
+            response.status = status
+            return response
+
+        with TemporaryDirectory() as tmp, patch.object(Comfy, "submit", return_value=job) as submit, patch("app.services.anima_adapter.HTTPConnection") as connection:
+            conn = connection.return_value
+            conn.getresponse.side_effect = [reply(503), reply(200, history), reply(429), reply(200, history), reply(200, PNG)]
+            def advance(retry=None):
+                return HandCG(Path(tmp)).advance(FROZEN, endpoint, retry)
+            attempt = advance()["attempt"]
+            self.assertEqual(advance(), {"state": "disconnected", "attempt": attempt})
+            self.assertEqual(advance()["state"], "disconnected")
+            self.assertEqual(conn.request.call_count, 1)
+            self.assertEqual(advance(attempt), {"state": "disconnected", "attempt": attempt})
+            self.assertEqual(advance(attempt), {"state": "ready", "attempt": attempt})
+            self.assertEqual(HandCG(Path(tmp)).image(FROZEN, attempt), PNG)
+            submit.assert_called_once()
+            self.assertEqual([call.args[:2] for call in conn.request.call_args_list],
+                             [("GET", f"/history/{job}"), ("GET", f"/history/{job}"),
+                              ("GET", "/view?filename=owned.png&subfolder=&type=output"),
+                              ("GET", f"/history/{job}"), ("GET", "/view?filename=owned.png&subfolder=&type=output")])
 
     def test_api_cold_resume_and_old_event_rejection(self):
         from test_result_delivery import ResultDeliveryTests

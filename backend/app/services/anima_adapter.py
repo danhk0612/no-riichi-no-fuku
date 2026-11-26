@@ -84,7 +84,11 @@ class Comfy:
             conn.request(method, path, data, {"Content-Type": "application/json"} if data else {})
             res = conn.getresponse()
             if res.status != 200:
-                raise ValueError(f"ComfyUI {method} {path.split('?')[0]}: HTTP {res.status}")
+                message = f"ComfyUI {method} {path.split('?')[0]}: HTTP {res.status}"
+                # A temporary read failure says nothing about the outcome of an accepted prompt.
+                if method == "GET" and res.status in (408, 429, 500, 502, 503, 504):
+                    raise ConnectionError(message)
+                raise ValueError(message)
             if not binary:
                 return json.load(res)
             limit = 32 * 1024 * 1024
