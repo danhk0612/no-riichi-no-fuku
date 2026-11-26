@@ -66,14 +66,28 @@ try {
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   const secondHand = makeHand(11, 2, 'hand-band-2', 2, 1)
   secondHand.head.payload.content = {version: 1, dialogues: [{cpu_id: 1, slot: "win", text: "저장된 화료 대사"}], scene: {stage: 1, media: null}}
+  const doubleRon = [{hora_log_offset:9,actor:2,target:0,win_kind:'ron',score:{band:3,han:8,fu:30,ron_agari:16000},deltas:[-16000,0,16000,0]},
+    {...secondHand.head.payload.fact_snapshot.winners[0],score:{band:2,han:5,fu:30,ron_agari:8000}}]
+  secondHand.head.payload.fact_snapshot.winners=doubleRon
+  secondHand.head.payload.winner_display_order=[8,9]
   currentServerEnvelope = secondHand
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...secondHand }))
   await page.getByText('만관·하네만').waitFor()
   await page.getByText('저장된 화료 대사').waitFor()
   await page.getByText('화료 CG가 등록되지 않았습니다.').waitFor()
   const thirdHand = makeHand(12, 3, 'hand-band-3', 3, 2)
+  const rows=page.getByRole('region',{name:'화료자별 결과'})
+  await rows.getByText('론 점수 16,000점').waitFor()
+  await rows.getByText('론 점수 8,000점').waitFor()
+  const summary=await rows.locator('.settlement-summary').allTextContents()
+  await rows.getByText('현재 배경 차례: 화료자').waitFor()
+  thirdHand.head.payload.fact_snapshot=secondHand.head.payload.fact_snapshot
+  thirdHand.head.payload.winner_display_order=[8,9]
+  thirdHand.head.payload.displayed_hora_log_offset=9
   currentServerEnvelope = thirdHand
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...thirdHand }))
+  await rows.getByText('현재 배경 차례: 좌석 3').waitFor()
+  assert.deepEqual(await rows.locator('.settlement-summary').allTextContents(),summary)
   await page.getByText('배만 이상').waitFor()
   const settlement = {
     version: 1, generation: 'generation-c1', session_id: 'session-c1', delivery_revision: 13,

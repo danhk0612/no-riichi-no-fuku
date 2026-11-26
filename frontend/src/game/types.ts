@@ -81,7 +81,7 @@ export type StageTransition = {from_stage:number;name:string;profile:ResultMedia
 export type SavedResultContent = {
   version: 1
   dialogues: {cpu_id: number; slot: string; text: string | null}[]
-  scene: {stage: number; cpu_id?:number; transition?:StageTransition; generation_input?: unknown; media: ResultMedia | null} | null
+  scene: {stage: number; cpu_id?:number; missing_candidates?:('clothing_state'|'situation'|'pose')[]; transition?:StageTransition; generation_input?: unknown; media: ResultMedia | null} | null
 }
 export type ResultDeliveryEntry = {
   ordinal: number

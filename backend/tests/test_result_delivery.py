@@ -21,8 +21,15 @@ from app.services.result_delivery import (
 
 
 class ResultDeliveryTests(unittest.TestCase):
-    def _build_completed(self, runtime, content=False):
+    def _build_completed(self, runtime, content=False, hand_defaults=False):
         with runtime.session_factory.begin() as db:
+            if hand_defaults:
+                from app.db.models import SharedPromptDefault, SharedPromptItem
+                for kind in ("clothing_state", "situation", "pose"):
+                    db.add(SharedPromptItem(id=kind, kind=kind, level=0, label=kind, positive=kind,
+                        negative="", allowed_events=["ron_band_2"] if kind=="situation" else None))
+                    db.flush()
+                    db.add(SharedPromptDefault(level=0,kind=kind,item_id=kind))
             state = db.get(LocalPlayState, runtime.member_id)
             generation = state.generation
             record = GameSessionRecord(
@@ -89,7 +96,7 @@ class ResultDeliveryTests(unittest.TestCase):
                              "characters": {"1":{"model": "CPU1", "loras": [{"name":"B","strength":0}]}}}
                     self.assertEqual(client.put(gp, headers=headers, json=first).status_code, 200)
                     edit(0, "original")
-                    self._build_completed(runtime, content=True)
+                    self._build_completed(runtime, content=True, hand_defaults=True)
                     self.assertEqual(client.put(gp, headers=headers, json={"expected_revision": 1, "common":{"model":"updated"}}).status_code, 200)
                     edit(1, "edited")
             finally:
@@ -110,6 +117,40 @@ class ResultDeliveryTests(unittest.TestCase):
                     self.assertEqual(settlement.result_content["dialogues"][0]["slot"], "defeat_stage_3")
             finally:
                 runtime.close()
+
+    def test_hand_default_must_match_event_and_missing_candidate_never_submits(self):
+        from copy import deepcopy
+        from app.db.models import GameResultDelivery
+        from app.services.result_content import resolve
+        with tempfile.TemporaryDirectory() as tmp:
+            rt = create_local_runtime(Path(tmp))
+            try:
+                with TestClient(rt.app,headers={"X-Local-Capability":rt.capability}) as client:
+                    client.put("/api/local/generation-settings",json={"expected_revision":0,
+                        "common":{"model":"m","encoder":"e","vae":"v"}}).raise_for_status()
+                    generation = self._build_completed(rt,content=True)
+                    base="/api/local/play/sessions/c1-test-session/results"
+                    head=client.get(base,params={"generation":generation}).json()["head"]
+                    scene=head["payload"]["content"]["scene"]
+                    self.assertEqual(scene["missing_candidates"],["clothing_state","situation","pose"])
+                    self.assertNotIn("generation_input",scene)
+                    with patch("app.services.hand_cg_cache.HandCG.advance") as advance:
+                        self.assertEqual(client.post(f"{base}/{head['event_id']}/cg",params={"generation":generation}).status_code,404)
+                        advance.assert_not_called()
+                    self.assertEqual(head["payload"]["content"]["dialogues"][0]["slot"],"win")
+                    with rt.session_factory() as db:
+                        anchor=deepcopy(db.get(GameResultDelivery,"c1-test-session").content_anchor)
+                    level=anchor["seats"]["1"]["levels"]["0"]
+                    for kind in ("clothing_state","situation","pose"):
+                        level[kind]["default"]={"positive":kind,"negative":"","allowed_events":["ron_band_2"]}
+                    level["situation"]["explicit"]=[{"positive":"wrong","negative":"","allowed_events":["ron_band_1"]}]
+                    def resolved(): return resolve(anchor,"hand",head["payload"],head["event_id"])["scene"]
+                    self.assertIn("situation",resolved()["generation_input"]["positive"])
+                    level["situation"]["default"]["allowed_events"]=["tsumo_band_2"]
+                    self.assertEqual(resolved()["missing_candidates"],["situation"])
+                    self.assertNotIn("generation_input",resolved())
+            finally:
+                rt.close()
 
     def test_invalid_optional_generation_settings_do_not_block_results(self):
         from app.db.models import GameSetting

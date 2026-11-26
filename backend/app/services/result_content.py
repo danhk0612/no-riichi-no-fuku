@@ -81,7 +81,10 @@ def scene(cpu, stage, event, identity, stage_cg=False):
     result = {"cpu_id": cpu["id"], "stage": stage, "event": event, "choices": choices,
             **{k: "\n".join(p[k] for p in parts if p[k] != "") for k in ("positive", "negative")},
             "media": level["frame"]["media"] if stage_cg else None}
-    if not stage_cg and "anima" in cpu:
+    missing = [kind for kind, item in choices.items() if item is None]
+    if not stage_cg and missing:
+        result["missing_candidates"] = missing
+    elif not stage_cg and "anima" in cpu:
         # Do not reinterpret older snapshots. A seed is allocated only when an artifact is requested.
         result["generation_input"] = {"workflow": "anima-txt2img-v1", "kind": "hand_cg", "stage": stage,
                                       "positive": result["positive"], "negative": result["negative"],

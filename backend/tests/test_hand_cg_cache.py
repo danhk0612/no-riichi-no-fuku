@@ -66,7 +66,7 @@ class HandCacheTests(TestCase):
             try:
                 with TestClient(runtime.app,headers={"X-Local-Capability":runtime.capability}) as client:
                     self.assertEqual(client.put("/api/local/generation-settings",json={"expected_revision":0,"common":{"model":"m","vae":"v","encoder":"c"}}).status_code,200)
-                    generation=ResultDeliveryTests()._build_completed(runtime,content=True)
+                    generation=ResultDeliveryTests()._build_completed(runtime,content=True,hand_defaults=True)
                     base="/api/local/play/sessions/c1-test-session/results"
                     params={"generation":generation}
                     envelope=client.get(base,params=params).json()
@@ -102,7 +102,7 @@ class HandCacheTests(TestCase):
             try:
                 with TestClient(runtime.app, headers={"X-Local-Capability":runtime.capability}) as client:
                     client.put("/api/local/generation-settings",json={"expected_revision":0,"common":{"model":"m","vae":"v","encoder":"c"}}).raise_for_status()
-                    generation = ResultDeliveryTests()._build_completed(runtime,content=True)
+                    generation = ResultDeliveryTests()._build_completed(runtime,content=True,hand_defaults=True)
                     base = "/api/local/play/sessions/c1-test-session/results"
                     params = {"generation":generation}
                     envelope = client.get(base,params=params).json()
