@@ -76,10 +76,12 @@ export type GameSessionCreated = {
   cpu_difficulties?: CpuDifficulty[] | null
 }
 
+type ResultMedia = {media_id:string;url:string;digest:string}
+export type StageTransition = {from_stage:number;name:string;profile:ResultMedia|null;full_body:ResultMedia|null}
 export type SavedResultContent = {
   version: 1
   dialogues: {cpu_id: number; slot: string; text: string | null}[]
-  scene: {stage: number; generation_input?: unknown; media: {media_id: string; url: string; digest: string} | null} | null
+  scene: {stage: number; cpu_id?:number; transition?:StageTransition; generation_input?: unknown; media: ResultMedia | null} | null
 }
 export type ResultDeliveryEntry = {
   ordinal: number

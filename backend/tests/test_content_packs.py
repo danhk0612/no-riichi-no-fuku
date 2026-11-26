@@ -166,6 +166,44 @@ class PackRegistryTests(unittest.TestCase):
         self.assertEqual(get("/api/game/sessions/active")["players"],players)
         self.assertEqual(self.client.get(original["profile"],headers=self.headers).status_code,200)
 
+    def test_settlement_uses_changed_stage_images_and_fixed_line_after_restart(self):
+        from test_result_delivery import ResultDeliveryTests
+        from app.db.models import GameResultDelivery, GameResultDeliveryEntry
+        from app.services.result_content import resolve
+        value = character()
+        files = {}
+        for stage in ("2","3"):
+            for kind in ("profile","full_body","cg"):
+                path = f"{stage}-{kind}.png"
+                files[path] = b"\x89PNG\r\n\x1a\n"+path.encode()
+                value["levels"][stage]["images"][kind] = path
+        self.install(value,files)
+        self.application(self.scan()["registry"]["packs"][0],cpu=3).raise_for_status()
+        self.client.patch("/api/local/characters/3/fixed-dialogues",headers=self.headers,json={
+            "expected_revision":0,"edits":{"defeat_stage_3":{"text":"saved line"}}}).raise_for_status()
+        frames = self.content(3)["levels"]["3"]
+        ResultDeliveryTests()._build_completed(self.runtime,content=True)
+        value["levels"]["3"]["images"] = dict.fromkeys(("profile","full_body","cg"))
+        self.install(value)
+        self.application(self.scan()["registry"]["packs"][0],cpu=3,expected=1).raise_for_status()
+        self.restart()
+        with self.runtime.session_factory() as db:
+            entry = db.scalar(select(GameResultDeliveryEntry).where(GameResultDeliveryEntry.kind=="settlement"))
+            scene = entry.result_content["scene"]
+            self.assertEqual(scene["transition"],{"from_stage":2,"name":"CPU C",
+                "profile":frames["profile"]["media"],"full_body":frames["full_body"]["media"]})
+            self.assertEqual(scene["media"],frames["cg"]["media"])
+            self.assertEqual(entry.result_content["dialogues"][0]["text"],"saved line")
+            anchor = db.get(GameResultDelivery,entry.session_id).content_anchor
+            for mode,ranks in (("progress",[4,1,2,3]),("omake",[1,2,3,4]),("progress",[1,2,3,4])):
+                payload = copy.deepcopy(entry.payload)
+                payload["ranks"]=ranks
+                payload["presentation"]["settlement"].update(mode=mode,stage_changed=False)
+                saved = resolve(anchor,"settlement",payload,"test-event")
+                self.assertIsNone(saved["scene"])
+                if ranks[3]==4:
+                    self.assertEqual(saved["dialogues"][0]["text"],"saved line")
+
     def test_stage_preview_and_explicit_save_preserve_pack_and_other_slots(self):
         from unittest.mock import patch
         from uuid import uuid4

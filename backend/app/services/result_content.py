@@ -24,7 +24,10 @@ def capture(db, record):
         stage = choice["defeat_stage"]
         levels = {}
         for level in sorted({stage, min(3, stage + 1)}):
-            level_data = {"frame": content["levels"][str(level)]["cg"]}
+            frames = content["levels"][str(level)]
+            level_data = {"frame": frames["cg"], "portraits": {
+                kind: frames[kind]["media"] for kind in ("full_body", "profile")
+            }}
             for kind in ("clothing_state", "situation", "pose"):
                 candidates = get_candidates(db, cpu, level, kind)
                 default = get_default(db, level, kind)
@@ -106,6 +109,11 @@ def resolve(anchor, kind, payload, identity):
             out["dialogues"].append(dialogue(cpu, key))
             if s["stage_changed"]:
                 out["scene"] = scene(cpu, stage, key, identity, stage_cg=True)
+                level = cpu["levels"][str(stage)]
+                if "portraits" in level:
+                    out["scene"]["transition"] = {
+                        "from_stage": cpu["stage"], "name": cpu["name"], **deepcopy(level["portraits"])
+                    }
         if first and s["mode"] == "progress" and seats[str(first)]["stage"] == 3:
             out["dialogues"].append(dialogue(seats[str(first)], "match_first"))
     out["digest"] = digest(out)
