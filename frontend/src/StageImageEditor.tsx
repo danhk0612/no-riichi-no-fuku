@@ -1,7 +1,7 @@
 import {useEffect, useRef, useState} from 'react'
 import {apiRequest, type CharacterContent} from './api'
 
-const labels:Record<string,string>={pending:'생성 중입니다.', uncertain:'접수 여부를 확인하지 못했습니다.', failed:'생성에 실패했습니다.', missing:'생성 파일이 없습니다.',disconnected:'연결이 끊겼습니다.',unconfigured:'생성 설정이 필요합니다.'}
+const labels:Record<string,string>={pending:'생성 중입니다.', uncertain:'접수 여부를 확인하지 못했습니다.', failed:'생성에 실패했습니다.', missing:'생성 파일이 없습니다.',disconnected:'접수된 이미지 작업의 결과를 읽지 못했습니다.',unconfigured:'생성 설정이 필요합니다.'}
 type Slot = CharacterContent['levels'][string]['profile']
 export function StageImageEditor({token,cpu,level,kind,label,revision,slot,disabled,onSaved}:{
   token:string;cpu:number;level:number;kind:'profile'|'full_body'|'cg';label:string;revision:number;
@@ -52,7 +52,7 @@ export function StageImageEditor({token,cpu,level,kind,label,revision,slot,disab
   return <section aria-label={label+' 이미지'} className="stage-image-editor">
     {slot.media ? <figure><img alt={'저장된 '+label} src={slot.media.url}/><figcaption>{slot.media.source==='generated'?'직접 저장한 이미지':'캐릭터팩 이미지'}</figcaption></figure> : <p>{label} 이미지 미등록</p>}
     <button type="button" disabled={disabled||busy} onClick={()=>void run(true)}>{label} 생성</button>
-    {ticket && state!=='ready' && state!=='saved' && !busy && <button type="button" disabled={disabled} onClick={()=>void run(false)}>{attempt?'다시 시도':'이전 요청 확인'}</button>}
+    {ticket && state!=='ready' && state!=='saved' && !busy && <button type="button" disabled={disabled} onClick={()=>void run(false)}>{state==='disconnected'?'기존 작업 다시 조회':attempt?'다시 시도':'이전 요청 확인'}</button>}
     {ticket && state==='ready' && attempt && <figure><img alt={label+' 생성 미리보기'} src={path+'/'+ticket+'/'+attempt}/><figcaption>미리보기 · 저장하면 이 단계에 적용됩니다.</figcaption>
       <button type="button" disabled={disabled||busy} onClick={()=>void save()}>이 이미지 저장</button></figure>}
     {(message||labels[state]) && <p role="status">{message||labels[state]}</p>}
