@@ -4,6 +4,8 @@ import shutil
 import subprocess
 import sys
 
+from package_notices import collect_engine_notices
+
 
 root = Path(__file__).resolve().parents[1]
 out = root / "out/w05"
@@ -42,6 +44,10 @@ for name in ["main.cjs", "preload.cjs", "quit.cjs"]:
 shutil.copytree(engine_dist / "no-riichi-engine", shell / "engine")
 shutil.copy2(root / "LICENSE", shell / "LICENSE")
 shutil.copy2(root / "THIRD_PARTY_NOTICES.md", shell / "THIRD_PARTY_NOTICES.md")
+notices = shell / "notices"
+collect_engine_notices(out / "work/no-riichi-engine/Analysis-00.toc", notices)
+shutil.copy2(Path(sys.base_prefix) / "LICENSE.txt", notices / "Python-LICENSE.txt")
+shutil.copy2(root / "frontend/dist/frontend-licenses.md", notices / "frontend-licenses.md")
 electron = root / "desktop/node_modules/@electron/packager/bin/electron-packager.mjs"
 subprocess.run([
     shutil.which("node"), str(electron), str(shell), "No-Riichi-No-Fuku",
