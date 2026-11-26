@@ -134,19 +134,30 @@ class Comfy:
             info = self._request("GET", "/object_info")
         except (OSError, HTTPException, ValueError) as exc:
             raise ValueError("Could not inspect ComfyUI before submission") from exc
+        if not isinstance(info, dict):
+            raise ValueError("Invalid ComfyUI node catalog")
         for node in nodes.values():
-            spec = info.get(node["class_type"], {}).get("input", {})
-            required = spec.get("required", {})
-            available = {**required, **spec.get("optional", {})}
-            if (not spec or required.keys() - node["inputs"].keys()
-                    or node["inputs"].keys() - available.keys()):
-                raise ValueError(f"Incompatible ComfyUI node: {node['class_type']}")
+            kind = node["class_type"]
+            definition = info.get(kind)
+            spec = definition.get("input") if isinstance(definition, dict) else None
+            required = spec.get("required") if isinstance(spec, dict) else None
+            optional = spec.get("optional", {}) if isinstance(spec, dict) else None
+            if not isinstance(required, dict) or not isinstance(optional, dict):
+                raise ValueError(f"Incompatible ComfyUI node: {kind}")
+            available = {**required, **optional}
+            if required.keys() - node["inputs"].keys() or node["inputs"].keys() - available.keys():
+                raise ValueError(f"Incompatible ComfyUI node: {kind}")
             for key, value in node["inputs"].items():
-                allowed = available[key][0]
-                if allowed == "COMBO" and len(available[key]) > 1:
-                    allowed = available[key][1].get("options")
-                if isinstance(allowed, list) and value not in allowed:
-                    raise ValueError(f"Unavailable {node['class_type']}.{key}")
+                field = available[key]
+                if not isinstance(field, list) or not field or not isinstance(field[0], (str, list)):
+                    raise ValueError(f"Invalid ComfyUI input: {kind}.{key}")
+                options = _listed_options(field)
+                if field[0] == "COMBO" and len(field) > 1 and (
+                    not isinstance(field[1], dict) or ("options" in field[1] and options is None)
+                ):
+                    raise ValueError(f"Invalid ComfyUI input: {kind}.{key}")
+                if options is not None and value not in options:
+                    raise ValueError(f"Unavailable {kind}.{key}")
         try:
             result = self._request("POST", "/prompt", {"prompt": nodes, "client_id": self.client_id})
             job = str(UUID(result["prompt_id"]))
