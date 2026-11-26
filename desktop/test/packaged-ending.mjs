@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { dirname, join } from 'node:path'
 import {readFileSync,writeFileSync} from 'node:fs'
 import {createRequire} from 'node:module'
 
@@ -48,6 +49,8 @@ try{
   await result.getByRole('button',{name:'CG만 보기'}).click()
   await page.getByRole('dialog').getByRole('button',{name:'확대',exact:true}).click()
   await page.getByRole('dialog').getByText('150%').waitFor()
+  await page.getByRole('dialog').press('Escape')
+  await result.screenshot({ path: join(dirname(reportFile), 'settlement-screen.png') })
   record('real last action led to stage 2 to 3 settlement and CG viewer')
   await stop()
   await launch()
