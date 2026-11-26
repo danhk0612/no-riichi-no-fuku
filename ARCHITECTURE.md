@@ -1,5 +1,13 @@
 # 구조와 전환 검토
 
+## W10 연결 설계 경계
+
+게임이 소유하는 것은 자기 요청의 식별자와 연결뿐이다. 로컬 ComfyUI 프로세스는 사용자 소유다. 실제 workflow와 설치 노드의 입력·출력 대응은 검증 전까지 확정하지 않는다. 현재 게임 시작이나 대국 진행은 해당 주소에 접속하지 않는다.
+
+실제 설치를 확인할 때는 다음 두 입력만 사용한다. (1) 사용자 환경에서 동작하는 Anima workflow를 API 형식 JSON으로 내보낸 것. (2) 해당 주소에서 `GET /object_info`로 얻은 노드 정의 중 workflow의 `class_type`에 해당하는 항목. 모델·LoRA 바이너리나 출력 이미지는 필요 없다. workflow에 개인 프롬프트가 있으면 노드와 연결을 유지하고 텍스트만 비울 수 있다.
+
+[기존 Anima 구성 참고](https://github.com/danhk0612/wayward-development/blob/5d80f118c590319881be34faba8214a0c3765fc2/programs/wayward-anima-manager/src/comfy/workflows/index.ts)의 `buildAnimaPrompt`는 모델·인코더·VAE를 분리하고 긍정/부정 인코딩, 선택적 순차 모델 LoRA, 샘플러, 디코딩, 출력 저장을 연결한다. 이 구조는 비교용이다. 실제 설치에서 노드의 class_type·입력 이름·모델 목록·출력 연결을 확인하기 전에는 호환을 보장하지 않는다. 참고 프로젝트의 프롬프트·콘텐츠·기본 모델명은 가져오지 않는다.
+
 ## W09-C2 저장 경계
 
 전달 규약 v1은 유지하고 별도 nullable 콘텐츠 버전·anchor·entry JSON을 추가한다(0016). 신규 로컬 대국만 콘텐츠 버전 1을 지정한다. writer가 참가 당시 설정으로 결과를 확정하고 읽기 경로는 기존 커서에 대응하는 저장값을 반환한다. CPU와 승자 표시 순서의 난수는 콘텐츠 선택과 독립이다.
