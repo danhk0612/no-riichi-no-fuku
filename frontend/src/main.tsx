@@ -1,3 +1,4 @@
+import type { SavedResultContent } from './game/types'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import { AuthPanel } from './AuthPanel'
@@ -97,7 +98,9 @@ function App() {
   const deliveryPresentation = gameState.status === 'result_delivery' && gameState.delivery.head?.kind === 'settlement'
     ? gameState.delivery.head.payload.presentation as { result_asset?: { id?: number; url?: string; defeat_stage?: number } | null } | undefined
     : undefined
-  const deliveryAsset = deliveryPresentation?.result_asset ?? null
+  const savedContent = gameState.status === 'result_delivery' ? gameState.delivery.head?.payload.content as SavedResultContent | undefined : undefined
+  const media = savedContent?.scene?.media
+  const deliveryAsset = savedContent ? (media ? {id: media.media_id, url: media.url} : null) : deliveryPresentation?.result_asset ?? null
   const deliveryAssetIdentity = gameState.status === 'result_delivery' && deliveryAsset?.id !== undefined
     ? `${gameState.delivery.generation}:${gameState.delivery.session_id}:${gameState.delivery.head?.event_id}:${deliveryAsset.id}`
     : null

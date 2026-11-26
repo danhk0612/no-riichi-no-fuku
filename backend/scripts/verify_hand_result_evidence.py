@@ -13,10 +13,10 @@ def main(database: Path, output: Path) -> None:
     connection.row_factory = sqlite3.Row
     try:
         version = connection.execute("SELECT version_num FROM alembic_version").fetchone()[0]
-        if version != "20261126_0015":
+        if version != "20261126_0016":
             raise RuntimeError(f"unexpected packaged database revision: {version}")
         sessions = connection.execute(
-            "SELECT id, status, hand_results_version, result_delivery_version, players, scores, ranks, "
+            "SELECT id, status, hand_results_version, result_delivery_version, result_content_version, players, scores, ranks, "
             "settlement, presentation FROM game_sessions "
             "WHERE status='completed' AND hand_results_version=1 AND result_delivery_version=1 ORDER BY updated_at DESC"
         ).fetchall()
@@ -58,11 +58,11 @@ def main(database: Path, output: Path) -> None:
                     "payload_sha256": hashlib.sha256(row["payload"].encode("utf-8")).hexdigest(),
                 })
             delivery = connection.execute(
-                "SELECT generation, version, content_mode, acked_ordinal, revision, terminal_ordinal "
+                "SELECT generation, version, content_anchor, content_mode, acked_ordinal, revision, terminal_ordinal "
                 "FROM game_result_deliveries WHERE session_id=?", (session["id"],)
             ).fetchone()
             entries = connection.execute(
-                "SELECT ordinal, event_id, kind, hand_start_log_offset, display_index, payload "
+                "SELECT ordinal, event_id, kind, hand_start_log_offset, display_index, result_content, payload "
                 "FROM game_result_delivery_entries WHERE session_id=? ORDER BY ordinal", (session["id"],)
             ).fetchall()
             if (delivery is None or delivery["version"] != 1 or delivery["content_mode"] != "unbound"
@@ -71,6 +71,12 @@ def main(database: Path, output: Path) -> None:
                     or entries[-1]["kind"] != "settlement"
                     or delivery["acked_ordinal"] != delivery["terminal_ordinal"] - 1):
                 raise RuntimeError("packaged renderer did not leave every hand acknowledged and settlement pending")
+            if session["result_content_version"] != 1 or json.loads(delivery["content_anchor"])["session"] != session["id"]:
+                raise RuntimeError("missing packaged result content anchor")
+            for entry in entries:
+                snapshot = json.loads(entry["result_content"])
+                if snapshot["event_id"] != entry["event_id"] or snapshot["version"] != 1:
+                    raise RuntimeError("packaged result content identity mismatch")
             settlement_payload = json.loads(entries[-1]["payload"])
             if (settlement_payload.get("participants") != json.loads(session["players"])
                     or settlement_payload.get("scores") != json.loads(session["scores"])

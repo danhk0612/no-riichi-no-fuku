@@ -73,7 +73,7 @@ class LocalRuntimeTests(unittest.TestCase):
                     )
                     self.assertEqual(
                         connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one(),
-                        "20261126_0015",
+                        "20261126_0016",
                     )
                 with runtime.session_factory.begin() as session:
                     member = session.get(User, runtime.member_id)

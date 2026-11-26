@@ -1,3 +1,4 @@
+import type { SavedResultContent } from './types'
 import type {
   DialogueEvent,
   GameScreenState,
@@ -58,7 +59,8 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
   const resultRows = scores.map((score, seat) => ({ seat, score, rank: ranks[seat] })).sort((a, b) => a.rank - b.rank)
   const presentation = payload.presentation as Record<string, any> | null | undefined
   const dialogues = Array.isArray(presentation?.result_dialogues) ? presentation.result_dialogues as Record<string, any>[] : []
-  const resultAsset = presentation?.result_asset as { id?: number; defeat_stage?: number } | null | undefined
+  const content = payload.content as SavedResultContent | undefined
+  const resultAsset = content ? (content.scene?.media ? {defeat_stage: content.scene.stage} : null) : presentation?.result_asset as { id?: number; defeat_stage?: number } | null | undefined
 
   if (delivery.route === 'settlement_wait') {
     return <section className="result-delivery-card" data-result-kind="settlement-wait" role="status"><h2>정산 결과 저장 중</h2><p>저장된 국 결과는 유지됩니다. 연결을 다시 확인하면 정산 결과로 복구합니다.</p></section>
@@ -75,7 +77,7 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
           {resultAsset && resultAssetObjectUrl && <figure className="result-asset"><img src={resultAssetObjectUrl} alt={`단계 ${resultAsset.defeat_stage ?? ''} 결과 CG`} /><figcaption>단계 {resultAsset.defeat_stage ?? ''} 결과 CG</figcaption></figure>}
           {resultAsset && !resultAssetObjectUrl && <p className="result-asset-status" role="status">{resultAssetLoadFailed ? 'CG를 불러오지 못했습니다.' : 'CG를 불러오는 중입니다.'}</p>}
           {!resultAsset && <p className="result-asset-status">등록된 결과 CG가 없습니다.</p>}
-          {dialogues.map((dialogue, index) => <blockquote className="result-dialogue" key={`${dialogue.cpu_character_id}-${dialogue.event_key}-${index}`}><p>{String(dialogue.text ?? '')}</p></blockquote>)}
+          {!content && dialogues.map((dialogue, index) => <blockquote className="result-dialogue" key={`${dialogue.cpu_character_id}-${dialogue.event_key}-${index}`}><p>{String(dialogue.text ?? '')}</p></blockquote>)}
           <p className="settlement-summary">저장된 정산 결과</p>
         </>
       ) : (
@@ -91,6 +93,8 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
           <ol className="result-deltas">{(winner?.deltas ?? fact?.draws?.[0]?.deltas ?? []).map((delta: number, seat: number) => <li key={seat}>{nameFor(seat)} · {delta > 0 ? '+' : ''}{delta.toLocaleString()}점</li>)}</ol>
         </>
       )}
+      {content?.dialogues.filter(line => line.text).map(line => <blockquote className="result-dialogue" key={line.cpu_id + ':' + line.slot}>{line.text}</blockquote>)}
+      {!settlementPayload && content?.scene && !content.scene.media && <p className="result-asset-status">화료 CG가 등록되지 않았습니다.</p>}
       {onAcknowledge && <button className="primary-button" onClick={() => onAcknowledge(delivery)} type="button">{settlementPayload ? '정산 확인' : '확인하고 다음 결과 보기'}</button>}
     </section>
   )

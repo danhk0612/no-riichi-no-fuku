@@ -188,6 +188,7 @@ class GameRegistry:
                     play_generation=generation,
                     rules_snapshot={"version": 2, "mode": rules_mode} if rules_mode else None,
                     hand_results_version=1 if capture_results else None,
+                    result_content_version=1 if capture_results else None,
                     result_delivery_version=1 if capture_results else None,
                 )
             )

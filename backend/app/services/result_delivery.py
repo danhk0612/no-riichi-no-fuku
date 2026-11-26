@@ -14,6 +14,7 @@ from app.db.models import (
     GameSessionRecord,
     LocalPlayState,
 )
+from app.services import result_content
 from app.services.hand_results import load_rows
 
 
@@ -28,6 +29,7 @@ def create_delivery(db: Session, record: GameSessionRecord) -> GameResultDeliver
         raise ResultDeliveryError("C1 delivery generation is missing")
     delivery = GameResultDelivery(
         session_id=record.id, generation=record.play_generation, version=1,
+        content_anchor=result_content.capture(db, record) if record.result_content_version == 1 else None,
         content_mode="unbound", acked_ordinal=0, revision=0, terminal_ordinal=None,
     )
     db.add(delivery)
@@ -96,6 +98,8 @@ def append_hand_entries(
                 hand_start_log_offset=fact.hand_start_log_offset,
                 display_index=display_index, payload=payload,
             )
+            if delivery.content_anchor is not None:
+                entry.result_content = result_content.resolve(delivery.content_anchor, "hand", payload, entry.event_id)
             db.add(entry)
             all_entries.append(entry)
             existing_hands[identity] = entry
@@ -113,7 +117,7 @@ def append_settlement_entry(db: Session, record: GameSessionRecord) -> None:
     if delivery.terminal_ordinal is not None or any(entry.kind == "settlement" for entry in entries):
         raise ResultDeliveryError("settlement result delivery already exists")
     ordinal = len(entries) + 1
-    db.add(GameResultDeliveryEntry(
+    entry = GameResultDeliveryEntry(
         session_id=record.id, ordinal=ordinal, event_id=str(uuid4()), kind="settlement",
         hand_start_log_offset=None, display_index=None,
         payload={
@@ -122,7 +126,10 @@ def append_settlement_entry(db: Session, record: GameSessionRecord) -> None:
             "presentation": deepcopy(record.presentation), "participants": deepcopy(record.players),
             "content_mode": "unbound",
         },
-    ))
+    )
+    if delivery.content_anchor is not None:
+        entry.result_content = result_content.resolve(delivery.content_anchor, "settlement", entry.payload, entry.event_id)
+    db.add(entry)
     delivery.terminal_ordinal = ordinal
     delivery.revision += 1
     db.flush()
@@ -155,7 +162,7 @@ def result_envelope(db: Session, record: GameSessionRecord) -> dict[str, object]
         "acked_ordinal": delivery.acked_ordinal,
         "head": None if head_entry is None else {
             "ordinal": head_entry.ordinal, "event_id": head_entry.event_id,
-            "kind": head_entry.kind, "payload": deepcopy(head_entry.payload),
+            "kind": head_entry.kind, "payload": {**deepcopy(head_entry.payload), **({"content_mode": "snapshot", "content": deepcopy(head_entry.result_content)} if head_entry.result_content is not None else {})},
         },
         "terminal_ordinal": delivery.terminal_ordinal,
         "route": route,
@@ -233,6 +240,13 @@ def _required_delivery(db: Session, record: GameSessionRecord) -> GameResultDeli
         raise ResultDeliveryError("result delivery state is missing")
     if delivery.generation != record.play_generation or delivery.version != 1 or delivery.content_mode != "unbound":
         raise ResultDeliveryError("result delivery state does not match its session")
+    anchor = delivery.content_anchor
+    if record.result_content_version is not None:
+        if (record.result_content_version != 1 or not isinstance(anchor, dict) or anchor.get("version") != 1
+                or anchor.get("generation") != record.play_generation or anchor.get("session") != record.id):
+            raise ResultDeliveryError("invalid result content anchor")
+    elif anchor is not None:
+        raise ResultDeliveryError("unexpected result content anchor")
     return delivery
 
 
@@ -319,6 +333,14 @@ def _validated(db: Session, record: GameSessionRecord) -> GameResultDelivery:
             UUID(entry.event_id)
         except (ValueError, TypeError, AttributeError):
             raise ResultDeliveryError("result delivery event identity is invalid") from None
+    for entry in entries:
+        content = entry.result_content
+        if delivery.content_anchor is None and content is None:
+            continue
+        if (delivery.content_anchor is None or not isinstance(content, dict) or content.get("version") != 1
+                or content.get("event_id") != entry.event_id
+                or content.get("digest") != result_content.digest({k: v for k, v in content.items() if k != "digest"})):
+            raise ResultDeliveryError("invalid result content snapshot")
     trailing = entries[expected_index:]
     if record.status == "active":
         if trailing or delivery.terminal_ordinal is not None:
