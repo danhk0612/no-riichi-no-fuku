@@ -992,3 +992,15 @@ button.tile:disabled {
   .result-delivery-card .result-deltas { grid-template-columns: 1fr; }
   .result-delivery-card > .primary-button { width: 100%; }
 }
+
+
+.tile-art {
+  display: block;
+  width: 21px;
+  height: 24.5px;
+  background: url('./assets/riichi-tile-faces.png') no-repeat;
+  background-size: 3700% 100%;
+}
+.tile-caption { font-size: 9px; line-height: 1; white-space: nowrap; }
+.hand .tile-art { width: 28px; height: 32.67px; }
+.hand .tile-caption { margin-top: 2px; font-size: 11px; }

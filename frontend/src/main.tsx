@@ -76,6 +76,7 @@ function App() {
   const [soundSelection, setSoundSelection] = useState<SoundSelection | null>(null)
   const [activeSettings, setActiveSettings] = useState<SettingsPage | null>(null)
   const [openSettings, setOpenSettings] = useState<Partial<Record<SettingsPage, boolean>>>({})
+  const [editedCharacters, setEditedCharacters] = useState<{id: number; name: string}[]>()
   const [fixedDirty, setFixedDirty] = useState(false)
   const [fixedSaving, setFixedSaving] = useState(false)
 
@@ -285,6 +286,17 @@ function App() {
       }
       return { ...cpu, measurements_cm: latest.measurements_cm }
     })
+  }
+
+  async function refreshCharacterChoices() {
+    if (!accessToken || !cpus || !localPlay) return
+    const requestToken = difficultyPreviewToken
+    const generation = localPlay.generation
+    const choices = await getRosterCandidates(accessToken)
+    if (!isCurrentLocalRequest(requestToken, generation)) return
+    const ids = new Set(localPlay.roster.map((cpu) => cpu.cpu_character_id))
+    const latestChoices = withLatestCharacterMeasurements(choices)
+    setCpus(localPlay.phase === 'roster_required' ? latestChoices : latestChoices.filter((cpu) => ids.has(cpu.id)))
   }
 
   function updateCharacterContent(content: CharacterContent) {
@@ -961,19 +973,10 @@ function App() {
           }}>게임 화면으로</button>}
         </nav>}
       </header>
-      {isDesktop && accessToken && openSettings.difficulty && <div id="settings-page-difficulty" hidden={activeSettings !== 'difficulty'}><LocalDifficultyPanel accessToken={accessToken} onClose={() => closeSettings('difficulty')} onSaved={async () => {
-        if (!cpus || !localPlay) return
-        const requestToken = difficultyPreviewToken
-        const generation = localPlay.generation
-        const choices = await getRosterCandidates(accessToken)
-        if (!isCurrentLocalRequest(requestToken, generation)) return
-        const ids = new Set(localPlay.roster.map((cpu) => cpu.cpu_character_id))
-        const latestChoices = withLatestCharacterMeasurements(choices)
-        setCpus(localPlay.phase === 'roster_required' ? latestChoices : latestChoices.filter((cpu) => ids.has(cpu.id)))
-      }} /></div>}
-      {isDesktop && accessToken && openSettings.generation && <div id="settings-page-generation" hidden={activeSettings !== 'generation'}><GenerationPanel key={accessToken} token={accessToken} close={()=>closeSettings('generation')}/></div>}
-      {isDesktop && accessToken && openSettings.sound && <div id="settings-page-sound" hidden={activeSettings !== 'sound'}><LocalSoundPanel accessToken={accessToken} onClose={() => closeSettings('sound')} onSelectionChanged={setSoundSelection} onPlaybackChanged={stopGameAudio} /></div>}
-      {isDesktop && accessToken && openSettings.content && <div id="settings-page-content" hidden={activeSettings !== 'content'}><LocalContentPanel accessToken={accessToken} onClose={() => closeSettings('content')} fixedDirty={fixedDirty} fixedSaving={fixedSaving} setFixedDirty={setFixedDirty} setFixedSaving={setFixedSaving} onPackApplied={stopGameAudio} onMeasurementsUpdated={updateCharacterContent}
+      {isDesktop && accessToken && openSettings.difficulty && <div id="settings-page-difficulty" hidden={activeSettings !== 'difficulty'}><LocalDifficultyPanel accessToken={accessToken} onClose={() => closeSettings('difficulty')} onSaved={refreshCharacterChoices} /></div>}
+      {isDesktop && accessToken && openSettings.generation && <div id="settings-page-generation" hidden={activeSettings !== 'generation'}><GenerationPanel editedCharacters={editedCharacters} key={accessToken} token={accessToken} close={()=>closeSettings('generation')}/></div>}
+      {isDesktop && accessToken && openSettings.sound && <div id="settings-page-sound" hidden={activeSettings !== 'sound'}><LocalSoundPanel editedCharacters={editedCharacters} accessToken={accessToken} onClose={() => closeSettings('sound')} onSelectionChanged={setSoundSelection} onPlaybackChanged={stopGameAudio} /></div>}
+      {isDesktop && accessToken && openSettings.content && <div id="settings-page-content" hidden={activeSettings !== 'content'}><LocalContentPanel onCharactersChanged={async characters => { setEditedCharacters(characters); await refreshCharacterChoices() }} accessToken={accessToken} onClose={() => closeSettings('content')} fixedDirty={fixedDirty} fixedSaving={fixedSaving} setFixedDirty={setFixedDirty} setFixedSaving={setFixedSaving} onPackApplied={stopGameAudio} onMeasurementsUpdated={updateCharacterContent}
         onImageSaved={(id,level,kind,url)=>setCpus(current=>current?.map(cpu=>cpu.id===id && cpu.defeat_stage===level
           ? {...cpu,stage_images:{profile:null,full_body:null,cg:null,...cpu.stage_images,[kind]:url}} : cpu) ?? current)} /></div>}
       {isDesktop && soundError && <p className="form-error" role="status">{soundError}</p>}

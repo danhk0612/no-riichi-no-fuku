@@ -7,7 +7,8 @@ import type { AudioPackSelection, BackgroundTrack, CharacterVoiceSelection, Endi
 
 const SOUND_KEYS = ['chi', 'pon', 'kan', 'riichi', 'ron', 'tsumo'] as const
 
-export function LocalSoundPanel({ accessToken, onClose, onSelectionChanged, onPlaybackChanged }: {
+export function LocalSoundPanel({ editedCharacters, accessToken, onClose, onSelectionChanged, onPlaybackChanged }: {
+  editedCharacters?: {id: number; name: string}[]
   accessToken: string
   onClose: () => void
   onSelectionChanged: (selection: SoundSelection) => void
@@ -47,6 +48,18 @@ export function LocalSoundPanel({ accessToken, onClose, onSelectionChanged, onPl
   }
 
   useEffect(() => { void refresh().catch((caught) => setError(message(caught))) }, [accessToken])
+
+  useEffect(() => {
+    if (!editedCharacters) return
+    let active = true
+    const missing = editedCharacters.filter(cpu => !voiceLinks[cpu.id])
+    if (missing.length) {
+      Promise.all(missing.map(cpu => getCharacterVoiceSelection(accessToken, cpu.id))).then(rows => {
+        if (active) setVoiceLinks(current => ({...Object.fromEntries(rows.map(row => [row.cpu_id, row])), ...current}))
+      }).catch(caught => { if (active) setError(message(caught)) })
+    }
+    return () => { active = false }
+  }, [accessToken, editedCharacters, voiceLinks])
 
   function selectSet(id: string) {
     setSetId(id)
@@ -136,7 +149,7 @@ export function LocalSoundPanel({ accessToken, onClose, onSelectionChanged, onPl
           </>}
           <h3>캐릭터 음성팩 연결</h3>
           <p className="muted">기본값은 적용한 캐릭터팩의 음성 기본 참조를 사용합니다. 선택된 유효 팩의 slot 누락은 무음이며, 끔은 항상 무음입니다.</p>
-          {characters.map((character) => {
+          {(editedCharacters ?? characters).map((character) => {
             const voice = voiceLinks[character.id]
             if (!voice) return null
             return <div className="sound-voice-row" key={character.id}><strong>{character.name}</strong>

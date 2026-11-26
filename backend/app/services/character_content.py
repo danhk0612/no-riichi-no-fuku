@@ -22,6 +22,21 @@ from app.services.content_packs import read_file, digest, ScanIssue
 PROMPT_GROUPS = ("appearance", "upper_underwear", "lower_underwear")
 IMAGE_KINDS = ("profile", "full_body", "cg")
 
+# The stable slug keeps a renamed starter's appearance intact.
+STARTER_APPEARANCES = {
+    "tachibana-rin": "auburn bob, amber eyes",
+    "kurokawa-mio": "long black hair, blue eyes",
+    "amamiya-yuna": "wavy brown hair, green eyes",
+    "shirogane-rei": "short silver hair, gray eyes",
+    "kanzaki-aya": "dark red ponytail, brown eyes",
+    "saionji-kaede": "chestnut braid, hazel eyes",
+}
+DEFAULT_FRAMING = {
+    "profile": "head and shoulders portrait, centered composition",
+    "full_body": "full-length character illustration, head and feet in frame",
+    "cg": "cinematic composition, mahjong table in the background",
+}
+
 
 def _empty_measurements() -> dict[str, str | None]:
     return {key: None for key in MEASUREMENT_KEYS}
@@ -56,11 +71,24 @@ def stage_image_urls(content: dict, stage: int) -> dict:
 
 
 def get_character_content(session: Session, cpu_id: int) -> dict:
-    if session.get(CpuCharacter, cpu_id) is None:
+    cpu = session.get(CpuCharacter, cpu_id)
+    if cpu is None:
         raise HTTPException(status_code=404, detail={"code": "not_found", "message": "캐릭터를 찾을 수 없습니다."})
     record = session.get(CharacterContent, cpu_id)
     prompts = record.prompts if record else {key: _empty_pair() for key in PROMPT_GROUPS}
     overrides = set(record.overrides or []) if record else set()
+    use_defaults = record is None or record.pack_revision_id is None
+    appearance = STARTER_APPEARANCES.get(cpu.slug, "brown hair, brown eyes")
+    defaults = {
+        "appearance": f"adult woman, {appearance}, anime illustration",
+        "upper_underwear": "plain cotton bra",
+        "lower_underwear": "matching cotton briefs",
+    }
+    prompts = {key: dict(prompts.get(key, {})) for key in PROMPT_GROUPS}
+    if use_defaults:
+        for key, pair in prompts.items():
+            if not pair.get("positive") and f"{key}.positive" not in overrides:
+                pair["positive"] = defaults[key]
     measurements = _empty_measurements()
     if record and isinstance(record.measurements_cm, dict):
         measurements.update({key: record.measurements_cm.get(key) for key in MEASUREMENT_KEYS})
@@ -73,8 +101,11 @@ def get_character_content(session: Session, cpu_id: int) -> dict:
         levels[str(level)] = {}
         for kind in IMAGE_KINDS:
             item = by_identity.get((level, kind))
+            positive = item.positive if item else ""
+            if use_defaults and not positive and not (item and "positive" in (item.overrides or [])):
+                positive = DEFAULT_FRAMING[kind]
             levels[str(level)][kind] = {
-                "positive": item.positive if item else "",
+                "positive": positive,
                 "negative": item.negative if item else "",
                 "revision": item.revision if item else 0,
                 "overrides": {

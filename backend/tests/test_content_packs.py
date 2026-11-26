@@ -364,8 +364,10 @@ class PackRegistryTests(unittest.TestCase):
         original = before.json()
         self.assertEqual(original["revision"], 0)
         self.assertEqual(original["prompts"]["appearance"], {
-            "positive": "", "negative": "", "overrides": {"positive": False, "negative": False}
+            "positive": "adult woman, auburn bob, amber eyes, anime illustration",
+            "negative": "", "overrides": {"positive": False, "negative": False}
         })
+        self.assertIn("portrait", original["levels"]["0"]["profile"]["positive"])
         self.assertEqual(len(original["levels"]), 4)
         self.assertEqual(set(original["levels"]["0"]), {"profile", "full_body", "cg"})
         with self.runtime.session_factory() as session:

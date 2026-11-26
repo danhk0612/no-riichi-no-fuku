@@ -8,7 +8,7 @@ type Saved = { endpoint: string; common: Common; characters: Record<string, Char
 type Catalog = { choices: Record<string, string[]>; missing_nodes: string[]; supports_anima_encoder: boolean | null }
 const path = '/api/local/generation-settings'
 
-export function GenerationPanel({token, close}: {token: string; close: () => void}) {
+export function GenerationPanel({token, close, editedCharacters}: {editedCharacters?: {id: number; name: string}[]; token: string; close: () => void}) {
   const [data, setData] = useState<Saved | null>(null)
   const [people, setPeople] = useState<{id:number; name:string}[]>([])
   const [person, setPerson] = useState('')
@@ -61,7 +61,7 @@ export function GenerationPanel({token, close}: {token: string; close: () => voi
     {data && <fieldset disabled={busy || loading}>
       <label>ComfyUI 주소 <input value={data.endpoint} onChange={e=>{setData({...data,endpoint:e.target.value});setCatalog(null);setNote('')}} /></label>
       <button onClick={()=>void run(true)}>연결 확인·목록 갱신</button>
-      <p><label>적용 대상 <select value={person} onChange={e=>setPerson(e.target.value)}><option value="">공통 설정</option>{people.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label></p>
+      <p><label>적용 대상 <select value={person} onChange={e=>setPerson(e.target.value)}><option value="">공통 설정</option>{(editedCharacters ?? people).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label></p>
       {person && <p>모델을 비우면 공통 모델을 사용합니다. 캐릭터 LoRA는 공통 LoRA 뒤에 순서대로 적용됩니다.</p>}
       <label>모델 <input list="gen-model" value={target.model} onChange={e=>patch({model:e.target.value})}/></label>
       {!person && <>{([['encoder','텍스트 인코더'],['vae','VAE'],['sampler','샘플러'],['scheduler','스케줄러']] as const).map(([key,label])=><p key={key}><label>{label} <input list={'gen-'+key} value={data.common[key]} onChange={e=>patch({[key]:e.target.value})}/></label></p>)}
