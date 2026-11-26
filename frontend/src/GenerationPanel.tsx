@@ -5,7 +5,7 @@ type Lora = { name: string; strength: number }
 type Character = { model: string; loras: Lora[] }
 type Common = Character & { encoder: string; vae: string; sampler: string; scheduler: string; width: number; height: number; steps: number; cfg: number; model_revision?: number }
 type Saved = { endpoint: string; common: Common; characters: Record<string, Character>; revision: number }
-type Catalog = { choices: Record<string, string[]>; missing_nodes: string[] }
+type Catalog = { choices: Record<string, string[]>; missing_nodes: string[]; supports_anima_encoder: boolean | null }
 const path = '/api/local/generation-settings'
 
 export function GenerationPanel({token, close}: {token: string; close: () => void}) {
@@ -38,7 +38,14 @@ export function GenerationPanel({token, close}: {token: string; close: () => voi
       if (check) {
         setCatalog(null)
         const c = await apiRequest<Catalog>(path+'/catalog',{method:'POST', body:JSON.stringify({endpoint:data.endpoint})},token)
-        setCatalog(c); setNote(c.missing_nodes.length ? '연결됨 · 없는 필수 노드: '+c.missing_nodes.join(', ') : '연결됨 · 기본 생성 노드 확인')
+        setCatalog(c)
+        const details = c.missing_nodes.length ? ['없는 필수 노드: '+c.missing_nodes.join(', ')] : ['기본 생성 노드 확인']
+        if (!c.missing_nodes.includes('CLIPLoader')) {
+          details.push(c.supports_anima_encoder === true ? 'Anima 인코더 유형 확인'
+            : c.supports_anima_encoder === false ? '이 설치는 Anima 인코더 유형(qwen_image)을 지원하지 않습니다.'
+            : 'Anima 인코더 유형의 지원 여부를 확인할 수 없습니다.')
+        }
+        setNote(['연결됨', ...details].join(' · '))
       } else {
         const saved = await apiRequest<Saved>(path,{method:'PUT',body:JSON.stringify({...config,expected_revision:revision})},token)
         setData(saved); setNote('설정을 저장했습니다.')

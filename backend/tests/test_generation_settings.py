@@ -47,6 +47,11 @@ class GenerationSettingsTests(TestCase):
                         self.assertEqual(data["choices"]["model"],["a","b"])
                         self.assertEqual(data["choices"]["sampler"],["euler"])
                         self.assertIn("SaveImage",data["missing_nodes"])
+                    for spec, expected in (([["qwen_image"]], True), (["COMBO", {"options":["stable_diffusion"]}], False), (["STRING"], None)):
+                        info["CLIPLoader"] = {"input":{"required":{"type":spec}}}
+                        with patch.object(Comfy,"_request",return_value=info) as request:
+                            self.assertIs(api.post(path+"/catalog",json={}).json()["supports_anima_encoder"], expected)
+                            request.assert_called_once_with("GET","/object_info")
                     with patch.object(Comfy,"_request",side_effect=ConnectionRefusedError):
                         self.assertEqual(api.post(path+"/catalog",json={}).status_code,502)
                     self.assertEqual(api.get(path).json()["revision"],0)

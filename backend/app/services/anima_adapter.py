@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 
 
 WORKFLOW = "anima-txt2img-v2"
+ANIMA_CLIP_TYPE = "qwen_image"
 LEGACY_WORKFLOW = "anima-txt2img-v1"
 
 
@@ -29,7 +30,7 @@ class Settings:
 def graph(settings: Settings, positive: str, negative: str, seed: int, *,
           character_model=None, character_loras=(), workflow=WORKFLOW):
     """Build from final prompt text without adding trigger words or changing weights."""
-    clip_type = {WORKFLOW: "qwen_image", LEGACY_WORKFLOW: "stable_diffusion"}[workflow]
+    clip_type = {WORKFLOW: ANIMA_CLIP_TYPE, LEGACY_WORKFLOW: "stable_diffusion"}[workflow]
     nodes = {}
 
     def add(kind, **inputs):
@@ -49,6 +50,15 @@ def graph(settings: Settings, positive: str, negative: str, seed: int, *,
                   scheduler=settings.scheduler, denoise=1)
     output = add("SaveImage", images=add("VAEDecode", samples=samples, vae=vae), filename_prefix="nrnf")
     return nodes, output[0]
+
+
+def _listed_options(spec):
+    if not isinstance(spec, (list, tuple)) or not spec:
+        return None
+    options = spec[0]
+    if options == "COMBO" and len(spec) > 1 and isinstance(spec[1], dict):
+        options = spec[1].get("options")
+    return options if isinstance(options, list) else None
 
 
 class Comfy:
@@ -95,13 +105,13 @@ class Comfy:
         result = {}
         for name, (kind, key) in fields.items():
             spec = info.get(kind, {}).get("input", {}).get("required", {}).get(key, [])
-            options = spec[0] if spec else []
-            if options == "COMBO" and len(spec) > 1:
-                options = spec[1].get("options", [])
-            result[name] = [v for v in options if isinstance(v, str)] if isinstance(options, list) else []
+            result[name] = [v for v in (_listed_options(spec) or []) if isinstance(v, str)]
         required = {"UNETLoader", "CLIPLoader", "VAELoader", "CLIPTextEncode", "EmptyLatentImage",
                     "KSampler", "VAEDecode", "SaveImage"}
-        return {"choices": result, "missing_nodes": sorted(required - info.keys())}
+        clip = info.get("CLIPLoader", {}).get("input", {})
+        types = _listed_options({**clip.get("required", {}), **clip.get("optional", {})}.get("type"))
+        return {"choices": result, "missing_nodes": sorted(required - info.keys()),
+                "supports_anima_encoder": None if types is None else ANIMA_CLIP_TYPE in types}
 
     def submit(self, settings, positive, negative, seed, **character):
         nodes, output = graph(settings, positive, negative, seed, **character)
