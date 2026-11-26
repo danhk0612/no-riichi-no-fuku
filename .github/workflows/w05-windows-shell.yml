@@ -99,6 +99,9 @@ jobs:
             node tests/difficulty.browser.mjs *> ../out/w05-evidence/difficulty-browser.txt
             if ($LASTEXITCODE -ne 0) { Get-Content ../out/w05-evidence/difficulty-browser.txt; exit $LASTEXITCODE }
             Get-Content ../out/w05-evidence/difficulty-browser.txt
+            node tests/generation-settings.browser.mjs *> ../out/w05-evidence/generation-settings-browser.txt
+            if ($LASTEXITCODE -ne 0) { Get-Content ../out/w05-evidence/generation-settings-browser.txt; exit $LASTEXITCODE }
+            Get-Content ../out/w05-evidence/generation-settings-browser.txt
           } finally {
             & taskkill.exe /PID $vite.Id /T /F 2>$null | Out-Null
           }

@@ -93,7 +93,7 @@ export type ContentPack = {
 }
 export type PackListing = { schema_version: 1; packs: ContentPack[]; scan_entries: { source: string; identity: unknown; status: string; issues: string[] }[] }
 
-async function apiRequest<T>(
+export async function apiRequest<T>(
   path: string,
   init: RequestInit = {},
   accessToken?: string,
