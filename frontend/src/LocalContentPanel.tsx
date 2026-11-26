@@ -1,3 +1,4 @@
+import { SituationPrompts } from './SituationPrompts'
 import { StageImageEditor } from './StageImageEditor'
 import { useEffect, useRef, useState } from 'react'
 import {
@@ -10,8 +11,10 @@ import { FixedDialogueManager } from './FixedDialogueManager'
 
 const GROUPS = [
   ['appearance', '외모'],
-  ['upper_underwear', '상의 속옷'],
-  ['lower_underwear', '하의 속옷'],
+  ['top', '상의'],
+  ['bottom', '하의'],
+  ['upper_underwear', '브라'],
+  ['lower_underwear', '팬티'],
 ] as const
 const KINDS = [['profile', '프로필'], ['full_body', '전신'], ['cg', 'CG']] as const
 const LEVELS = ['정상', '상의 겉옷 탈의', '속옷 세트', '전체 탈의']
@@ -31,6 +34,7 @@ export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, o
   onMeasurementsUpdated: (content: CharacterContent) => void
 }) {
   const [tab, setTab] = useState<Tab>('prompts')
+  const [showSituations, setShowSituations] = useState(false)
   const [sharedMounted, setSharedMounted] = useState(false)
   const [cpus, setCpus] = useState<{ id: number; slug: string; name: string }[]>([])
   const [cpuId, setCpuId] = useState<number | null>(null)
@@ -229,6 +233,8 @@ export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, o
       {loading && <p className="muted" role="status">캐릭터 자료를 불러오는 중…</p>}
       {!loading && !cpus.length && <p className="muted">편집 가능한 캐릭터가 없습니다.</p>}
       {content && <>
+        <h3>캐릭터 기본 프롬프트</h3>
+        {GROUPS.map(([key, label]) => <PromptFields source={content.pack_source?.prompts[key]} disabled={saving} key={key} title={label} positive={valueFor(`p.${key}.positive`, content.prompts[key].positive)} negative={valueFor(`p.${key}.negative`, content.prompts[key].negative)} positiveEdited={content.prompts[key].overrides.positive || Object.hasOwn(dirty, `p.${key}.positive`)} negativeEdited={content.prompts[key].overrides.negative || Object.hasOwn(dirty, `p.${key}.negative`)} onPositive={(value) => editPrompt(key, 'positive', value)} onNegative={(value) => editPrompt(key, 'negative', value)} />)}
         <section aria-label="캐릭터팩 연결">
           <h3>캐릭터팩 연결·갱신</h3>
           {content.pack ? <p>연결된 팩: {content.pack.pack_id} · 적용 revision {content.pack.applied_revision} · 등록 revision {linkedPack?.registered_revision?.revision ?? '확인 중'}</p>
@@ -257,12 +263,10 @@ export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, o
           })}
         </div>
         <p className="muted">변경한 항목만 저장합니다. 비워 둔 프롬프트도 명시 편집값으로 기록됩니다.</p>
-        <h3>캐릭터 기본 프롬프트</h3>
-        {GROUPS.map(([key, label]) => <PromptFields source={content.pack_source?.prompts[key]} disabled={saving} key={key} title={label} positive={valueFor(`p.${key}.positive`, content.prompts[key].positive)} negative={valueFor(`p.${key}.negative`, content.prompts[key].negative)} positiveEdited={content.prompts[key].overrides.positive || Object.hasOwn(dirty, `p.${key}.positive`)} negativeEdited={content.prompts[key].overrides.negative || Object.hasOwn(dirty, `p.${key}.negative`)} onPositive={(value) => editPrompt(key, 'positive', value)} onNegative={(value) => editPrompt(key, 'negative', value)} />)}
-        <h3>단계별 이미지 구도 P/N</h3>
-        <p className="muted">얼굴 확대나 전신처럼 화면에 담을 범위를 입력하세요. 복장과 포즈는 같은 단계의 공유 후보에서 가져옵니다.</p>
+        <h3>단계별 이미지</h3>
+        <p className="muted">프로필은 정면 얼굴, 전신은 정면으로 선 모습입니다. CG 구도와 상황은 필요할 때만 바꾸세요.</p>
         {[0, 1, 2, 3].map((level) => <details className="framing-level" key={level} open={level === 0}>
-          <summary>Level {level} · {LEVELS[level]}</summary>
+          <summary>Level {level} · {LEVELS[level]} · {['미소', '무표정', '부끄러움', '울먹임'][level]}</summary>
           {KINDS.map(([kind, label]) => {
             const pair = content.levels[String(level)][kind]
             const posKey = `f.${level}.${kind}.positive`, negKey = `f.${level}.${kind}.negative`
@@ -273,7 +277,7 @@ export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, o
                   setContent(current=>current?.cpu_id===content.cpu_id ? {...current,levels:{...current.levels,[level]:{...current.levels[String(level)],[kind]:next}}} : current)
                   onImageSaved(content.cpu_id,level,kind,next.media?.url ?? null)
                 }} />
-              <PromptFields source={content.pack_source?.levels[String(level)].framing[kind]} disabled={saving} title={label} positive={valueFor(posKey, pair.positive)} negative={valueFor(negKey, pair.negative)} positiveEdited={pair.overrides.positive || Object.hasOwn(dirty, posKey)} negativeEdited={pair.overrides.negative || Object.hasOwn(dirty, negKey)} onPositive={(value) => editFraming(level, kind, 'positive', value)} onNegative={(value) => editFraming(level, kind, 'negative', value)} /></div>
+              {kind === 'cg' && <PromptFields source={content.pack_source?.levels[String(level)].framing[kind]} disabled={saving} title={label} positive={valueFor(posKey, pair.positive)} negative={valueFor(negKey, pair.negative)} positiveEdited={pair.overrides.positive || Object.hasOwn(dirty, posKey)} negativeEdited={pair.overrides.negative || Object.hasOwn(dirty, negKey)} onPositive={(value) => editFraming(level, kind, 'positive', value)} onNegative={(value) => editFraming(level, kind, 'negative', value)} />}</div>
           })}
         </details>)}
         <button className="primary-button" disabled={saving || !Object.keys(dirty).length} onClick={() => void save()} type="button">{saving ? '저장 중…' : `변경 필드 저장 (${Object.keys(dirty).length})`}</button>
@@ -288,7 +292,11 @@ export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, o
       </li>)}</ul> : <p className="muted">등록된 팩이 없습니다.</p>}
       {!!scanEntries.length && <><h3>최근 검색 진단</h3><ul className="sound-list pack-list">{scanEntries.map((entry, index) => <li key={`${entry.source}-${index}`}><span>{entry.source}<small>{entry.status}{entry.issues.length ? ` · ${entry.issues.join(', ')}` : ''}</small></span></li>)}</ul></>}
     </section>}
-    {sharedMounted && <div hidden={tab !== 'shared'}><SharedPromptManager accessToken={accessToken} cpus={cpus} /></div>}
+    <div hidden={tab !== 'prompts'}><details onToggle={e => { if (e.currentTarget.open) setShowSituations(true) }}>
+      <summary>공통 상황·단계별 의상 상태 편집</summary>
+      {showSituations && <SituationPrompts token={accessToken} />}
+    </details></div>
+    {sharedMounted && <div hidden={tab !== 'shared'}><p>이전에 등록한 공유 후보를 관리합니다. 새 이미지에는 캐릭터 편집의 의상과 공통 상황을 사용합니다.</p><SharedPromptManager accessToken={accessToken} cpus={cpus} /></div>}
   </section>
 }
 
@@ -298,7 +306,7 @@ function PromptFields({ source, disabled, title, positive, negative, positiveEdi
 }) {
   return <fieldset className="prompt-fields" disabled={disabled}><legend>{title}</legend>
     <label>Positive {positiveEdited && <small>편집 기록</small>}<textarea rows={2} value={positive} onChange={(event) => onPositive(event.target.value)} /></label>
-    <label>Negative {negativeEdited && <small>편집 기록</small>}<textarea rows={2} value={negative} onChange={(event) => onNegative(event.target.value)} /></label>
+    <details><summary>제외할 요소 (Negative)</summary><label>Negative {negativeEdited && <small>편집 기록</small>}<textarea rows={2} value={negative} onChange={(event) => onNegative(event.target.value)} /></label></details>
     {source && <details><summary>적용한 팩 원본 P/N</summary><p>Positive: {source.positive || '(빈 값)'}</p><p>Negative: {source.negative || '(빈 값)'}</p></details>}
   </fieldset>
 }

@@ -59,9 +59,9 @@ export type CharacterContent = {
   cpu_id: number
   revision: number
   pack_revision_id: string | null
-  pack_source: { prompts: Record<'appearance' | 'upper_underwear' | 'lower_underwear', { positive: string; negative: string }>; levels: Record<string, { framing: Record<'profile' | 'full_body' | 'cg', { positive: string; negative: string }> }>; metadata: Record<string, unknown> | null } | null
+  pack_source: { prompts: Record<'appearance' | 'top' | 'bottom' | 'upper_underwear' | 'lower_underwear', { positive: string; negative: string }>; levels: Record<string, { framing: Record<'profile' | 'full_body' | 'cg', { positive: string; negative: string }> }>; metadata: Record<string, unknown> | null } | null
   pack: { id: string; pack_id: string; applied_revision_id: string; applied_revision: number; registered_revision_id: string | null; update_available: boolean } | null
-  prompts: Record<'appearance' | 'upper_underwear' | 'lower_underwear', PromptPair>
+  prompts: Record<'appearance' | 'top' | 'bottom' | 'upper_underwear' | 'lower_underwear', PromptPair>
   measurements_cm: { height: string | null; bust: string | null; waist: string | null; hips: string | null }
   measurement_overrides: { height: boolean; bust: boolean; waist: boolean; hips: boolean }
   levels: Record<string, Record<'profile' | 'full_body' | 'cg', PromptPair & { revision: number; generation_ticket?: string; media: { media_id: string; url: string; digest: string; source?: string } | null }>>

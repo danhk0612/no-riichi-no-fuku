@@ -16,10 +16,11 @@ from app.schemas.local_content import (
     CharacterContentPatch, CharacterPackApplication, PackManifest,
     MEASUREMENT_KEYS, normalize_measurement,
 )
+from app.services.image_prompts import CG_FRAME
 from app.services.local_media import media_url, media_path, MAX_IMAGE_BYTES
 from app.services.content_packs import read_file, digest, ScanIssue
 
-PROMPT_GROUPS = ("appearance", "upper_underwear", "lower_underwear")
+PROMPT_GROUPS = ("appearance", "top", "bottom", "upper_underwear", "lower_underwear")
 IMAGE_KINDS = ("profile", "full_body", "cg")
 
 # The stable slug keeps a renamed starter's appearance intact.
@@ -34,7 +35,7 @@ STARTER_APPEARANCES = {
 DEFAULT_FRAMING = {
     "profile": "head and shoulders portrait, centered composition",
     "full_body": "full-length character illustration, head and feet in frame",
-    "cg": "cinematic composition, mahjong table in the background",
+    "cg": CG_FRAME,
 }
 
 
@@ -77,18 +78,21 @@ def get_character_content(session: Session, cpu_id: int) -> dict:
     record = session.get(CharacterContent, cpu_id)
     prompts = record.prompts if record else {key: _empty_pair() for key in PROMPT_GROUPS}
     overrides = set(record.overrides or []) if record else set()
-    use_defaults = record is None or record.pack_revision_id is None
+    applied = session.get(ContentPackRevision, record.pack_revision_id) if record and record.pack_revision_id else None
+    use_defaults = applied is None
     appearance = STARTER_APPEARANCES.get(cpu.slug, "brown hair, brown eyes")
     defaults = {
         "appearance": f"adult woman, {appearance}, anime illustration",
+        "top": "casual shirt",
+        "bottom": "casual trousers",
         "upper_underwear": "plain cotton bra",
         "lower_underwear": "matching cotton briefs",
     }
-    prompts = {key: dict(prompts.get(key, {})) for key in PROMPT_GROUPS}
-    if use_defaults:
-        for key, pair in prompts.items():
-            if not pair.get("positive") and f"{key}.positive" not in overrides:
-                pair["positive"] = defaults[key]
+    stored = prompts
+    prompts = {key: dict(stored.get(key, {})) for key in PROMPT_GROUPS}
+    for key, pair in prompts.items():
+        if (use_defaults or key not in applied.manifest["prompts"]) and not pair.get("positive") and f"{key}.positive" not in overrides:
+            pair["positive"] = defaults[key]
     measurements = _empty_measurements()
     if record and isinstance(record.measurements_cm, dict):
         measurements.update({key: record.measurements_cm.get(key) for key in MEASUREMENT_KEYS})
@@ -113,7 +117,6 @@ def get_character_content(session: Session, cpu_id: int) -> dict:
                     "negative": bool(item and "negative" in (item.overrides or [])),
                 },
             }
-    applied = session.get(ContentPackRevision, record.pack_revision_id) if record and record.pack_revision_id else None
     pack = session.get(ContentPack, applied.pack_id) if applied else None
     images = _revision_images(session, applied) if applied else {}
     for level, kinds in levels.items():
@@ -175,11 +178,11 @@ def patch_character_content(
     prompts = {key: _empty_pair() for key in PROMPT_GROUPS}
     overrides: set[str] = set()
     if record:
-        prompts.update({key: dict(value) for key, value in (record.prompts or {}).items()})
+        prompts = {key: dict(value) for key, value in (record.prompts or {}).items()}
         overrides.update(record.overrides or [])
     for group, edit in change.prompts.items():
         for field in edit.model_fields_set:
-            prompts[group][field] = getattr(edit, field)
+            prompts.setdefault(group, _empty_pair())[field] = getattr(edit, field)
             overrides.add(f"{group}.{field}")
     measurements = _empty_measurements()
     if record and isinstance(record.measurements_cm, dict):
@@ -311,7 +314,7 @@ def apply_character_pack(
     for group in PROMPT_GROUPS:
         pair = current["prompts"][group]
         prompts[group] = {
-            field: pair[field] if pair["overrides"][field] else revision.manifest["prompts"][group][field]
+            field: pair[field] if pair["overrides"][field] else getattr(getattr(parsed.prompts, group), field)
             for field in ("positive", "negative")
         }
     if record is None:
