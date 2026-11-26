@@ -7,10 +7,15 @@ try {
   page.setDefaultTimeout(6000)
   await page.addInitScript(()=>{window.nrnfDesktop={isDesktop:true}})
   const requests=[]
-  let failRead=false, writes=0
+  let failRead=false, writes=0, difficultyReads=0
   let settings={endpoint:'http://127.0.0.1:8188',revision:0,characters:{},common:{model:'',encoder:'',vae:'',sampler:'euler',scheduler:'normal',width:1024,height:1024,steps:20,cfg:4,loras:[]}}
   await page.route('**/api/**',async route=>{
     const path=new URL(route.request().url()).pathname
+    if(path==='/api/local/difficulty'){
+      assert.equal(route.request().method(),'GET')
+      difficultyReads++
+      return route.fulfill({json:{setting:5, revision:0}})
+    }
     if(path.endsWith('/generation-settings/catalog')){
       requests.push('check')
       if(requests.length===2)return route.fulfill({json:{choices:{},missing_nodes:[],supports_anima_encoder:false}})
@@ -67,6 +72,7 @@ try {
   await difficulty.getByRole('button', {name:'닫기'}).click()
   assert.equal(await difficultyButton.evaluate(button => button === document.activeElement), true)
   await open.click()
+  assert.equal(difficultyReads, 1, 'switching back must retain the open editor')
   assert.equal(writes, 1)
   assert.deepEqual(requests, ['check','check'])
   failRead=true
