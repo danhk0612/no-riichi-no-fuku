@@ -87,6 +87,8 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
   if (delivery.route === 'settlement_wait') {
     return <section className="result-delivery-card" data-result-kind="settlement-wait" role="status"><h2>정산 결과 저장 중</h2><p>저장된 국 결과는 유지됩니다. 연결을 다시 확인하면 정산 결과로 복구합니다.</p></section>
   }
+  const input=content?.scene?.generation_input
+  const canGenerate=!!(input?.positive?.trim() && input.settings?.model && input.settings.encoder && input.settings.vae)
   if (!entry) return null
 
   return (
@@ -102,7 +104,7 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
             </li>
           ))}</ol>
           {transition && content?.scene && <SettlementScene key={delivery.generation+':'+delivery.session_id+':'+entry.event_id}
-            transition={transition} stage={content.scene.stage} text={defeatLine ? defeatLine.text : null}
+            cpu={content.scene.cpu_id} transition={transition} stage={content.scene.stage} text={defeatLine ? defeatLine.text : null}
             url={resultAssetObjectUrl} hasCG={!!resultAsset} failed={!!resultAssetLoadFailed}/>}
           {!transition && resultAsset && resultAssetObjectUrl && <figure className="result-asset"><img src={resultAssetObjectUrl} alt={`단계 ${resultAsset.defeat_stage ?? ''} 결과 CG`} /><figcaption>단계 {resultAsset.defeat_stage ?? ''} 결과 CG</figcaption></figure>}
           {!transition && resultAsset && !resultAssetObjectUrl && <p className="result-asset-status" role="status">{resultAssetLoadFailed ? 'CG를 불러오지 못했습니다.' : 'CG를 불러오는 중입니다.'}</p>}
@@ -128,8 +130,8 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
         </>
       )}
       {content?.dialogues.filter(line => line.text && line!==defeatLine).map(line => <blockquote className="result-dialogue" key={line.cpu_id + ':' + line.slot}>{line.text}</blockquote>)}
-      {!settlementPayload && !!content?.scene?.generation_input && window.nrnfDesktop?.isDesktop && <HandCG path={`/api/local/play/sessions/${delivery.session_id}/results/${entry.event_id}/cg`} generation={delivery.generation}/>}
-      {!settlementPayload && content?.scene && !content.scene.generation_input && !content.scene.media && <p className="result-asset-status">{content.scene.missing_candidates?.length
+      {!settlementPayload && canGenerate && window.nrnfDesktop?.isDesktop && <HandCG path={`/api/local/play/sessions/${delivery.session_id}/results/${entry.event_id}/cg`} generation={delivery.generation}/>}
+      {!settlementPayload && content?.scene && !canGenerate && !content.scene.media && <p className="result-asset-status">{content.scene.missing_candidates?.length
         ? '화료 CG 생략 · 미등록 후보: '+content.scene.missing_candidates.map(k=>({clothing_state:'복장 상태',situation:'화료 상황',pose:'포즈'})[k]).join(', ')
         : '화료 CG가 등록되지 않았습니다.'}</p>}
       {onAcknowledge && <button className="primary-button" onClick={() => onAcknowledge(delivery)} type="button">{settlementPayload ? '정산 확인' : '확인하고 다음 결과 보기'}</button>}
@@ -198,8 +200,8 @@ function SeatPanel({
         {player.isHuman && <span className="human-badge">PLAYER</span>}
       </header>
       {!player.isHuman && player.detail && <details className="seat-details">
-        <summary aria-label={player.name+' 캐릭터 정보'}><CharacterImage url={player.detail.images.profile} label={player.name+' 프로필'} className="seat-face"/></summary>
-        <div className="seat-bio"><CharacterImage url={player.detail.images.full_body} label={player.name+' 전신'} className="seat-body"/>
+        <summary aria-label={player.name+' 캐릭터 정보'}><CharacterImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="profile" url={player.detail.images.profile} label={player.name+' 프로필'} className="seat-face"/></summary>
+        <div className="seat-bio"><CharacterImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="full_body" url={player.detail.images.full_body} label={player.name+' 전신'} className="seat-body"/>
           <p>Level {player.detail.stage} · {player.detail.style}</p><Measurements values={player.detail.measurements_cm}/>
           <p>{player.detail.description}</p><dl aria-label="마작 스펙">
           {Object.entries({aggression:'공격 성향',defense:'수비 성향',call_preference:'부로 선호',riichi_preference:'리치 선호',hand_value_preference:'타점 선호',speed_preference:'속도 선호'}).map(([k,label])=>

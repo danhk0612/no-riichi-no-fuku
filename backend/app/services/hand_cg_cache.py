@@ -61,7 +61,7 @@ class HandCG:
     def advance(self, frozen, endpoint, retry=None):
         settings = Settings(**frozen["settings"])
         workflow = frozen["workflow"]
-        if workflow not in (LEGACY_WORKFLOW, WORKFLOW) or frozen["kind"] not in ("hand_cg", "profile", "full_body", "cg"):
+        if workflow not in (LEGACY_WORKFLOW, WORKFLOW) or frozen["kind"] not in ("hand_cg", "profile", "full_body", "cg", "ending"):
             return {"state": "unsupported"}
         if not all((settings.model, settings.encoder, settings.vae)):
             return {"state": "unconfigured"}

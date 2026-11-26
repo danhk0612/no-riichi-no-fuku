@@ -1,3 +1,4 @@
+import {ImageSettings,ImageQueueStatus,LiveImage} from './LiveImage'
 import { GenerationPanel } from './GenerationPanel'
 import type { SavedResultContent } from './game/types'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
@@ -170,8 +171,10 @@ function App() {
   useEffect(() => {
     if (!isDesktop || !playbackAccessToken) { setSoundSelection(null); return }
     let current = true
-    void getSoundSelection(playbackAccessToken).then((selection) => { if (current) setSoundSelection(selection) }).catch(() => {})
-    return () => { current = false }
+    const refresh=()=>void getSoundSelection(playbackAccessToken).then((selection) => { if (current) setSoundSelection(selection) }).catch(() => {})
+    refresh()
+    window.addEventListener('nrnf-generation-settings',refresh)
+    return () => { current = false;window.removeEventListener('nrnf-generation-settings',refresh) }
   }, [playbackAccessToken, isDesktop])
 
   useEffect(() => {
@@ -954,7 +957,8 @@ function App() {
     || gameState.status === 'settlement_wait' || gameState.status === 'complete'
   const musicScreen = cpus ? 'selection' : showingResult ? 'result' : players.length ? 'game' : 'title'
   return (
-    <main className="shell">
+    <ImageSettings.Provider value={{available:!!soundSelection?.image_slots, ready:!!soundSelection?.image_generation_ready}}><main className="shell">
+      <ImageQueueStatus/>
       <header className="app-header">
         <p className="eyebrow">4-PLAYER RIICHI MAHJONG</p>
         <h1>No Riichi No Fuku</h1>
@@ -974,7 +978,7 @@ function App() {
         </nav>}
       </header>
       {isDesktop && accessToken && openSettings.difficulty && <div id="settings-page-difficulty" hidden={activeSettings !== 'difficulty'}><LocalDifficultyPanel accessToken={accessToken} onClose={() => closeSettings('difficulty')} onSaved={refreshCharacterChoices} /></div>}
-      {isDesktop && accessToken && openSettings.generation && <div id="settings-page-generation" hidden={activeSettings !== 'generation'}><GenerationPanel editedCharacters={editedCharacters} key={accessToken} token={accessToken} close={()=>closeSettings('generation')}/></div>}
+      {isDesktop && accessToken && openSettings.generation && <div id="settings-page-generation" hidden={activeSettings !== 'generation'}><GenerationPanel key={accessToken} token={accessToken} close={()=>closeSettings('generation')}/></div>}
       {isDesktop && accessToken && openSettings.sound && <div id="settings-page-sound" hidden={activeSettings !== 'sound'}><LocalSoundPanel editedCharacters={editedCharacters} accessToken={accessToken} onClose={() => closeSettings('sound')} onSelectionChanged={setSoundSelection} onPlaybackChanged={stopGameAudio} /></div>}
       {isDesktop && accessToken && openSettings.content && <div id="settings-page-content" hidden={activeSettings !== 'content'}><LocalContentPanel onCharactersChanged={async characters => { setEditedCharacters(characters); await refreshCharacterChoices() }} accessToken={accessToken} onClose={() => closeSettings('content')} fixedDirty={fixedDirty} fixedSaving={fixedSaving} setFixedDirty={setFixedDirty} setFixedSaving={setFixedSaving} onPackApplied={stopGameAudio} onMeasurementsUpdated={updateCharacterContent}
         onImageSaved={(id,level,kind,url)=>setCpus(current=>current?.map(cpu=>cpu.id===id && cpu.defeat_stage===level
@@ -1037,7 +1041,7 @@ function App() {
         </>
       )}
       {isDesktop && <BackgroundMusic accessToken={accessToken ?? DESKTOP_SESSION} selection={soundSelection} screen={musicScreen} paused={gameState.status === 'ending'} />}
-    </main>
+    </main></ImageSettings.Provider>
   )
 }
 
@@ -1170,7 +1174,7 @@ function EndingScreen({ accessToken, generation, eventId, fallback, busy, onCont
     <section className="match-result ending-panel" aria-label="엔딩">
       <p className="eyebrow">ENDING</p>
       <h2>모든 참가 CPU 완료</h2>
-      {cgUrl && !imageError && <img className="ending-image" src={cgUrl} alt="엔딩 CG" onError={() => { setImageError(true); setLoadError(true) }} />}
+      {resources?.cpu_id ? <LiveImage cpu={resources.cpu_id} level={3} kind="ending" label="엔딩 CG" className="ending-image" url={resources.cg?.url}/> : cgUrl && !imageError && <img className="ending-image" src={cgUrl} alt="엔딩 CG" onError={() => { setImageError(true); setLoadError(true) }} />}
       {!resources && !loadError && <p role="status">엔딩 자료를 불러오는 중…</p>}
       {text && <blockquote className="result-dialogue">{text}</blockquote>}
       <p>오마케에서는 완료한 참가자들과 동풍전을 계속할 수 있습니다.</p>

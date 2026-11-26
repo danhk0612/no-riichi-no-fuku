@@ -16,6 +16,7 @@ class Form(BaseModel):
 
 class Lora(Form):
     name: Annotated[Name, Field(min_length=1)]
+    trigger: Name = ""
     strength: FiniteFloat
 
 
@@ -28,12 +29,20 @@ class Common(Character):
     model_revision: int = Field(default=1, ge=1)
     encoder: Name = ""
     vae: Name = ""
-    width: int = Field(default=1024, ge=16, multiple_of=16)
-    height: int = Field(default=1024, ge=16, multiple_of=16)
+    width: int = Field(default=1024, ge=16, le=16384, multiple_of=16)
+    height: int = Field(default=1024, ge=16, le=16384, multiple_of=16)
     steps: int = Field(default=20, gt=0)
     cfg: FiniteFloat = 4
     sampler: Name = "euler"
     scheduler: Name = "normal"
+
+
+    @field_validator("width", "height", mode="before")
+    @classmethod
+    def align_dimension(cls, value):
+        if isinstance(value, int) or isinstance(value, str) and value.isdecimal():
+            return max(16, min(16384, (int(value) + 8) // 16 * 16))
+        return value
 
 
 class Endpoint(Form):
@@ -49,6 +58,9 @@ class Endpoint(Form):
 class Config(Endpoint):
     common: Common = Field(default_factory=Common)
     characters: dict[int, Character] = Field(default_factory=dict)
+
+    def triggers_for(self, cpu_id):
+        return ", ".join(row.trigger for row in self.characters.get(cpu_id, Character()).loras if row.trigger)
 
     def inputs_for(self, cpu_id):
         c = self.common

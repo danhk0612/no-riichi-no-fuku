@@ -202,7 +202,7 @@ def acknowledge_ending(
     return state
 
 
-def _create_ending_if_complete(session: Session, state: LocalPlayState) -> None:
+def _create_ending_if_complete(session: Session, state: LocalPlayState, cpu_id: int | None = None) -> None:
     ids = roster_cpu_ids(session, state.user_id)
     stages = dict(session.execute(select(
         UserCpuProgress.cpu_character_id, UserCpuProgress.defeat_stage
@@ -218,12 +218,25 @@ def _create_ending_if_complete(session: Session, state: LocalPlayState) -> None:
         # reference without consulting the track's later active flag.
         if track is not None and not track.active:
             track = None
+        cg_id = resource_values.get("cg_asset_id")
+        if cpu_id is not None:
+            from app.services.character_content import get_character_content
+            ending = get_character_content(session, cpu_id)["ending"]
+            if ending["media"]:
+                cg_id = ending["media"]["media_id"]
+        music_id = track.media_asset_id if track is not None else None
+        if not music_id and session.info.get("media_root"):
+            from app.services.audio_packs import resolve_audio_pack_slot
+            clip = resolve_audio_pack_slot(session, kind="bgm", slot="ending", media_root=session.info["media_root"])
+            if clip:
+                music_id = clip["asset_id"]
         state.phase = "ending_pending"
         state.ending_event_id = str(uuid4())
         state.ending_payload = {
             "version": 1,
-            "cg_asset_id": resource_values.get("cg_asset_id"),
-            "music_asset_id": track.media_asset_id if track is not None else None,
+            **({"cpu_id": cpu_id} if cpu_id is not None else {}),
+            "cg_asset_id": cg_id,
+            "music_asset_id": music_id,
             "dialogue_text": resource_values.get("dialogue_text"),
         }
 

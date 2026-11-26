@@ -123,7 +123,7 @@ function readMessage(childProcess, wantedType, timeoutMs = 30000) {
 async function spawnEngine(root, port = 0, retries = 0) {
   if (child) throw new Error('host already owns a local engine')
   const identity = randomUUID()
-  const processChild = spawn(enginePath(), ['--data', root, '--identity', identity, '--port', String(port)], {
+  const processChild = spawn(enginePath(), ['--data', root, '--game-root', require('node:path').dirname(app.getPath('exe')), '--identity', identity, '--port', String(port)], {
     cwd: root,
     windowsHide: true,
     stdio: ['pipe', 'pipe', 'pipe'],
@@ -538,7 +538,9 @@ async function smokeSharedPrompts() {
   if (!cpuId) throw new Error('packaged shared-prompt smoke found no character')
   await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('캐릭터 프롬프트'))?.click()")
   await waitForRenderer("Boolean(document.querySelector('.content-panel select[aria-label=\"캐릭터\"]'))")
-  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.content-panel [role=tab]')).find(button => button.innerText.includes('공유 복장'))?.click()")
+  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.content-panel [role=tab]')).find(button => button.innerText.includes('팩 목록'))?.click()")
+  await waitForRenderer("Boolean(document.querySelector('.content-panel details > button'))")
+  await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.content-panel details > button')).find(button => button.textContent.includes('공유 복장'))?.click()")
   await waitForRenderer("Boolean(document.querySelector('.shared-prompt-manager input[aria-label=\"공유 항목 표시 이름\"]'))")
   const label = 'W08-D packaged smoke'
   const positive = 'temporary shared prompt for packaged persistence smoke'
@@ -630,6 +632,7 @@ async function smokeRun() {
     || soundDefaults.ending.dialogue_text !== null) {
     throw new Error('new local profile did not start with silent and unregistered sound/ending settings')
   }
+  await window.webContents.executeJavaScript("document.querySelector('.sound-panel-grid > details').open = true")
   addCheck('renderer opened local sound and ending settings')
   addCheck('new local profile starts silent with ending resources unregistered')
   await window.webContents.executeJavaScript(`(() => {
@@ -1071,7 +1074,9 @@ async function smokeRun() {
       || !afterRestartShared[2].stored_item_ids.includes(sharedPromptSmoke.itemId)) throw new Error('engine restart changed shared prompt resources')
     await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.app-header button')).find(button => button.innerText.includes('캐릭터 프롬프트'))?.click()")
     await waitForRenderer("Boolean(document.querySelector('.content-panel [role=tab]'))")
-    await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.content-panel [role=tab]')).find(button => button.innerText.includes('공유 복장'))?.click()")
+    await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.content-panel [role=tab]')).find(button => button.innerText.includes('팩 목록'))?.click()")
+    await waitForRenderer("Boolean(document.querySelector('.content-panel details > button'))")
+    await window.webContents.executeJavaScript("Array.from(document.querySelectorAll('.content-panel details > button')).find(button => button.textContent.includes('공유 복장'))?.click()")
     await waitForRenderer(`Array.from(document.querySelectorAll('.shared-prompt-list button')).some(button => button.innerText.startsWith('${sharedPromptSmoke.label}'))`, 30000)
     await window.webContents.executeJavaScript("document.querySelector('.content-panel .sound-panel-heading .text-button')?.click()")
     addCheck('shared prompt, default, and character candidate survived packaged engine restart')

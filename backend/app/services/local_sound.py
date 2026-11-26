@@ -38,7 +38,11 @@ def sound_selection_response(session: Session, media_root: Path) -> dict[str, ob
     effect_sets = {row.id: row for row in session.scalars(select(SoundEffectSet)).all()}
     tracks = {row.id: row for row in session.scalars(select(BackgroundTrack)).all()}
     from app.services.audio_packs import audio_pack_selection_response
+    from app.services.generation_settings import match_inputs
+    config = match_inputs(session)
     return {
+        "image_slots": True,
+        "image_generation_ready": bool(config and config.common.encoder and config.common.vae and (config.common.model or any(c.model for c in config.characters.values()))),
         **value,
         "audio_packs": audio_pack_selection_response(session, media_root),
         "effect_sets": [effect_set_payload(row) for row in sorted(effect_sets.values(), key=lambda item: item.label.casefold())],
@@ -107,6 +111,7 @@ def resolve_ending(session: Session, payload: dict[str, object], media_root: Pat
     music_available = bool(music and music.kind == "audio" and storage_path(media_root, music.storage_key).is_file())
     return {
         "acknowledged": False,
+        **({"cpu_id": payload["cpu_id"]} if payload.get("cpu_id") else {}),
         "cg": {"asset_id": cg_id, "url": f"/api/local/media/{cg.id}/file" if cg_available and cg else None, "available": cg_available},
         "music": {"asset_id": music_id, "url": f"/api/local/media/{music.id}/file" if music_available and music else None, "available": music_available},
         "dialogue_text": payload.get("dialogue_text"),

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from uuid import uuid4
+from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import desc, select, update
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_member, get_session
-from app.db.models import GameResultDelivery, GameSessionRecord, LocalPlayRoster, LocalPlayState, User, UserCpuProgress
+from app.db.models import GameSetting, GameResultDelivery, GameSessionRecord, LocalPlayRoster, LocalPlayState, User, UserCpuProgress
 from app.schemas.game import CreateGameSessionResponse
 from app.schemas.local_play import (
     LocalEndingAckRequest,
@@ -310,14 +312,55 @@ def _hand_cg_input(session_id, generation, event_id, user, session):
     scene = ((head.get("payload", {}).get("content") or {}).get("scene") or {})
     if not scene.get("generation_input"):
         raise HTTPException(404, "저장된 생성 입력이 없습니다.")
-    return scene["generation_input"]
+    key = f"image.hand.{scene['cpu_id']}.{scene['stage']}.{scene['event'].split('_')[0]}"
+    return key, scene["generation_input"]
+
+
+class HandPrompt(BaseModel):
+    positive: str = Field(max_length=16000)
+    previous: str
+
+
+@router.get("/sessions/{session_id}/results/{event_id}/cg/prompt")
+def hand_prompt(session_id: str, event_id: str, generation: str, user=Depends(get_current_member), session=Depends(get_session)):
+    key, frozen = _hand_cg_input(session_id, generation, event_id, user, session)
+    row = session.get(GameSetting, key)
+    return {"positive": (row.value.get("positive") if row else None) or frozen["positive"]}
+
+
+@router.put("/sessions/{session_id}/results/{event_id}/cg/prompt")
+def save_hand_prompt(session_id: str, event_id: str, generation: str, body: HandPrompt,
+                     user=Depends(get_current_member), session=Depends(get_session)):
+    session.rollback()
+    mark_write_intent(session)
+    key, frozen = _hand_cg_input(session_id, generation, event_id, user, session)
+    row = session.get(GameSetting, key) or GameSetting(key=key, value={})
+    if (row.value.get("positive") or frozen["positive"]) != body.previous:
+        raise HTTPException(409, "프롬프트가 변경됐습니다. 다시 열어 주세요.")
+    row.value = {**row.value, "positive": body.positive.strip()}
+    session.add(row)
+    session.commit()
+    return {"positive": body.positive.strip() or frozen["positive"]}
 
 
 @router.post("/sessions/{session_id}/results/{event_id}/cg")
 def advance_hand_cg(session_id: str, event_id: str, generation: str, request: Request,
-                    retry: str | None = None, user: User = Depends(get_current_member),
+                    retry: str | None = None, regenerate: bool = False, user: User = Depends(get_current_member),
                     session: Session = Depends(get_session)):
-    frozen = _hand_cg_input(session_id, generation, event_id, user, session)
+    session.rollback()
+    mark_write_intent(session)
+    key, source = _hand_cg_input(session_id, generation, event_id, user, session)
+    row = session.get(GameSetting, key) or GameSetting(key=key, value={})
+    frozen = row.value.get("input")
+    if regenerate or not frozen:
+        frozen = {**source, "positive": row.value.get("positive") or source["positive"]}
+        if not frozen["positive"].strip() or not all(frozen["settings"].get(k) for k in ("model", "vae", "encoder")):
+            return {"state": "unconfigured"}
+        if regenerate:
+            frozen["variation"] = str(uuid4())
+        row.value = {**row.value, "input": frozen}
+        session.add(row)
+        session.commit()
     config = read_settings(session)
     endpoint = config.get("endpoint") if isinstance(config, dict) else None
     session.rollback()  # do not hold a game DB lock across disk I/O or HTTP
@@ -331,7 +374,9 @@ def advance_hand_cg(session_id: str, event_id: str, generation: str, request: Re
 @router.get("/sessions/{session_id}/results/{event_id}/cg/{attempt}")
 def read_hand_cg(session_id: str, event_id: str, attempt: str, generation: str, request: Request,
                  user: User = Depends(get_current_member), session: Session = Depends(get_session)):
-    frozen = _hand_cg_input(session_id, generation, event_id, user, session)
+    key, source = _hand_cg_input(session_id, generation, event_id, user, session)
+    row = session.get(GameSetting, key)
+    frozen = row.value.get("input", source) if row else source
     session.rollback()
     data = HandCG(request.app.state.local_runtime.paths.root / "generated" / "hand").image(frozen, attempt)
     if data is None:

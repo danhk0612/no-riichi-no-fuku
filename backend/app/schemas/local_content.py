@@ -7,6 +7,8 @@ from decimal import Decimal, InvalidOperation
 from pathlib import PureWindowsPath
 from typing import Annotated, Literal
 
+from app.services.generation_settings import Character as CharacterGeneration
+
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -120,7 +122,18 @@ class CharacterMetadata(BaseModel):
         return value
 
 
+class EndingFrame(PromptPair):
+    image: StrictStr | None = None
+
+    @field_validator("image")
+    @classmethod
+    def safe_image(cls, value):
+        return relative_file(value) if value is not None else None
+
+
 class PackManifest(StrictModel):
+    ending: EndingFrame | None = None
+    generation: CharacterGeneration | None = None
     schema_version: StrictInt
     kind: PackKind
     id: EnglishId
@@ -142,7 +155,7 @@ class PackManifest(StrictModel):
         if self.kind == "character":
             allowed = common | {
                 "character_id",
-                "metadata",
+                "metadata", "ending", "generation",
                 "prompts",
                 "levels",
                 "shared_dependencies",
@@ -172,7 +185,7 @@ class PackManifest(StrictModel):
                 raise ValueError("audio requires slots and voice requires character_id")
             allowed_slots = {
                 "sfx": {"tile_discard", "tile_shuffle", "riichi_stick"},
-                "bgm": {"title", "selection", "game", "result"},
+                "bgm": {"title", "selection", "game", "result", "ending"},
                 "voice": {
                     "chi",
                     "pon",
@@ -204,12 +217,12 @@ class PackManifest(StrictModel):
 
     def references(self) -> dict[str, str]:
         if self.kind == "character":
-            return {
+            return {**({self.ending.image: "image"} if self.ending and self.ending.image else {}), **{
                 path: "image"
                 for level in self.levels.values()
                 for path in level.images.model_dump().values()
                 if path is not None
-            }
+            }}
         return {path: "audio" for path in self.slots.values()}
 
     def identity(self) -> tuple[str, str, str]:
@@ -271,7 +284,7 @@ class MeasurementsPatch(StrictModel):
 
 class CharacterContentPatch(StrictModel):
     expected_revision: StrictInt = Field(ge=0)
-    prompts: dict[Literal["appearance", "top", "bottom", "upper_underwear", "lower_underwear"], PromptEdit] = Field(default_factory=dict)
+    prompts: dict[Literal["ending", "appearance", "top", "bottom", "upper_underwear", "lower_underwear"], PromptEdit] = Field(default_factory=dict)
     framing: list[FramingEdit] = Field(default_factory=list)
     measurements_cm: MeasurementsPatch | None = None
 

@@ -214,6 +214,52 @@ class PackRegistryTests(unittest.TestCase):
                 if ranks[3]==4:
                     self.assertEqual(saved["dialogues"][0]["text"],"saved line")
 
+    def test_portable_folder_audio_and_character_ending_round_trip(self):
+        import shutil
+        from test_hand_cg_cache import PNG
+        game = Path(self.tmp.name) / "portable"
+        registry = self.runtime.content_packs
+        registry.game_root = game
+        folder = game / "packs/bgm/default"
+        folder.mkdir(parents=True)
+        (folder / "game.mp3").write_bytes(b"ID3example")
+        self.scan()
+        selection = self.client.get("/api/local/sound-selection", headers=self.headers).json()["audio_packs"]
+        self.assertEqual(selection["bgm_mode"], "pack")
+        self.assertTrue(selection["bgm_slots"]["game"])
+        self.assertIsNone(selection["bgm_slots"]["title"])
+        source = self.filled_character("source")
+        source["ending"] = {"positive": "sunset scene", "negative": "", "image": "ending.png"}
+        source["generation"] = {"model": "", "loras": [{"name": "character", "strength": 0.6, "trigger": "activation"}]}
+        self.install(source, {"ending.png": PNG})
+        pack = next(p for p in self.scan()["registry"]["packs"] if p["kind"] == "character")
+        self.application(pack).raise_for_status()
+        export = self.client.post("/api/local/characters/1/export-pack", headers=self.headers,
+                                  json={"pack_id": "portable-test", "include_audio": True})
+        export.raise_for_status()
+        receiver = Path(self.tmp.name) / "receiver"
+        shutil.copytree(Path(export.json()["folder"]) / "packs", receiver / "packs")
+        fresh = create_local_runtime(Path(self.tmp.name) / "fresh", receiver)
+        try:
+            with TestClient(fresh.app, headers={"X-Local-Capability": fresh.capability}) as client:
+                packs = client.get("/api/local/packs").json()["packs"]
+                exported = next(p for p in packs if p["kind"] == "character")
+                linked = client.post("/api/local/characters/2/pack-application", json={
+                    "expected_revision": 0, "pack_id": exported["id"],
+                    "registered_revision_id": exported["registered_revision"]["id"]})
+                linked.raise_for_status()
+                ending = linked.json()["ending"]
+                self.assertEqual(ending["positive"], "sunset scene")
+                self.assertEqual(client.get(ending["media"]["url"]).content, PNG)
+                cfg = client.get("/api/local/generation-settings").json()["characters"]["2"]
+                self.assertEqual(cfg["loras"][0]["trigger"], "activation")
+        finally:
+            fresh.close()
+        (folder / "game.mp3").unlink()
+        self.scan()
+        self.assertIsNone(self.client.get("/api/local/sound-selection", headers=self.headers)
+                          .json()["audio_packs"]["bgm_slots"]["game"])
+
     def test_stage_preview_and_explicit_save_preserve_pack_and_other_slots(self):
         from unittest.mock import patch
         from uuid import uuid4

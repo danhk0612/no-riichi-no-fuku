@@ -17,7 +17,10 @@ CLOTHING = (("top", "bottom"), ("bottom", "upper_underwear"),
 STATES = ("fully dressed", "upper outer garment removed, lower outer garment still worn",
           "outer garments removed, wearing underwear only", "all garments removed")
 WARDROBE_KEYS = tuple(f"clothing_{level}" for level in range(4))
-PRESETS = {**EVENTS, **dict(zip(WARDROBE_KEYS, STATES))}
+PRESETS = {**EVENTS, **dict(zip(WARDROBE_KEYS, STATES)),
+           **{f"expression_{i}": text for i, text in enumerate(EXPRESSIONS)},
+           **{f"profile_{i}": "front view, face only, close-up portrait, looking at viewer" for i in range(4)},
+           **{f"full_body_{i}": "front view, standing upright, full body from head to toe" for i in range(4)}}
 CG_FRAME = "cinematic composition, mahjong table in the background"
 
 
@@ -27,16 +30,20 @@ def situations(db):
     return {key: saved.get(key) or default for key, default in PRESETS.items()}
 
 
-def compose(prompts, level, kind, frame, presets, event=None):
-    parts = [prompts["appearance"]]
-    if kind != "profile":
+def compose(prompts, level, kind, frame, presets, event=None, triggers=""):
+    parts = [prompts["appearance"], {"positive": triggers}]
+    if kind not in ("profile", "ending"):
         parts.extend(prompts[group] for group in CLOTHING[level])
         parts.append({"positive": presets[WARDROBE_KEYS[level]]})
-    parts.append({"positive": EXPRESSIONS[level]})
-    if kind == "profile":
-        parts.append({"positive": "front view, face only, close-up portrait, looking at viewer"})
-    elif kind == "full_body":
-        parts.append({"positive": "front view, standing upright, full body from head to toe"})
+    if kind != "ending":
+        parts.append({"positive": presets[f"expression_{level}"]})
+    if kind in ("profile", "full_body"):
+        if frame.get("overrides", {}).get("positive") and frame["positive"].strip():
+            parts.append({"positive": frame["positive"]})
+        else:
+            parts.append({"positive": presets[f"{kind}_{level}"]})
+        if frame.get("overrides", {}).get("negative"):
+            parts.append({"negative": frame["negative"]})
     else:
         parts.append({"positive": frame["positive"] if frame["positive"].strip() else CG_FRAME,
                       "negative": frame["negative"]})

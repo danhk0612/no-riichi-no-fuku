@@ -5,7 +5,8 @@ from app.services.image_prompts import PRESETS, KEY as SITUATION_KEY, situations
 
 from app.api.dependencies import get_current_superadmin, get_session
 from app.db.session import mark_write_intent
-from app.schemas.local_content import PackKind
+from app.services.pack_export import export_character
+from app.schemas.local_content import EnglishId, PackKind
 from app.schemas.local_content import CharacterContentPatch, CharacterPackApplication
 from app.services.character_content import (get_character_content, patch_character_content,
     apply_character_pack, get_character_pack_revision)
@@ -33,6 +34,16 @@ def rescan_packs(request: Request, session=Depends(get_session)):
     session.rollback()
     registry = request.app.state.local_runtime.content_packs
     return {**registry.scan(), "registry": registry.listing()}
+
+
+class ExportPack(BaseModel):
+    pack_id: EnglishId
+    include_audio: bool = False
+
+
+@character_router.post("/{cpu}/export-pack")
+def export_pack(cpu: int, body: ExportPack, request: Request, session=Depends(get_session)):
+    return export_character(session, request.app.state.local_runtime.content_packs, cpu, body.pack_id, body.include_audio)
 
 
 class SituationEdit(BaseModel):

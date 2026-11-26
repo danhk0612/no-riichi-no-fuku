@@ -4,8 +4,7 @@ import {apiRequest} from './api'
 export const situationLabels = {
   chi: '치', pon: '퐁', kan: '깡', riichi: '리치', ron: '론', tsumo: '쯔모', defeat: '대국 패배',
 }
-const presetLabels = {...situationLabels, clothing_0: '0단계 의상 상태', clothing_1: '1단계 의상 상태',
-  clothing_2: '2단계 의상 상태', clothing_3: '3단계 의상 상태'}
+const levelLabels = {profile: '프로필 구도', full_body: '전신 구도', expression: '표정', clothing: '의상 상태'}
 type Values = Record<string, string>
 const path = '/api/local/characters/situation-prompts'
 
@@ -28,13 +27,15 @@ export function SituationPrompts({token}: {token: string}) {
         body: JSON.stringify({previous: saved[event], text: drafts[event]})}, token)
       setSaved(values)
       setDrafts(current => { const next = {...current}; delete next[event]; return next })
-      setMessage('상황 프롬프트를 저장했습니다.')
+      setMessage('공통 프롬프트를 저장했습니다.')
     } catch (error) { setMessage(String(error)) }
     finally { setBusy(false) }
   }
   return <fieldset disabled={busy}><legend>모든 캐릭터에 적용할 프롬프트</legend>
     <label>편집 항목<select value={event} onChange={e => {setEvent(e.target.value); setMessage('')}}>
-      {Object.entries(presetLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+      {Object.entries(levelLabels).map(([key,label]) => <optgroup key={key} label={label}>{[0,1,2,3].map(level =>
+        <option key={level} value={key+'_'+level}>{level}단계 {label}</option>)}</optgroup>)}
+      <optgroup label="대국 상황">{Object.entries(situationLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</optgroup>
     </select></label>
     <label>공통 프롬프트<textarea disabled={saved[event] === undefined} value={drafts[event] ?? saved[event] ?? ''}
       onChange={e => setDrafts({...drafts, [event]: e.target.value})} /></label>

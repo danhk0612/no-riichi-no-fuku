@@ -40,7 +40,7 @@ export type MatchResult = {
 }
 
 export type StageImages = {profile:string|null; full_body:string|null; cg:string|null}
-export type SeatDetail = {stage:number; images:StageImages; measurements_cm:Record<string,string|null>; style:string;
+export type SeatDetail = {cpu_id?:number; stage:number; images:StageImages; measurements_cm:Record<string,string|null>; style:string;
   description:string|null; stats:Record<string,number>}
 
 export type PlayerSeat = {
@@ -81,7 +81,7 @@ export type StageTransition = {from_stage:number;name:string;profile:ResultMedia
 export type SavedResultContent = {
   version: 1
   dialogues: {cpu_id: number; slot: string; text: string | null}[]
-  scene: {stage: number; cpu_id?:number; missing_candidates?:('clothing_state'|'situation'|'pose')[]; transition?:StageTransition; generation_input?: unknown; media: ResultMedia | null} | null
+  scene: {stage: number; cpu_id?:number; missing_candidates?:('clothing_state'|'situation'|'pose')[]; transition?:StageTransition; generation_input?: {positive?:string;settings?:{model?:string;encoder?:string;vae?:string}}; media: ResultMedia | null} | null
 }
 export type ResultDeliveryEntry = {
   ordinal: number

@@ -30,13 +30,14 @@ def capture(db, record):
             level_data = {"frame": frames["cg"], "portraits": {
                 kind: frames[kind]["media"] for kind in ("full_body", "profile")
             }}
-            level_data["composed_cg"] = compose(content["prompts"], level, "cg", frames["cg"], event_prompts)
+            level_data["composed_cg"] = compose(content["prompts"], level, "cg", frames["cg"], event_prompts,
+                                                triggers=settings.triggers_for(cpu) if settings else "")
             levels[str(level)] = level_data
         seats[str(seat)] = {"situations": event_prompts, "id": cpu, "name": record.players[seat]["name"], "stage": stage,
                             "revision": content["revision"], "pack_revision": content["pack_revision_id"],
                             "prompts": content["prompts"], "fixed": read_fixed(db, cpu), "levels": levels}
         seats[str(seat)]["table_detail"] = {
-            "stage":stage, "images":stage_image_urls(content,stage), "measurements_cm":content["measurements_cm"],
+            "cpu_id": cpu, "stage":stage, "images":stage_image_urls(content,stage), "measurements_cm":content["measurements_cm"],
             "style":choice.get("style"), "description":choice.get("long_description") or choice.get("short_description"),
             "stats":{key:choice[key] for key in ("aggression","defense","call_preference","riichi_preference",
                                                  "hand_value_preference","speed_preference") if key in choice},

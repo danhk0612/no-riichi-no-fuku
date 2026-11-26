@@ -1,8 +1,9 @@
+import { GenerationPanel } from './GenerationPanel'
 import { SituationPrompts } from './SituationPrompts'
 import { StageImageEditor } from './StageImageEditor'
 import { useEffect, useRef, useState } from 'react'
 import {
-  getCharacterContent, listLocalCharacters, listContentPacks, patchCharacterContent,
+  apiRequest, getCharacterContent, listLocalCharacters, listContentPacks, patchCharacterContent,
   rescanContentPacks, applyCharacterPack, createLocalCharacter, renameLocalCharacter,
 } from './api'
 import type { CharacterContent, ContentPack, LocalCharacterChoice } from './api'
@@ -19,7 +20,7 @@ const GROUPS = [
 const KINDS = [['profile', '프로필'], ['full_body', '전신'], ['cg', 'CG']] as const
 const LEVELS = ['정상', '상의 겉옷 탈의', '속옷 세트', '전체 탈의']
 const MEASUREMENTS = [['height', '키'], ['bust', '가슴(B)'], ['waist', '허리(W)'], ['hips', '엉덩이(H)']] as const
-type Tab = 'prompts' | 'packs' | 'shared' | 'fixed'
+type Tab = 'prompts' | 'packs' | 'shared' | 'common' | 'fixed'
 
 export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, onPackApplied, onMeasurementsUpdated, onImageSaved, fixedDirty, fixedSaving, setFixedDirty, setFixedSaving }: {
   accessToken: string
@@ -34,7 +35,10 @@ export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, o
   onMeasurementsUpdated: (content: CharacterContent) => void
 }) {
   const [tab, setTab] = useState<Tab>('prompts')
-  const [showSituations, setShowSituations] = useState(false)
+  const [exportId, setExportId] = useState('')
+  const [exportAudio, setExportAudio] = useState(false)
+  const [exportPath, setExportPath] = useState('')
+  const [exporting, setExporting] = useState(false)
   const [sharedMounted, setSharedMounted] = useState(false)
   const [cpus, setCpus] = useState<{ id: number; slug: string; name: string }[]>([])
   const [cpuId, setCpuId] = useState<number | null>(null)
@@ -54,6 +58,14 @@ export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, o
   const scanInFlight = useRef(false)
   const listingRequest = useRef(0)
 
+  useEffect(()=>{
+    const reload=(event:Event)=>{
+      if(cpuId && (event as CustomEvent).detail===cpuId && !Object.keys(dirty).length)void loadCharacter(cpuId)
+    }
+    window.addEventListener('nrnf-prompt-edited',reload)
+    return ()=>window.removeEventListener('nrnf-prompt-edited',reload)
+  },[cpuId,dirty])
+
   function updateListing(listing: { packs: ContentPack[]; scan_entries: typeof scanEntries }) {
     setPacks(listing.packs)
     setScanEntries(listing.scan_entries)
@@ -61,6 +73,7 @@ export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, o
 
   async function loadCharacter(id: number) {
     const request = ++requestId.current
+    setExportId(''); setExportPath(''); setExportAudio(false)
     setCpuId(id); setSelectedPack(''); setContent(null); setDirty({}); setLoading(true); setError(null)
     try {
       const next = await getCharacterContent(accessToken, id)
@@ -206,12 +219,23 @@ export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, o
     finally { mutationInFlight.current = false; setSaving(false) }
   }
 
+  async function exportPack() {
+    if (!cpuId || exporting) return
+    const request = requestId.current
+    setExporting(true); setExportPath(''); setError(null)
+    try {
+      const result = await apiRequest<{folder:string}>('/api/local/characters/'+cpuId+'/export-pack',
+        {method:'POST',body:JSON.stringify({pack_id:exportId,include_audio:exportAudio})}, accessToken)
+      if (request === requestId.current) setExportPath(result.folder)
+    } catch (caught) { if (request === requestId.current) setError(message(caught)) }
+    finally { setExporting(false) }
+  }
   return <section className="sound-panel content-panel" aria-label="캐릭터 프롬프트와 팩 관리">
     <div className="sound-panel-heading"><div><p className="eyebrow">LOCAL CONTENT</p><h2>캐릭터 프롬프트·팩</h2></div><button className="text-button" disabled={fixedSaving} onClick={onClose} type="button">닫기</button></div>
     <div className="content-tabs" role="tablist" aria-label="콘텐츠 관리">
       <button role="tab" aria-selected={tab === 'prompts'} disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?')) { setFixedDirty(false); setTab('prompts') } }} type="button">캐릭터 편집</button>
       <button role="tab" aria-selected={tab === 'packs'} disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?')) { setFixedDirty(false); setTab('packs') } }} type="button">팩 목록·진단</button>
-      <button role="tab" aria-selected={tab === 'shared'} disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?')) { setFixedDirty(false); setSharedMounted(true); setTab('shared') } }} type="button">공유 복장·상황·포즈</button>
+      <button role="tab" aria-selected={tab === 'common'} disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?')) { setFixedDirty(false); setTab('common') } }} type="button">공통 프롬프트</button>
       <button role="tab" aria-selected={tab === 'fixed'} disabled={fixedSaving} onClick={() => setTab('fixed')} type="button">고정 대사</button>
     </div>
     {error && <p className="form-error" role="alert">{error}</p>}
@@ -235,6 +259,14 @@ export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, o
       {content && <>
         <h3>캐릭터 기본 프롬프트</h3>
         {GROUPS.map(([key, label]) => <PromptFields source={content.pack_source?.prompts[key]} disabled={saving} key={key} title={label} positive={valueFor(`p.${key}.positive`, content.prompts[key].positive)} negative={valueFor(`p.${key}.negative`, content.prompts[key].negative)} positiveEdited={content.prompts[key].overrides.positive || Object.hasOwn(dirty, `p.${key}.positive`)} negativeEdited={content.prompts[key].overrides.negative || Object.hasOwn(dirty, `p.${key}.negative`)} onPositive={(value) => editPrompt(key, 'positive', value)} onNegative={(value) => editPrompt(key, 'negative', value)} />)}
+        <details><summary>캐릭터 LoRA·트리거 단어</summary><GenerationPanel key={content.cpu_id} characterId={content.cpu_id} token={accessToken} /></details>
+        <details><summary>배포용 캐릭터팩 내보내기</summary>
+          <p>저장한 단계 이미지·캐릭터 프롬프트와 연결된 음성팩을 게임 폴더의 exports에 복사합니다.</p>
+          <label>팩 ID (영문 소문자·숫자·하이픈)<input value={exportId} placeholder="my-character" onChange={e=>setExportId(e.target.value)}/></label>
+          <label><input type="checkbox" checked={exportAudio} onChange={e=>setExportAudio(e.target.checked)}/>사용 중인 BGM·효과음 팩도 포함</label>
+          <button type="button" disabled={exporting || saving || !!Object.keys(dirty).length || !exportId} onClick={()=>void exportPack()}>팩 폴더 만들기</button>
+          {exportPath && <p role="status">내보낸 위치 · {exportPath}</p>}
+        </details>
         <section aria-label="캐릭터팩 연결">
           <h3>캐릭터팩 연결·갱신</h3>
           {content.pack ? <p>연결된 팩: {content.pack.pack_id} · 적용 revision {content.pack.applied_revision} · 등록 revision {linkedPack?.registered_revision?.revision ?? '확인 중'}</p>
@@ -280,22 +312,30 @@ export function LocalContentPanel({ accessToken, onClose, onCharactersChanged, o
               {kind === 'cg' && <PromptFields source={content.pack_source?.levels[String(level)].framing[kind]} disabled={saving} title={label} positive={valueFor(posKey, pair.positive)} negative={valueFor(negKey, pair.negative)} positiveEdited={pair.overrides.positive || Object.hasOwn(dirty, posKey)} negativeEdited={pair.overrides.negative || Object.hasOwn(dirty, negKey)} onPositive={(value) => editFraming(level, kind, 'positive', value)} onNegative={(value) => editFraming(level, kind, 'negative', value)} />}</div>
           })}
         </details>)}
+        {content.ending && <details><summary>이 캐릭터의 엔딩</summary>
+          <label>엔딩 프롬프트<textarea value={valueFor('p.ending.positive',content.ending.positive)}
+            onChange={e=>setDirty({...dirty,'p.ending.positive':e.target.value})}/></label>
+          <p>비워서 저장하면 기본 구도를 사용합니다. 이 캐릭터가 마지막으로 3단계가 되면 저장한 엔딩 이미지를 표시합니다.</p>
+          <StageImageEditor key={content.cpu_id+':ending:'+content.revision} token={accessToken} cpu={content.cpu_id} level={3}
+            kind="ending" label="엔딩" revision={content.revision} slot={content.ending} disabled={saving || !!Object.keys(dirty).length}
+            onSaved={ending=>setContent(current=>current?.cpu_id===content.cpu_id ? {...current,ending} : current)} />
+        </details>}
         <button className="primary-button" disabled={saving || !Object.keys(dirty).length} onClick={() => void save()} type="button">{saving ? '저장 중…' : `변경 필드 저장 (${Object.keys(dirty).length})`}</button>
       </>}
     </section></div>
     {tab === 'fixed' && <FixedDialogueManager token={accessToken} cpus={cpus} onDirty={setFixedDirty} onSaving={setFixedSaving} />}
     {tab === 'packs' && <section className="sound-card">
+      <details><summary>이전 버전 자료</summary>
+      <button  disabled={fixedSaving} onClick={() => { if (!fixedDirty || window.confirm('저장하지 않은 고정 대사를 버리시겠습니까?')) { setFixedDirty(false); setSharedMounted(true); setTab('shared') } }} type="button">공유 복장·상황·포즈</button>
+      </details>
       <div className="content-list-heading"><h3>등록된 팩</h3><button disabled={scanning} onClick={() => void scanPacks()} type="button">{scanning ? '재검색 중…' : '폴더 다시 검색'}</button></div>
-      <p className="muted">설정 진입 때 자동 검색했습니다. 목록 조회 자체는 파일을 다시 읽지 않습니다.</p>
+      <p className="muted">받은 packs 폴더를 게임 EXE 옆에 복사한 뒤 폴더 다시 검색을 누르세요. characters는 캐릭터·이미지, voices는 음성, bgm은 음악, sfx는 효과음입니다.</p>
       {packs.length ? <ul className="sound-list pack-list">{packs.map((pack) => <li key={pack.id}>
         <span><strong>{pack.kind}</strong> · {pack.namespace ? `${pack.namespace}/` : ''}{pack.pack_id}<small> revision {pack.registered_revision?.revision ?? '없음'} · {statusLabel(pack.status)}</small>{pack.issues.length > 0 && <small className="diagnostic">진단: {pack.issues.join(', ')}</small>}</span>
       </li>)}</ul> : <p className="muted">등록된 팩이 없습니다.</p>}
       {!!scanEntries.length && <><h3>최근 검색 진단</h3><ul className="sound-list pack-list">{scanEntries.map((entry, index) => <li key={`${entry.source}-${index}`}><span>{entry.source}<small>{entry.status}{entry.issues.length ? ` · ${entry.issues.join(', ')}` : ''}</small></span></li>)}</ul></>}
     </section>}
-    <div hidden={tab !== 'prompts'}><details onToggle={e => { if (e.currentTarget.open) setShowSituations(true) }}>
-      <summary>공통 상황·단계별 의상 상태 편집</summary>
-      {showSituations && <SituationPrompts token={accessToken} />}
-    </details></div>
+    <div hidden={tab !== 'common'}><SituationPrompts token={accessToken} /></div>
     {sharedMounted && <div hidden={tab !== 'shared'}><p>이전에 등록한 공유 후보를 관리합니다. 새 이미지에는 캐릭터 편집의 의상과 공통 상황을 사용합니다.</p><SharedPromptManager accessToken={accessToken} cpus={cpus} /></div>}
   </section>
 }

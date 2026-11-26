@@ -26,6 +26,7 @@ export type MediaAsset = { id: string; kind: 'image' | 'audio'; mime_type: strin
 export type SoundEffectSet = { id: string; label: string; active: boolean; clips: Record<string, string> }
 export type BackgroundTrack = { id: string; label: string; active: boolean; media_asset_id: string; available: boolean; url: string | null }
 export type SoundSelection = {
+  image_slots?:boolean; image_generation_ready?:boolean
   effect_set_id: string | null; bgm_ids: string[]; effect_sets: SoundEffectSet[]; tracks: BackgroundTrack[];
   effect_set_available: boolean; bgm_available: boolean[]
   audio_packs: AudioPackSelection
@@ -44,6 +45,7 @@ export type CharacterVoiceSelection = {
 }
 export type EndingResources = { cg_asset_id: string | null; music_track_id: string | null; dialogue_text: string | null }
 export type ResolvedEnding = {
+  cpu_id?:number
   acknowledged: boolean;
   cg?: { asset_id: string | null; url: string | null; available: boolean };
   music?: { asset_id: string | null; url: string | null; available: boolean };
@@ -55,6 +57,8 @@ export type PromptPair = {
   overrides: { positive: boolean; negative: boolean }
 }
 export type CharacterContent = {
+  image_copy_warning?:string
+  ending?: CharacterContent['levels'][string]['cg']
   schema_version: 1
   cpu_id: number
   revision: number

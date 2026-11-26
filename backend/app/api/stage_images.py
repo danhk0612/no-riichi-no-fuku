@@ -6,7 +6,9 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response
 from sqlalchemy.orm import Session
 from app.api.dependencies import get_current_superadmin, get_session
-from app.db.models import LocalMediaAsset
+from app.db.models import CpuCharacter, LocalMediaAsset
+from app.services.content_packs import safe_path, ScanIssue
+from app.schemas.local_content import relative_file
 from app.db.models.character_content import StageImage
 from app.services.anima_adapter import WORKFLOW
 from app.services.character_content import get_character_content
@@ -17,12 +19,14 @@ from app.services.image_prompts import EVENTS, compose, situations
 
 router = APIRouter(prefix="/api/local/characters/{cpu}/stage-images/{level}/{kind}",
                    dependencies=[Depends(get_current_superadmin)])
-Kind = Literal["profile", "full_body", "cg"]
+Kind = Literal["profile", "full_body", "cg", "ending"]
 
 
 @router.post("")
 def prepare(cpu: int, kind: Kind, expected_revision: int, level: int = Path(ge=0, le=3),
-            db: Session = Depends(get_session), event: str | None = None):
+            db: Session = Depends(get_session), event: str | None = None, regenerate: bool = False):
+    if kind == "ending" and level != 3:
+        raise HTTPException(422, "엔딩은 최종 단계에서 생성합니다.")
     if event is not None and (kind != "cg" or event not in EVENTS):
         raise HTTPException(422, "CG 상황을 확인해 주세요.")
     content = get_character_content(db, cpu)
@@ -37,8 +41,11 @@ def prepare(cpu: int, kind: Kind, expected_revision: int, level: int = Path(ge=0
     if not all(settings[k] for k in ("model", "encoder", "vae")):
         raise HTTPException(422, "먼저 모델·텍스트 인코더·VAE를 설정해 주세요.")
     ticket = str(uuid4())
-    frozen = {**compose(content["prompts"], level, kind, content["levels"][str(level)][kind], situations(db), event), "workflow":WORKFLOW, "kind":kind,
-              "stage":level, "settings":settings}
+    frame = content["ending"] if kind == "ending" else content["levels"][str(level)][kind]
+    prompts = compose(content["prompts"], level, kind, frame, situations(db), event, cfg.triggers_for(cpu))
+    frozen = {**prompts, "workflow": WORKFLOW, "kind": kind, "stage": level, "settings": settings}
+    if regenerate:
+        frozen["variation"] = ticket
     slot = db.get(StageImage,(cpu,level,kind))
     if slot is None:
         slot = StageImage(cpu_id=cpu, level=level, kind=kind)
@@ -106,4 +113,18 @@ def apply(cpu:int,level:int,kind:Kind,ticket:str,attempt:str,request:Request,db:
             db.rollback()
             dest.unlink(missing_ok=True)
             raise
-    return get_character_content(db,cpu)
+    content = get_character_content(db, cpu)
+    game_root = request.app.state.local_runtime.content_packs.game_root
+    if game_root:
+        # Keep a shareable copy next to the EXE. The save's immutable asset is authoritative.
+        try:
+            slug = relative_file(db.get(CpuCharacter, cpu).slug)
+            folder = game_root
+            for part in ("images", slug, "ending" if kind == "ending" else f"level-{level}"):
+                folder = folder / part
+                folder.mkdir(exist_ok=True)
+                safe_path(game_root, folder)
+            replace(folder / f"{kind}.png", data)
+        except (OSError, ScanIssue, ValueError):
+            content["image_copy_warning"] = "게임 폴더에 이미지 사본을 쓰지 못했습니다. 세이브에는 저장했습니다."
+    return content

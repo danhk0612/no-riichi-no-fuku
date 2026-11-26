@@ -6,6 +6,7 @@ from pydantic import Field
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_superadmin, get_session
+from app.db.session import mark_write_intent
 from app.db.models import CpuCharacter, GameSetting
 from app.services.anima_adapter import Comfy
 from app.services.generation_settings import Config, Endpoint, KEY, read_settings
@@ -24,6 +25,8 @@ def read(session: Session = Depends(get_session)):
 
 @router.put("")
 def save(body: Write, session: Session = Depends(get_session)):
+    session.rollback()
+    mark_write_intent(session)
     current = read_settings(session)
     if current["revision"] != body.expected_revision:
         raise HTTPException(409, "설정이 변경됐습니다. 다시 불러온 뒤 저장해 주세요.")

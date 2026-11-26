@@ -88,7 +88,7 @@ try {
       await voiceRow.getByLabel('음성팩').selectOption('off')
       await voiceRow.getByRole('button', { name: '저장', exact: true }).click()
     } else {
-      await page.getByLabel('SFX 재생 방식').selectOption('pack')
+      await page.getByLabel('효과음 폴더 세트').selectOption('')
       await page.getByRole('button', { name: '팩 재생 방식 저장', exact: true }).click()
     }
     await page.waitForFunction(() => !document.querySelector('.sound-panel input[type="file"]')?.disabled)
