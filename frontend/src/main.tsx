@@ -1055,16 +1055,17 @@ function App() {
     setError(null)
   }
 
+  const atTable = isDesktop && screen === 'play' && gameState.status === 'human_turn' && !settingsVisible
   const showingResult = gameState.status === 'result_delivery'
     || gameState.status === 'settlement_wait' || gameState.status === 'complete'
   const musicScreen = screen !== 'play' ? 'title' : cpus ? 'selection' : showingResult ? 'result' : players.length ? 'game' : 'title'
   return (
-    <ImageSettings.Provider value={{available:!!soundSelection?.image_slots, ready:!!soundSelection?.image_generation_ready}}><main className={isDesktop ? "shell desktop-shell" : "shell"}>
+    <ImageSettings.Provider value={{available:!!soundSelection?.image_slots, ready:!!soundSelection?.image_generation_ready}}><main className={isDesktop ? (atTable ? "shell desktop-shell at-table" : "shell desktop-shell") : "shell"}>
       <ImageQueueStatus/>
       <header className="app-header" hidden={screen !== 'play' && !settingsVisible}>
-        <p className="eyebrow">4-PLAYER RIICHI MAHJONG</p>
+        {!atTable && <><p className="eyebrow">4-PLAYER RIICHI MAHJONG</p>
         <h1>No Riichi No Fuku</h1>
-        <p>플레이어 1명과 CPU 3명이 진행하는 동풍전</p>
+        <p>플레이어 1명과 CPU 3명이 진행하는 동풍전</p></>}
         {isDesktop && accessToken && <button className="settings-door" id="settings-door" type="button"
           aria-expanded={settingsVisible} aria-controls="game-settings" onClick={() => {
             setSettingsVisible(!settingsVisible)
@@ -1094,7 +1095,11 @@ function App() {
               <ProfileEditor busy={profileBusy} name={profileName} onNameChange={value => { setProfileName(value); setProfileMessage('') }} onSave={savePlayerName} />
               {profileMessage && <p role="status">{profileMessage}</p>}
             </section>}
-            {openSettings.difficulty && <div id="settings-page-difficulty" hidden={activeSettings !== 'difficulty'}><LocalDifficultyPanel accessToken={accessToken} onClose={() => closeSettings('difficulty')} onSaved={refreshCharacterChoices} /></div>}
+            {openSettings.difficulty && <div id="settings-page-difficulty" hidden={activeSettings !== 'difficulty'}>
+              {(gameState.status === 'human_turn' || gameState.status === 'complete') && <p className="current-difficulty">
+            현재 대국 난이도: {gameState.cpuDifficulties?.map((cpu) => `${players.find((p) => p.seat === cpu.seat)?.name ?? cpu.seat} ${cpu.level}/10`).join(' · ') ?? '기존 저장'}
+              </p>}
+              <LocalDifficultyPanel accessToken={accessToken} onClose={() => closeSettings('difficulty')} onSaved={refreshCharacterChoices} /></div>}
             {openSettings.generation && <div id="settings-page-generation" hidden={activeSettings !== 'generation'}><GenerationPanel key={accessToken} token={accessToken} close={()=>closeSettings('generation')}/></div>}
             {openSettings.sound && <div id="settings-page-sound" hidden={activeSettings !== 'sound'}><LocalSoundPanel editedCharacters={editedCharacters} accessToken={accessToken} onClose={() => closeSettings('sound')} onSelectionChanged={setSoundSelection} onPlaybackChanged={stopGameAudio} /></div>}
             {openSettings.content && <div id="settings-page-content" hidden={activeSettings !== 'content'}><LocalContentPanel onCharactersChanged={async characters => { setEditedCharacters(characters); await refreshCharacterChoices() }} accessToken={accessToken} onClose={() => closeSettings('content')} fixedDirty={fixedDirty} fixedSaving={fixedSaving} setFixedDirty={setFixedDirty} setFixedSaving={setFixedSaving} onPackApplied={stopGameAudio} onMeasurementsUpdated={updateCharacterContent}
@@ -1153,12 +1158,10 @@ function App() {
         <>
           <div className="game-toolbar">
             {isDesktop && <button className="menu-return" disabled={busy || actionPending} onClick={leaveToMenu}>저장하고 나가기</button>}
-            <span>{players.map((player) => player.name).join(' · ') || desktopProfile}</span>
+            {!isDesktop && <span>{players.map((player) => player.name).join(' · ') || desktopProfile}</span>}
 
           </div>
-          {isDesktop && (gameState.status === 'human_turn' || gameState.status === 'complete') && <p className="current-difficulty">
-            현재 대국 난이도: {gameState.cpuDifficulties?.map((cpu) => `${players.find((p) => p.seat === cpu.seat)?.name ?? cpu.seat} ${cpu.level}/10`).join(' · ') ?? '기존 저장'}
-          </p>}
+
           {error && <p className="form-error" role="alert">{error}</p>}
           {gameState.status === 'ending' ? (
             <EndingScreen accessToken={accessToken} generation={gameState.generation} eventId={gameState.eventId} fallback={gameState.payload} busy={busy} onContinue={continueFromEnding} />

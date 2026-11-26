@@ -1050,6 +1050,7 @@ async function smokeRun() {
       headers: { 'X-Local-Capability': capability },
     }).then(response => response.json())
     if (!frozenDifficulty.cpu_difficulties?.length) throw new Error('active match omitted difficulty snapshots')
+    await openSmokeSettings('difficulty')
     const difficultyText = await window.webContents.executeJavaScript("document.querySelector('.current-difficulty')?.innerText")
     const currentSetting = await fetch(`${origin}/api/local/difficulty`, {
       headers: { 'X-Local-Capability': capability },
@@ -1062,6 +1063,7 @@ async function smokeRun() {
     if (await window.webContents.executeJavaScript("document.querySelector('.current-difficulty')?.innerText") !== difficultyText) {
       throw new Error('future difficulty setting changed active match display')
     }
+    await window.webContents.executeJavaScript("document.getElementById('settings-door').click()")
     const before = await rendererSnapshot()
     window.destroy()
     window = undefined
@@ -1080,11 +1082,13 @@ async function smokeRun() {
     const restoredSetting = await fetch(`${origin}/api/local/difficulty`, {
       headers: { 'X-Local-Capability': capability },
     }).then(response => response.json())
+    await openSmokeSettings('difficulty')
     if (JSON.stringify(restoredDifficulty.cpu_difficulties) !== JSON.stringify(frozenDifficulty.cpu_difficulties)
       || restoredSetting.setting !== 10
       || await window.webContents.executeJavaScript("document.querySelector('.current-difficulty')?.innerText") !== difficultyText) {
       throw new Error('restart recomputed the saved difficulty or lost the future setting')
     }
+    await window.webContents.executeJavaScript("document.getElementById('settings-door').click()")
     addCheck('active difficulty snapshot survived setting change and engine restart')
     const afterRestartMeasurements = await fetch(`${origin}/api/local/characters/${measurementSmoke.cpuId}/content`, {
       headers: { 'X-Local-Capability': capability },

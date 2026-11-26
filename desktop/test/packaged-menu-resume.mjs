@@ -28,8 +28,11 @@ async function checkViewport() {
     const rect = selector => document.querySelector(selector)?.getBoundingClientRect()
     const table = rect('.mahjong-table'), hand = rect('.human-controls')
     const visible = el => el.top >= -1 && el.bottom <= innerHeight+1 && el.left >= -1 && el.right <= innerWidth+1
+    const faces = [...document.querySelectorAll('.portrait-button')].map(el=>el.getBoundingClientRect())
     const items = [...document.querySelectorAll('.river-square .river-preview,.hand button,.action-bar button')]
     return {
+      uniform:!table || (faces.length===3 && faces.every(r=>r.width===r.height && r.width===faces[0].width)),
+      top:!table || (table.top < 16 && !document.querySelector('.app-header h1') && !document.querySelector('.game-toolbar span')),
       outer:doc.scrollHeight <= innerHeight+1 && doc.scrollWidth <= innerWidth+1,
       actions:items.every(el => visible(el.getBoundingClientRect())),
       hand:!hand || (visible(hand) && hand.top >= table.bottom-1),
@@ -46,7 +49,7 @@ async function checkViewport() {
     decisionRows.set(size,layout.positions)
     for (const kind of layout.kinds.length ? layout.kinds : ['discard']) actionKinds.add(kind)
   }
-  for (const key of ['outer','actions','hand','table']) assert.ok(layout[key], JSON.stringify(layout))
+  for (const key of ['outer','actions','hand','table','top','uniform']) assert.ok(layout[key], JSON.stringify(layout))
 }
 async function shot(name) {
   await checkViewport()

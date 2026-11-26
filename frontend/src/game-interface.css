@@ -190,17 +190,12 @@ body:has(.desktop-shell) {overflow:clip}
 /* The rivers occupy their own square between the portraits. */
 .game-view .mahjong-table {display:grid;grid-template:"left top right" minmax(60px,.32fr) "left center right" minmax(0,1fr) "left bottom right" auto / minmax(0,1fr) minmax(0,2.3fr) minmax(0,1fr);align-items:stretch}
 .game-view .mahjong-table>.seat {position:relative;align-self:center;display:grid;grid-template-columns:minmax(0,1fr) auto;padding:6px;min-height:0;gap:4px}
-.game-view .mahjong-table>.seat-2 {height:100%;width:min(100%,390px);justify-self:center;grid-template-columns:38% 1fr auto}
-.game-view .seat-2>.portrait-button {grid-area:1/1/4/2;height:100%}
-.game-view .seat-2>header {grid-column:2}
-.game-view .seat-2>.score {grid-column:3}
 .game-view .mahjong-table>.seat-0 {width:100%;padding:3px 10px}
 .portrait-button {grid-column:1/-1;grid-row:2;display:grid;width:100%;height:clamp(100px,20vh,215px);padding:0;overflow:hidden;border:1px solid #728ba0;background:#193349;color:#d9e5ed;cursor:zoom-in}
 .portrait-button .live-image {display:contents}
 .game-view .portrait-button .seat-face {width:100%;height:100%;min-height:0;object-fit:cover;object-position:50% 30%}
 .game-view .portrait-button .image-empty {display:grid;place-content:center;font-size:.83rem;background:radial-gradient(ellipse at top,#395670,#182e42)}
 .game-view .seat .melds {margin:0}
-.game-view .seat-2>:is(.melds,.speech-bubble,.riichi) {grid-column:2/-1}
 .game-view .seat .speech-bubble {position:absolute;bottom:0;right:0;z-index:1;pointer-events:none}
 .river-square {grid-area:center;position:relative;min-height:0;container-type:size;display:grid;place-items:center}
 .river-square>.discards {position:absolute;min-height:0;--unit:clamp(12px,min(5cqw,6.4cqh),28px);width:calc(6 * var(--unit));height:calc(3.65 * var(--unit) + 14px)}
@@ -246,3 +241,29 @@ body:has(.desktop-shell) {overflow:clip}
 .game-view .human-controls .hand {grid-area:2/1/3/3}
 .game-view .human-controls .action-bar {grid-area:1/2;display:flex;flex-wrap:nowrap;justify-content:safe flex-end;align-items:center;margin:0;min-width:0;overflow-x:auto;overflow-y:hidden;gap:5px}
 .game-view .action-bar button {flex:none;padding:5px 10px;border-radius:3px}
+
+/* The table owns the top edge. The two controls sit in its unused corners. */
+.desktop-shell.at-table {position:relative;padding:3px 6px;max-width:none}
+.desktop-shell.at-table>.app-header {position:absolute;z-index:2;top:10px;right:14px;min-height:0;margin:0;padding:0}
+.at-table .settings-door {position:static}
+.at-table .game-view {position:relative}
+.at-table .game-toolbar {position:absolute;z-index:2;top:7px;left:8px}
+.at-table .game-toolbar .menu-return {margin:0}
+.at-table .mahjong-table {container-type:size;grid-template-rows:max-content minmax(0,1fr) auto}
+.at-table .mahjong-table>.seat:not(.seat-0) {
+  --portrait-size:clamp(96px,min(19vw,28cqh),190px);
+  width:calc(var(--portrait-size) + 10px);box-sizing:border-box;justify-self:center;
+  display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:var(--portrait-size) auto;
+  padding:4px;gap:3px 2px
+}
+.at-table .seat:not(.seat-0)>.portrait-button {grid-area:1/1/2/3;width:var(--portrait-size);height:var(--portrait-size);border-radius:2px}
+.at-table .seat:not(.seat-0)>header {grid-column:1;grid-row:2;gap:3px;font-size:clamp(11px,1vw,15px)}
+.at-table .seat:not(.seat-0)>header strong {overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.at-table .seat:not(.seat-0) .wind {width:19px;height:19px;flex:none}
+.at-table .seat:not(.seat-0)>.score {grid-column:2;grid-row:2;font-size:clamp(10px,.95vw,14px)}
+.at-table .seat:not(.seat-0)>.melds {position:absolute;bottom:27px;left:4px;right:4px;align-items:end;gap:2px;pointer-events:none}
+.at-table .seat:not(.seat-0)>.melds .meld {background:#1c3347df;padding:1px 2px}
+.at-table .seat:not(.seat-0)>.riichi {position:absolute;top:6px;right:6px}
+.at-table .seat:not(.seat-0)>.speech-bubble {top:6px;left:6px;bottom:auto;right:auto;max-width:90%}
+.at-table .seat-2 {align-self:start}
+.settings-detail .current-difficulty {color:var(--ink);margin:0 0 12px}

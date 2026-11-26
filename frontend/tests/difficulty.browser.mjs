@@ -61,6 +61,10 @@ try {
   await select.selectOption('1');await panel.getByRole('button',{name:'난이도 저장'}).click();await enteredSave
   await page.getByRole('button',{name:'게임 화면으로',exact:true}).click()
   await page.getByRole('button',{name:'동풍전 시작',exact:true}).click()
+  await page.locator('.human-controls').waitFor()
+  assert.equal(await page.locator('.current-difficulty').isVisible(),false)
+  await page.getByRole('button',{name:'설정',exact:true}).click()
+  await page.getByRole('button',{name:'난이도 설정',exact:true}).click()
   await page.getByText('현재 대국 난이도').waitFor()
   const current=await page.locator('.current-difficulty').innerText()
   releaseSave();await page.locator('.difficulty-panel [role=status]').waitFor({state:'attached'})
