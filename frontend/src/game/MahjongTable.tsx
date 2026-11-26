@@ -75,7 +75,6 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
 
   return (
     <section className={`${settlementPayload ? 'match-result ' : ''}result-delivery-card`} data-result-kind={settlementPayload ? 'settlement' : 'hand'} data-multiple-winners={winners.length>1 || undefined} data-ordinal={entry?.ordinal} data-event-id={entry?.event_id} aria-live="polite" aria-label={settlementPayload ? '최종 정산 결과' : '국 결과'}>
-      <p className="eyebrow">{settlementPayload ? 'MATCH SETTLEMENT' : 'HAND RESULT'}</p>
       <h2>{settlementPayload ? '동풍전 정산' : `국 결과 · ${String(start?.bakaze ?? '')}${String(start?.kyoku ?? 0)}국`}</h2>
       {settlementPayload ? (
         <>
@@ -124,19 +123,22 @@ function Tile({ tileId, disabled = false, onClick }: {
 }) {
   const tile = tileIdToDisplay(tileId)
   const className = `tile tile-${tile.suit}${tile.red ? ' tile-red' : ''}`
+  const face = <><span className="tile-value">{tile.suit === 'honor' ? tile.label : tile.label.slice(0, -1)}</span>{tile.suit !== 'honor' && <small className="tile-suit">{tile.label.slice(-1)}</small>}{tile.red && <i className="aka-mark" aria-hidden="true" />}</>
+  const name = (tile.red ? '적도라 ' : '') + tile.label
   if (onClick) {
     return (
       <button
         className={className}
+        aria-label={name}
         disabled={disabled}
         onClick={onClick}
         type="button"
       >
-        {tile.label}
+        {face}
       </button>
     )
   }
-  return <span className={className}>{tile.label}</span>
+  return <span className={className} title={name}>{face}</span>
 }
 
 function TileRow({ tiles, emptyText }: { tiles: number[]; emptyText: string }) {
@@ -194,7 +196,7 @@ function SeatPanel({
           ))}
         </div>
       )}
-      <div className="discards">
+      <div className="discards" aria-label={`${player.name} 버림패`} title="각 좌석에서 마지막으로 버린 패는 아래쪽 금색 선으로 표시합니다.">
         <TileRow tiles={observation.discards[seat]} emptyText="버림패 없음" />
       </div>
     </section>
@@ -234,7 +236,7 @@ function HumanHand({
 
   return (
     <section className="human-controls" aria-label="플레이어 행동">
-      <h2>내 손패</h2>
+      <header className="hand-heading"><h2>내 손패</h2><p role="status">{disabled ? '행동 처리 중' : nonDiscardActions.length ? '가능한 행동을 선택하세요.' : '버릴 패를 선택하세요.'}</p></header>
       <div className="hand">
         {observation.hands[0].map((tileId) => {
           const actionIndex = discardIndexByTile.get(tileId)
@@ -251,10 +253,10 @@ function HumanHand({
         })}
       </div>
       <div className="action-bar">
-        {nonDiscardActions.length === 0 && <p>버릴 패를 선택하세요.</p>}
         {nonDiscardActions.map(({ action, index }) => (
           <button
             disabled={disabled}
+            data-action={action.type}
             key={index}
             onClick={() => onAction(index)}
             type="button"
@@ -303,8 +305,7 @@ function ActiveTable({
         ))}
         <div className="round-status">
           <strong>{roundWindLabel(observation.round_wind)}{observation.kyoku_index % 4 + 1}국</strong>
-          <span>본장 {observation.honba}</span>
-          <span>리치봉 {observation.riichi_sticks}</span>
+          <div className="round-counters"><span>본장 {observation.honba}</span><span>리치봉 {observation.riichi_sticks}</span></div>
           <span>도라</span>
           <TileRow tiles={observation.dora_indicators} emptyText="없음" />
         </div>
