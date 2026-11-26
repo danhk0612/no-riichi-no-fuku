@@ -11,7 +11,9 @@ try {
   await page.route('**/api/**',async route=>{
     const path=new URL(route.request().url()).pathname
     if(path.endsWith('/generation-settings/catalog')){
-      requests.push('check');return route.fulfill({status:502,json:{detail:'연결할 수 없습니다.'}})
+      requests.push('check')
+      if(requests.length===2)return route.fulfill({json:{choices:{},missing_nodes:[],supports_anima_encoder:false}})
+      return route.fulfill({status:502,json:{detail:'연결할 수 없습니다.'}})
     }
     if(path.endsWith('/generation-settings')){
       if(route.request().method()==='PUT'){
@@ -37,10 +39,12 @@ try {
   assert.deepEqual(requests,[])
   await panel.getByRole('button',{name:'연결 확인·목록 갱신'}).click()
   await panel.getByText('연결할 수 없습니다.').waitFor()
+  await panel.getByRole('button',{name:'연결 확인·목록 갱신'}).click()
+  await panel.getByText(/이 설치는 Anima 인코더 유형.*지원하지 않습니다/).waitFor()
   await panel.getByRole('button',{name:'설정 저장',exact:true}).click()
   await panel.getByText('설정을 저장했습니다.').waitFor()
   assert.equal(settings.common.model,'base')
   assert.deepEqual(settings.characters['1'],{model:'',loras:[{name:'char',strength:0}]})
-  assert.deepEqual(requests,['check'])
+  assert.deepEqual(requests,['check','check'])
   console.log('PASS: offline editing and saving after an explicit, failed catalog check')
 } finally {await browser.close()}
