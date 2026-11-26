@@ -18,13 +18,14 @@ const LEVELS = ['정상', '상의 겉옷 탈의', '속옷 세트', '전체 탈�
 const MEASUREMENTS = [['height', '키'], ['bust', '가슴(B)'], ['waist', '허리(W)'], ['hips', '엉덩이(H)']] as const
 type Tab = 'prompts' | 'packs' | 'shared' | 'fixed'
 
-export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasurementsUpdated, fixedDirty, fixedSaving, setFixedDirty, setFixedSaving }: {
+export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasurementsUpdated, onImageSaved, fixedDirty, fixedSaving, setFixedDirty, setFixedSaving }: {
   accessToken: string
   onClose: () => void
   fixedDirty: boolean
   fixedSaving: boolean
   setFixedDirty: (value: boolean) => void
   setFixedSaving: (value: boolean) => void
+  onImageSaved: (cpu:number, level:number, kind:typeof KINDS[number][0], url:string|null)=>void
   onPackApplied: () => void
   onMeasurementsUpdated: (content: CharacterContent) => void
 }) {
@@ -226,7 +227,10 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
             return <div key={kind}>
               <StageImageEditor key={content.cpu_id+':'+level+':'+kind+':'+content.revision} token={accessToken} cpu={content.cpu_id}
                 level={level} kind={kind} label={label} revision={content.revision} slot={pair} disabled={saving||!!Object.keys(dirty).length}
-                onSaved={next=>setContent(current=>current?.cpu_id===content.cpu_id ? {...current,levels:{...current.levels,[level]:{...current.levels[String(level)],[kind]:next}}} : current)} />
+                onSaved={next=>{
+                  setContent(current=>current?.cpu_id===content.cpu_id ? {...current,levels:{...current.levels,[level]:{...current.levels[String(level)],[kind]:next}}} : current)
+                  onImageSaved(content.cpu_id,level,kind,next.media?.url ?? null)
+                }} />
               <PromptFields source={content.pack_source?.levels[String(level)].framing[kind]} disabled={saving} title={label} positive={valueFor(posKey, pair.positive)} negative={valueFor(negKey, pair.negative)} positiveEdited={pair.overrides.positive || Object.hasOwn(dirty, posKey)} negativeEdited={pair.overrides.negative || Object.hasOwn(dirty, negKey)} onPositive={(value) => editFraming(level, kind, 'positive', value)} onNegative={(value) => editFraming(level, kind, 'negative', value)} /></div>
           })}
         </details>)}

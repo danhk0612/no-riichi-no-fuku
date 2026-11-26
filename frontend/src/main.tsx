@@ -237,7 +237,11 @@ function App() {
       measurements_cm: content.measurements_cm,
     })
     setCpus((current) => current?.map((cpu) => cpu.id === content.cpu_id
-      ? { ...cpu, measurements_cm: content.measurements_cm }
+      ? { ...cpu, measurements_cm: content.measurements_cm, stage_images: {
+        profile:content.levels[String(cpu.defeat_stage)].profile.media?.url ?? null,
+        full_body:content.levels[String(cpu.defeat_stage)].full_body.media?.url ?? null,
+        cg:content.levels[String(cpu.defeat_stage)].cg.media?.url ?? null,
+      }}
       : cpu) ?? current)
   }
 
@@ -899,7 +903,9 @@ function App() {
       }} />}
       {isDesktop && accessToken && generationOpen && <GenerationPanel token={accessToken} close={()=>setGenerationOpen(false)}/>}
       {isDesktop && accessToken && soundSettingsOpen && <LocalSoundPanel accessToken={accessToken} onClose={() => setSoundSettingsOpen(false)} onSelectionChanged={setSoundSelection} onPlaybackChanged={stopGameAudio} />}
-      {isDesktop && accessToken && contentSettingsOpen && <LocalContentPanel accessToken={accessToken} onClose={closeContentSettings} fixedDirty={fixedDirty} fixedSaving={fixedSaving} setFixedDirty={setFixedDirty} setFixedSaving={setFixedSaving} onPackApplied={stopGameAudio} onMeasurementsUpdated={updateCharacterContent} />}
+      {isDesktop && accessToken && contentSettingsOpen && <LocalContentPanel accessToken={accessToken} onClose={closeContentSettings} fixedDirty={fixedDirty} fixedSaving={fixedSaving} setFixedDirty={setFixedDirty} setFixedSaving={setFixedSaving} onPackApplied={stopGameAudio} onMeasurementsUpdated={updateCharacterContent}
+        onImageSaved={(id,level,kind,url)=>setCpus(current=>current?.map(cpu=>cpu.id===id && cpu.defeat_stage===level
+          ? {...cpu,stage_images:{profile:null,full_body:null,cg:null,...cpu.stage_images,[kind]:url}} : cpu) ?? current)} />}
       {isDesktop && soundError && <p className="form-error" role="status">{soundError}</p>}
       {!isDesktop && !accessToken && (
         <AuthPanel

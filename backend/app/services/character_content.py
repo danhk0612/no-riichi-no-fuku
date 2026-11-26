@@ -49,6 +49,12 @@ def _empty_pair() -> dict:
     return {"positive": "", "negative": ""}
 
 
+def stage_image_urls(content: dict, stage: int) -> dict:
+    slots = content["levels"][str(stage)]
+    return {kind: slots[kind]["media"]["url"] if slots[kind]["media"] else None
+            for kind in IMAGE_KINDS}
+
+
 def get_character_content(session: Session, cpu_id: int) -> dict:
     if session.get(CpuCharacter, cpu_id) is None:
         raise HTTPException(status_code=404, detail={"code": "not_found", "message": "캐릭터를 찾을 수 없습니다."})

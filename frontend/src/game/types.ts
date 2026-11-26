@@ -39,7 +39,12 @@ export type MatchResult = {
   ranks: number[]
 }
 
+export type StageImages = {profile:string|null; full_body:string|null; cg:string|null}
+export type SeatDetail = {stage:number; images:StageImages; measurements_cm:Record<string,string|null>; style:string;
+  description:string|null; stats:Record<string,number>}
+
 export type PlayerSeat = {
+  detail?: SeatDetail|null
   seat: number
   name: string
   isHuman: boolean
@@ -57,6 +62,7 @@ export type CpuChoice = {
   long_description: string | null
   profile_image_key: string | null
   defeat_stage: number
+  stage_images?: StageImages
   content_revision?: number
   measurements_cm?: { height: string | null; bust: string | null; waist: string | null; hips: string | null }
   difficulty_preview?: { level: number; profile_version: string; reason: string } | null

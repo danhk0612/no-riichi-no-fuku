@@ -26,6 +26,7 @@ class GamePlayerResponse(BaseModel):
     seat: int
     name: str
     is_human: bool = Field(serialization_alias="isHuman")
+    detail: dict | None = None
 
 
 class CreateGameSessionResponse(BaseModel):

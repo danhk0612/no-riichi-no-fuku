@@ -5,7 +5,7 @@ from random import Random
 from hashlib import sha256
 import json
 
-from app.services.character_content import get_character_content
+from app.services.character_content import get_character_content, stage_image_urls
 from app.services.generation_settings import match_inputs
 from app.services.fixed_dialogue import read_fixed, render_text
 from app.services.shared_prompts import get_candidates, get_default
@@ -37,6 +37,12 @@ def capture(db, record):
         seats[str(seat)] = {"id": cpu, "name": record.players[seat]["name"], "stage": stage,
                             "revision": content["revision"], "pack_revision": content["pack_revision_id"],
                             "prompts": content["prompts"], "fixed": read_fixed(db, cpu), "levels": levels}
+        seats[str(seat)]["table_detail"] = {
+            "stage":stage, "images":stage_image_urls(content,stage), "measurements_cm":content["measurements_cm"],
+            "style":choice.get("style"), "description":choice.get("long_description") or choice.get("short_description"),
+            "stats":{key:choice[key] for key in ("aggression","defense","call_preference","riichi_preference",
+                                                 "hand_value_preference","speed_preference") if key in choice},
+        }
         if settings is not None:
             common, overrides = settings.inputs_for(cpu)
             seats[str(seat)]["anima"] = {
