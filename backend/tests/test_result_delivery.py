@@ -84,8 +84,13 @@ class ResultDeliveryTests(unittest.TestCase):
                     def edit(revision, text):
                         response = client.patch(path, headers=headers, json={"expected_revision": revision, "edits": {"win": {"text": text}}})
                         self.assertEqual(response.status_code, 200, response.text)
+                    gp = "/api/local/generation-settings"
+                    first = {"expected_revision": 0, "common": {"model": "common", "loras": [{"name":"A","strength":1}]},
+                             "characters": {"1":{"model": "CPU1", "loras": [{"name":"B","strength":0}]}}}
+                    self.assertEqual(client.put(gp, headers=headers, json=first).status_code, 200)
                     edit(0, "original")
                     self._build_completed(runtime, content=True)
+                    self.assertEqual(client.put(gp, headers=headers, json={"expected_revision": 1, "common":{"model":"updated"}}).status_code, 200)
                     edit(1, "edited")
             finally:
                 runtime.close()
@@ -97,9 +102,29 @@ class ResultDeliveryTests(unittest.TestCase):
                     self.assertEqual(head["content_mode"], "snapshot")
                     self.assertEqual(head["content"]["dialogues"][0]["text"], "original")
                     self.assertEqual(head["content"]["scene"]["event"], "ron_band_2")
+                    frozen = head["content"]["scene"]["generation_input"]
+                    self.assertEqual((frozen["settings"]["model"], frozen["settings"]["loras"]), ("CPU1", [["A", 1], ["B", 0]]))
+                    self.assertNotIn("endpoint", frozen["settings"])
                     settlement = db.scalar(select(GameResultDeliveryEntry).where(GameResultDeliveryEntry.kind == "settlement"))
                     self.assertEqual(settlement.result_content["scene"]["stage"], 3)
                     self.assertEqual(settlement.result_content["dialogues"][0]["slot"], "defeat_stage_3")
+            finally:
+                runtime.close()
+
+    def test_invalid_optional_generation_settings_do_not_block_results(self):
+        from app.db.models import GameSetting
+        from app.services.generation_settings import KEY
+        with tempfile.TemporaryDirectory() as tmp:
+            runtime = create_local_runtime(Path(tmp))
+            try:
+                with runtime.session_factory.begin() as db:
+                    db.add(GameSetting(key=KEY, value={"revision": 1, "common": {"steps": "broken"}}))
+                self._build_completed(runtime, content=True)
+                with runtime.session_factory() as db:
+                    record = db.get(GameSessionRecord, "c1-test-session")
+                    saved = result_envelope(db, record)["head"]["payload"]["content"]["scene"]
+                    self.assertEqual(saved["event"], "ron_band_2")
+                    self.assertNotIn("generation_input", saved)
             finally:
                 runtime.close()
 

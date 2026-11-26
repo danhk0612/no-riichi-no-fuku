@@ -1,10 +1,12 @@
 """Content is sampled only from a private copy taken at local match creation."""
 from copy import deepcopy
+from dataclasses import asdict
 from random import Random
 from hashlib import sha256
 import json
 
 from app.services.character_content import get_character_content
+from app.services.generation_settings import match_inputs
 from app.services.fixed_dialogue import read_fixed, render_text
 from app.services.shared_prompts import get_candidates, get_default
 
@@ -15,6 +17,7 @@ def digest(snapshot):
 
 def capture(db, record):
     seats = {}
+    settings = match_inputs(db)
     for seat, choice in enumerate(record.cpu_choices, 1):
         cpu = choice["id"]
         content = get_character_content(db, cpu)
@@ -34,6 +37,12 @@ def capture(db, record):
         seats[str(seat)] = {"id": cpu, "name": record.players[seat]["name"], "stage": stage,
                             "revision": content["revision"], "pack_revision": content["pack_revision_id"],
                             "prompts": content["prompts"], "fixed": read_fixed(db, cpu), "levels": levels}
+        if settings is not None:
+            common, overrides = settings.inputs_for(cpu)
+            seats[str(seat)]["anima"] = {
+                **asdict(common), "model": overrides["character_model"] or common.model,
+                "loras": [list(row) for row in (*common.loras, *overrides["character_loras"])],
+            }
     return deepcopy({"version": 1, "session": record.id, "generation": record.play_generation, "seats": seats})
 
 
@@ -60,9 +69,15 @@ def scene(cpu, stage, event, identity, stage_cg=False):
     if stage == 2:
         parts.append(cpu["prompts"]["lower_underwear"])
     parts += [x for x in choices.values() if x is not None] + [level["frame"]]
-    return {"cpu_id": cpu["id"], "stage": stage, "event": event, "choices": choices,
+    result = {"cpu_id": cpu["id"], "stage": stage, "event": event, "choices": choices,
             **{k: "\n".join(p[k] for p in parts if p[k] != "") for k in ("positive", "negative")},
             "media": level["frame"]["media"] if stage_cg else None}
+    if not stage_cg and "anima" in cpu:
+        # Do not reinterpret older snapshots. A seed is allocated only when an artifact is requested.
+        result["generation_input"] = {"workflow": "anima-txt2img-v1", "kind": "hand_cg", "stage": stage,
+                                      "positive": result["positive"], "negative": result["negative"],
+                                      "settings": deepcopy(cpu["anima"])}
+    return result
 
 
 def resolve(anchor, kind, payload, identity):

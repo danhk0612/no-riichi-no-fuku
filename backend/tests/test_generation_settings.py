@@ -4,7 +4,7 @@ from unittest import TestCase
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 
-from app.api.local_generation import Config
+from app.services.generation_settings import Config
 from app.local_runtime import create_local_runtime
 from app.services.anima_adapter import Comfy
 
