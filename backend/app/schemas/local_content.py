@@ -65,6 +65,8 @@ class PromptPair(StrictModel):
 
 class CharacterPrompts(StrictModel):
     appearance: PromptPair
+    top: PromptPair = Field(default_factory=lambda: PromptPair(positive="casual shirt", negative=""))
+    bottom: PromptPair = Field(default_factory=lambda: PromptPair(positive="casual trousers", negative=""))
     upper_underwear: PromptPair
     lower_underwear: PromptPair
 
@@ -269,7 +271,7 @@ class MeasurementsPatch(StrictModel):
 
 class CharacterContentPatch(StrictModel):
     expected_revision: StrictInt = Field(ge=0)
-    prompts: dict[Literal["appearance", "upper_underwear", "lower_underwear"], PromptEdit] = Field(default_factory=dict)
+    prompts: dict[Literal["appearance", "top", "bottom", "upper_underwear", "lower_underwear"], PromptEdit] = Field(default_factory=dict)
     framing: list[FramingEdit] = Field(default_factory=list)
     measurements_cm: MeasurementsPatch | None = None
 

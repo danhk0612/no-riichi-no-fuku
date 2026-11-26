@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel, Field
+from app.db.models import GameSetting
+from app.services.image_prompts import PRESETS, KEY as SITUATION_KEY, situations
 
 from app.api.dependencies import get_current_superadmin, get_session
 from app.db.session import mark_write_intent
@@ -30,6 +33,35 @@ def rescan_packs(request: Request, session=Depends(get_session)):
     session.rollback()
     registry = request.app.state.local_runtime.content_packs
     return {**registry.scan(), "registry": registry.listing()}
+
+
+class SituationEdit(BaseModel):
+    text: str = Field(max_length=8000)
+    previous: str
+
+
+@character_router.get("/situation-prompts")
+def read_situations(session=Depends(get_session)):
+    return situations(session)
+
+
+@character_router.put("/situation-prompts/{event}")
+def edit_situation(event: str, change: SituationEdit, session=Depends(get_session)):
+    if event not in PRESETS:
+        raise HTTPException(422, "알 수 없는 상황입니다.")
+    session.rollback()
+    mark_write_intent(session)
+    if situations(session)[event] != change.previous:
+        raise HTTPException(409, "다른 편집이 먼저 저장됐습니다. 다시 열어 주세요.")
+    row = session.get(GameSetting, SITUATION_KEY)
+    values = dict(row.value) if row else {}
+    values[event] = change.text.strip()
+    if row:
+        row.value = values
+    else:
+        session.add(GameSetting(key=SITUATION_KEY, value=values))
+    session.commit()
+    return situations(session)
 
 
 @character_router.get("/{cpu_id}/content")

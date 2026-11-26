@@ -5,7 +5,7 @@ const browser = await chromium.launch({ headless: true, executablePath: process.
 function gate() { let release, seen; return { wait: new Promise((r) => { release = r }), entered: new Promise((r) => { seen = r }), release: () => release(), seen: () => seen() } }
 function content(id) {
   const pair = () => ({ positive: '', negative: '', overrides: { positive: false, negative: false } })
-  const prompts = Object.fromEntries(['appearance', 'upper_underwear', 'lower_underwear'].map((key) => [key, pair()]))
+  const prompts = Object.fromEntries(['appearance', 'top', 'bottom', 'upper_underwear', 'lower_underwear'].map((key) => [key, pair()]))
   prompts.appearance.positive = `test-only-${id}`
   return { schema_version: 1, cpu_id: id, revision: 0, pack_revision_id: null, pack: null, pack_source: null, measurements_cm: { height: null, bust: null, waist: null, hips: null }, measurement_overrides: { height: false, bust: false, waist: false, hips: false }, prompts, levels: Object.fromEntries([0, 1, 2, 3].map((level) => [level, Object.fromEntries(['profile', 'full_body', 'cg'].map((kind) => [kind, { ...pair(), revision: 0 }]))])) }
 }
@@ -404,8 +404,9 @@ try {
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
     assert.equal(await select.inputValue(), '1'); assert.equal(await positive.inputValue(), '')
     // Framing edits keep their Level/kind/field identity and do not resubmit base prompts.
-    const level = panel.locator('.framing-level').nth(2); await level.locator('summary').click()
+    const level = panel.locator('.framing-level').nth(2); await level.locator(':scope > summary').click()
     const framing = level.getByRole('group', { name: 'CG', exact: true }).locator('textarea').nth(1)
+    await level.getByRole('group', {name: 'CG', exact: true}).getByText('제외할 요소 (Negative)').click()
     await framing.fill('test-only-framing')
     const framingResponse = page.waitForResponse((r) => r.url().endsWith('/characters/1/content') && r.request().method() === 'PATCH')
     await save.click(); await framingResponse
@@ -512,6 +513,7 @@ try {
   assert.equal(await page.locator('.cpu-card.selected').count(), 3, 'applying a pack must preserve selected CPUs')
   const negative = panel.getByRole('group', { name: '외모', exact: true }).locator('textarea').nth(1)
   assert.equal(await negative.inputValue(), 'test-source-1-N')
+  await panel.getByRole('group', {name: '외모', exact: true}).getByText('제외할 요소 (Negative)').click()
   await negative.fill(''); await save.click()
   await page.waitForFunction(() => !document.querySelector('.content-editor button.primary-button')?.textContent.includes('저장 중'))
   listing.packs[0].registered_revision = { id: 'test-rev-2', revision: 2 }
@@ -523,7 +525,7 @@ try {
   assert.equal(await negative.inputValue(), ''); assert.equal(await positive.inputValue(), 'test-pending-draft')
   assert.equal(await panel.locator('input[aria-label^="키"]').inputValue(), '', 'directly cleared measurement must survive pack revision update')
   assert.equal(await panel.locator('input[aria-label^="가슴(B)"]').inputValue(), '88.5')
-  assert.equal(await panel.getByRole('group', { name: '하의 속옷', exact: true }).locator('textarea').first().inputValue(), 'test-source-2-P')
+  assert.equal(await panel.getByRole('group', { name: '팬티', exact: true }).locator('textarea').first().inputValue(), 'test-source-2-P')
   assert.equal(await update.isEnabled(), false)
   // Pack application also commits before delaying only its response. Re-entering
   // settings, then saving a measurement, must keep the new value after the old apply.

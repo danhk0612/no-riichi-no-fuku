@@ -189,16 +189,15 @@ class ResultDeliveryTests(unittest.TestCase):
                     base="/api/local/play/sessions/c1-test-session/results"
                     head=client.get(base,params={"generation":generation}).json()["head"]
                     scene=head["payload"]["content"]["scene"]
-                    self.assertEqual(scene["missing_candidates"],["clothing_state","situation","pose"])
-                    self.assertNotIn("generation_input",scene)
-                    with patch("app.services.hand_cg_cache.HandCG.advance") as advance:
-                        self.assertEqual(client.post(f"{base}/{head['event_id']}/cg",params={"generation":generation}).status_code,404)
-                        advance.assert_not_called()
+                    self.assertIn("declaring ron", scene["generation_input"]["positive"])
                     self.assertEqual(head["payload"]["content"]["dialogues"][0]["slot"],"win")
                     with rt.session_factory() as db:
                         anchor=deepcopy(db.get(GameResultDelivery,"c1-test-session").content_anchor)
                     level=anchor["seats"]["1"]["levels"]["0"]
+                    # A saved pre-recipe anchor retains its original candidate requirements.
+                    del level["composed_cg"]
                     for kind in ("clothing_state","situation","pose"):
+                        level[kind] = {"explicit": []}
                         level[kind]["default"]={"positive":kind,"negative":"","allowed_events":["ron_band_2"]}
                     level["situation"]["explicit"]=[{"positive":"wrong","negative":"","allowed_events":["ron_band_1"]}]
                     def resolved(): return resolve(anchor,"hand",head["payload"],head["event_id"])["scene"]

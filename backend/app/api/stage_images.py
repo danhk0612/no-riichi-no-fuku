@@ -1,6 +1,5 @@
 from dataclasses import asdict
 from hashlib import sha256
-from secrets import choice
 from typing import Literal
 from uuid import uuid4
 
@@ -14,36 +13,18 @@ from app.services.character_content import get_character_content
 from app.services.generation_settings import match_inputs
 from app.services.hand_cg_cache import HandCG, replace
 from app.services.local_media import media_path
-from app.services.shared_prompts import get_candidates
+from app.services.image_prompts import EVENTS, compose, situations
 
 router = APIRouter(prefix="/api/local/characters/{cpu}/stage-images/{level}/{kind}",
                    dependencies=[Depends(get_current_superadmin)])
 Kind = Literal["profile", "full_body", "cg"]
 
 
-def parts(db, cpu, level, kind, content):
-    prompts = content["prompts"]
-    selected = [prompts["appearance"]]
-    if level in (1, 2):
-        selected.append(prompts["upper_underwear"])
-    if level == 2:
-        selected.append(prompts["lower_underwear"])
-    for group in ("clothing_state", "situation", "pose"):
-        if group == "situation" and (kind != "cg" or level == 0):
-            continue  # no hand/defeat event for a neutral portrait
-        event = f"defeat_stage_{level}" if group == "situation" else None
-        items = get_candidates(db, cpu, level, group, event)["effective_items"]
-        if not items:
-            label = {"clothing_state":"복장 상태", "pose":"포즈", "situation":"패배 상황"}[group]
-            raise HTTPException(422, f"{level}단계 {label} 후보를 먼저 등록해 주세요.")
-        selected.append(choice(items))
-    selected.append(content["levels"][str(level)][kind])
-    return {k: "\n".join(p[k] for p in selected if p[k]) for k in ("positive", "negative")}
-
-
 @router.post("")
 def prepare(cpu: int, kind: Kind, expected_revision: int, level: int = Path(ge=0, le=3),
-            db: Session = Depends(get_session)):
+            db: Session = Depends(get_session), event: str | None = None):
+    if event is not None and (kind != "cg" or event not in EVENTS):
+        raise HTTPException(422, "CG 상황을 확인해 주세요.")
     content = get_character_content(db, cpu)
     if content["revision"] != expected_revision:
         raise HTTPException(409, "캐릭터 설정이 변경됐습니다. 다시 불러와 주세요.")
@@ -56,7 +37,7 @@ def prepare(cpu: int, kind: Kind, expected_revision: int, level: int = Path(ge=0
     if not all(settings[k] for k in ("model", "encoder", "vae")):
         raise HTTPException(422, "먼저 모델·텍스트 인코더·VAE를 설정해 주세요.")
     ticket = str(uuid4())
-    frozen = {**parts(db, cpu, level, kind, content), "workflow":WORKFLOW, "kind":kind,
+    frozen = {**compose(content["prompts"], level, kind, content["levels"][str(level)][kind], situations(db), event), "workflow":WORKFLOW, "kind":kind,
               "stage":level, "settings":settings}
     slot = db.get(StageImage,(cpu,level,kind))
     if slot is None:
