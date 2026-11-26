@@ -87,3 +87,37 @@ class HandCacheTests(TestCase):
                     self.assertEqual(client.post(route,params=params).status_code,409)
                     self.assertEqual(submit.call_count,1)
             finally: runtime.close()
+
+    def test_ack_does_not_wait_for_generator(self):
+        from threading import Event
+        from test_result_delivery import ResultDeliveryTests
+        began, release = Event(), Event()
+        def delayed(*args):
+            began.set()
+            if not release.wait(8):
+                raise TimeoutError
+            return str(uuid4())
+        with TemporaryDirectory() as tmp, patch.object(Comfy, "submit", side_effect=delayed):
+            runtime = create_local_runtime(Path(tmp))
+            try:
+                with TestClient(runtime.app, headers={"X-Local-Capability":runtime.capability}) as client:
+                    client.put("/api/local/generation-settings",json={"expected_revision":0,"common":{"model":"m","vae":"v","encoder":"c"}}).raise_for_status()
+                    generation = ResultDeliveryTests()._build_completed(runtime,content=True)
+                    base = "/api/local/play/sessions/c1-test-session/results"
+                    params = {"generation":generation}
+                    envelope = client.get(base,params=params).json()
+                    head = envelope["head"]
+                    route = f"{base}/{head['event_id']}/cg"
+                    with ThreadPoolExecutor(max_workers=1) as pool:
+                        future = pool.submit(client.post,route,params=params)
+                        try:
+                            self.assertTrue(began.wait(3))
+                            ack = client.post(base+"/ack",json={**params,"event_id":head["event_id"],"ordinal":head["ordinal"],"expected_delivery_revision":envelope["delivery_revision"]})
+                            self.assertEqual(ack.status_code,200,ack.text)
+                            self.assertEqual(ack.json()["head"]["kind"],"settlement")
+                        finally:
+                            release.set()
+                        self.assertEqual(future.result().json()["state"],"pending")
+                    self.assertEqual(client.post(route,params=params).status_code,409)
+            finally:
+                runtime.close()

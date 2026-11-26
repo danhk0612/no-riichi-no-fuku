@@ -1,6 +1,6 @@
 """Internal W10 text-to-image adapter. No game hooks or external process management."""
 from dataclasses import dataclass
-from http.client import HTTPConnection
+from http.client import HTTPConnection, HTTPException
 from ipaddress import ip_address
 import json
 from urllib.parse import urlencode, urlsplit
@@ -100,7 +100,10 @@ class Comfy:
 
     def submit(self, settings, positive, negative, seed, **character):
         nodes, output = graph(settings, positive, negative, seed, **character)
-        info = self._request("GET", "/object_info")
+        try:
+            info = self._request("GET", "/object_info")
+        except (OSError, HTTPException, ValueError) as exc:
+            raise ValueError("Could not inspect ComfyUI before submission") from exc
         for node in nodes.values():
             spec = info.get(node["class_type"], {}).get("input", {})
             required = spec.get("required", {})
@@ -114,8 +117,11 @@ class Comfy:
                     allowed = available[key][1].get("options")
                 if isinstance(allowed, list) and value not in allowed:
                     raise ValueError(f"Unavailable {node['class_type']}.{key}")
-        result = self._request("POST", "/prompt", {"prompt": nodes, "client_id": self.client_id})
-        job = str(UUID(result["prompt_id"]))
+        try:
+            result = self._request("POST", "/prompt", {"prompt": nodes, "client_id": self.client_id})
+            job = str(UUID(result["prompt_id"]))
+        except (OSError, HTTPException, ValueError, KeyError, TypeError, AttributeError) as exc:
+            raise ConnectionError("No confirmed prompt ID after submission") from exc
         self._outputs[job] = output
         return job
 

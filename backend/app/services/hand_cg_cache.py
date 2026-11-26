@@ -104,7 +104,11 @@ class HandCG:
             except (ValueError, KeyError, TypeError):
                 return save("failed")
             if data is None:
-                return save("failed") if time() - record["started"] > 3600 else save("pending") if record["state"] != "pending" else {"state": "pending", "attempt": record["attempt"]}
+                if time() - record["started"] > 3600:
+                    return save("failed")
+                if record["state"] != "pending":
+                    return save("pending")
+                return {"state": "pending", "attempt": record["attempt"]}
             if not valid_png(data):
                 return save("failed")
             replace(directory / (record["attempt"] + ".png"), data)
