@@ -10,30 +10,42 @@ const data = mkdtempSync(join(evidence, 'campaign-'))
 let app, page, turn
 const button = name => page.getByRole('button', {name, exact:true})
 async function launch() {
-  app = await _electron.launch({executablePath:exe, args:['--data', data]})
+  app = await _electron.launch({executablePath:exe, args:['--disable-background-timer-throttling','--disable-renderer-backgrounding','--disable-backgrounding-occluded-windows','--data', data]})
   page = await app.firstWindow()
-  page.setDefaultTimeout(15000)
+  page.setDefaultTimeout(45000)
+  page.on('pageerror',error=>console.error(error.message))
   await app.evaluate(({BrowserWindow}) => BrowserWindow.getAllWindows()[0].setContentSize(1280,800))
   page.on('websocket', socket => socket.on('framereceived', frame => {
     const event = JSON.parse(String(frame.payload))
     if (event.type === 'human_turn') turn = event
   }))
 }
+const decisionRows = new Map()
+const actionKinds = new Set()
 async function checkViewport() {
   const layout = await page.evaluate(() => {
     const doc = document.scrollingElement
     const rect = selector => document.querySelector(selector)?.getBoundingClientRect()
     const table = rect('.mahjong-table'), hand = rect('.human-controls')
     const visible = el => el.top >= -1 && el.bottom <= innerHeight+1 && el.left >= -1 && el.right <= innerWidth+1
-    const items = [...document.querySelectorAll('.seat .river-preview,.hand button,.action-bar button')]
+    const items = [...document.querySelectorAll('.river-square .river-preview,.hand button,.action-bar button')]
     return {
       outer:doc.scrollHeight <= innerHeight+1 && doc.scrollWidth <= innerWidth+1,
       actions:items.every(el => visible(el.getBoundingClientRect())),
       hand:!hand || (visible(hand) && hand.top >= table.bottom-1),
       table:!table || visible(table),
-      width:innerWidth, height:innerHeight
+      width:innerWidth, height:innerHeight,
+      positions:table && [table.top, table.bottom, rect('.hand').top, rect('.action-bar').top],
+      kinds:[...document.querySelectorAll('.action-bar button')].map(b=>b.dataset.action)
     }
   })
+  if (layout.positions) {
+    const size = layout.width+'x'+layout.height
+    const prior = decisionRows.get(size)
+    if (prior) assert.deepEqual(layout.positions,prior,'행동 선택지가 달라져도 대국판과 손패 위치 유지')
+    decisionRows.set(size,layout.positions)
+    for (const kind of layout.kinds.length ? layout.kinds : ['discard']) actionKinds.add(kind)
+  }
   for (const key of ['outer','actions','hand','table']) assert.ok(layout[key], JSON.stringify(layout))
 }
 async function shot(name) {
@@ -66,10 +78,17 @@ try {
   await button('새로 시작').click()
   await page.locator('.cpu-grid').waitFor()
   await shot('roster')
-  for (const action of ['참가 명단 확정','동풍전 시작']) {
+  {
     const cards = page.locator('button.cpu-card')
     for(let i=0;i<3;i++) await cards.nth(i).click()
-    await button(action).click()
+    await button('참가 명단 확정').click()
+    await page.locator('.portrait-button').first().click()
+    const profile = page.locator('.profile-dialog[open]')
+    await profile.locator('.seat-body').waitFor()
+    await profile.evaluate(el=>Promise.all(el.getAnimations().map(a=>a.finished)))
+    await page.screenshot({path:join(evidence,'profile.png')})
+    await page.keyboard.press('Escape')
+    assert.equal(await page.locator('.game-toolbar').getByText('초기화').count(),0)
   }
   let riverVerified = false
   let verified = false
@@ -87,6 +106,7 @@ try {
       continue
     }
     await page.locator('.human-controls').waitFor()
+    await page.locator('.hand button:enabled,.action-bar button:enabled').first().waitFor()
     await checkViewport()
     const observation = turn.turn.observation
     const current = [observation.round_wind, observation.kyoku_index, observation.honba].join('/')
@@ -96,9 +116,9 @@ try {
       await app.evaluate(({BrowserWindow}) => BrowserWindow.getAllWindows()[0].setSize(1000,720))
       await checkViewport()
       console.log('최소 게임 창', await page.evaluate(()=>[innerWidth,innerHeight,document.scrollingElement.scrollHeight]))
-      const preview = page.locator('.seat-'+riverSeat+' .river-preview')
+      const preview = page.locator('.river-seat-'+riverSeat+' .river-preview')
       const before = (await page.locator('.human-controls').boundingBox()).y
-      assert.equal(await preview.locator('.tile').count(),6)
+      assert.equal(await preview.locator('.tile').count(),Math.min(18,observation.discards[riverSeat].length))
       await preview.click()
       const dialog = page.getByRole('dialog')
       assert.equal(await dialog.locator('.tile').count(),observation.discards[riverSeat].length)
@@ -110,9 +130,17 @@ try {
     if (!verified && observation.kyoku_index >= 2 && turn.action_version > start.action_version) {
       await shot('table')
       const oldVersion = turn.action_version
+      page.once('dialog',d=>d.dismiss())
+      await button('저장하고 나가기').click()
+      await page.locator('.human-controls').waitFor()
+      page.once('dialog',d=>d.accept())
       await button('저장하고 나가기').click()
       await button('이어하기').waitFor()
       // Exit via the actual main menu, then reopen the packaged application.
+      page.once('dialog',d=>d.dismiss())
+      await button('게임 종료').click()
+      await button('이어하기').waitFor()
+      page.once('dialog',d=>d.accept())
       const exit = app.waitForEvent('close')
       await button('게임 종료').click()
       await exit
@@ -127,6 +155,7 @@ try {
       verified = true
     }
     await discardOrCall()
+    await page.waitForFunction(()=>document.querySelector('.hand button:enabled,.action-bar button:enabled,.result-delivery-card,.match-result'))
   }
   assert.ok(riverVerified,'일곱 장 이상의 실제 버림패 확인')
   assert.ok(verified,'두 번째 이후 국을 실제로 되감아야 합니다.')
@@ -139,5 +168,9 @@ try {
   await button('새로 시작').click()
   await page.locator('.cpu-grid').waitFor()
   assert.equal(await page.locator('.cpu-card.selected').count(),0)
+  console.log('고정 좌표',Object.fromEntries(decisionRows),'행동 종류',[...actionKinds])
   console.log('PASS 메뉴, 종료, 동일한 국 복원, 최종 정산, 새 게임')
+} catch (error) {
+  if(page && !page.isClosed()) console.error((await page.locator('body').innerText()).slice(-900))
+  throw error
 } finally { if(app) await app.close() }

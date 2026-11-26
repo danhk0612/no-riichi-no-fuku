@@ -65,9 +65,9 @@ export function CpuSelection({
         return <div key={cpu.id} className="candidate" data-viewed={viewed?.id===cpu.id} onMouseEnter={()=>setViewId(cpu.id)} onFocus={()=>setViewId(cpu.id)}
           tabIndex={completed || full || busy ? 0 : undefined}>
           <button type="button" className={'cpu-card'+(index>=0?' selected':'')} aria-pressed={index>=0} disabled={busy||completed||full}
-            aria-label={cpu.name+(index>=0?' · '+(index+1)+'번 좌석':completed?' · 완료 CPU':full?' · 좌석 마감':' · 선택 가능')} onClick={()=>{setViewId(cpu.id);onToggle(cpu.id)}}>
+            aria-label={cpu.name+(index>=0?' · 선택됨':completed?' · 완료 CPU':full?' · 3명 선택 완료':' · 선택 가능')} onClick={()=>{setViewId(cpu.id);onToggle(cpu.id)}}>
             <CharacterImage cpu={cpu.id} level={cpu.defeat_stage} kind="profile" imageOnly url={cpu.stage_images?.profile} label={cpu.name+' 프로필'} className="candidate-face"/>
-            {index>=0 && <span className="seat-check">✓ {index+1}</span>}
+            {index>=0 && <span className="seat-check">✓</span>}
             <strong>{cpu.name}</strong>{completed && <small>완료 CPU</small>}
           </button>
           {settings.available && <details className="face-tools"><summary aria-label={cpu.name+' 프로필 관리'}>···</summary>
@@ -76,7 +76,7 @@ export function CpuSelection({
       })}</div>
       {!cpus.length && <p>선택 가능한 CPU가 없습니다.</p>}
       {error && <p role="alert">{error}</p>}
-      <footer className="draft-footer"><strong>좌석 순서</strong><ol aria-label="선택한 상대 좌석 순서">{[0,1,2].map(i=><li key={i}><b>{i+1}</b>{cpus.find(cpu=>cpu.id===selectedIds[i])?.name ?? '빈 좌석'}</li>)}</ol>
+      <footer className="draft-footer"><strong>선택한 상대</strong><ol aria-label="선택한 상대">{[0,1,2].map(i=><li key={i}>{cpus.find(cpu=>cpu.id===selectedIds[i])?.name ?? '미선택'}</li>)}</ol>
         <button className="primary-button start-button" type="button" disabled={busy||selectedIds.length!==3} onClick={onStart}>{busy?'세션 생성 중…':'동풍전 시작'}</button></footer>
       <div className="sheet-bottom"><span>Tab 이동　·　Enter 선택</span>
         {onReset && <button type="button" disabled={busy} onClick={onReset}>진행 초기화</button>}

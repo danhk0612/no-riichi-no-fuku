@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, session } = require('electron')
+const { app, BrowserWindow, dialog, ipcMain, session } = require('electron')
 const { spawn } = require('node:child_process')
 const { createServer } = require('node:net')
 const { mkdirSync, writeFileSync, existsSync } = require('node:fs')
@@ -298,9 +298,21 @@ function makeWindow(show = true) {
   window.webContents.on('will-navigate', (event, url) => {
     if (!origin || !url.startsWith(`${origin}/`)) event.preventDefault()
   })
-  window.on('close', event => {
+  let confirmingClose = false
+  window.on('close', async event => {
     if (quitting) return
     event.preventDefault()
+    if (!smoke && !lifecycleTest && origin && window.webContents.getURL().startsWith(origin)) {
+      if (confirmingClose) return
+      confirmingClose = true
+      try {
+        const accepted = await window.webContents.executeJavaScript("window.confirm('게임을 종료할까요? 저장된 대국은 다음 실행에서 이어갈 수 있습니다.')")
+        if (!accepted) return
+      } catch {
+        // A stopped renderer cannot display the confirmation. Use the native window.
+        if (dialog.showMessageBoxSync(window, {type:'question',message:'게임을 종료할까요?',buttons:['취소','종료'],defaultId:0,cancelId:0}) !== 1) return
+      } finally { confirmingClose = false }
+    }
     if (lifecycleTest) {
       evidence.windowCloseRequested = { pid: process.pid, at: Date.now() }
       writeEvidence()
@@ -421,8 +433,9 @@ async function startMatchFromRenderer() {
     })()`)
     await waitForRenderer("document.querySelectorAll('button.cpu-card.selected').length >= 3 && document.querySelector('button.start-button:not([disabled])')", 30000)
     await window.webContents.executeJavaScript("document.querySelector('button.start-button:not([disabled])')?.click()")
-    await waitForRenderer("Boolean(document.querySelector('.opponent-sheet') !== null)", 30000)
-    addCheck('renderer fixed participant roster before opponent selection')
+    await waitForRenderer("Boolean(document.querySelector('.human-controls,.match-result'))", 90000)
+    addCheck('three participants started the match with randomly assigned seats')
+    return
   }
   await window.webContents.executeJavaScript(`(() => {
     Array.from(document.querySelectorAll('button.cpu-card:not([disabled])')).slice(0, 3).forEach(button => button.click())
@@ -914,7 +927,7 @@ async function smokeRun() {
 
     await window.webContents.executeJavaScript(`(() => {
       window.confirm = () => true
-      const reset = document.querySelector('.selection-actions button, .sheet-bottom button') || document.querySelector('.game-toolbar > button.text-button')
+      const reset = document.querySelector('.selection-actions button, .sheet-bottom button') || document.querySelector('#settings-reset')
       reset?.click()
     })()`)
     const resetState = await waitFor(async () => {
@@ -929,10 +942,10 @@ async function smokeRun() {
     await window.webContents.executeJavaScript(`(() => {
       const cards = Array.from(document.querySelectorAll('button.cpu-card:not([disabled])'))
       const selected = cards.filter(button => button.classList.contains('selected'))
-      selected.slice(3).forEach(button => button.click())
-      cards.filter(button => !button.classList.contains('selected')).slice(0, Math.max(0, 3 - selected.length)).forEach(button => button.click())
+      selected.slice(4).forEach(button => button.click())
+      cards.filter(button => !button.classList.contains('selected')).slice(0, Math.max(0, 4 - selected.length)).forEach(button => button.click())
     })()`)
-    await waitForRenderer("document.querySelectorAll('button.cpu-card.selected').length === 3 && document.querySelector('button.start-button:not([disabled])')", 30000)
+    await waitForRenderer("document.querySelectorAll('button.cpu-card.selected').length === 4 && document.querySelector('button.start-button:not([disabled])')", 30000)
     await window.webContents.executeJavaScript("document.querySelector('button.start-button:not([disabled])')?.click()")
     await waitForRenderer("document.querySelector('.opponent-sheet') !== null", 30000)
     await window.webContents.executeJavaScript(`(() => {
@@ -963,7 +976,7 @@ async function smokeRun() {
     }).then(response => response.json())
     await window.webContents.executeJavaScript(`(() => {
       window.confirm = () => true
-      const reset = document.querySelector('.selection-actions button, .sheet-bottom button') || document.querySelector('.game-toolbar > button.text-button')
+      const reset = document.querySelector('.selection-actions button, .sheet-bottom button') || document.querySelector('#settings-reset')
       if (!reset) throw new Error('could not locate reset control while start response was pending')
       const reactProps = Object.keys(reset).find(key => key.startsWith('__reactProps$'))
       if (!reactProps) throw new Error('could not locate reset handler while start response was pending')
@@ -1006,14 +1019,16 @@ async function smokeRun() {
         }
         return originalFetch(input, init)
       }
-      document.querySelector('.game-toolbar > button.text-button')?.click()
+      document.getElementById('settings-door').click()
+      document.querySelector('#settings-reset')?.click()
     })()`)
-    await waitForRenderer("window.__w06ResetFailureInjected === true && Boolean(document.querySelector('.human-controls')) && document.querySelector('.game-toolbar > button.text-button:not([disabled])') && (document.querySelector('.human-controls .hand button:not([disabled])') || document.querySelector('.human-controls .action-bar button:not([disabled])'))", 30000)
+    await waitForRenderer("window.__w06ResetFailureInjected === true && Boolean(document.querySelector('.human-controls')) && document.querySelector('#settings-reset:not([disabled])') && (document.querySelector('.human-controls .hand button:not([disabled])') || document.querySelector('.human-controls .action-bar button:not([disabled])'))", 30000)
     const activeAfterFailedReset = await fetch(`${origin}/api/game/sessions/active`, {
       headers: { 'X-Local-Capability': capability },
     }).then(response => response.json())
     if (!activeAfterFailedReset) throw new Error('uncommitted reset recovery lost the active match')
     addCheck('renderer restored active turn after uncommitted reset failure')
+    await window.webContents.executeJavaScript("if (!document.getElementById('game-settings').hidden) document.getElementById('settings-door').click()")
     await clickHumanAction()
     addCheck('next action completed after reset failure recovery without renderer reload')
   }
@@ -1180,6 +1195,10 @@ try {
 } catch (error) {
   bootstrapError = error
 }
+
+ipcMain.on('quit-from-menu', event => {
+  if (window && event.sender === window.webContents && event.senderFrame === window.webContents.mainFrame) void finishQuit('menu')
+})
 
 const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) app.quit()

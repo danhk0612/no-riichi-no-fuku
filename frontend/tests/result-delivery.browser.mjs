@@ -288,12 +288,12 @@ try {
     if (scenario==='human_turn') {
       const seat=desktop.getByRole('region',{name:'Player 2 좌석'})
       await seat.getByAltText('Player 2 프로필').waitFor()
-      await seat.locator('summary').click()
+      await seat.locator('.portrait-button').click()
       await seat.getByAltText('Player 2 전신').waitFor()
       await seat.getByText('키 169.0 cm').waitFor()
       await seat.getByText('리치 선호').waitFor()
       assert.equal(await seat.locator('dd').innerText(),'0')
-      await seat.locator('summary').click()
+      await desktop.keyboard.press('Escape')
     }
     desktopSockets[0].send(JSON.stringify({ type: 'result_delivery', ...noImage }))
     await desktop.locator('[data-event-id="settlement-no-image"]').waitFor()
@@ -305,7 +305,8 @@ try {
         desktopSockets[0].send(JSON.stringify({ type: 'result_delivery', ...conflicting }))
       } else {
         desktop.once('dialog', (dialog) => dialog.accept())
-        await desktop.getByRole('button', { name: '초기화' }).click()
+        await desktop.getByRole('button', {name:'설정',exact:true}).click()
+      await desktop.getByRole('button', {name:'진행 초기화',exact:true}).click()
       }
       await desktop.locator('.opponent-sheet').waitFor()
       for (const card of await desktop.locator('button.cpu-card:not([disabled])').all()) await card.click()

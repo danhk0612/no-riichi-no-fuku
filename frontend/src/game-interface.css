@@ -186,3 +186,63 @@ body:has(.desktop-shell) {overflow:clip}
 .game-view .opponent-selection .preview-copy {padding-block:8px}
 .game-view .opponent-selection .cpu-grid {flex:1;align-content:start;margin:6px 0}
 .game-view .opponent-selection .start-button {margin-top:6px}
+
+/* The rivers occupy their own square between the portraits. */
+.game-view .mahjong-table {display:grid;grid-template:"left top right" minmax(60px,.32fr) "left center right" minmax(0,1fr) "left bottom right" auto / minmax(0,1fr) minmax(0,2.3fr) minmax(0,1fr);align-items:stretch}
+.game-view .mahjong-table>.seat {position:relative;align-self:center;display:grid;grid-template-columns:minmax(0,1fr) auto;padding:6px;min-height:0;gap:4px}
+.game-view .mahjong-table>.seat-2 {height:100%;width:min(100%,390px);justify-self:center;grid-template-columns:38% 1fr auto}
+.game-view .seat-2>.portrait-button {grid-area:1/1/4/2;height:100%}
+.game-view .seat-2>header {grid-column:2}
+.game-view .seat-2>.score {grid-column:3}
+.game-view .mahjong-table>.seat-0 {width:100%;padding:3px 10px}
+.portrait-button {grid-column:1/-1;grid-row:2;display:grid;width:100%;height:clamp(100px,20vh,215px);padding:0;overflow:hidden;border:1px solid #728ba0;background:#193349;color:#d9e5ed;cursor:zoom-in}
+.portrait-button .live-image {display:contents}
+.game-view .portrait-button .seat-face {width:100%;height:100%;min-height:0;object-fit:cover;object-position:50% 30%}
+.game-view .portrait-button .image-empty {display:grid;place-content:center;font-size:.83rem;background:radial-gradient(ellipse at top,#395670,#182e42)}
+.game-view .seat .melds {margin:0}
+.game-view .seat-2>:is(.melds,.speech-bubble,.riichi) {grid-column:2/-1}
+.game-view .seat .speech-bubble {position:absolute;bottom:0;right:0;z-index:1;pointer-events:none}
+.river-square {grid-area:center;position:relative;min-height:0;container-type:size;display:grid;place-items:center}
+.river-square>.discards {position:absolute;min-height:0;--unit:clamp(12px,min(5cqw,6.4cqh),28px);width:calc(6 * var(--unit));height:calc(3.65 * var(--unit) + 14px)}
+.river-square .river-preview {display:flex;flex-direction:column;height:100%;gap:1px;padding:0;align-items:center}
+.river-square .river-heading {font-size:10px;line-height:12px;white-space:nowrap}
+.river-square .river-heading small {font-size:inherit}
+.river-square .river-preview .tile-row {display:grid;width:100%;height:auto;gap:0;grid-template-columns:repeat(6,1fr)}
+.river-square .river-preview .tile {min-width:0;width:100%;min-height:0;height:calc(var(--unit) * 1.2);padding:0;border-radius:2px;animation:tile-arrive .25s ease-out}
+.river-square .river-preview .tile-art {width:96%;height:auto;aspect-ratio:96/112}
+.river-square .river-preview .tile-caption {display:none}
+.river-seat-2 {top:0;left:50%;translate:-50% 0}
+.river-seat-0 {bottom:0;left:50%;translate:-50% 0}
+.river-seat-1,.river-seat-3 {top:50%;translate:0 -50%}
+.river-seat-1 {left:calc(50% + 3.8 * var(--unit))}.river-seat-3 {right:calc(50% + 3.8 * var(--unit))}
+.river-seat-1 .river-preview {transform:rotate(-90deg)}.river-seat-3 .river-preview {transform:rotate(90deg)}
+.game-view .river-square .round-status {grid-area:1/1;position:relative;display:grid;grid-template-columns:auto auto;gap:2px 5px;width:fit-content;max-width:40%;padding:4px 8px;font-size:.75rem}
+.river-square .round-counters {font-size:.7rem;gap:3px}
+.river-square .round-status .tile {min-height:22px;padding:0}
+.river-square .round-status .tile-art {width:15px;height:17px}
+.river-square .round-status .tile-caption {display:none}
+.table-call {position:absolute;z-index:2;bottom:100%;left:50%;translate:-50% 0;width:max-content;padding:5px 12px;color:white;background:#172f46;border-left:3px solid var(--gold);animation:tile-arrive .2s ease-out}
+.profile-dialog {width:min(760px,90vw);max-height:85vh;overflow:auto;padding:0;color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-top:4px solid var(--gold)}
+.profile-dialog::backdrop {background:#0a192bd9}
+.seat .profile-dialog header {display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:#233c54;color:white}
+.profile-dialog h2 {margin:0}
+.profile-spread {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.full-portrait {display:grid;place-items:center;background:#d3dde0}
+.full-portrait .live-image {display:contents}
+.full-portrait .seat-body {width:100%;max-height:none;height:clamp(220px,55vh,540px);object-fit:contain}
+.full-portrait .image-empty {display:grid;place-items:center;color:#37526a}
+.profile-copy {padding:16px;align-self:start}
+.profile-copy dl>div {display:flex;justify-content:space-between;border-bottom:1px solid var(--rule);padding:4px}
+.profile-copy .image-actions {display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 12px}
+.profile-copy textarea {width:100%;box-sizing:border-box}
+.profile-dialog button {border:1px solid #7790a2;background:#203a51;color:white;padding:5px 8px;cursor:pointer}
+@keyframes tile-arrive {from{opacity:.25;transform:translateY(-5px)}to{opacity:1;transform:none}}
+.profile-dialog[open],.river-dialog[open] {animation:tile-arrive .2s ease-out}
+@media(prefers-reduced-motion:reduce){.desktop-shell *, .desktop-shell *::before {animation-duration:.001ms!important;transition-duration:.001ms!important}}
+
+/* Keep the decision row above the hand even when discard is the only action. */
+.game-view .human-controls {display:grid;grid-template-columns:max-content minmax(0,1fr);grid-template-rows:42px auto;gap:4px 12px}
+.game-view .hand-heading {grid-area:1/1;margin:0;align-self:center}
+.game-view .human-controls .hand {grid-area:2/1/3/3}
+.game-view .human-controls .action-bar {grid-area:1/2;display:flex;flex-wrap:nowrap;justify-content:safe flex-end;align-items:center;margin:0;min-width:0;overflow-x:auto;overflow-y:hidden;gap:5px}
+.game-view .action-bar button {flex:none;padding:5px 10px;border-radius:3px}

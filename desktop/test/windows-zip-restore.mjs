@@ -79,7 +79,8 @@ try {
     await page.getByRole('button',{name:'게임 화면으로',exact:true}).click()
     await page.locator('.cpu-preview').waitFor()
     await page.screenshot({ path: join(dirname(evidence), 'selection-screen.png') })
-    for (const action of ['참가 명단 확정', '동풍전 시작']) {
+    {
+      const action = '참가 명단 확정'
       const start = page.getByRole('button', { name: action, exact: true })
       await start.waitFor()
       await page.locator('button.cpu-card').filter({ hasText: '다시 만난 캐릭터' }).click()

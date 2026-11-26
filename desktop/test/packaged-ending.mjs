@@ -32,6 +32,7 @@ async function stop(){
     const timeout=setTimeout(()=>reject(Error('packaged application did not exit')),30000)
     app.process().once('exit',(code)=>{clearTimeout(timeout);code===0?resolve():reject(Error('packaged application exit '+code))})
   })
+  page.once('dialog', d=>d.accept())
   await Promise.all([exit,app.evaluate(({BrowserWindow})=>{setImmediate(()=>BrowserWindow.getAllWindows()[0].close())})])
   app=null
 }
@@ -41,7 +42,7 @@ try{
   await page.locator('.human-controls').waitFor()
   assert.equal((await state()).active_session_id,plan.session)
   const seat=page.locator('.seat-1')
-  await seat.locator('summary').click()
+  await seat.locator('.portrait-button').click()
   if (noMedia) {
     assert.equal(plan.previous_matches.length, 8)
     assert.equal(await seat.locator('img.seat-body').count(), 0)
@@ -50,6 +51,7 @@ try{
     await seat.locator('img.seat-body').evaluate(i=>i.decode())
     record('restored final hand and decoded current-stage seat image')
   }
+  await page.keyboard.press('Escape')
   // The fixture was saved before the final action. Resume now starts at the hand boundary.
   while (turn.action_version < plan.prior_actions) {
     const version = turn.action_version

@@ -239,6 +239,7 @@ async def send_registered_game_state(
 ) -> bool:
     """Build a snapshot under the registry lock, then perform network IO unlocked."""
     dialogue_messages: list[dict[str, object]] = []
+    table_actions = []
     sound_messages: list[dict[str, object]] = []
     result_voice_message: dict[str, object] | None = None
     with registered.lock:
@@ -257,6 +258,8 @@ async def send_registered_game_state(
                         event_type = event.get("type")
                         actor = event.get("actor")
                         event_key = _map_event_type_to_key(event_type, event)
+                        if isinstance(actor, int) and (event_type == "dahai" or event_key in {"chi", "pon", "kan", "riichi", "ron", "tsumo"}):
+                            table_actions.append({"seat": actor, "kind": "discard" if event_type == "dahai" else event_key, "tile": event.get("pai")})
                         if isinstance(actor, int) and actor in game.cpu_character_by_seat and event_key in {"chi", "pon", "kan", "riichi", "ron", "tsumo"}:
                             cpu_id = game.cpu_character_by_seat[actor]
                             clip = resolve_voice_slot(session, cpu_id, event_key, local_runtime.paths.media)
@@ -397,6 +400,8 @@ async def send_registered_game_state(
                     )
                     await websocket.close(code=1011)
                     return False
+                if envelope["route"] == "result" and table_actions:
+                    envelope["table_actions"] = table_actions
                 await websocket.send_json({"type": "result_delivery", **envelope})
                 if envelope["route"] != "human_turn":
                     return True
@@ -447,6 +452,8 @@ async def send_registered_game_state(
         message = message
     if registered.play_generation is not None:
         message["cpu_difficulties"] = registered.cpu_difficulties
+    if table_actions:
+        message["table_actions"] = table_actions
     await websocket.send_json(message)
     if result_voice_message is not None:
         await websocket.send_json(result_voice_message)

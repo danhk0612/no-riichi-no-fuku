@@ -183,13 +183,13 @@ function TileRow({ tiles, emptyText }: { tiles: number[]; emptyText: string }) {
   )
 }
 
-function DiscardRiver({ name, tiles }: { name: string; tiles: number[] }) {
+function DiscardRiver({ name, tiles, seat }: { name: string; tiles: number[]; seat: number }) {
   const dialog = useRef<HTMLDialogElement>(null)
-  return <div className="discards">
+  return <div className={`discards river-seat-${seat}`}>
     <button type="button" className="river-preview" disabled={!tiles.length} aria-haspopup="dialog"
       aria-label={name + ' 버림패 전체 보기 · ' + tiles.length + '장'} onClick={() => dialog.current?.showModal()}>
       <span className="river-heading">버림패 {tiles.length}장 {tiles.length > 0 && <small>전체 보기 ›</small>}</span>
-      <span className="tile-row">{tiles.slice(-6).map(id => <Tile key={id} tileId={id}/>)}</span>
+      <span className="tile-row">{tiles.slice(-18).map(id => <Tile key={id} tileId={id}/>)}</span>
     </button>
     <dialog ref={dialog} className="river-dialog" aria-label={name + ' 버림패 전체'}>
       <header><h2>{name} · 버림패</h2><button type="button" onClick={() => dialog.current?.close()}>닫기</button></header>
@@ -209,6 +209,7 @@ function SeatPanel({
   dialogue?: DialogueEvent
 }) {
   const imageSettings = useContext(ImageSettings)
+  const profile = useRef<HTMLDialogElement>(null)
   const seat = player.seat
   return (
     <section className={`seat seat-${seat}`} aria-label={`${player.name} 좌석`}>
@@ -219,16 +220,20 @@ function SeatPanel({
         <strong>{player.name}</strong>
         {player.isHuman && <span className="human-badge">나</span>}
       </header>
-      {!player.isHuman && player.detail && <details className="seat-details">
-        <summary aria-label={player.name+' 캐릭터 정보'}><CharacterImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="profile" url={player.detail.images.profile} label={player.name+' 프로필'} className="seat-face" imageOnly/></summary>
-        <div className="seat-bio">
-          {imageSettings.available && player.detail.cpu_id != null && <LiveImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="profile" controlsOnly className="" label={player.name+' 프로필'}/>}
-          <CharacterImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="full_body" url={player.detail.images.full_body} label={player.name+' 전신'} className="seat-body"/>
-          <p>Level {player.detail.stage} · {player.detail.style}</p><Measurements values={player.detail.measurements_cm}/>
+      {!player.isHuman && player.detail && <>
+        <button type="button" className="portrait-button" aria-haspopup="dialog" onClick={()=>profile.current?.showModal()} aria-label={player.name+' 캐릭터 정보'}><CharacterImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="profile" url={player.detail.images.profile} label={player.name+' 프로필'} className="seat-face" imageOnly/></button>
+        <dialog ref={profile} className="profile-dialog" aria-label={player.name+' 캐릭터 정보'}>
+          <header><h2>{player.name}</h2><button type="button" onClick={()=>profile.current?.close()}>닫기</button></header>
+          <div className="profile-spread"><div className="full-portrait">
+          <CharacterImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="full_body" url={player.detail.images.full_body} label={player.name+' 전신'} className="seat-body" imageOnly/>
+          </div><div className="profile-copy">
+          {imageSettings.available && player.detail.cpu_id != null && <div><b>프로필</b><LiveImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="profile" controlsOnly className="" label={player.name+' 프로필'}/></div>}
+          {imageSettings.available && player.detail.cpu_id != null && <div><b>전신</b><LiveImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="full_body" controlsOnly className="" label={player.name+' 전신'}/></div>}
+          <p>{defeatStageLabel(player.detail.stage)}</p><Measurements values={player.detail.measurements_cm}/>
           <p>{player.detail.description}</p><dl aria-label="마작 스펙">
           {Object.entries({aggression:'공격 성향',defense:'수비 성향',call_preference:'부로 선호',riichi_preference:'리치 선호',hand_value_preference:'타점 선호',speed_preference:'속도 선호'}).map(([k,label])=>
-            player.detail?.stats[k]!=null && <div key={k}><dt>{label}</dt><dd>{player.detail.stats[k]}</dd></div>)}</dl></div>
-      </details>}
+            player.detail?.stats[k]!=null && <div key={k}><dt>{label}</dt><dd>{player.detail.stats[k]}</dd></div>)}</dl></div></div></dialog>
+      </>}
       <p className="score">{observation.scores[seat].toLocaleString()}점</p>
       {observation.riichi_declared[seat] && <p className="riichi">리치</p>}
       {dialogue && !player.isHuman && (
@@ -246,7 +251,7 @@ function SeatPanel({
           ))}
         </div>
       )}
-      <DiscardRiver name={player.name} tiles={observation.discards[seat]}/>
+
     </section>
   )
 }
@@ -351,12 +356,15 @@ function ActiveTable({
             dialogue={dialogueBySeat.get(player.seat)}
           />
         ))}
+        <div className="river-square">
+        {players.map(player=><DiscardRiver key={player.seat} seat={player.seat} name={player.name} tiles={observation.discards[player.seat]}/>)}
         <div className="round-status">
+          {state.tableAction && <b className="table-call" key={state.tableAction.label} role="status">{state.tableAction.label}</b>}
           <strong>{roundWindLabel(observation.round_wind)}{observation.kyoku_index % 4 + 1}국</strong>
           <div className="round-counters"><span>본장 {observation.honba}</span><span>리치봉 {observation.riichi_sticks}</span></div>
           <span>도라</span>
           <TileRow tiles={observation.dora_indicators} emptyText="없음" />
-        </div>
+        </div></div>
       </section>
       <HumanHand
         observation={observation}

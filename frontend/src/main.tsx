@@ -47,7 +47,7 @@ import './style.css'
 import './game-interface.css'
 
 declare global {
-  interface Window { nrnfDesktop?: { isDesktop: true } }
+  interface Window { nrnfDesktop?: { isDesktop: true; quit: () => void } }
 }
 
 const DESKTOP_SESSION = 'local-desktop-session'
@@ -536,6 +536,7 @@ function App() {
     const requestToken = localRequestTokenRef.current
     socketRef.current = socket
     setActionPending(true)
+    let tableVisible = false
     let completed = false
     let recentDialogues: DialogueEvent[] = []
 
@@ -550,11 +551,39 @@ function App() {
       }
       socket.send(JSON.stringify(message))
     })
-    socket.addEventListener('message', (event) => {
+    socket.addEventListener('message', async (event) => {
       if (socketRef.current !== socket || (isDesktop && requestToken !== localRequestTokenRef.current)) return
       const message = JSON.parse(event.data as string) as GameServerMessage
       if (isDesktop && 'generation' in message && message.generation && localGenerationRef.current
         && message.generation !== localGenerationRef.current) return
+      if (tableVisible && 'table_actions' in message && message.table_actions) {
+        const duration = (kind:string) => kind === 'discard' ? 340 : 760
+        const total = message.table_actions.reduce((ms, action)=>ms + duration(action.kind),0)
+        const scale = Math.min(1, 5000 / total)
+        for (const action of message.table_actions) {
+          const names: Record<string,string> = {discard:'버림',chi:'치',pon:'퐁',kan:'깡',riichi:'리치',ron:'론',tsumo:'쯔모'}
+          const tile = action.tile?.replace(/^([1-9])([mps])(r?)$/, (_, n, suit, red) =>
+            (red ? '적 ' : '') + n + ({m:'만',p:'통',s:'삭'}[suit as 'm'|'p'|'s']))
+          const honors: Record<string,string> = {E:'동',S:'남',W:'서',N:'북',P:'백',F:'발',C:'중'}
+          const label = [seats.find(p=>p.seat===action.seat)?.name, tile && (honors[tile] || tile), names[action.kind]].filter(Boolean).join(' · ')
+          setGameState(current=>{
+            if (current.status !== 'human_turn') return current
+            const observation = current.turn.observation
+            let discards = observation.discards
+            if (action.kind === 'discard' && message.type === 'human_turn') {
+              const previous = discards[action.seat]
+              const next = message.turn.observation.discards[action.seat]
+              const id = next[previous.length]
+              if (id !== undefined && previous.every((tile,i)=>next[i]===tile)) {
+                discards = discards.map((row,seat)=>seat===action.seat ? [...row,id] : row)
+              }
+            }
+            return {...current, tableAction:{seat:action.seat,label},turn:{...current.turn,observation:{...observation,discards}}}
+          })
+          await new Promise(resolve=>window.setTimeout(resolve,duration(action.kind) * scale))
+          if (socketRef.current !== socket || requestToken !== localRequestTokenRef.current) return
+        }
+      }
       if (message.type === 'dialogue_event') {
         recentDialogues = [...recentDialogues, {
           cpu_character_id: message.cpu_character_id,
@@ -662,6 +691,7 @@ function App() {
         return
       }
       if (message.type === 'human_turn') {
+        tableVisible = true
         setGameState({
           status: 'human_turn',
           cpuDifficulties: message.cpu_difficulties,
@@ -758,7 +788,7 @@ function App() {
   async function startGame() {
     if (!accessToken || (rosterMode ? selectedCpuIds.length < 3 : selectedCpuIds.length !== 3)) return
     const requestToken = isDesktop ? beginLocalRequest() : 0
-    const expectedGeneration = isDesktop ? localPlay?.generation : undefined
+    let expectedGeneration = isDesktop ? localPlay?.generation : undefined
     setBusy(true)
     setError(null)
     try {
@@ -766,6 +796,9 @@ function App() {
         const updated = await confirmLocalRoster(accessToken, localPlay.generation, selectedCpuIds)
         if (!isCurrentLocalRequest(requestToken, expectedGeneration)) return
         storeLocalPlay(updated, requestToken)
+        expectedGeneration = updated.generation
+        setRosterMode(false)
+        setCpus(current=>current?.filter(cpu=>selectedCpuIds.includes(cpu.id)) ?? null)
         if (updated.phase === 'ending_pending' && updated.ending_event_id) {
           setCpus(null)
           setPlayers([])
@@ -774,11 +807,19 @@ function App() {
           setError(null)
           return
         }
-        await loadLocalCpus(accessToken, updated, requestToken)
-        setError(null)
-        return
+        if (selectedCpuIds.length !== 3) {
+          await loadLocalCpus(accessToken, updated, requestToken)
+          return
+        }
       }
-      const created = await createGameSession(accessToken, selectedCpuIds, isDesktop ? localPlay?.generation : undefined)
+      const opponents = [...selectedCpuIds]
+      if (isDesktop) {
+        for (let i = opponents.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[opponents[i], opponents[j]] = [opponents[j], opponents[i]]
+        }
+      }
+      const created = await createGameSession(accessToken, opponents, expectedGeneration)
       if (isDesktop && !isCurrentLocalRequest(requestToken, expectedGeneration)) return
       setPlayers(created.players)
       setGameState({ status: 'waiting' })
@@ -931,6 +972,7 @@ function App() {
     clearResultAssetUrl()
     try {
       const updated = await resetLocalPlay(accessToken, localPlay.generation)
+      setSettingsVisible(false)
       if (!isCurrentLocalRequest(requestToken, expectedGeneration)) return
       await restoreLocalPlay(accessToken, updated, requestToken)
     } catch (caught) {
@@ -972,6 +1014,7 @@ function App() {
 
   async function leaveToMenu() {
     if (!accessToken || busy || actionPending) return
+    if (!cpus && !window.confirm('대국을 저장하고 메인 메뉴로 나갈까요? 진행 중인 국은 이어하기에서 그 국의 처음부터 시작합니다.')) return
     setBusy(true)
     try {
       const play = await getLocalPlay(accessToken)
@@ -1044,6 +1087,7 @@ function App() {
                 disabled={activeSettings === 'content' && page === 'content' && fixedSaving}
                 onClick={() => selectSettings(page)}>{label}</button>)}
             </div>)}
+            {screen === 'play' && !cpus && <button id="settings-reset" type="button" disabled={busy} onClick={resetPlay}>진행 초기화</button>}
           </nav>
           <div className="settings-detail">
             {!activeSettings && <section aria-label="플레이어 이름 설정"><h3>플레이어 이름</h3>
@@ -1069,7 +1113,7 @@ function App() {
               <button disabled={!hasProgress || busy} onClick={() => void enterFromMenu(true)}>이어하기</button>
               {hasProgress && localPlay?.active_session_id && !localPlay.result_resume && <small>이어하면 중단한 국의 처음부터 시작합니다.</small>}
               <button disabled={!accessToken || busy} onClick={() => {setActiveSettings(null);setSettingsVisible(true)}}>설정</button>
-              <button disabled={busy} onClick={() => window.close()}>게임 종료</button></nav>}
+              <button disabled={busy} onClick={() => {if (window.confirm('게임을 종료할까요? 저장된 대국은 다음 실행에서 이어갈 수 있습니다.')) window.nrnfDesktop?.quit()}}>게임 종료</button></nav>}
           {error && <p className="form-error" role="alert">{error}</p>}
         </div></section>}
       <div className="game-view" hidden={settingsVisible || screen !== 'play'}>
@@ -1110,7 +1154,7 @@ function App() {
           <div className="game-toolbar">
             {isDesktop && <button className="menu-return" disabled={busy || actionPending} onClick={leaveToMenu}>저장하고 나가기</button>}
             <span>{players.map((player) => player.name).join(' · ') || desktopProfile}</span>
-            {isDesktop && <button className="text-button" disabled={busy} onClick={resetPlay} type="button">초기화</button>}
+
           </div>
           {isDesktop && (gameState.status === 'human_turn' || gameState.status === 'complete') && <p className="current-difficulty">
             현재 대국 난이도: {gameState.cpuDifficulties?.map((cpu) => `${players.find((p) => p.seat === cpu.seat)?.name ?? cpu.seat} ${cpu.level}/10`).join(' · ') ?? '기존 저장'}
