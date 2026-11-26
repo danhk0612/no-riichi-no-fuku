@@ -880,6 +880,9 @@ function App() {
     setError(null)
   }
 
+  const showingResult = gameState.status === 'result_delivery'
+    || gameState.status === 'settlement_wait' || gameState.status === 'complete'
+  const musicScreen = cpus ? 'selection' : showingResult ? 'result' : players.length ? 'game' : 'title'
   return (
     <main className="shell">
       <header className="app-header">
@@ -963,7 +966,7 @@ function App() {
           />}
         </>
       )}
-      {isDesktop && <BackgroundMusic accessToken={accessToken ?? DESKTOP_SESSION} selection={soundSelection} screen={cpus ? 'selection' : gameState.status === 'complete' ? 'result' : players.length === 0 ? 'title' : 'game'} paused={gameState.status === 'ending'} />}
+      {isDesktop && <BackgroundMusic accessToken={accessToken ?? DESKTOP_SESSION} selection={soundSelection} screen={musicScreen} paused={gameState.status === 'ending'} />}
     </main>
   )
 }
