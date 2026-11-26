@@ -241,7 +241,7 @@ class LocalRuntime:
         self.lock.release()
 
 
-def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
+def create_local_runtime(data_root: Path | None = None, game_root: Path | None = None) -> LocalRuntime:
     paths = resolve_data_paths(data_root)
     paths.root.mkdir(parents=True, exist_ok=True)
     paths.media.mkdir(parents=True, exist_ok=True)
@@ -256,7 +256,7 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
         )
         _migrate(engine)
         session_factory = sessionmaker(
-            bind=engine, class_=LocalRuntimeSession, expire_on_commit=False
+            bind=engine, class_=LocalRuntimeSession, expire_on_commit=False, info={"media_root": paths.media}
         )
         settings = Settings(
             _env_file=None,
@@ -362,7 +362,7 @@ def create_local_runtime(data_root: Path | None = None) -> LocalRuntime:
         app.dependency_overrides[get_game_registry] = lambda: registry
         runtime = LocalRuntime(
             app, paths, capability, engine, session_factory, member_id, admin_id,
-            lock, registry, {}, RLock(), ContentPackRegistry(paths.root, paths.media, session_factory)
+            lock, registry, {}, RLock(), ContentPackRegistry(paths.root, paths.media, session_factory, game_root)
         )
         app.state.local_runtime = runtime
         runtime.content_packs.scan()

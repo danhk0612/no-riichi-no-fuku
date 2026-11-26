@@ -122,8 +122,16 @@ def get_character_content(session: Session, cpu_id: int) -> dict:
     for level, kinds in levels.items():
         for kind, pair in kinds.items():
             pair["media"] = images.get(level, {}).get(kind)
+    pack_ending = (applied.manifest.get("ending") if applied else None) or {}
+    ending = {**_empty_pair(), **{k: pack_ending[k] for k in ("positive", "negative") if k in pack_ending},
+              **stored.get("ending", {}), "media": None}
+    ending["positive"] = ending["positive"] or "closing portrait after the final mahjong match, soft evening light"
+    if pack_ending.get("image"):
+        ref = session.get(ContentPackFile, (applied.id, pack_ending["image"]))
+        if ref:
+            ending["media"] = {"media_id": ref.media_asset_id, "url": media_url(ref.media_asset_id), "digest": ref.digest}
     for slot in session.scalars(select(StageImage).where(StageImage.cpu_id == cpu_id)):
-        frame = levels[str(slot.level)][slot.kind]
+        frame = ending if slot.kind == "ending" else levels[str(slot.level)][slot.kind]
         frame["generation_ticket"] = slot.ticket
         if slot.media_id:
             frame["media"] = {"media_id": slot.media_id, "url": media_url(slot.media_id),
@@ -142,6 +150,7 @@ def get_character_content(session: Session, cpu_id: int) -> dict:
         } if pack else None,
         "schema_version": 1,
         "cpu_id": cpu_id,
+        "ending": ending,
         "revision": record.revision if record else 0,
         "pack_revision_id": record.pack_revision_id if record else None,
         "prompts": {
@@ -320,7 +329,21 @@ def apply_character_pack(
     if record is None:
         record = CharacterContent(cpu_id=cpu_id, overrides=[])
         session.add(record)
+    if record.prompts and "ending" in record.prompts:
+        prompts["ending"] = record.prompts["ending"]
     record.prompts = prompts
+    if parsed.generation:
+        from app.services.generation_settings import KEY, Character, read_settings
+        from app.db.models import GameSetting
+        preferences = read_settings(session)
+        current_model = preferences["characters"].get(str(cpu_id))
+        previous = session.get(ContentPackRevision, record.pack_revision_id) if record.pack_revision_id else None
+        previous_model = previous.manifest.get("generation") if previous else None
+        if current_model is None or (previous_model and Character.model_validate(current_model) == Character.model_validate(previous_model)):
+            row = session.get(GameSetting, KEY) or GameSetting(key=KEY)
+            row.value = {**preferences, "revision": preferences["revision"] + 1,
+                         "characters": {**preferences["characters"], str(cpu_id): parsed.generation.model_dump()}}
+            session.add(row)
     record.pack_revision_id = revision.id
     record.revision = current["revision"] + 1
     measurement_overrides = set(record.overrides or []) if record else set()

@@ -54,3 +54,13 @@ subprocess.run([
     "--platform=win32", "--arch=x64", "--electron-version=44.7.2",
     f"--out={out / 'package'}", "--overwrite", "--no-prune", "--no-asar",
 ], check=True, cwd=root)
+
+product = out / "package/No-Riichi-No-Fuku-win32-x64"
+for category in ("characters", "voices", "bgm", "sfx"):
+    destination = product / "packs" / category
+    destination.mkdir(parents=True, exist_ok=True)
+    source = root / "packs" / category
+    if category in ("bgm", "sfx") and source.is_dir():
+        shutil.copytree(source, destination, dirs_exist_ok=True)
+(product / "images").mkdir(exist_ok=True)
+shutil.copy2(root / "desktop/windows-quick-start.txt", product / "시작하기.txt")

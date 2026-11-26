@@ -566,7 +566,7 @@ class GameRegistry:
                                            "cpu_character_id": None, "defeat_stage": None,
                                            "stage_changed": False, "cpu_completed": False}}
         if mode == "progress":
-            _create_ending_if_complete(db_session, state)
+            _create_ending_if_complete(db_session, state, settlement.cpu_character_id)
             if state.phase == "ending_pending":
                 registered.presentation["ending_event_id"] = state.ending_event_id
         else:

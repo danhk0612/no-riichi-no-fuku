@@ -184,6 +184,8 @@ try {
     if (path === '/api/game/sessions' && request.method() === 'POST') return route.fulfill({ json: { session_id: 'test-game-session', generation: 'test-game', players: [{ seat: 0, name: 'test-only', isHuman: true }, ...cpus.map((cpu, index) => ({ seat: index + 1, name: cpu.name, isHuman: false }))] } })
     if (path === '/api/game/sessions/active') return route.fulfill({ json: null })
     if (path === '/api/local/sound-selection') return route.fulfill({ json: { effect_set_id: null, bgm_ids: [], effect_sets: [], tracks: [], effect_set_available: false, bgm_available: [] } })
+    if(path==='/api/local/characters/situation-prompts') return route.fulfill({json:{chi:'calling chi'}})
+    if(path==='/api/local/generation-settings') return route.fulfill({json:{endpoint:'',revision:0,characters:{},common:{model:'',loras:[]}}})
     throw new Error(`Unexpected API: ${path}`)
   })
   await page.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
@@ -255,7 +257,9 @@ try {
   const select = panel.getByRole('combobox', { name: '캐릭터', exact: true })
   assert.equal(await select.inputValue(), '')
   await select.selectOption('1')
-  await panel.getByRole('tab', { name: '공유 복장·상황·포즈' }).click()
+  await panel.getByRole('tab', { name: '팩 목록·진단' }).click()
+  await panel.getByText('이전 버전 자료',{exact:true}).click()
+  await panel.getByRole('button', { name: '공유 복장·상황·포즈' }).click()
   const sharedLabel = panel.getByRole('textbox', { name: '공유 항목 표시 이름' })
   await panel.getByLabel('종류', {exact: true}).selectOption('situation')
   const event = panel.getByRole('checkbox', {name: '쯔모 · 배만 이상', exact: true})
@@ -274,7 +278,9 @@ try {
   await sharedLabel.fill('test-only-shared-prompt')
   await panel.getByRole('textbox', { name: '공유 항목 Positive' }).fill('  test-only P\n<lora:fixture:0.7>  ')
   await panel.getByRole('tab', { name: '캐릭터 편집' }).click()
-  await panel.getByRole('tab', { name: '공유 복장·상황·포즈' }).click()
+  await panel.getByRole('tab', { name: '팩 목록·진단' }).click()
+  await panel.getByText('이전 버전 자료',{exact:true}).click()
+  await panel.getByRole('button', { name: '공유 복장·상황·포즈' }).click()
   assert.equal(await sharedLabel.inputValue(), 'test-only-shared-prompt', 'switching editor tabs must preserve a pending shared item draft')
   await panel.getByRole('button', { name: '공유 항목 추가' }).click()
   const sharedItemButton = panel.getByRole('button', { name: 'test-only-shared-prompt', exact: true })
@@ -369,7 +375,7 @@ try {
     const previewUrl = await preview.getAttribute('src')
     const stageWrites = () => stageCalls.filter(([method]) => method === 'POST').length
     const callsBeforeTab = stageWrites()
-    await panel.getByRole('tab', {name: '공유 복장·상황·포즈'}).click()
+    await panel.getByRole('tab', {name: '공통 프롬프트'}).click()
     assert.equal(await preview.isVisible(), false)
     await panel.getByRole('tab', {name: '캐릭터 편집'}).click()
     await preview.waitFor()
@@ -473,13 +479,14 @@ try {
     await panel.locator('input[aria-label="키 (cm)"]').waitFor()
   }
   // Rapid tab re-entry reuses the in-flight scan.
+  const earlierScans = scans
   scanGate = gate(); await panel.getByRole('tab', { name: '팩 목록·진단' }).click(); await scanGate.entered
   await panel.getByRole('tab', { name: '캐릭터 편집' }).click(); await panel.getByRole('tab', { name: '팩 목록·진단' }).click()
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
   scanGate.release(); await panel.getByRole('button', { name: '폴더 다시 검색' }).waitFor()
-  assert.equal(scans, 1, 'pack tab re-entry submitted a duplicate in-flight scan')
+  assert.equal(scans, earlierScans+1, 'pack tab re-entry submitted a duplicate in-flight scan')
   scanGate = undefined; await panel.getByRole('button', { name: '폴더 다시 검색' }).click()
-  await panel.getByRole('button', { name: '폴더 다시 검색' }).waitFor(); assert.equal(scans, 2)
+  await panel.getByRole('button', { name: '폴더 다시 검색' }).waitFor(); assert.equal(scans, earlierScans+2)
   listing.packs = [{ id: 'test-pack-uuid', kind: 'character', namespace: '', pack_id: 'test-pack', identity: ['character', '', 'test-pack'], status: 'normal', issues: [], registered_revision: { id: 'test-rev-1', revision: 1 }, applied_revision_id: null, revisions: [] }]
   await panel.getByRole('button', { name: '폴더 다시 검색' }).click()
   await panel.getByRole('button', { name: '폴더 다시 검색' }).waitFor()

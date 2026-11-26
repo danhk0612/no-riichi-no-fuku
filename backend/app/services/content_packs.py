@@ -119,37 +119,71 @@ class Candidate:
     raw_manifest: bytes | None = None
     manifest_stamp: tuple | None = None
 
+    game_source: bool = False
+
     def entry(self):
         return {
-            "source": self.source,
+            "source": ("game/" if self.game_source else "") + self.source,
             "identity": list(self.identity) if self.identity else None,
             "status": self.status,
             "issues": self.issues or [],
         }
 
 
+def source_manifest(root, folder, allow_folder):
+    manifest = folder / "manifest.json"
+    if manifest.exists() or manifest.is_symlink():
+        return read_file(root, manifest, MAX_MANIFEST_BYTES)
+    if not allow_folder:
+        raise ScanIssue("missing_manifest")
+    parts = folder.relative_to(root / "packs").parts
+    kind = {"bgm": "bgm", "sfx": "sfx", "voices": "voice"}.get(parts[0])
+    if not kind:
+        raise ScanIssue("missing_manifest")
+    slots = {}
+    allowed = {"bgm": {"title", "selection", "game", "result", "ending"},
+               "sfx": {"tile_discard", "tile_shuffle", "riichi_stick"},
+               "voice": {"chi", "pon", "kan", "riichi", "ron", "tsumo", "win", "match_first",
+                         "match_last", "defeat_stage_1", "defeat_stage_2", "defeat_stage_3"}}[kind]
+    for file in safe_path(root, folder).iterdir():
+        slot = file.stem.lower()
+        if file.suffix.lower() in {".mp3", ".wav", ".ogg"} and slot in allowed:
+            if slot in slots:
+                raise ScanIssue("duplicate_slot_filename")
+            slots[slot] = file.name
+    if not slots:
+        raise ScanIssue("missing_audio_slots")
+    value = {"schema_version": 1, "kind": kind, "id": parts[-1], "label": parts[-1],
+             "version": "folder-v1", "slots": slots}
+    if kind == "voice":
+        value["character_id"] = parts[1]
+    return canonical(value), None
+
+
 class ContentPackRegistry:
-    def __init__(self, data_root: Path, media_root: Path, sessions: sessionmaker):
+    def __init__(self, data_root: Path, media_root: Path, sessions: sessionmaker, game_root: Path | None = None):
         self.root = data_root
         self.pack_root = data_root / "packs"
+        self.game_root = game_root if game_root != data_root else None
         self.media_root = media_root
         self.sessions = sessions
         self.lock = RLock()
 
-    def _discover(self) -> list[Candidate]:
+    def _discover(self, root) -> list[Candidate]:
+        pack_root = root / "packs"
         candidates = []
         for category in ("characters", "sfx", "bgm", "voices"):
-            category_root = self.pack_root / category
+            category_root = pack_root / category
             if not category_root.exists() and not category_root.is_symlink():
                 continue
             try:
-                safe_path(self.root, category_root)
+                safe_path(root, category_root)
                 for folder in sorted(category_root.iterdir()):
                     # Files alongside pack folders are not pack candidates.
                     if not folder.is_dir() and not folder.is_symlink():
                         continue
                     try:
-                        safe_path(self.root, folder)
+                        safe_path(root, folder)
                         roots = (
                             sorted(folder.iterdir())
                             if category == "voices"
@@ -159,13 +193,13 @@ class ContentPackRegistry:
                             if pack.is_dir() or pack.is_symlink():
                                 candidates.append(
                                     Candidate(
-                                        pack.relative_to(self.pack_root).as_posix()
+                                        pack.relative_to(pack_root).as_posix()
                                     )
                                 )
                     except (OSError, ScanIssue):
                         candidates.append(
                             Candidate(
-                                folder.relative_to(self.pack_root).as_posix(),
+                                folder.relative_to(pack_root).as_posix(),
                                 issues=["unsafe_or_unreadable_source"],
                             )
                         )
@@ -178,11 +212,10 @@ class ContentPackRegistry:
     def _inspect(self, candidate: Candidate) -> None:
         if candidate.issues:
             return
-        folder = self.pack_root / candidate.source
+        root = self.game_root if candidate.game_source else self.root
+        folder = root / "packs" / candidate.source
         try:
-            raw, manifest_stamp = read_file(
-                self.root, folder / "manifest.json", MAX_MANIFEST_BYTES
-            )
+            raw, manifest_stamp = source_manifest(root, folder, root == self.game_root)
             value = json.loads(
                 raw.decode("utf-8"),
                 object_pairs_hook=_no_duplicate_keys,
@@ -231,7 +264,7 @@ class ContentPackRegistry:
                     raise ScanIssue("file_path_conflict")
                 case_paths.add(folded)
                 limit = MAX_IMAGE_BYTES if media_kind == "image" else MAX_AUDIO_BYTES
-                data, stamp = read_file(self.root, folder / name, limit)
+                data, stamp = read_file(root, folder / name, limit)
                 mime, extension = _identify(media_kind, name, None, data[:16])
                 files[name] = (data, digest(data), stamp, media_kind, mime, extension)
             # A second complete read detects interrupted/cross-file copies before metadata is written.
@@ -266,15 +299,14 @@ class ContentPackRegistry:
             candidate.issues = ["invalid_manifest_or_file"]
 
     def _verify_source(self, folder, raw, manifest_stamp, files):
-        again, stamp = read_file(
-            self.root, folder / "manifest.json", MAX_MANIFEST_BYTES
-        )
+        root = self.game_root if self.game_root and folder.is_relative_to(self.game_root / "packs") else self.root
+        again, stamp = source_manifest(root, folder, root == self.game_root)
         if again != raw or stamp != manifest_stamp:
             raise ScanIssue("incomplete_copy")
         for name, item in files.items():
             data, expected_digest, expected_stamp, kind, _, _ = item
             again, stamp = read_file(
-                self.root,
+                root,
                 folder / name,
                 MAX_IMAGE_BYTES if kind == "image" else MAX_AUDIO_BYTES,
             )
@@ -348,7 +380,7 @@ class ContentPackRegistry:
                     )
                 )
             self._verify_source(
-                self.pack_root / candidate.source,
+                (self.game_root if candidate.game_source else self.root) / "packs" / candidate.source,
                 candidate.raw_manifest,
                 candidate.manifest_stamp,
                 candidate.files,
@@ -417,7 +449,12 @@ class ContentPackRegistry:
 
     def scan(self) -> dict:
         with self.lock:
-            candidates = self._discover()
+            candidates = self._discover(self.root)
+            if self.game_root:
+                portable = self._discover(self.game_root)
+                for candidate in portable:
+                    candidate.game_source = True
+                candidates.extend(portable)
             for candidate in candidates:
                 self._inspect(candidate)
             claims = defaultdict(list)
@@ -575,7 +612,7 @@ class ContentPackRegistry:
                     for e in entries
                     if not kind
                     or (e.identity and e.identity[0] == kind)
-                    or e.source.split("/")[0]
+                    or e.source.removeprefix("game/").split("/")[0]
                     == {"character": "characters", "voice": "voices"}.get(kind, kind)
                 ],
             }

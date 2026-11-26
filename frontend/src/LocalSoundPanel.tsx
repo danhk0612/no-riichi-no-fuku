@@ -89,7 +89,31 @@ export function LocalSoundPanel({ editedCharacters, accessToken, onClose, onSele
     <section className="sound-panel" aria-label="사운드와 엔딩 자료 설정">
       <div className="sound-panel-heading"><div><p className="eyebrow">LOCAL CONTENT</p><h2>사운드와 엔딩 설정</h2></div><button className="text-button" onClick={onClose} type="button">닫기</button></div>
       {error && <p className="form-error" role="alert">{error}</p>}
-      <div className="sound-panel-grid">
+      <div className="sound-panel-grid"><section className="sound-card">
+          {audioPacks && <>
+            <h3>폴더 사운드 세트</h3>
+            <p className="muted">게임 폴더의 packs/bgm과 packs/sfx에 세트 폴더를 넣고 게임을 다시 열면 인식합니다. 지정한 파일이 없으면 무음으로 진행합니다.</p>
+            {(['bgm','sfx'] as const).map(kind=><label key={kind}>{kind==='bgm' ? '배경음 세트' : '효과음 폴더 세트'}
+              <select value={audioPacks[`${kind}_mode`]==='legacy' ? 'legacy' : audioPacks[`${kind}_pack_id`] ?? ''}
+                onChange={e=>{const id=e.target.value;setAudioPacks({...audioPacks,[kind+'_mode']:id==='legacy'?'legacy':'pack',[kind+'_pack_id']:id==='legacy'?null:id||null})}}>
+                <option value="">폴더 기본 세트</option><option value="legacy">기존 등록 설정</option>
+                {audioPacks.packs.filter(p=>p.kind===kind).map(p=><option key={p.id} value={p.id}>{p.pack_id}</option>)}
+              </select></label>)}
+            <button disabled={busy} onClick={() => void run(async () => { if (!audioPacks) return; const updated = await putAudioPackSelection(accessToken, audioPacks); onPlaybackChanged(); setSelection(updated); setAudioPacks(updated.audio_packs); onSelectionChanged(updated) })} type="button">팩 재생 방식 저장</button>
+          </>}
+          <h3>캐릭터 음성팩 연결</h3>
+          <p className="muted">기본값은 적용한 캐릭터팩의 음성 기본 참조를 사용합니다. 선택된 유효 팩의 slot 누락은 무음이며, 끔은 항상 무음입니다.</p>
+          {(editedCharacters ?? characters).map((character) => {
+            const voice = voiceLinks[character.id]
+            if (!voice) return null
+            return <div className="sound-voice-row" key={character.id}><strong>{character.name}</strong>
+              <label>음성팩<select value={voice.selection_mode === 'off' ? 'off' : voice.selection_mode === 'selected' ? voice.selected_pack_id ?? '' : ''} onChange={(event) => setVoiceLinks((current) => ({ ...current, [character.id]: { ...voice, selection_mode: event.target.value === 'off' ? 'off' : event.target.value ? 'selected' : 'default', selected_pack_id: event.target.value && event.target.value !== 'off' ? event.target.value : null } }))}>
+                <option value="">캐릭터 기본팩</option><option value="off">음성 끔</option>{voice.packs.map((pack) => <option key={pack.id} value={pack.id}>{pack.namespace}/{pack.pack_id}</option>)}
+              </select></label>
+              <button disabled={busy} onClick={() => void run(async () => { const saved = await putCharacterVoiceSelection(accessToken, voice); onPlaybackChanged(); setVoiceLinks((current) => ({ ...current, [character.id]: saved })) })} type="button">저장</button>
+            </div>
+          })}
+        </section><details><summary>이전 버전 등록 자료</summary>
         <section className="sound-card">
           <h3>파일 등록</h3>
           <label>자료 종류<select value={uploadKind} onChange={(event) => setUploadKind(event.target.value as 'image' | 'audio')}><option value="audio">오디오</option><option value="image">이미지</option></select></label>
@@ -138,27 +162,6 @@ export function LocalSoundPanel({ editedCharacters, accessToken, onClose, onSele
             </li>
           })}</ol>}
           <button disabled={busy || !selection} onClick={() => void run(async () => { if (!selection) return; const updated = await putSoundSelection(accessToken, selection.effect_set_id, selection.bgm_ids); setSelection(updated); onSelectionChanged(updated) })} type="button">사운드 선택 저장</button>
-          {audioPacks && <>
-            <h3>등록 팩 재생 전환</h3>
-            <p className="muted">기존 설정과 파일은 보존됩니다. 팩 모드로 저장하면 해당 종류의 기존 재생을 중지하고 새 팩만 사용합니다.</p>
-            <label>SFX 재생 방식<select value={audioPacks.sfx_mode} onChange={(event) => setAudioPacks((current) => current ? { ...current, sfx_mode: event.target.value as 'legacy' | 'pack' } : current)}><option value="legacy">기존 설정 유지</option><option value="pack">등록 팩 사용</option></select></label>
-            {audioPacks.sfx_mode === 'pack' && <label>SFX 팩<select value={audioPacks.sfx_pack_id ?? ''} onChange={(event) => setAudioPacks((current) => current ? { ...current, sfx_pack_id: event.target.value || null } : current)}><option value="">지정 기본팩 사용</option>{audioPacks.packs.filter((pack) => pack.kind === 'sfx').map((pack) => <option key={pack.id} value={pack.id}>{pack.pack_id}</option>)}</select></label>}
-            <label>BGM 재생 방식<select value={audioPacks.bgm_mode} onChange={(event) => setAudioPacks((current) => current ? { ...current, bgm_mode: event.target.value as 'legacy' | 'pack' } : current)}><option value="legacy">기존 설정 유지</option><option value="pack">등록 팩 사용</option></select></label>
-            {audioPacks.bgm_mode === 'pack' && <label>BGM 팩<select value={audioPacks.bgm_pack_id ?? ''} onChange={(event) => setAudioPacks((current) => current ? { ...current, bgm_pack_id: event.target.value || null } : current)}><option value="">지정 기본팩 사용</option>{audioPacks.packs.filter((pack) => pack.kind === 'bgm').map((pack) => <option key={pack.id} value={pack.id}>{pack.pack_id}</option>)}</select></label>}
-            <button disabled={busy} onClick={() => void run(async () => { if (!audioPacks) return; const updated = await putAudioPackSelection(accessToken, audioPacks); onPlaybackChanged(); setSelection(updated); setAudioPacks(updated.audio_packs); onSelectionChanged(updated) })} type="button">팩 재생 방식 저장</button>
-          </>}
-          <h3>캐릭터 음성팩 연결</h3>
-          <p className="muted">기본값은 적용한 캐릭터팩의 음성 기본 참조를 사용합니다. 선택된 유효 팩의 slot 누락은 무음이며, 끔은 항상 무음입니다.</p>
-          {(editedCharacters ?? characters).map((character) => {
-            const voice = voiceLinks[character.id]
-            if (!voice) return null
-            return <div className="sound-voice-row" key={character.id}><strong>{character.name}</strong>
-              <label>음성팩<select value={voice.selection_mode === 'off' ? 'off' : voice.selection_mode === 'selected' ? voice.selected_pack_id ?? '' : ''} onChange={(event) => setVoiceLinks((current) => ({ ...current, [character.id]: { ...voice, selection_mode: event.target.value === 'off' ? 'off' : event.target.value ? 'selected' : 'default', selected_pack_id: event.target.value && event.target.value !== 'off' ? event.target.value : null } }))}>
-                <option value="">캐릭터 기본팩</option><option value="off">음성 끔</option>{voice.packs.map((pack) => <option key={pack.id} value={pack.id}>{pack.namespace}/{pack.pack_id}</option>)}
-              </select></label>
-              <button disabled={busy} onClick={() => void run(async () => { const saved = await putCharacterVoiceSelection(accessToken, voice); onPlaybackChanged(); setVoiceLinks((current) => ({ ...current, [character.id]: saved })) })} type="button">저장</button>
-            </div>
-          })}
         </section>
         <section className="sound-card">
           <h3>엔딩 자료</h3>
@@ -168,6 +171,7 @@ export function LocalSoundPanel({ editedCharacters, accessToken, onClose, onSele
           <button disabled={busy} onClick={() => void run(async () => { const saved = await putEndingResources(accessToken, ending); setEnding(saved) })} type="button">엔딩 자료 저장</button>
           <p className="muted">다음 엔딩부터 적용됩니다. 이미 대기 중인 엔딩 자료는 고정되어 있습니다.</p>
         </section>
+        </details>
       </div>
     </section>
   )

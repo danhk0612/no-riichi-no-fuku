@@ -24,8 +24,8 @@ def _frontend_directory() -> Path:
     return candidate
 
 
-async def _serve(data_root: Path, identity: str, port: int) -> None:
-    runtime = create_local_runtime(data_root)
+async def _serve(data_root: Path, identity: str, port: int, game_root: Path | None = None) -> None:
+    runtime = create_local_runtime(data_root, game_root)
     app = runtime.app
     app.state.local_identity = identity
 
@@ -83,6 +83,7 @@ async def _serve(data_root: Path, identity: str, port: int) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="No Riichi No Fuku local engine")
     parser.add_argument("--data", required=True, type=Path)
+    parser.add_argument("--game-root", type=Path)
     parser.add_argument("--identity", required=True)
     parser.add_argument("--port", type=int, default=0)
     args = parser.parse_args()
@@ -93,7 +94,7 @@ def main() -> int:
         print("invalid loopback port", file=sys.stderr)
         return 2
     try:
-        asyncio.run(_serve(args.data, args.identity, args.port))
+        asyncio.run(_serve(args.data, args.identity, args.port, args.game_root))
     except Exception as error:
         print(f"local engine startup failed: {type(error).__name__}: {error}", file=sys.stderr)
         return 1

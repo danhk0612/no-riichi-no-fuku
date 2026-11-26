@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import {apiRequest} from '../api'
+import {pollImage,queueImage,useImageQueue} from '../imageQueue'
 
 type Status = {state:string; attempt?:string}
 const labels:Record<string,string> = {
@@ -10,37 +12,38 @@ const labels:Record<string,string> = {
 
 export function HandCG({path, generation}:{path:string; generation:string}) {
   const [status,setStatus]=useState<Status>({state:'pending'})
-  const [action,setAction]=useState<{retry?:string}>({})
+  const [action,setAction]=useState<{retry?:string;regenerate?:boolean}>({})
   const [image,setImage]=useState('')
+  const [draft,setDraft]=useState<string|null>(null), [previous,setPrevious]=useState(''), [note,setNote]=useState('')
+  const q=useImageQueue()
+  const query=new URLSearchParams({generation}).toString()
   useEffect(()=>{
-    const abort=new AbortController()
-    let timer:ReturnType<typeof setTimeout>, objectUrl=''
-    setStatus({state:'pending'});setImage('')
-    const query=new URLSearchParams({generation})
-    async function step(retry?:string) {
-      try {
-        const q=new URLSearchParams(query)
-        if(retry)q.set('retry',retry)
-        const response=await fetch(path+'?'+q,{method:'POST',signal:abort.signal})
-        if(!response.ok)throw Error()
-        const data:Status=await response.json()
-        if(abort.signal.aborted)return
-        if(data.state==='ready'){
-          const file=await fetch(path+'/'+encodeURIComponent(data.attempt!)+'?'+query,{signal:abort.signal})
-          if(!file.ok)throw Error()
-          const blob=await file.blob()
-          if(abort.signal.aborted)return
-          objectUrl=URL.createObjectURL(blob);setImage(objectUrl)
-        }
-        setStatus(data)
-        if(data.state==='pending')timer=setTimeout(()=>void step(),1500)
-      }catch{if(!abort.signal.aborted)setStatus({state:'unavailable'})}
-    }
-    void step(action.retry)
-    return ()=>{abort.abort();clearTimeout(timer);if(objectUrl)URL.revokeObjectURL(objectUrl)}
-  },[path,generation,action])
+    let current=true
+    setStatus({state:'pending'})
+    queueImage(path,()=>pollImage(path,query+(action.regenerate?'&regenerate=true':''),action.retry)).then(result=>{
+      if(!current)return
+      setStatus(result)
+      if(result.state==='ready')setImage(path+'/'+result.attempt+'?'+query)
+    }).catch(()=>{if(current)setStatus({state:'unavailable'})})
+    return ()=>{current=false}
+  },[path,query,action])
+  async function edit(){
+    try{
+      if(draft===null){
+        const data=await apiRequest<{positive:string}>(path+'/prompt?'+query)
+        setPrevious(data.positive);setDraft(data.positive);setNote('')
+      }else{
+        await apiRequest(path+'/prompt?'+query,{method:'PUT',body:JSON.stringify({positive:draft,previous})})
+        setDraft(null);setNote('저장했습니다. 재생성하면 적용됩니다.')
+      }
+    }catch(error){setNote(String(error))}
+  }
   return <>{image && <img className="hand-cg-backdrop" src={image} alt="화료 결과 CG" />}
-    {status.state!=='ready' && <p role="status" className="result-asset-status">{labels[status.state]}
+    <button type="button" disabled={q.pending.has(path)} onClick={()=>setAction({regenerate:true})}>화료 CG 재생성</button>
+    {draft!==null && <label>화료 CG 프롬프트<textarea value={draft} onChange={e=>setDraft(e.target.value)}/></label>}
+    <button type="button" onClick={()=>void edit()}>{draft===null?'프롬프트 바로 수정':'프롬프트 저장'}</button>
+    {note && <small role="status">{note}</small>}
+    {status.state!=='ready' && <p role="status" className="result-asset-status">{status.state==='pending' && q.active!==path?'생성 대기 중':labels[status.state]}
       {['failed','rejected','uncertain','missing','disconnected','unavailable'].includes(status.state) &&
         <button type="button" onClick={()=>setAction({retry:status.attempt})}>{status.state==='disconnected'?'기존 작업 다시 조회':status.state==='unavailable'?'상태 다시 확인':'다시 시도'}</button>}
     </p>}</>

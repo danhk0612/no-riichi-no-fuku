@@ -327,7 +327,7 @@ class LocalPlayTests(unittest.TestCase):
                 self.assertEqual(state.phase, "ending_pending")
                 event_id = state.ending_event_id
                 payload = state.ending_payload
-                self.assertEqual(payload, {"version": 1, "cg_asset_id": None, "music_asset_id": None, "dialogue_text": None})
+                self.assertEqual(payload, {"version": 1, "cpu_id": 1, "cg_asset_id": None, "music_asset_id": None, "dialogue_text": None})
             acknowledged = client.post("/api/local/play/ending/ack", headers=headers, json={
                 "generation": confirmed["generation"], "ending_event_id": event_id,
             })

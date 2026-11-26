@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import {LiveImage,ImageSettings} from './LiveImage'
+import { useContext,useState } from 'react'
 import { CharacterImage, Measurements } from './CharacterImage'
 import type { CpuChoice } from './game/types'
 import { DEFEAT_STAGE_LABELS, defeatStageLabel } from './stages'
@@ -30,6 +31,7 @@ export function CpuSelection({
   rosterMode = false,
   allowCompleted = false,
 }: CpuSelectionProps) {
+  const settings=useContext(ImageSettings)
   const [viewId,setViewId]=useState<number|null>(null)
   const viewed=cpus.find(c=>c.id===viewId) ?? cpus.find(c=>c.id===selectedIds.at(-1)) ?? cpus[0]
   return (
@@ -46,8 +48,8 @@ export function CpuSelection({
         </div>
       </div>
       {viewed && <section className="cpu-preview" aria-label="캐릭터 미리보기">
-        <CharacterImage url={viewed.stage_images?.cg} label="단계 CG" className="preview-cg"/>
-        <CharacterImage url={viewed.stage_images?.full_body} label="전신" className="preview-body"/>
+        <CharacterImage cpu={viewed.id} level={viewed.defeat_stage} kind="cg" url={viewed.stage_images?.cg} label="단계 CG" className="preview-cg"/>
+        <CharacterImage cpu={viewed.id} level={viewed.defeat_stage} kind="full_body" url={viewed.stage_images?.full_body} label="전신" className="preview-body"/>
         <div className="preview-copy"><h3>{viewed.name}</h3><p>Level {viewed.defeat_stage} · {defeatStageLabel(viewed.defeat_stage)}</p>
           <Measurements values={viewed.measurements_cm}/></div>
       </section>}
@@ -69,7 +71,7 @@ export function CpuSelection({
                 {selectedIndex >= 0 ? (rosterMode ? '참가 명단' : `${selectedIndex + 1}번 좌석`) : unavailable ? '완료 CPU' : selectionFull ? '좌석 마감' : '선택 가능'}
               </span>
               <span className="cpu-profile">
-                <CharacterImage url={cpu.stage_images?.profile} label={cpu.name+' 프로필'} className="roster-face"/>
+                <CharacterImage cpu={cpu.id} level={cpu.defeat_stage} kind="profile" imageOnly url={cpu.stage_images?.profile} label={cpu.name+' 프로필'} className="roster-face"/>
                 <strong>{cpu.name}</strong>
               </span>
               <span className="cpu-stage">{defeatStageLabel(cpu.defeat_stage)}</span>
@@ -78,7 +80,7 @@ export function CpuSelection({
               <span>{cpu.style}</span>
               <p>{cpu.short_description}</p>
               {unavailable && <small>최종 완료 · 현재 대국 선택 불가</small>}
-            </button></div>
+            </button>{settings.available && <LiveImage cpu={cpu.id} level={cpu.defeat_stage} kind="profile" controlsOnly label={cpu.name+' 프로필'} className="roster-face"/>}</div>
           )
         })}
       </div>

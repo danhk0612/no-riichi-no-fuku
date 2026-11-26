@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.models import (
-    CharacterContent, CharacterVoiceLink, ContentPack, ContentPackFile,
+    CharacterContent, CharacterVoiceLink, ContentPackScanEntry, ContentPack, ContentPackFile,
     ContentPackRevision, CpuCharacter, GameSetting, LocalMediaAsset,
 )
 from app.schemas.audio_packs import AudioPackSelectionWrite, CharacterVoiceSelectionWrite
@@ -24,7 +24,17 @@ DEFAULT_AUDIO_PACK_SELECTION = {
 def _audio_selection(session: Session) -> dict:
     row = session.get(GameSetting, AUDIO_PACK_SELECTION_KEY)
     value = row.value if row is not None and isinstance(row.value, dict) else DEFAULT_AUDIO_PACK_SELECTION
-    return {**DEFAULT_AUDIO_PACK_SELECTION, **value}
+    result = {**DEFAULT_AUDIO_PACK_SELECTION, **value}
+    if row is None:
+        legacy = session.get(GameSetting, "local_sound_selection")
+        legacy = legacy.value if legacy else {}
+        for kind, key in (("bgm", "bgm_ids"), ("sfx", "effect_set_id")):
+            default = _default_audio_pack(session, kind)
+            if not legacy.get(key) and default and session.scalar(select(ContentPackScanEntry.source).where(
+                ContentPackScanEntry.source == f"game/{kind}/{default.pack_id}",
+                ContentPackScanEntry.status == "normal")):
+                result[kind + "_mode"] = "pack"
+    return result
 
 
 def _pack(session: Session, pack_id: str | None, kind: str) -> ContentPack | None:
@@ -32,14 +42,24 @@ def _pack(session: Session, pack_id: str | None, kind: str) -> ContentPack | Non
     if pack is None or pack.kind != kind or not pack.registered_revision_id:
         return None
     revision = session.get(ContentPackRevision, pack.registered_revision_id)
-    return pack if revision is not None and revision.pack_id == pack.id else None
+    if revision is None or revision.pack_id != pack.id:
+        return None
+    if revision.manifest.get("version") == "folder-v1":
+        entries = session.scalars(select(ContentPackScanEntry).where(ContentPackScanEntry.status == "normal"))
+        if not any(entry.identity == [pack.kind, pack.namespace, pack.pack_id] for entry in entries):
+            return None
+    return pack
 
 
 def _default_audio_pack(session: Session, kind: str) -> ContentPack | None:
-    return session.scalar(select(ContentPack).where(
-        ContentPack.kind == kind, ContentPack.pack_id == "default",
-        ContentPack.namespace == "",
-    ))
+    packs = session.scalars(select(ContentPack).where(ContentPack.kind == kind, ContentPack.namespace == "")
+                            .order_by((ContentPack.pack_id != "default"), ContentPack.pack_id))
+    for pack in packs:
+        revision = session.get(ContentPackRevision, pack.registered_revision_id)
+        if revision and (pack.pack_id == "default" or revision.manifest.get("version") == "folder-v1"):
+            if _pack(session, pack.id, kind):
+                return pack
+    return None
 
 
 def _clip_from_pack(session: Session, pack: ContentPack | None, slot: str, media_root: Path) -> dict | None:
