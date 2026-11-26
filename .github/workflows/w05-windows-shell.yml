@@ -221,6 +221,19 @@ jobs:
           node desktop/test/packaged-ending.mjs $product $data $plan $report
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Get-Content $report -Raw
+      - name: Complete an offline campaign without music, packs or image generation
+        run: |
+          $product = (Resolve-Path 'out/w05/package/No-Riichi-No-Fuku-win32-x64/No-Riichi-No-Fuku.exe').Path
+          $data = Join-Path (Get-Location) 'out/w05-scratch/offline-campaign'
+          $plan = Join-Path (Get-Location) 'out/w05-evidence/offline-campaign-plan.json'
+          $report = Join-Path (Get-Location) 'out/w05-evidence/offline-campaign.json'
+          python desktop/test/prepare-offline-campaign.py $data $plan
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $env:PLAYWRIGHT_MODULE_PATH = Join-Path $env:RUNNER_TEMP 'nrnf-playwright/node_modules/playwright'
+          $env:W11_SOURCE_SHA = (git rev-parse HEAD).Trim()
+          node desktop/test/packaged-ending.mjs $product $data $plan $report
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-Content $report -Raw
       - name: Package ZIP and hash
         if: success()
         run: |

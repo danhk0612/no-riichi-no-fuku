@@ -1167,8 +1167,10 @@ function EndingScreen({ accessToken, generation, eventId, fallback, busy, onCont
     <section className="match-result ending-panel" aria-label="엔딩">
       <p className="eyebrow">ENDING</p>
       <h2>모든 참가 CPU 완료</h2>
-      {cgUrl && !imageError ? <img className="ending-image" src={cgUrl} alt="엔딩 CG" onError={() => { setImageError(true); setLoadError(true) }} /> : <p className="result-asset-placeholder">{resources ? '엔딩 CG가 등록되지 않았거나 파일을 읽을 수 없습니다.' : '엔딩 자료를 불러오는 중…'}</p>}
-      <p>{text || '엔딩 대사가 등록되지 않았습니다.'}</p>
+      {cgUrl && !imageError && <img className="ending-image" src={cgUrl} alt="엔딩 CG" onError={() => { setImageError(true); setLoadError(true) }} />}
+      {!resources && !loadError && <p role="status">엔딩 자료를 불러오는 중…</p>}
+      {text && <blockquote className="result-dialogue">{text}</blockquote>}
+      <p>오마케에서는 완료한 참가자들과 동풍전을 계속할 수 있습니다.</p>
       {musicUrl && <audio className="ending-audio" src={musicUrl} controls autoPlay onError={() => setLoadError(true)} />}
       {loadError && <p className="muted">일부 엔딩 자료를 재생하거나 불러오지 못했습니다. 계속하기는 사용할 수 있습니다.</p>}
       <button className="primary-button" disabled={busy || resources?.acknowledged === true} onClick={onContinue} type="button">오마케로 계속하기</button>
