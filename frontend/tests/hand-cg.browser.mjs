@@ -7,6 +7,7 @@ try {
   page.setDefaultTimeout(6000)
   await page.addInitScript(()=>{window.nrnfDesktop={isDesktop:true}})
   const env={version:1,generation:'g',session_id:'s',acked_ordinal:0,terminal_ordinal:null,route:'result',delivery_revision:1,head:{ordinal:1,event_id:'e',kind:'hand',payload:{kind:'hand',fact_snapshot:{start:{bakaze:'E',kyoku:1},winners:[{actor:1,target:0,hora_log_offset:1,win_kind:'ron',score:{band:1}}]},displayed_hora_log_offset:1,content:{version:1,scene:{stage:0,media:null,generation_input:{}},dialogues:[{cpu_id:1,slot:'win',text:'화료 대사'}]}}}}
+  let cgCalls=0
   let retry=0, held, began, cached=false
   const waiting=new Promise(resolve=>{began=resolve})
   await page.route('**/api/**',async route=>{
@@ -16,6 +17,7 @@ try {
     if(p==='/api/local/play')return json({phase:'progress',roster:[],generation:'g',result_resume:{session_id:'s',route:'result'}})
     if(p.endsWith('/results'))return json(env)
     if(p.endsWith('/results/e/cg')){
+      cgCalls++
       if(cached)return json({state:'ready',attempt:'cached'})
       if(u.searchParams.get('retry')==='a'){retry++;return json({state:'ready',attempt:'b'})}
       return json({state:'uncertain',attempt:'a'})
@@ -42,5 +44,13 @@ try {
   await page.getByRole('img',{name:'화료 결과 CG'}).waitFor()
   assert.equal(await page.locator('.hand-cg-backdrop').evaluate(async img=>{await img.decode();return img.naturalWidth}),1)
   assert.equal(retry,1)
+  delete env.head.payload.content.scene.generation_input
+  env.head.payload.content.scene.missing_candidates=['situation']
+  const before=cgCalls
+  await page.reload()
+  await page.getByText('화료 CG 생략 · 미등록 후보: 화료 상황').waitFor()
+  await page.getByText('화료 대사').waitFor()
+  assert.equal(cgCalls,before)
+  assert.equal(await page.getByRole('button',{name:'확인하고 다음 결과 보기'}).isEnabled(),true)
   console.log('PASS: hand dialogue, explicit retry, next hand before image, no stale backdrop')
 }finally{await browser.close()}

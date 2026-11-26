@@ -74,7 +74,7 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
   if (!entry) return null
 
   return (
-    <section className={`${settlementPayload ? 'match-result ' : ''}result-delivery-card`} data-result-kind={settlementPayload ? 'settlement' : 'hand'} data-ordinal={entry?.ordinal} data-event-id={entry?.event_id} aria-live="polite" aria-label={settlementPayload ? '최종 정산 결과' : '국 결과'}>
+    <section className={`${settlementPayload ? 'match-result ' : ''}result-delivery-card`} data-result-kind={settlementPayload ? 'settlement' : 'hand'} data-multiple-winners={winners.length>1 || undefined} data-ordinal={entry?.ordinal} data-event-id={entry?.event_id} aria-live="polite" aria-label={settlementPayload ? '최종 정산 결과' : '국 결과'}>
       <p className="eyebrow">{settlementPayload ? 'MATCH SETTLEMENT' : 'HAND RESULT'}</p>
       <h2>{settlementPayload ? '동풍전 정산' : `국 결과 · ${String(start?.bakaze ?? '')}${String(start?.kyoku ?? 0)}국`}</h2>
       {settlementPayload ? (
@@ -92,19 +92,26 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
       ) : (
         <>
           <p className="settlement-summary">{String(start?.bakaze ?? '')}{String(start?.kyoku ?? 0)}국 · 본장 {String(start?.honba ?? 0)} · 리치봉 {String(start?.kyotaku ?? 0)}</p>
-          {winner ? (
-            <div className="settlement-summary">
-              <strong>{nameFor(winner.actor)} · {winner.win_kind === 'tsumo' ? '쯔모' : `론 · ${nameFor(winner.target)}`}</strong>
-              <p>{({ 1: '만관 미만', 2: '만관·하네만', 3: '배만 이상' } as Record<number, string>)[Number(winner.score?.band)] ?? '점수 미분류'} · {winner.score?.han ?? 0}판 {winner.score?.fu ?? 0}부</p>
-            </div>
+          {winners.length > 0 ? (
+            <section aria-label="화료자별 결과">
+              {winners.map(w => <div className="settlement-summary" key={w.hora_log_offset}>
+                <strong>{nameFor(w.actor)} · {w.win_kind === 'tsumo' ? '쯔모' : `론 · ${nameFor(w.target)}`}</strong>
+                <p>{({ 1: '만관 미만', 2: '만관·하네만', 3: '배만 이상' } as Record<number, string>)[Number(w.score?.band)] ?? '점수 미분류'} · {w.score?.han ?? 0}판 {w.score?.fu ?? 0}부</p>
+                {w.win_kind==='ron' && typeof w.score?.ron_agari==='number' && <p>론 점수 {w.score.ron_agari.toLocaleString()}점</p>}
+                <ol className="result-deltas" aria-label={nameFor(w.actor)+' 화료 점수 이동'}>{(w.deltas ?? []).map((delta:number,seat:number)=><li key={seat}>{nameFor(seat)} · {delta>0?'+':''}{delta.toLocaleString()}점</li>)}</ol>
+              </div>)}
+              {winners.length>1 && winner && <p aria-label="현재 배경 차례">현재 배경 차례: {nameFor(winner.actor)}</p>}
+            </section>
           ) : <p className="settlement-summary">유국 결과</p>}
           {Array.isArray(fact?.draws) && fact.draws.length > 0 && <p className="settlement-summary">유국 정보: {fact.draws.map((draw: Record<string, any>) => draw.reason ?? '유국').join(' · ')}</p>}
-          <ol className="result-deltas">{(winner?.deltas ?? fact?.draws?.[0]?.deltas ?? []).map((delta: number, seat: number) => <li key={seat}>{nameFor(seat)} · {delta > 0 ? '+' : ''}{delta.toLocaleString()}점</li>)}</ol>
+          {!winners.length && <ol className="result-deltas">{(fact?.draws?.[0]?.deltas ?? []).map((delta: number, seat: number) => <li key={seat}>{nameFor(seat)} · {delta > 0 ? '+' : ''}{delta.toLocaleString()}점</li>)}</ol>}
         </>
       )}
       {content?.dialogues.filter(line => line.text && line!==defeatLine).map(line => <blockquote className="result-dialogue" key={line.cpu_id + ':' + line.slot}>{line.text}</blockquote>)}
       {!settlementPayload && !!content?.scene?.generation_input && window.nrnfDesktop?.isDesktop && <HandCG path={`/api/local/play/sessions/${delivery.session_id}/results/${entry.event_id}/cg`} generation={delivery.generation}/>}
-      {!settlementPayload && content?.scene && !content.scene.generation_input && !content.scene.media && <p className="result-asset-status">화료 CG가 등록되지 않았습니다.</p>}
+      {!settlementPayload && content?.scene && !content.scene.generation_input && !content.scene.media && <p className="result-asset-status">{content.scene.missing_candidates?.length
+        ? '화료 CG 생략 · 미등록 후보: '+content.scene.missing_candidates.map(k=>({clothing_state:'복장 상태',situation:'화료 상황',pose:'포즈'})[k]).join(', ')
+        : '화료 CG가 등록되지 않았습니다.'}</p>}
       {onAcknowledge && <button className="primary-button" onClick={() => onAcknowledge(delivery)} type="button">{settlementPayload ? '정산 확인' : '확인하고 다음 결과 보기'}</button>}
     </section>
   )
