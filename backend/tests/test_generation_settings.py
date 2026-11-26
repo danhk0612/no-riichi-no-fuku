@@ -52,6 +52,16 @@ class GenerationSettingsTests(TestCase):
                         with patch.object(Comfy,"_request",return_value=info) as request:
                             self.assertIs(api.post(path+"/catalog",json={}).json()["supports_anima_encoder"], expected)
                             request.assert_called_once_with("GET","/object_info")
+                    malformed_catalogs = (
+                        {"UNETLoader": None},
+                        {"CLIPLoader": {"input": {"required": {}, "optional": []}}},
+                    )
+                    for catalog in malformed_catalogs:
+                        with self.subTest(catalog=catalog), patch.object(Comfy, "_request", return_value=catalog) as request:
+                            response = api.post(path + "/catalog", json={})
+                            self.assertEqual(response.status_code, 502)
+                            self.assertEqual(response.json()["detail"], "ComfyUI의 노드 목록을 읽지 못했습니다. 주소와 실행 상태를 확인해 주세요.")
+                            request.assert_called_once_with("GET", "/object_info")
                     with patch.object(Comfy,"_request",side_effect=ConnectionRefusedError):
                         self.assertEqual(api.post(path+"/catalog",json={}).status_code,502)
                     self.assertEqual(api.get(path).json()["revision"],0)
