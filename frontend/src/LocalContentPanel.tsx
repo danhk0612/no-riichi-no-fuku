@@ -219,6 +219,7 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
         <h3>캐릭터 기본 프롬프트</h3>
         {GROUPS.map(([key, label]) => <PromptFields source={content.pack_source?.prompts[key]} disabled={saving} key={key} title={label} positive={valueFor(`p.${key}.positive`, content.prompts[key].positive)} negative={valueFor(`p.${key}.negative`, content.prompts[key].negative)} positiveEdited={content.prompts[key].overrides.positive || Object.hasOwn(dirty, `p.${key}.positive`)} negativeEdited={content.prompts[key].overrides.negative || Object.hasOwn(dirty, `p.${key}.negative`)} onPositive={(value) => editPrompt(key, 'positive', value)} onNegative={(value) => editPrompt(key, 'negative', value)} />)}
         <h3>단계별 이미지 구도 P/N</h3>
+        <p className="muted">얼굴 확대나 전신처럼 화면에 담을 범위를 입력하세요. 복장과 포즈는 같은 단계의 공유 후보에서 가져옵니다.</p>
         {[0, 1, 2, 3].map((level) => <details className="framing-level" key={level} open={level === 0}>
           <summary>Level {level} · {LEVELS[level]}</summary>
           {KINDS.map(([kind, label]) => {
