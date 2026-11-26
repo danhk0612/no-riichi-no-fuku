@@ -8,7 +8,7 @@ sys.path[:0] = [str(backend), str(backend / "tests")]
 from fastapi.testclient import TestClient
 from app.local_runtime import create_local_runtime
 from app.db.models import LocalPlayState, UserCpuProgress
-from app.services.game_registry import GameRegistry
+from app.services.game_registry import GameRegistry, get_game_registry
 from app.services.game_setup import create_game_session_from_choices
 from app.services.local_play import effective_choices
 from test_content_packs import character
@@ -53,6 +53,7 @@ def prepare(root):
             else:
                 raise RuntimeError("no suitable deterministic last turn")
             runtime.registry = GameRegistry(seed_factory=lambda:seed)
+            runtime.app.dependency_overrides[get_game_registry] = lambda: runtime.registry
             started=client.post("/api/game/sessions",json=body)
             started.raise_for_status()
             sid=started.json()["session_id"]
