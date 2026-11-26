@@ -175,6 +175,33 @@ class HandCacheTests(TestCase):
                     self.assertEqual(submit.call_count,1)
             finally: runtime.close()
 
+    def test_saved_hand_prompt_changes_only_on_regenerate(self):
+        from test_result_delivery import ResultDeliveryTests
+        with TemporaryDirectory() as tmp, patch.object(Comfy, "submit", return_value=str(uuid4())) as submit, patch.object(Comfy, "saved_result", return_value=PNG):
+            runtime = create_local_runtime(Path(tmp))
+            try:
+                with TestClient(runtime.app, headers={"X-Local-Capability":runtime.capability}) as api:
+                    api.put("/api/local/generation-settings", json={"expected_revision":0,
+                            "common":{"model":"m","vae":"v","encoder":"c"}}).raise_for_status()
+                    generation = ResultDeliveryTests()._build_completed(runtime, content=True, hand_defaults=True)
+                    base = "/api/local/play/sessions/c1-test-session/results"
+                    params = {"generation":generation}
+                    event = api.get(base, params=params).json()["head"]["event_id"]
+                    path = f"{base}/{event}/cg"
+                    api.post(path, params=params).raise_for_status()
+                    original = api.post(path, params=params).json()
+                    previous = api.get(path+"/prompt", params=params).json()["positive"]
+                    api.put(path+"/prompt", params=params, json={"previous":previous,"positive":"edited scene"}).raise_for_status()
+                    self.assertEqual(api.post(path, params=params).json(), original)
+                    api.post(path, params={**params,"regenerate":"true"}).raise_for_status()
+                    replacement = api.post(path, params=params).json()
+                    self.assertEqual(replacement["state"], "ready")
+                    self.assertNotEqual(original["attempt"], replacement["attempt"])
+                    self.assertEqual(submit.call_count, 2)
+                    self.assertEqual(submit.call_args.args[1], "edited scene")
+            finally:
+                runtime.close()
+
     def test_ack_does_not_wait_for_generator(self):
         from threading import Event
         from test_result_delivery import ResultDeliveryTests
