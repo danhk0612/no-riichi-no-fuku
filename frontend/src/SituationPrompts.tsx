@@ -37,7 +37,7 @@ export function SituationPrompts({token}: {token: string}) {
         <option key={level} value={key+'_'+level}>{level}단계 {label}</option>)}</optgroup>)}
       <optgroup label="대국 상황">{Object.entries(situationLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</optgroup>
     </select></label>
-    <label>공통 프롬프트<textarea disabled={saved[event] === undefined} value={drafts[event] ?? saved[event] ?? ''}
+    <label>공통 프롬프트<textarea aria-label="공통 프롬프트" disabled={saved[event] === undefined} value={drafts[event] ?? saved[event] ?? ''}
       onChange={e => setDrafts({...drafts, [event]: e.target.value})} /></label>
     <p>비워서 저장하면 기본 문구로 돌아갑니다. 대국 중 화료 CG에는 대국 시작 시점의 설정이 적용됩니다.</p>
     <button type="button" disabled={drafts[event] === undefined} onClick={() => void save()}>공통 문구 저장</button>

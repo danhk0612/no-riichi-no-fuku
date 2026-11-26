@@ -804,7 +804,9 @@ button.tile:disabled {
 .preview-cg.image-empty { text-align:right; padding:.5rem }
 .preview-body { width:30%; height:12rem; object-fit:contain }
 .preview-copy { padding:.7rem; background:#152421db; border-radius:.4rem }
-.cpu-grid .cpu-card { width:100%; height:100% }
+.cpu-grid > div { display:flex; flex-direction:column; min-width:0 }
+.cpu-grid .cpu-card { width:100%; flex:1 }
+.cpu-grid .image-actions { display:flex; flex-wrap:wrap; gap:4px }
 .roster-face,.seat-face { width:4rem; aspect-ratio:1; object-fit:cover; border-radius:.35rem }
 .image-empty { display:inline-grid; place-content:center; font-size:.75rem }
 .seat-details summary { cursor:pointer }

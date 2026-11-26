@@ -41,7 +41,7 @@ export function PromptShortcut({cpu,level,kind}:{cpu:number;level:number;kind:Im
     }catch(error){setMessage(String(error))}finally{setBusy(false)}
   }
   return <><button type="button" disabled={busy} onClick={()=>void edit()}>프롬프트 바로 수정</button>
-    {draft!==null && <span><label>이미지 구도 프롬프트<textarea value={draft} onChange={e=>setDraft(e.target.value)}/></label>
+    {draft!==null && <span><label>이미지 구도 프롬프트<textarea aria-label="이미지 구도 프롬프트" value={draft} onChange={e=>setDraft(e.target.value)}/></label>
     <button type="button" disabled={busy} onClick={()=>void save()}>프롬프트 저장</button>
     <button type="button" disabled={busy} onClick={()=>setDraft(null)}>취소</button></span>}
     {message && <small role="status">{message}</small>}</>
