@@ -73,6 +73,24 @@ class HandCacheTests(TestCase):
             self.assertEqual(submit.call_count,1)
             self.assertEqual(len(set(tuple(x.args) for x in poll.call_args_list)),1)
 
+    def test_invalid_preflight_never_submits_and_retries_only_after_input(self):
+        nodes, _ = graph(Settings(**FROZEN["settings"]), "p", "n", 1, workflow=FROZEN["workflow"])
+        valid = {n["class_type"]: {"input":{"required":{k:["*"] for k in n["inputs"]}}} for n in nodes.values()}
+        bad_fields = [{**valid, "UNETLoader": {"input": {"required": {"unet_name": field, "weight_dtype": ["*"]}}}}
+                      for field in ([], ["COMBO", {"options": "invalid"}])]
+        for bad in ([], {"UNETLoader": None}, {"UNETLoader": {"input": {"required": []}}}, *bad_fields):
+            with self.subTest(bad=bad), TemporaryDirectory() as tmp, patch.object(Comfy, "_request") as request:
+                endpoint = "http://127.0.0.1:8188"
+                cache = HandCG(Path(tmp))
+                request.side_effect = [bad, valid, {"prompt_id": str(uuid4())}]
+                failed = cache.advance(FROZEN, endpoint)
+                self.assertEqual(failed["state"], "failed")
+                self.assertEqual(HandCG(Path(tmp)).advance(FROZEN, endpoint), failed)
+                request.assert_called_once_with("GET", "/object_info")
+                self.assertEqual(cache.advance(FROZEN, endpoint, failed["attempt"])["state"], "pending")
+                self.assertEqual([c.args[:2] for c in request.call_args_list],
+                                 [("GET", "/object_info"), ("GET", "/object_info"), ("POST", "/prompt")])
+
     def test_prompt_validation_rejection_is_distinct_from_lost_receipt(self):
         nodes, _ = graph(Settings(**FROZEN["settings"]), "p", "n", 1, workflow=FROZEN["workflow"])
         info = {n["class_type"]: {"input": {"required": {k: ["*"] for k in n["inputs"]}}}
