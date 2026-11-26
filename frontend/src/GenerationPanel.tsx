@@ -15,13 +15,15 @@ export function GenerationPanel({token, close}: {token: string; close: () => voi
   const [catalog, setCatalog] = useState<Catalog | null>(null)
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
+  const [loading, setLoading] = useState(true)
   const [reload, setReload] = useState(0)
   useEffect(() => {
     let active = true
-    setData(null); setNote(''); setCatalog(null)
+    setLoading(true); setNote('')
     Promise.all([apiRequest<Saved>(path, {}, token), listLocalCharacters(token)]).then(([d,p]) => {
-      if (active) { setData(d); setPeople(p) }
-    }).catch(e => { if (active) setNote(String(e)) })
+      if (active) { setData(d); setPeople(p); setCatalog(null) }
+    }).catch(e => { if (active) setNote(e instanceof Error ? e.message : String(e)) })
+      .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [token, reload])
   const target: Character = data ? (person ? data.characters[person] ?? { model:'', loras:[] } : data.common) : {model:'',loras:[]}
@@ -31,7 +33,7 @@ export function GenerationPanel({token, close}: {token: string; close: () => voi
     setData(person ? {...data, characters:{...data.characters,[person]:{...target,...change}}} : {...data,common:{...data.common,...change}})
   }
   async function run(check: boolean) {
-    if (!data || busy) return
+    if (!data || busy || loading) return
     setBusy(true); setNote('')
     try {
       const { revision, ...config } = data
@@ -56,7 +58,7 @@ export function GenerationPanel({token, close}: {token: string; close: () => voi
   return <section className="selection-panel" aria-label="이미지 생성 설정">
     <div className="panel-heading"><h2>이미지 생성 설정</h2><button disabled={busy} onClick={close}>닫기</button></div>
     <p>ComfyUI 없이 설정을 저장할 수 있습니다. 연결 확인은 설치된 모델과 노드 목록만 읽습니다.</p>
-    {data && <fieldset disabled={busy}>
+    {data && <fieldset disabled={busy || loading}>
       <label>ComfyUI 주소 <input value={data.endpoint} onChange={e=>{setData({...data,endpoint:e.target.value});setCatalog(null);setNote('')}} /></label>
       <button onClick={()=>void run(true)}>연결 확인·목록 갱신</button>
       <p><label>적용 대상 <select value={person} onChange={e=>setPerson(e.target.value)}><option value="">공통 설정</option>{people.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label></p>
@@ -76,6 +78,6 @@ export function GenerationPanel({token, close}: {token: string; close: () => voi
       {catalog && Object.entries(catalog.choices).map(([k,vs])=><datalist key={k} id={'gen-'+k}>{vs.map(v=><option key={v} value={v}/>)}</datalist>)}
     </fieldset>}
     {note && <p role="status">{note}</p>}
-    <button disabled={busy} onClick={()=>setReload(reload+1)}>저장된 설정 다시 불러오기</button>
+    <button disabled={busy || loading} onClick={()=>setReload(reload+1)}>저장된 설정 다시 불러오기</button>
   </section>
 }
