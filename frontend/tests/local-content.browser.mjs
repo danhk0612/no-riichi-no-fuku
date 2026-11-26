@@ -404,7 +404,7 @@ try {
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
     assert.equal(await select.inputValue(), '1'); assert.equal(await positive.inputValue(), '')
     // Framing edits keep their Level/kind/field identity and do not resubmit base prompts.
-    const level = panel.locator('.framing-level').nth(2); await level.locator('summary').click()
+    const level = panel.locator('.framing-level').nth(2); await level.locator(':scope > summary').click()
     const framing = level.getByRole('group', { name: 'CG', exact: true }).locator('textarea').nth(1)
     await level.getByRole('group', {name: 'CG', exact: true}).getByText('제외할 요소 (Negative)').click()
     await framing.fill('test-only-framing')
@@ -525,7 +525,7 @@ try {
   assert.equal(await negative.inputValue(), ''); assert.equal(await positive.inputValue(), 'test-pending-draft')
   assert.equal(await panel.locator('input[aria-label^="키"]').inputValue(), '', 'directly cleared measurement must survive pack revision update')
   assert.equal(await panel.locator('input[aria-label^="가슴(B)"]').inputValue(), '88.5')
-  assert.equal(await panel.getByRole('group', { name: '하의 속옷', exact: true }).locator('textarea').first().inputValue(), 'test-source-2-P')
+  assert.equal(await panel.getByRole('group', { name: '팬티', exact: true }).locator('textarea').first().inputValue(), 'test-source-2-P')
   assert.equal(await update.isEnabled(), false)
   // Pack application also commits before delaying only its response. Re-entering
   // settings, then saving a measurement, must keep the new value after the old apply.
