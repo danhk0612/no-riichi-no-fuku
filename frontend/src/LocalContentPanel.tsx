@@ -180,7 +180,7 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
       <button role="tab" aria-selected={tab === 'fixed'} disabled={fixedSaving} onClick={() => setTab('fixed')} type="button">고정 대사</button>
     </div>
     {error && <p className="form-error" role="alert">{error}</p>}
-    {tab === 'prompts' && <section className="sound-card content-editor">
+    <div hidden={tab !== 'prompts'}><section className="sound-card content-editor">
       <label>캐릭터<select aria-label="캐릭터" value={cpuId ?? ''} disabled={!cpus.length} onChange={(event) => { const id = Number(event.target.value); if (Number.isInteger(id)) void loadCharacter(id) }}>
         <option value="" disabled>캐릭터 선택</option>
         {cpus.map((cpu) => <option key={cpu.id} value={cpu.id}>{cpu.name} · {cpu.slug}</option>)}
@@ -219,6 +219,7 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
         <h3>캐릭터 기본 프롬프트</h3>
         {GROUPS.map(([key, label]) => <PromptFields source={content.pack_source?.prompts[key]} disabled={saving} key={key} title={label} positive={valueFor(`p.${key}.positive`, content.prompts[key].positive)} negative={valueFor(`p.${key}.negative`, content.prompts[key].negative)} positiveEdited={content.prompts[key].overrides.positive || Object.hasOwn(dirty, `p.${key}.positive`)} negativeEdited={content.prompts[key].overrides.negative || Object.hasOwn(dirty, `p.${key}.negative`)} onPositive={(value) => editPrompt(key, 'positive', value)} onNegative={(value) => editPrompt(key, 'negative', value)} />)}
         <h3>단계별 이미지 구도 P/N</h3>
+        <p className="muted">얼굴 확대나 전신처럼 화면에 담을 범위를 입력하세요. 복장과 포즈는 같은 단계의 공유 후보에서 가져옵니다.</p>
         {[0, 1, 2, 3].map((level) => <details className="framing-level" key={level} open={level === 0}>
           <summary>Level {level} · {LEVELS[level]}</summary>
           {KINDS.map(([kind, label]) => {
@@ -236,7 +237,7 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
         </details>)}
         <button className="primary-button" disabled={saving || !Object.keys(dirty).length} onClick={() => void save()} type="button">{saving ? '저장 중…' : `변경 필드 저장 (${Object.keys(dirty).length})`}</button>
       </>}
-    </section>}
+    </section></div>
     {tab === 'fixed' && <FixedDialogueManager token={accessToken} cpus={cpus} onDirty={setFixedDirty} onSaving={setFixedSaving} />}
     {tab === 'packs' && <section className="sound-card">
       <div className="content-list-heading"><h3>등록된 팩</h3><button disabled={scanning} onClick={() => void scanPacks()} type="button">{scanning ? '재검색 중…' : '폴더 다시 검색'}</button></div>

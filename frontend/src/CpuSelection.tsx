@@ -38,7 +38,7 @@ export function CpuSelection({
         <div>
           <p className="selection-count" aria-live="polite">{selectedIds.length}명 선택 · {rosterMode ? '최소 3명' : '정원 3명'}</p>
           <h2>{rosterMode ? '이번 플레이 참가 CPU 확정' : '대국 상대 CPU 3명 선택'}</h2>
-          <p>{rosterMode ? '확정한 명단은 초기화 전까지 바꿀 수 없습니다. 최소 3명을 선택하세요.' : '참가 명단 안에서 서로 다른 CPU 3명을 선택합니다. 3단계 CPU는 미완료가 3명 미만일 때 참가할 수 있습니다.'}</p>
+          <p>{rosterMode ? '함께 플레이할 CPU를 3명 이상 선택하세요. 명단은 진행 초기화 전까지 유지됩니다. 다음 화면에서 첫 동풍전 상대 3명을 고릅니다.' : '참가 명단 안에서 서로 다른 CPU 3명을 선택합니다. 3단계 CPU는 미완료가 3명 미만일 때 참가할 수 있습니다.'}</p>
         </div>
         <div className="selection-actions">
           {onReset && <button className="text-button" disabled={busy} onClick={onReset} type="button">진행 초기화</button>}
