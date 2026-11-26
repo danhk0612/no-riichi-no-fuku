@@ -51,6 +51,8 @@ try {
     await page.locator('.profile-editor input').fill('배포 복구 확인')
     await page.locator('.profile-editor button').click()
     await page.waitForFunction(async () => (await (await fetch('/api/profile/me')).json()).player_name === '배포 복구 확인')
+    await page.locator('.cpu-preview').waitFor()
+    await page.screenshot({ path: join(dirname(evidence), 'selection-screen.png') })
     for (const action of ['참가 명단 확정', '동풍전 시작']) {
       const start = page.getByRole('button', { name: action, exact: true })
       await start.waitFor()
@@ -58,6 +60,23 @@ try {
       await start.click()
     }
     expected = await snapshot(page)
+    const controls = page.getByRole('region', { name: '플레이어 행동' })
+    for (const width of [1280, 680]) {
+      await page.setViewportSize({ width, height: 800 })
+      await controls.locator('.hand .tile').first().waitFor()
+      const layout = await page.evaluate(() => ({
+        overflow: document.documentElement.scrollWidth > innerWidth,
+        seats: document.querySelectorAll('.mahjong-table .seat').length,
+        missingNames: [...document.querySelectorAll('.hand button.tile')].some(tile => !tile.getAttribute('aria-label')),
+        visibleHint: document.querySelector('.hand-heading [role=status]')?.textContent?.trim()
+      }))
+      assert.equal(layout.seats, 4)
+      assert.equal(layout.overflow, false, 'page overflow at ' + width)
+      assert.equal(layout.missingNames, false)
+      assert.ok(layout.visibleHint)
+      await page.locator('.mahjong-table').screenshot({ path: join(dirname(evidence), 'table-' + width + '.png') })
+      await controls.screenshot({ path: join(dirname(evidence), 'hand-' + width + '.png') })
+    }
     assert.equal(expected.name, '배포 복구 확인')
     assert.ok(expected.session && expected.generation)
     assert.equal(expected.roster.length, 3)
