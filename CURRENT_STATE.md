@@ -1,6 +1,6 @@
 # 현재 상태
 
-설정 화면의 연결 확인 API는 `UNETLoader: null` 또는 `CLIPLoader.input.optional: []` 응답에 기존 HTTP 502 안내를 반환한다. 두 경우의 응답 문구와 `/object_info` 단일 GET을 검사하는 API 회귀 사례를 추가했다. 핸들러 본문과 어댑터의 격리 검사 2건 통과. 이번 변경에서 FastAPI 통합 검사와 실제 ComfyUI 연결은 미실행이다.
+설정 화면의 연결 확인 API는 `UNETLoader: null` 또는 `CLIPLoader.input.optional: []` 응답에 기존 HTTP 502 안내를 반환한다. 두 경우의 응답 문구와 `/object_info` 단일 GET을 검사하는 API 회귀 사례를 추가했다. 핸들러 본문과 어댑터의 격리 검사 2건 통과. 커밋 `cb658c3`의 [Windows W04](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45755922664)에서 두 사례를 포함한 FastAPI 백엔드 회귀 및 프런트 빌드가 통과했다. [Windows W05](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45755922642) 브라우저·패키지 EXE 종료/재시작·결산/엔딩 검사도 통과했다(artifact `15087847048`). 실제 사용자 PC·ComfyUI 생성은 미검증이다.
 
 이미지 생성 전 필수 노드·입력 정의 형식이 잘못된 경우 큐에 제출하지 않고 실패 상태를 저장한다. 다시 열어도 미접수 작업을 자동 제출하지 않으며, 명시 재시도에서 노드 정의를 다시 읽는다. 잘못된 정의 5종과 정상 정의 복구를 모의 검증했다.
 
