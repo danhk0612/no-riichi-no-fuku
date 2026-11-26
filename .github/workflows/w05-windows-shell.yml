@@ -225,9 +225,31 @@ jobs:
         if: success()
         run: |
           $product = 'out/w05/package/No-Riichi-No-Fuku-win32-x64'
+          Copy-Item -LiteralPath desktop/windows-quick-start.txt -Destination (Join-Path $product '시작하기.txt')
+          (git rev-parse HEAD).Trim() | Set-Content -Encoding ascii (Join-Path $product 'BUILD-SOURCE.txt')
           Compress-Archive -Path "$product/*" -DestinationPath out/w05-evidence/No-Riichi-No-Fuku-W05-Windows.zip -CompressionLevel Optimal
           Get-FileHash out/w05-evidence/No-Riichi-No-Fuku-W05-Windows.zip -Algorithm SHA256 | ConvertTo-Json | Out-File out/w05-evidence/zip-sha256.json
           Get-ChildItem out/w05-evidence -Recurse -File | Select-Object FullName,Length | ConvertTo-Json | Out-File out/w05-evidence/manifest-files.json
+      - name: Verify the player ZIP, normal launch and offline backup restoration
+        run: |
+          $archive = 'out/w05-evidence/No-Riichi-No-Fuku-W05-Windows.zip'
+          $scratch = (Resolve-Path 'out/w05-scratch').Path
+          $first = Join-Path $scratch '첫 번째 설치'
+          $second = Join-Path $scratch '새 폴더 설치'
+          Expand-Archive -LiteralPath $archive -DestinationPath $first
+          Expand-Archive -LiteralPath $archive -DestinationPath $second
+          $env:PLAYWRIGHT_MODULE_PATH = Join-Path $env:RUNNER_TEMP 'nrnf-playwright/node_modules/playwright'
+          $source = (git rev-parse HEAD).Trim()
+          node desktop/test/windows-zip-restore.mjs (Join-Path $first 'No-Riichi-No-Fuku.exe') (Join-Path $second 'No-Riichi-No-Fuku.exe') $scratch out/w05-evidence/windows-zip-restore.json $source
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-Content out/w05-evidence/windows-zip-restore.json -Raw
+      - name: Upload playable Windows x64 folder as a standalone ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: No-Riichi-No-Fuku-Windows-x64-${{ github.event.pull_request.head.sha || github.sha }}
+          path: out/w05/package/No-Riichi-No-Fuku-win32-x64/
+          if-no-files-found: error
+          retention-days: 14
       - name: Upload exact-source Windows evidence and test ZIP
         if: always()
         uses: actions/upload-artifact@v4

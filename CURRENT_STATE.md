@@ -1,5 +1,9 @@
 # 현재 상태
 
+## Windows 사용자 ZIP · 오프라인 대국 재개
+
+소스 `d1e6009`의 [W04](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45758298094)와 [W05](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45758298103)가 통과했다. Windows Server 2022 x64에서 같은 빌드를 한글·공백이 있는 두 폴더에 압축 해제했다. 기본 경로로 실행해 저장한 이름·CPU 3명·진행 세대·진행 중 대국 ID가 두 번째 설치에서 일치했다. 게임 종료 후 데이터 폴더 전체를 백업해 별도 LocalAppData에 복원한 뒤에도 같은 값을 확인했다. 사용자용 ZIP artifact `15088254644`, 개발 검증 자료 `15089605512`. 사용자 PC, 서로 다른 버전 간 DB 이전, 실제 이미지 생성 및 정식 배포 검증은 별도다.
+
 설정 화면의 연결 확인 API는 `UNETLoader: null` 또는 `CLIPLoader.input.optional: []` 응답에 기존 HTTP 502 안내를 반환한다. 두 경우의 응답 문구와 `/object_info` 단일 GET을 검사하는 API 회귀 사례를 추가했다. 핸들러 본문과 어댑터의 격리 검사 2건 통과. 커밋 `cb658c3`의 [Windows W04](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45755922664)에서 두 사례를 포함한 FastAPI 백엔드 회귀 및 프런트 빌드가 통과했다. [Windows W05](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45755922642) 브라우저·패키지 EXE 종료/재시작·결산/엔딩 검사도 통과했다(artifact `15087847048`). 실제 사용자 PC·ComfyUI 생성은 미검증이다.
 
 이미지 생성 전 필수 노드·입력 정의 형식이 잘못된 경우 큐에 제출하지 않고 실패 상태를 저장한다. 다시 열어도 미접수 작업을 자동 제출하지 않으며, 명시 재시도에서 노드 정의를 다시 읽는다. 잘못된 정의 5종과 정상 정의 복구를 모의 검증했다.
