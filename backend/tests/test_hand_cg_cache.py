@@ -73,6 +73,30 @@ class HandCacheTests(TestCase):
             self.assertEqual(submit.call_count,1)
             self.assertEqual(len(set(tuple(x.args) for x in poll.call_args_list)),1)
 
+    def test_prompt_validation_rejection_is_distinct_from_lost_receipt(self):
+        nodes, _ = graph(Settings(**FROZEN["settings"]), "p", "n", 1, workflow=FROZEN["workflow"])
+        info = {n["class_type"]: {"input": {"required": {k: ["*"] for k in n["inputs"]}}}
+                for n in nodes.values()}
+
+        def response(status, body):
+            reply = BytesIO(body)
+            reply.status = status
+            return reply
+
+        rejection = json.dumps({"error":{"type":"prompt_outputs_failed_validation"},
+                                "node_errors":{}}).encode()
+        for code, body, expected in ((400, rejection, "rejected"), (400, b"bad response", "uncertain"),
+                                     (503, rejection, "uncertain"), (200, b"{}", "uncertain")):
+            with self.subTest(code=code, body=body), TemporaryDirectory() as tmp, patch("app.services.anima_adapter.HTTPConnection") as connect:
+                conn = connect.return_value
+                conn.getresponse.side_effect = [response(200, json.dumps(info).encode()), response(code, body)]
+                cache = HandCG(Path(tmp))
+                first = cache.advance(FROZEN, "http://127.0.0.1:8188")
+                self.assertEqual(first["state"], expected)
+                self.assertEqual(cache.advance(FROZEN, "http://127.0.0.1:8188"), first)
+                self.assertEqual([c.args[:2] for c in conn.request.call_args_list],
+                                 [("GET", "/object_info"), ("POST", "/prompt")])
+
     def test_transient_history_and_image_http_errors_keep_the_original_job(self):
         job = str(uuid4())
         endpoint = "http://127.0.0.1:8188"

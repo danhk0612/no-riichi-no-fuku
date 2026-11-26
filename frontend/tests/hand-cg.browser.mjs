@@ -8,7 +8,7 @@ try {
   await page.addInitScript(()=>{window.nrnfDesktop={isDesktop:true}})
   const env={version:1,generation:'g',session_id:'s',acked_ordinal:0,terminal_ordinal:null,route:'result',delivery_revision:1,head:{ordinal:1,event_id:'e',kind:'hand',payload:{kind:'hand',fact_snapshot:{start:{bakaze:'E',kyoku:1},winners:[{actor:1,target:0,hora_log_offset:1,win_kind:'ron',score:{band:1}}]},displayed_hora_log_offset:1,content:{version:1,scene:{stage:0,media:null,generation_input:{}},dialogues:[{cpu_id:1,slot:'win',text:'화료 대사'}]}}}}
   let cgCalls=0
-  let retry=0, held, began, cached=false, disconnected=false
+  let retry=0, held, began, cached=false, disconnected=false, rejected=false
   const waiting=new Promise(resolve=>{began=resolve})
   await page.route('**/api/**',async route=>{
     const u=new URL(route.request().url()), p=u.pathname
@@ -18,6 +18,7 @@ try {
     if(p.endsWith('/results'))return json(env)
     if(p.endsWith('/results/e/cg')){
       cgCalls++
+      if(rejected && u.searchParams.get('retry')!=='invalid')return json({state:'rejected',attempt:'invalid'})
       if(disconnected && u.searchParams.get('retry')!=='known')return json({state:'disconnected',attempt:'known'})
       if(cached)return json({state:'ready',attempt:'cached'})
       if(u.searchParams.get('retry')==='a'){retry++;return json({state:'ready',attempt:'b'})}
@@ -48,6 +49,13 @@ try {
   disconnected=true
   await page.reload()
   await page.getByRole('button',{name:'기존 작업 다시 조회'}).click()
+  await page.getByRole('img',{name:'화료 결과 CG'}).waitFor()
+  disconnected=false
+  rejected=true
+  await page.reload()
+  await page.getByText(/생성 입력을 검증하지 못해 요청을 거절/).waitFor()
+  assert.equal(await page.getByRole('button',{name:'확인하고 다음 결과 보기'}).isEnabled(),true)
+  await page.getByRole('button',{name:'다시 시도'}).click()
   await page.getByRole('img',{name:'화료 결과 CG'}).waitFor()
   delete env.head.payload.content.scene.generation_input
   env.head.payload.content.scene.missing_candidates=['situation']
