@@ -1,5 +1,9 @@
 # 현재 상태
 
+## 국 결과 점수 이동과 최종 순위
+
+PR #143은 화료/유국 점수 이동을 좌석과 증감 점수로 나누어 표시한다. 복수 론은 화료자별 카드를 유지하고 표시 중인 배경 차례를 강조한다. 결산은 저장된 순위·이름·최종 점수를 정렬해 표시한다. 소스 `fd2fbee`의 [W04](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45781705349)와 [W05](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45781705336) 통과. 모의 복수 론 점수·부호·배경 전환 및 순위, Windows 패키지 결산·종료 후 복구를 검사했다. 게임 ZIP artifact `15098848311`.
+
 ## 게임 설정과 콘텐츠 편집 이동
 
 PR #141에서 플레이 설정과 콘텐츠 편집 메뉴를 구분하고 한 번에 한 설정 패널을 표시한다. 다른 패널로 전환하거나 게임 화면으로 돌아가면 열린 편집기의 메모리 상태를 유지한다. 명시적으로 닫으면 기존 닫기 정책을 적용한다. 테스트 소스 `42de2d9`: [W04](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45779347401), [W05](https://github.com/danhk0612/no-riichi-no-fuku/actions/runs/45779347371) 성공. 브라우저에서 미저장 모델·캐릭터 선택·LoRA 강도·난이도 보존, 재전환 추가 조회·자동 저장·ComfyUI 요청 없음, 닫기 후 초점 복귀를 검사했다. ZIP artifact `15098032467`. 실제 사용자 PC 및 GPU 생성은 이번 검사 범위 밖이다.

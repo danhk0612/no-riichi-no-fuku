@@ -79,6 +79,11 @@ try {
   const rows=page.getByRole('region',{name:'화료자별 결과'})
   await rows.getByText('론 점수 16,000점').waitFor()
   await rows.getByText('론 점수 8,000점').waitFor()
+  const firstWinner = rows.locator('.winner-card').first()
+  const movements = firstWinner.getByRole('list')
+  assert.deepEqual(await movements.locator('strong').allTextContents(), ['-16,000점','0점','+16,000점','0점'])
+  assert.deepEqual(await movements.locator('strong').evaluateAll(nodes => nodes.map(n => n.dataset.change)), ['loss','even','gain','even'])
+  assert.equal(await rows.locator('.winner-card[data-current]').count(), 1)
   const summary=await rows.locator('.settlement-summary').allTextContents()
   await rows.getByText('현재 배경 차례: 화료자').waitFor()
   thirdHand.head.payload.fact_snapshot=secondHand.head.payload.fact_snapshot
@@ -103,6 +108,8 @@ try {
   await page.getByRole('heading', { name: '동풍전 정산' }).waitFor()
   await page.locator('.result-delivery-card figure.result-asset img').waitFor()
   assert.match(await page.locator('.result-delivery-card figure.result-asset img').getAttribute('src'), /^blob:/)
+  const ranking = page.getByRole('list', {name:'동풍전 최종 순위'})
+  assert.deepEqual(await ranking.locator('.rank-points').allTextContents(), ['40,000점','30,000점','20,000점','10,000점'])
   assert.equal(await page.getByText('저장된 이름').count(), 1)
   const failedImage = structuredClone(settlement)
   failedImage.delivery_revision = 14
