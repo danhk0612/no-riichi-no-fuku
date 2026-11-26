@@ -73,6 +73,24 @@ class Comfy:
         finally:
             conn.close()
 
+    def catalog(self):
+        info = self._request("GET", "/object_info")
+        if not isinstance(info, dict) or not info:
+            raise ValueError("Invalid object_info")
+        fields = {"model": ("UNETLoader", "unet_name"), "encoder": ("CLIPLoader", "clip_name"),
+                  "vae": ("VAELoader", "vae_name"), "lora": ("LoraLoaderModelOnly", "lora_name"),
+                  "sampler": ("KSampler", "sampler_name"), "scheduler": ("KSampler", "scheduler")}
+        result = {}
+        for name, (kind, key) in fields.items():
+            spec = info.get(kind, {}).get("input", {}).get("required", {}).get(key, [])
+            options = spec[0] if spec else []
+            if options == "COMBO" and len(spec) > 1:
+                options = spec[1].get("options", [])
+            result[name] = [v for v in options if isinstance(v, str)] if isinstance(options, list) else []
+        required = {"UNETLoader", "CLIPLoader", "VAELoader", "CLIPTextEncode", "EmptyLatentImage",
+                    "KSampler", "VAEDecode", "SaveImage"}
+        return {"choices": result, "missing_nodes": sorted(required - info.keys())}
+
     def submit(self, settings, positive, negative, seed, **character):
         nodes, output = graph(settings, positive, negative, seed, **character)
         info = self._request("GET", "/object_info")

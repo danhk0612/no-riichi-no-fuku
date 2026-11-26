@@ -1,3 +1,4 @@
+import { GenerationPanel } from './GenerationPanel'
 import type { SavedResultContent } from './game/types'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import ReactDOM from 'react-dom/client'
@@ -66,6 +67,7 @@ function App() {
   const [profileName, setProfileName] = useState('')
   const [profileBusy, setProfileBusy] = useState(false)
   const [soundSelection, setSoundSelection] = useState<SoundSelection | null>(null)
+  const [generationOpen, setGenerationOpen] = useState(false)
   const [soundSettingsOpen, setSoundSettingsOpen] = useState(false)
   const [contentSettingsOpen, setContentSettingsOpen] = useState(false)
   const [fixedDirty, setFixedDirty] = useState(false)
@@ -881,6 +883,7 @@ function App() {
         <h1>No Riichi No Fuku</h1>
         <p>플레이어 1명과 CPU 3명이 진행하는 동풍전</p>
         {isDesktop && accessToken && <button className="text-button" type="button" onClick={() => setDifficultySettingsOpen((open) => !open)}>난이도 설정</button>}
+        {isDesktop && accessToken && <button className="text-button" onClick={()=>setGenerationOpen(!generationOpen)}>이미지 생성 설정</button>}
         {isDesktop && accessToken && <button className="text-button" type="button" onClick={() => setSoundSettingsOpen((open) => !open)}>사운드·자료 설정</button>}
         {isDesktop && accessToken && <button className="text-button" type="button" disabled={contentSettingsOpen && fixedSaving} onClick={() => contentSettingsOpen ? closeContentSettings() : setContentSettingsOpen(true)}>캐릭터 프롬프트·팩 설정</button>}
       </header>
@@ -894,6 +897,7 @@ function App() {
         const latestChoices = withLatestCharacterMeasurements(choices)
         setCpus(localPlay.phase === 'roster_required' ? latestChoices : latestChoices.filter((cpu) => ids.has(cpu.id)))
       }} />}
+      {isDesktop && accessToken && generationOpen && <GenerationPanel token={accessToken} close={()=>setGenerationOpen(false)}/>}
       {isDesktop && accessToken && soundSettingsOpen && <LocalSoundPanel accessToken={accessToken} onClose={() => setSoundSettingsOpen(false)} onSelectionChanged={setSoundSelection} onPlaybackChanged={stopGameAudio} />}
       {isDesktop && accessToken && contentSettingsOpen && <LocalContentPanel accessToken={accessToken} onClose={closeContentSettings} fixedDirty={fixedDirty} fixedSaving={fixedSaving} setFixedDirty={setFixedDirty} setFixedSaving={setFixedSaving} onPackApplied={stopGameAudio} onMeasurementsUpdated={updateCharacterContent} />}
       {isDesktop && soundError && <p className="form-error" role="status">{soundError}</p>}
