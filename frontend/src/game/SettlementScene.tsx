@@ -39,7 +39,8 @@ export function SettlementScene({cpu,transition:t,stage,text,url,hasCG,failed}:{
   cpu?:number;transition:StageTransition;stage:number;text:string|null;url?:string|null;hasCG:boolean;failed:boolean
 }) {
   const [liveUrl,setLiveUrl]=useState('')
-  const live=useContext(ImageSettings).available && cpu
+  const settings=useContext(ImageSettings)
+  const live=settings.available && cpu && (hasCG || settings.ready)
   const [loaded,setLoaded]=useState(false),[broken,setBroken]=useState(false)
   const [skipWait,setSkipWait]=useState(false)
   useEffect(()=>{
@@ -50,15 +51,15 @@ export function SettlementScene({cpu,transition:t,stage,text,url,hasCG,failed}:{
   const reveal=loaded || !hasCG || failed || broken || skipWait
   return <section className="stage-change" aria-label="패배 단계 변경">
     <h3>{t.name} · 단계 {t.from_stage} → {stage}</h3>
-    <div className="settlement-scene">
+    {(hasCG || live || t.full_body || t.profile || text || settings.ready) && <div className="settlement-scene">
       {live ? <LiveImage cpu={cpu!} level={stage} kind="cg" label={'단계 '+stage+' 결과 CG'} url={url} onLoaded={setLiveUrl} className="settlement-cg"/> : url && !broken && <img className="settlement-cg" src={url} alt={'단계 '+stage+' 결과 CG'} onLoad={()=>setLoaded(true)} onError={()=>setBroken(true)}/>}
-      {!live && (!url || broken) && <p role="status">{failed || broken ? 'CG를 불러오지 못했습니다.' : hasCG ? 'CG를 불러오는 중입니다.' : '등록된 결과 CG가 없습니다.'}</p>}
-      {(live || reveal) && <><CharacterImage cpu={cpu} level={stage} kind="full_body" url={t.full_body?.url} label={t.name+' 전신'} className="settlement-body"/>
+      {!live && hasCG && (!url || broken) && <p role="status">{failed || broken ? 'CG를 불러오지 못했습니다.' : hasCG ? 'CG를 불러오는 중입니다.' : '등록된 결과 CG가 없습니다.'}</p>}
+      {(live || reveal) && <>{(t.full_body || settings.ready) && <CharacterImage cpu={cpu} level={stage} kind="full_body" url={t.full_body?.url} label={t.name+' 전신'} className="settlement-body"/>}
       <div className="settlement-line">
-        <CharacterImage cpu={cpu} level={stage} kind="profile" url={t.profile?.url} label={t.name+' 프로필'} className="settlement-profile"/>
-        <div><strong>{t.name}</strong><p>{text || '등록된 패배 대사가 없습니다.'}</p></div>
+        {(t.profile || settings.ready) && <CharacterImage cpu={cpu} level={stage} kind="profile" url={t.profile?.url} label={t.name+' 프로필'} className="settlement-profile"/>}
+        <div><strong>{t.name}</strong>{text && <p>{text}</p>}</div>
       </div></>}
-    </div>
+    </div>}
     {live && liveUrl ? <CGViewer url={liveUrl}/> : url && loaded && !broken && <CGViewer url={url}/>}
   </section>
 }

@@ -97,6 +97,7 @@ export type ResultDeliveryEnvelope = {
   delivery_revision: number
   acked_ordinal: number
   head: ResultDeliveryEntry | null
+  next_view?: 'winner' | 'hand_result' | 'settlement' | 'ending' | 'selection' | 'hand' | null
   terminal_ordinal: number | null
   route: 'result' | 'human_turn' | 'settlement_wait' | 'ending' | 'selection'
   action_version: number | null

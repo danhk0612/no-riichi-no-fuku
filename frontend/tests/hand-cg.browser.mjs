@@ -39,8 +39,8 @@ try {
   await page.getByText('화료 대사').waitFor()
   await page.getByRole('button',{name:'다시 시도'}).click()
   await Promise.race([waiting,page.waitForTimeout(6000).then(()=>{throw Error('image request did not start')})])
-  await page.getByRole('button',{name:'확인하고 다음 결과 보기'}).click()
-  await page.getByRole('heading',{name:'국 결과 · E2국'}).waitFor()
+  await page.getByRole('button',{name:'다음 국'}).click()
+  await page.getByRole('heading',{name:'동 2국 결과'}).waitFor()
   held()
   assert.equal(await page.locator('.hand-cg-backdrop').count(),0)
   cached=true
@@ -59,7 +59,7 @@ try {
   await page.reload()
   await enterDesktopGame(page)
   await page.getByText(/생성 입력을 검증하지 못해 요청을 거절/).waitFor()
-  assert.equal(await page.getByRole('button',{name:'확인하고 다음 결과 보기'}).isEnabled(),true)
+  assert.equal(await page.getByRole('button',{name:'다음 국'}).isEnabled(),true)
   await page.getByRole('button',{name:'다시 시도'}).click()
   await page.getByRole('img',{name:'화료 결과 CG'}).waitFor()
   delete env.head.payload.content.scene.generation_input
@@ -67,9 +67,9 @@ try {
   const before=cgCalls
   await page.reload()
   await enterDesktopGame(page)
-  await page.getByText('화료 CG 생략 · 미등록 후보: 화료 상황').waitFor()
+  assert.equal(await page.getByText('화료 CG 생략 · 미등록 후보: 화료 상황').count(),0)
   await page.getByText('화료 대사').waitFor()
   assert.equal(cgCalls,before)
-  assert.equal(await page.getByRole('button',{name:'확인하고 다음 결과 보기'}).isEnabled(),true)
+  assert.equal(await page.getByRole('button',{name:'다음 국'}).isEnabled(),true)
   console.log('PASS: hand dialogue, explicit retry, next hand before image, no stale backdrop')
 }finally{await browser.close()}

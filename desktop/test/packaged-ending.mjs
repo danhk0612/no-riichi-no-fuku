@@ -16,6 +16,7 @@ async function launch(){
   app=await _electron.launch({executablePath:exe,args:['--data',data],timeout:90000})
   page=await app.firstWindow({timeout:90000})
   page.setDefaultTimeout(30000)
+  await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setSize(1000,720))
   page.on('websocket', socket => socket.on('framereceived', frame => {
     const message = JSON.parse(String(frame.payload))
     if (message.type === 'human_turn') turn = message
@@ -36,6 +37,15 @@ async function stop(){
   await Promise.all([exit,app.evaluate(({BrowserWindow})=>{setImmediate(()=>BrowserWindow.getAllWindows()[0].close())})])
   app=null
 }
+async function checkVisible(locator) {
+  for (const item of await locator.all()) {
+    assert.ok(await item.evaluate(node => {
+      const box=node.getBoundingClientRect()
+      return box.width>0 && box.height>0 && box.left>=0 && box.top>=0 &&
+        box.right<=window.innerWidth+1 && box.bottom<=window.innerHeight+1
+    }), '최소 창에서 점수와 다음 동작이 보여야 합니다.')
+  }
+}
 const state=()=>page.evaluate(async()=>{const r=await fetch('/api/local/play');if(!r.ok)throw Error('local play '+r.status);return r.json()})
 try{
   await launch()
@@ -55,9 +65,10 @@ try{
   // The fixture was saved before the final action. Resume now starts at the hand boundary.
   while (turn.action_version < plan.prior_actions) {
     const version = turn.action_version
+    await page.locator('.hand button:enabled,.action-bar button:enabled').first().waitFor()
     const action = turn.turn.legal_actions[0]
     const choice = action.type ? page.locator('.action-bar button').first() :
-      page.locator('.hand > *').nth(turn.turn.observation.hands[0].indexOf(action.tile))
+      page.locator('.hand > button:enabled:nth-child('+(turn.turn.observation.hands[0].indexOf(action.tile)+1)+')')
     await choice.click()
     const until = Date.now()+15000
     while (turn.action_version === version) {
@@ -65,17 +76,21 @@ try{
       await page.waitForTimeout(15)
     }
   }
+  await page.locator('.hand button:enabled,.action-bar button:enabled').first().waitFor()
   await page.locator(plan.selector).nth(plan.index).click()
   for(let i=0;i<8;i++){
     const card=page.locator('.result-delivery-card[data-event-id]')
     await card.waitFor()
     if(await card.getAttribute('data-result-kind')==='settlement')break
+    await checkVisible(card.locator('.result-deltas li, .primary-button'))
+    await card.screenshot({path:join(dirname(reportFile),'hand-result.png')})
     const event=await card.getAttribute('data-event-id')
     await card.locator('button.primary-button').click()
     await page.waitForFunction(id=>document.querySelector('.result-delivery-card')?.dataset.eventId!==id,event)
   }
   const result=page.locator('[data-result-kind="settlement"]')
   const id = await result.getAttribute('data-event-id')
+  await checkVisible(result.locator('.score-table tr,.primary-button'))
   if (noMedia) {
     await result.getByRole('region', {name:'패배 단계 변경'}).getByText(/단계 2 → 3/).waitFor()
     assert.equal(await result.getByRole('button',{name:'CG만 보기'}).count(),0)
@@ -96,7 +111,7 @@ try{
   await launch()
   await page.locator('[data-result-kind="settlement"]').waitFor()
   assert.equal(await page.locator('[data-result-kind="settlement"]').getAttribute('data-event-id'),id)
-  await page.getByRole('button',{name:'정산 확인'}).click()
+  await page.getByRole('button',{name:'엔딩 보기'}).click()
   await page.getByRole('region',{name:'엔딩'}).waitFor()
   assert.equal((await state()).phase,'ending_pending')
   await page.getByRole('region',{name:'엔딩'}).screenshot({path:join(dirname(reportFile),'ending-screen.png')})
@@ -105,7 +120,7 @@ try{
     await stop()
     await launch()
     const ending = page.getByRole('region',{name:'엔딩'})
-    await ending.getByText('오마케에서는 완료한 참가자들과 동풍전을 계속할 수 있습니다.').waitFor()
+    await ending.getByRole('button',{name:'오마케로 계속하기'}).waitFor()
     assert.equal((await state()).phase, 'ending_pending')
     assert.equal(await ending.locator('img,audio').count(), 0)
     await ending.screenshot({path:join(dirname(reportFile), 'offline-ending.png')})
