@@ -105,6 +105,89 @@ class PackRegistryTests(unittest.TestCase):
         self.runtime = create_local_runtime(self.root)
         self.open_client()
 
+    def test_stage_prompt_composition_for_twelve_slots(self):
+        from unittest.mock import patch
+        from app.api.stage_images import parts
+        value = self.filled_character("stage")
+        self.install(value)
+        self.application(self.scan()["registry"]["packs"][0]).raise_for_status()
+        content = self.content()
+        for level in range(4):
+            for kind in ("profile", "full_body", "cg"):
+                groups = []
+                def candidates(_db, cpu, stage, group, event):
+                    self.assertEqual((cpu,stage),(1,level))
+                    groups.append((group,event))
+                    return {"effective_items":[{"positive":group,"negative":group}]}
+                with patch("app.api.stage_images.get_candidates",side_effect=candidates):
+                    result = parts(None,1,level,kind,content)
+                situation = kind == "cg" and level > 0
+                self.assertEqual(groups,[("clothing_state",None)] +
+                    ([("situation",f"defeat_stage_{level}")] if situation else []) + [("pose",None)])
+                for key, suffix in (("positive","P"),("negative","N")):
+                    base = ["appearance"] + (["upper_underwear"] if level in (1,2) else []) + (["lower_underwear"] if level == 2 else [])
+                    self.assertEqual(result[key].splitlines(),
+                        [f"test-stage-{group}-{suffix}" for group in base] +
+                        [group for group,_ in groups] + [f"test-stage-{level}-{kind}-{suffix}"])
+
+    def test_stage_preview_and_explicit_save_preserve_pack_and_other_slots(self):
+        from unittest.mock import patch
+        from uuid import uuid4
+        from app.services.anima_adapter import Comfy
+        from test_hand_cg_cache import PNG
+        value = self.filled_character("stage")
+        value["levels"]["0"]["images"]["profile"] = "original.png"
+        original = b"\x89PNG\r\n\x1a\noriginal"
+        folder = self.install(value, {"original.png": original})
+        pack = self.scan()["registry"]["packs"][0]
+        self.application(pack).raise_for_status()
+        before = self.content()
+        self.client.put("/api/local/generation-settings", headers=self.headers, json={
+            "expected_revision":0, "common":{"model":"m","vae":"v","encoder":"c"}}).raise_for_status()
+        route = "/api/local/characters/1/stage-images/0/profile"
+        def post(path):
+            return self.client.post(path, headers=self.headers)
+        def prepare():
+            response = post(route + "?expected_revision=" + str(before["revision"]))
+            response.raise_for_status()
+            return route + "/" + response.json()["ticket"]
+        with patch.object(Comfy, "submit", return_value=str(uuid4())) as submit, patch.object(Comfy, "saved_result", return_value=PNG):
+            self.assertEqual(post(route + "?expected_revision=" + str(before["revision"])).status_code,422)
+            for group in ("pose","clothing_state"):
+                item = self.client.post("/api/local/shared-prompts", headers=self.headers,json={
+                    "level":0,"kind":group,"label":group,"positive":group,"negative":""}).json()
+                self.client.put("/api/local/shared-prompt-defaults/0/"+group,headers=self.headers,
+                    json={"expected_revision":0,"item_id":item["id"]}).raise_for_status()
+            stale, live = prepare(), prepare()
+            submit.assert_not_called()
+            self.assertEqual(post(stale+"/advance").status_code,409)
+            self.assertEqual(post(live.replace("/0/profile","/1/profile")+"/advance").status_code,409)
+            self.assertEqual(post(live+"/advance").json()["state"],"pending")
+            ready = post(live+"/advance").json()
+            submit.assert_called_once()
+            self.assertEqual(ready["state"],"ready")
+            preview = live + "/" + ready["attempt"]
+            self.assertEqual(self.client.get(preview, headers=self.headers).content, PNG)
+            self.assertEqual(self.content()["levels"]["0"]["profile"]["media"],before["levels"]["0"]["profile"]["media"])
+            after = post(preview+"/save").json()
+            media = after["levels"]["0"]["profile"]["media"]
+            self.assertEqual(media["source"],"generated")
+            self.assertEqual(after["levels"]["1"], before["levels"]["1"])
+            self.assertEqual(post(preview+"/save").json()["levels"]["0"]["profile"]["media"],media)
+            live = prepare()
+            reused = post(live+"/advance").json()
+            self.assertEqual(ready,reused)
+            submit.assert_called_once()
+            preview = live + "/" + reused["attempt"]
+            self.restart()
+            self.assertEqual(self.content()["levels"]["0"]["profile"]["media"], media)
+            self.assertEqual(self.client.get(media["url"], headers=self.headers).content, PNG)
+            self.assertEqual((folder/"original.png").read_bytes(),original)
+            self.assertEqual(self.client.get(before["levels"]["0"]["profile"]["media"]["url"],headers=self.headers).content,original)
+            self.client.patch("/api/local/characters/1/content",headers=self.headers,json={
+                "expected_revision":after["revision"], "prompts":{"appearance":{"positive":"edited"}}}).raise_for_status()
+            self.assertEqual(post(preview+"/save").status_code,409)
+
     def test_character_structure_and_original_snapshot(self):
         value = character()
         value["prompts"]["upper_underwear"]["negative"] = "test-only"
@@ -875,7 +958,7 @@ class PackRegistryTests(unittest.TestCase):
             self.assertEqual(conn.execute(text("PRAGMA foreign_key_check")).all(), [])
             self.assertEqual(
                 conn.execute(text("select version_num from alembic_version")).scalar(),
-                "20261126_0016",
+                "20261126_0017",
             )
             self.assertIn("measurements_cm", {
                 row[1] for row in conn.execute(text("PRAGMA table_info(character_content)"))

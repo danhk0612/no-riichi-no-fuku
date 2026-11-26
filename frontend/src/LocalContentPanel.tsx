@@ -1,3 +1,4 @@
+import { StageImageEditor } from './StageImageEditor'
 import { useEffect, useRef, useState } from 'react'
 import {
   getCharacterContent, listLocalCharacters, listContentPacks, patchCharacterContent,
@@ -223,7 +224,9 @@ export function LocalContentPanel({ accessToken, onClose, onPackApplied, onMeasu
             const pair = content.levels[String(level)][kind]
             const posKey = `f.${level}.${kind}.positive`, negKey = `f.${level}.${kind}.negative`
             return <div key={kind}>
-              {pair.media && <p className="muted">{label} 이미지 · 적용 팩 revision {content.pack?.applied_revision} · 보관 ID {pair.media.media_id}</p>}
+              <StageImageEditor key={content.cpu_id+':'+level+':'+kind+':'+content.revision} token={accessToken} cpu={content.cpu_id}
+                level={level} kind={kind} label={label} revision={content.revision} slot={pair} disabled={saving||!!Object.keys(dirty).length}
+                onSaved={next=>setContent(current=>current?.cpu_id===content.cpu_id ? {...current,levels:{...current.levels,[level]:{...current.levels[String(level)],[kind]:next}}} : current)} />
               <PromptFields source={content.pack_source?.levels[String(level)].framing[kind]} disabled={saving} title={label} positive={valueFor(posKey, pair.positive)} negative={valueFor(negKey, pair.negative)} positiveEdited={pair.overrides.positive || Object.hasOwn(dirty, posKey)} negativeEdited={pair.overrides.negative || Object.hasOwn(dirty, negKey)} onPositive={(value) => editFraming(level, kind, 'positive', value)} onNegative={(value) => editFraming(level, kind, 'negative', value)} /></div>
           })}
         </details>)}

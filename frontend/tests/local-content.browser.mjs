@@ -16,6 +16,7 @@ try {
   const confirmMessages = []
   page.on('dialog', (dialog) => { confirmMessages.push(dialog.message()); void (discardDraft ? dialog.accept() : dialog.dismiss()) })
   await page.addInitScript(() => { window.nrnfDesktop = { isDesktop: true } })
+  const stageCalls = []
   const saved = { 1: content(1), 2: content(2), 3: content(3) }
   saved[1].measurements_cm = { height: '170.0', bust: null, waist: '62.5', hips: null }
   const cpus = [1, 2, 3].map((id) => ({ id, slug: `cpu-${id}`, name: `CPU ${id}`, defeat_stage: 0, style: 'balanced', short_description: 'test-only', profile_image_key: null, measurements_cm: id === 1 ? { height: '170.0', bust: null, waist: '62.5', hips: null } : { height: null, bust: null, waist: null, hips: null } }))
@@ -38,6 +39,16 @@ try {
   const listing = { schema_version: 1, packs: [], scan_entries: [] }
   await page.route('**/api/**', async (route) => {
     const request = route.request(), path = new URL(request.url()).pathname
+    if (path.startsWith('/api/local/characters/1/stage-images/0/profile')) {
+      stageCalls.push([request.method(),path])
+      if (path.endsWith('/advance')) return route.fulfill({json:{state:'ready',attempt:'sample'}})
+      if (path.endsWith('/save')) {
+        saved[1].levels[0].profile.media={source:'generated',media_id:'sample',url:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='}
+        return route.fulfill({json:saved[1]})
+      }
+      if (request.method()==='GET') return route.fulfill({contentType:'image/gif',body:Buffer.from('R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==','base64')})
+      return route.fulfill({json:{ticket:'ticket'}})
+    }
     const fixedPath = path.match(/^\/api\/local\/characters\/(\d+)\/fixed-dialogues$/)
     const fixedCandidates = path.match(/^\/api\/local\/characters\/(\d+)\/fixed-dialogue-candidates$/)
     if (fixedCandidates) return route.fulfill({ json: {items: [{id: 91, event_key: 'win', text: 'first', active: true}, {id: 92, event_key: 'win', text: 'second', active: true}, {id: 93, event_key: 'win', text: 'inactive', active: false}]} })
@@ -340,6 +351,14 @@ try {
   const save = panel.locator('.content-editor:not(.shared-prompt-manager) button.primary-button')
   await positive.waitFor()
   if (!process.argv.includes('--scan-only')) {
+    assert.equal(stageCalls.length,0)
+    const stagePanel=panel.locator('.framing-level').first().getByRole('region',{name:'프로필 이미지'})
+    await stagePanel.getByRole('button',{name:'프로필 생성'}).click()
+    await stagePanel.getByAltText('프로필 생성 미리보기').waitFor()
+    assert.equal(await stagePanel.getByAltText('저장된 프로필').count(),0)
+    await stagePanel.getByRole('button',{name:'이 이미지 저장'}).click()
+    await stagePanel.getByAltText('저장된 프로필').waitFor()
+    assert.equal(stageCalls.filter(([method,path])=>method==='POST' && path.endsWith('/save')).length,1)
     // Failures/conflicts preserve drafts; only dirty strings are submitted.
     await positive.fill('test-only-draft')
     for (const mode of ['fail', 'conflict']) { saveMode = mode; await save.click(); await panel.getByRole('alert').filter({ hasText: `test-only-${mode}` }).waitFor(); assert.equal(await positive.inputValue(), 'test-only-draft') }
