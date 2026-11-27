@@ -1,11 +1,11 @@
 import {ImageSettings, LiveImage,type ImageKind} from './LiveImage'
-import { useContext, useState } from 'react'
+import { type ReactNode, useContext, useState } from 'react'
 
-export function CharacterImage({url, label, className,cpu,level,kind,imageOnly}: {url?:string|null; label:string; className:string;cpu?:number;level?:number;kind?:ImageKind;imageOnly?:boolean}) {
+export function CharacterImage({url, label, className,cpu,level,kind,imageOnly,placeholder}: {url?:string|null; label:string; className:string;cpu?:number;level?:number;kind?:ImageKind;imageOnly?:boolean;placeholder?:ReactNode}) {
   const [failed,setFailed]=useState<string|null>(null)
   const settings=useContext(ImageSettings)
-  if(settings.available && cpu && level!==undefined && kind)return <LiveImage cpu={cpu} level={level} kind={kind} url={url} label={label} className={className} imageOnly={imageOnly}/>
-  if (!url || failed===url) return <span className={className+' image-empty'}>{label} 없음</span>
+  if(settings.available && cpu && level!==undefined && kind)return <LiveImage cpu={cpu} level={level} kind={kind} url={url} label={label} className={className} imageOnly={imageOnly} placeholder={placeholder}/>
+  if (!url || failed===url) return <span className={className+' image-empty'}>{placeholder ?? label+' 없음'}</span>
   return <img className={className} src={url} alt={label} onError={()=>setFailed(url)}/>
 }
 

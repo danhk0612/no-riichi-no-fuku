@@ -241,7 +241,7 @@ function SeatPanel({
         {player.isHuman && <span className="human-badge">나</span>}
       </header>
       {!player.isHuman && player.detail && <>
-        <button type="button" className="portrait-button" aria-haspopup="dialog" onClick={()=>profile.current?.showModal()} aria-label={player.name+' 캐릭터 정보'}><CharacterImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="profile" url={player.detail.images.profile} label={player.name+' 프로필'} className="seat-face" imageOnly/></button>
+        <button type="button" className="portrait-button" aria-haspopup="dialog" onClick={()=>profile.current?.showModal()} aria-label={player.name+' 캐릭터 정보'}><CharacterImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="profile" url={player.detail.images.profile} label={player.name+' 프로필'} className="seat-face" placeholder={<span className="seat-wind-tile" aria-hidden="true">{seatWindLabel(seat, observation.oya)}</span>} imageOnly/></button>
         <dialog ref={profile} className="profile-dialog" aria-label={player.name+' 캐릭터 정보'}>
           <header><h2>{player.name}</h2><button type="button" onClick={()=>profile.current?.close()}>닫기</button></header>
           <div className="profile-spread"><div className="full-portrait">

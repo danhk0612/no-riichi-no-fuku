@@ -1,5 +1,5 @@
 import {ImageTools} from './ImageTools'
-import {createContext,useContext,useEffect,useRef,useState} from 'react'
+import {type ReactNode,createContext,useContext,useEffect,useRef,useState} from 'react'
 import {apiRequest,type CharacterContent} from './api'
 import {pollImage,queueImage,useImageQueue} from './imageQueue'
 
@@ -37,8 +37,8 @@ export function SlotImageTools({cpu,level,kind,label,regenerateLabel,disabled,on
   return <ImageTools label={label} regenerateLabel={regenerateLabel} disabled={disabled} onGenerate={onGenerate} loadPrompt={loadPrompt} savePrompt={savePrompt}/>
 }
 
-type Props={cpu:number;level:number;kind:ImageKind;url?:string|null;label:string;className:string;controlsOnly?:boolean;imageOnly?:boolean;onLoaded?:(url:string)=>void}
-export function LiveImage({cpu,level,kind,url,label,className,controlsOnly,imageOnly,onLoaded}:Props){
+type Props={cpu:number;level:number;kind:ImageKind;url?:string|null;label:string;className:string;controlsOnly?:boolean;imageOnly?:boolean;placeholder?:ReactNode;onLoaded?:(url:string)=>void}
+export function LiveImage({cpu,level,kind,url,label,className,controlsOnly,imageOnly,placeholder,onLoaded}:Props){
   const settings=useContext(ImageSettings)
   const key=slotPath(cpu,level,kind)
   const q=useImageQueue()
@@ -74,7 +74,7 @@ export function LiveImage({cpu,level,kind,url,label,className,controlsOnly,image
   },[key,settings.ready,visible,display,message,controlsOnly])
   return <span ref={anchor} className="live-image">
     {!controlsOnly && (display ? <img className={className} src={display} alt={label} onLoad={()=>onLoaded?.(display)}/> :
-      <span className={className+' image-empty'}>{q.active===key?'생성 중…':q.pending.has(key)?'생성 대기 중':label+' 없음'}</span>)}
+      <span className={className+' image-empty'}>{q.active===key?'생성 중…':q.pending.has(key)?'생성 대기 중':placeholder ?? label+' 없음'}</span>)}
     {!imageOnly && settings.available && <SlotImageTools key={key} cpu={cpu} level={level} kind={kind} label={label} regenerateLabel={label+' 재생성'} disabled={q.pending.has(key)} onGenerate={()=>void generate(true)}/>}
     {message && !controlsOnly && <small role="status">{message}</small>}</span>
 }

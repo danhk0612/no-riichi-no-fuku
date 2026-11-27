@@ -313,3 +313,15 @@ body:has(.desktop-shell) {overflow:clip}
 .ending-panel > .live-image { display:block; width:fit-content; min-width:9rem; margin-block:12px; }
 .ending-panel .ending-image.image-empty { display:grid; place-items:center; min-height:6rem; color:#526577; background:#e2e8ed; }
 .ending-panel > .primary-button { display:block; margin:12px 0 0 auto; }
+
+.seat-wind-tile {
+  display:grid;
+  place-items:center;
+  width:1.42em;
+  aspect-ratio:3/4;
+  border-radius:0.12em;
+  border-bottom:0.1em solid #bba983;
+  background:var(--paper);
+  color:var(--navy);
+  font:700 clamp(22px,3.3vh,38px)/1 Batang,serif;
+}
