@@ -115,6 +115,30 @@ class AudioPackTests(unittest.TestCase):
                              resolve_voice_slot(session, 4, "pon", self.runtime.paths.media))
             self.assertIsNone(resolve_voice_slot(session, 2, "pon", self.runtime.paths.media))
 
+    def test_retired_explicit_builtin_selection_uses_the_same_voice_after_upgrade(self):
+        portable = Path(self.tmp.name) / "portable"
+        self.runtime.content_packs.game_root = portable
+        for namespace in ("kanzaki-aya", "amamiya-yuna"):
+            folder = portable / "packs/voices" / namespace / "ja-default"
+            folder.mkdir(parents=True)
+            (folder / "win.mp3").write_bytes(b"ID3" + namespace.encode())
+        packs = self.scan()
+        old = next(p for p in packs if p["namespace"] == "kanzaki-aya")
+        shared = next(p for p in packs if p["namespace"] == "amamiya-yuna")
+        url = "/api/local/characters/1/voice-selection"
+        revision = self.client.get(url, headers=self.headers).json()["revision"]
+        result = self.client.put(url, headers=self.headers, json={
+            "expected_revision": revision, "selection_mode": "selected", "selected_pack_id": old["id"],
+        })
+        self.assertEqual(result.status_code, 200, result.text)
+        (portable / "packs/voices/kanzaki-aya").rename(portable / "retired")
+        self.scan()
+        selection = self.client.get(url, headers=self.headers).json()
+        self.assertEqual(selection["selected_pack_id"], shared["id"])
+        self.assertNotIn(old["id"], [p["id"] for p in selection["packs"]])
+        with Session(self.runtime.engine) as session:
+            self.assertEqual(resolve_voice_slot(session, 1, "win", self.runtime.paths.media)["pack_id"], shared["id"])
+
     def test_voice_default_pack_revision_and_explicit_selected_off_are_preserved(self):
         self.install(audio("voice", "voice-a", {"chi": "chi.mp3", "win": "win.mp3", "defeat_stage_3": "loss.mp3"}, "actor-one"),
                      {"chi.mp3": b"ID3chi", "win.mp3": b"ID3win", "loss.mp3": b"ID3loss"})

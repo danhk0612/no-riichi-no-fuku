@@ -176,19 +176,36 @@ def update_audio_pack_selection(session: Session, change: AudioPackSelectionWrit
     return audio_pack_selection_response(session, media_root)
 
 
+def _selected_voice_pack(session: Session, row: CharacterVoiceLink | None) -> ContentPack | None:
+    if row is None or row.selection_mode != "selected":
+        return None
+    selected = _pack(session, row.selected_pack_id, "voice")
+    if selected is not None:
+        return selected
+    old = session.get(ContentPack, row.selected_pack_id) if row.selected_pack_id else None
+    owner = DEFAULT_VOICE_OWNERS.get(old.namespace) if old and old.kind == "voice" and old.pack_id == "ja-default" else None
+    if not owner or owner == old.namespace:
+        return None
+    replacement = session.scalar(select(ContentPack.id).where(
+        ContentPack.kind == "voice", ContentPack.namespace == owner, ContentPack.pack_id == "ja-default",
+    ))
+    return _pack(session, replacement, "voice")
+
+
 def character_voice_selection(session: Session, cpu_id: int) -> dict:
     if session.get(CpuCharacter, cpu_id) is None:
         raise HTTPException(404, detail={"code": "not_found", "message": "캐릭터를 찾을 수 없습니다."})
     row = session.get(CharacterVoiceLink, cpu_id)
     default_id = _voice_default_pack(session, cpu_id)
+    selected = _selected_voice_pack(session, row)
     packs = [{"id": pack.id, "namespace": pack.namespace, "pack_id": pack.pack_id,
               "revision": pack.registered_revision_id}
              for pack in session.scalars(select(ContentPack).where(
                  ContentPack.kind == "voice",
                  ContentPack.registered_revision_id.is_not(None)
-             ).order_by(ContentPack.namespace, ContentPack.pack_id))]
+             ).order_by(ContentPack.namespace, ContentPack.pack_id)) if _pack(session, pack.id, "voice")]
     return {"schema_version": 1, "cpu_id": cpu_id, "revision": row.revision if row else 0,
-            "default_pack_id": default_id, "selected_pack_id": row.selected_pack_id if row else None,
+            "default_pack_id": default_id, "selected_pack_id": selected.id if selected else (row.selected_pack_id if row else None),
             "selection_mode": row.selection_mode if row else "default", "packs": packs}
 
 
@@ -219,9 +236,8 @@ def resolve_voice_slot(session: Session, cpu_id: int, slot: str, media_root: Pat
     row = session.get(CharacterVoiceLink, cpu_id)
     if row and row.selection_mode == "off":
         return None
-    if row and row.selection_mode == "selected":
-        selected = _pack(session, row.selected_pack_id, "voice")
-        if selected is not None:
-            return _clip_from_pack(session, selected, slot, media_root)
+    selected = _selected_voice_pack(session, row)
+    if selected is not None:
+        return _clip_from_pack(session, selected, slot, media_root)
     default_id = _voice_default_pack(session, cpu_id)
     return _clip_from_pack(session, _pack(session, default_id, "voice"), slot, media_root)
