@@ -88,13 +88,13 @@ try {
   assert.deepEqual(await movements.locator('strong').evaluateAll(nodes => nodes.map(n => n.dataset.change)), ['loss','even','gain','even'])
   assert.equal(await rows.locator('.winner-card[data-current]').count(), 1)
   const summary=await rows.locator('.settlement-summary').allTextContents()
-  await rows.getByText('현재 배경 차례: 화료자').waitFor()
+  await rows.locator('[aria-current=step] > strong').filter({hasText:/^화료자/}).waitFor()
   thirdHand.head.payload.fact_snapshot=secondHand.head.payload.fact_snapshot
   thirdHand.head.payload.winner_display_order=[8,9]
   thirdHand.head.payload.displayed_hora_log_offset=9
   currentServerEnvelope = thirdHand
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...thirdHand }))
-  await rows.getByText('현재 배경 차례: 좌석 3').waitFor()
+  await rows.locator('[aria-current=step] > strong').filter({hasText:/^좌석 3/}).waitFor()
   assert.deepEqual(await rows.locator('.settlement-summary').allTextContents(),summary)
   await page.getByText('배만 이상').waitFor()
   const settlement = {
@@ -279,11 +279,12 @@ try {
       await desktop.setViewportSize({width:984,height:650})
       const draw=makeHand(12,3,'draw-layout',1,2)
       draw.head.payload.fact_snapshot.winners=[]
-      draw.head.payload.fact_snapshot.draws=[{reason:'유국',deltas:[-1000,3000,-1000,-1000]}]
+      draw.head.payload.fact_snapshot.draws=[{reason:'exhaustive_draw',deltas:[-1000,3000,-1000,-1000]}]
       for (const result of [hand,secondHand,draw,noImage]) {
         desktopSockets[0].send(JSON.stringify({type:'result_delivery',...result}))
         const card=desktop.locator('[data-event-id="'+result.head.event_id+'"]')
         await card.waitFor()
+        if (result===draw) await card.getByText('황패유국',{exact:true}).waitFor()
         const points=card.locator('.result-deltas li,.rank-points')
         assert.ok(await points.count()>=4)
         for (const item of [...await points.all(),card.locator('.primary-button')]) {

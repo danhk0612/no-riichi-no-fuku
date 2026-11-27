@@ -42,6 +42,16 @@ type MahjongTableProps = {
   allowGameOverContinue?: boolean
 }
 
+const drawReasonLabels: Record<string, string> = {
+  exhaustive_draw: '황패유국',
+  nagashimangan: '유국만관',
+  triple_ron: '삼가화 유국',
+  kyushu_kyuhai: '구종구패',
+  sufuurenta: '사풍연타',
+  suukansansen: '사깡유국',
+  suucha_riichi: '사가리치',
+}
+
 function PointChanges({ deltas, nameFor, label }: {
   deltas: number[]
   nameFor: (seat: number) => string
@@ -95,6 +105,7 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
   const nextLabel = delivery.next_view
     ? {winner:'다음 화료',hand_result:'다음 국 결과',settlement:'최종 정산',ending:'엔딩 보기',selection:'상대 선택',hand:'다음 국'}[delivery.next_view]
     : settlementPayload ? '정산 확인' : '다음 국'
+  const drawLabels = (fact?.draws ?? []).map((draw: {reason?: string}) => drawReasonLabels[draw.reason ?? ''] ?? '유국')
   const changes = winners.length ? winners : fact?.draws ?? []
   const myDelta = changes.reduce((sum:number, item:{deltas?:number[]})=>sum + (item.deltas?.[0] ?? 0),0)
   const wind = String(start?.bakaze ?? '')
@@ -117,21 +128,20 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
         </>
       ) : (
         <>
-          <div className="hand-outcome"><strong>{winners.length ? winners.map(w=>nameFor(w.actor)).join(' · ')+' '+(winners.length>1?'복수 론':winners[0].win_kind==='tsumo'?'쯔모':'론') : '유국'}</strong>
-            <span>내 점수 <b>{myDelta>0?'+':''}{myDelta.toLocaleString()}점</b></span></div>
+          <div className="hand-outcome"><strong>{winners.length ? winners.map(w=>nameFor(w.actor)).join(' · ')+' '+(winners.length>1?'복수 론':winners[0].win_kind==='tsumo'?'쯔모':'론') : drawLabels.join(' · ') || '유국'}</strong>
+            <span>내 점수 변동 <b>{myDelta>0?'+':''}{myDelta.toLocaleString()}점</b></span></div>
           <p className="settlement-summary">본장 {String(start?.honba ?? 0)} · 리치봉 {String(start?.kyotaku ?? 0)}</p>
           {winners.length > 0 ? (
             <section className="winner-results" aria-label="화료자별 결과">
-              {winners.map(w => <div className="winner-card settlement-summary" key={w.hora_log_offset} data-current={winners.length > 1 && w === winner || undefined}>
+              {winners.map(w => <div className="winner-card settlement-summary" key={w.hora_log_offset} data-current={winners.length > 1 && w === winner || undefined} aria-current={winners.length > 1 && w === winner ? "step" : undefined}>
                 <strong>{nameFor(w.actor)} · {w.win_kind === 'tsumo' ? '쯔모' : `론 · ${nameFor(w.target)}`}</strong>
                 <p>{({ 1: '만관 미만', 2: '만관·하네만', 3: '배만 이상' } as Record<number, string>)[Number(w.score?.band)] ?? '점수 미분류'} · {w.score?.han ?? 0}판 {w.score?.fu ?? 0}부</p>
                 {w.win_kind==='ron' && typeof w.score?.ron_agari==='number' && <p>론 점수 {w.score.ron_agari.toLocaleString()}점</p>}
                 <PointChanges deltas={w.deltas ?? []} nameFor={nameFor} label={nameFor(w.actor) + ' 화료 점수 이동'} />
               </div>)}
-              {winners.length>1 && winner && <p aria-label="현재 배경 차례">현재 배경 차례: {nameFor(winner.actor)}</p>}
             </section>
           ) : null}
-          {Array.isArray(fact?.draws) && fact.draws.length > 0 && <p className="settlement-summary">유국 정보: {fact.draws.map((draw: Record<string, any>) => draw.reason ?? '유국').join(' · ')}</p>}
+          {winners.length > 0 && drawLabels.length > 0 && <p className="settlement-summary">{drawLabels.join(' · ')}</p>}
           {!winners.length && <PointChanges deltas={fact?.draws?.[0]?.deltas ?? []} nameFor={nameFor} label="유국 점수 이동" />}
         </>
       )}
