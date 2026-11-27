@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import os
 import shutil
 import subprocess
@@ -60,6 +61,13 @@ for category in ("characters", "voices", "bgm", "sfx"):
     destination = product / "packs" / category
     destination.mkdir(parents=True, exist_ok=True)
     source = root / "packs" / category
+    if category == "voices":
+        owners = json.loads((root / "backend/app/seeds/default_voice_owners.json").read_text("utf-8"))
+        for namespace in sorted(set(owners.values())):
+            relative = Path(namespace) / "ja-default"
+            for clip in (source / relative).glob("*.ogg"):
+                (destination / relative).mkdir(parents=True, exist_ok=True)
+                shutil.copy2(clip, destination / relative / clip.name)
     if category in ("bgm", "sfx") and source.is_dir():
         shutil.copytree(source, destination, dirs_exist_ok=True)
 (product / "images").mkdir(exist_ok=True)

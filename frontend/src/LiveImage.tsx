@@ -1,4 +1,5 @@
-import {createContext,useContext,useEffect,useRef,useState} from 'react'
+import {ImageTools} from './ImageTools'
+import {type ReactNode,createContext,useContext,useEffect,useRef,useState} from 'react'
 import {apiRequest,type CharacterContent} from './api'
 import {pollImage,queueImage,useImageQueue} from './imageQueue'
 
@@ -14,41 +15,30 @@ export function ImageQueueStatus(){
   return q.count ? <aside role="status" className="image-queue-status">이미지 생성 중 · {q.waiting}개 대기</aside>:null
 }
 
-export function PromptShortcut({cpu,level,kind}:{cpu:number;level:number;kind:ImageKind}){
-  const [draft,setDraft]=useState<string|null>(null),[message,setMessage]=useState('')
-  const [revision,setRevision]=useState(0)
-  const [busy,setBusy]=useState(false)
-  async function edit(){
-    setBusy(true);setMessage('')
-    try{
-      const data=await apiRequest<CharacterContent>('/api/local/characters/'+cpu+'/content')
-      const slot=slotFor(data,level,kind)!
-      let text=slot.positive
-      if((kind==='profile'||kind==='full_body')&&!slot.overrides?.positive){
-        const presets=await apiRequest<Record<string,string>>('/api/local/characters/situation-prompts')
-        text=presets[kind+'_'+level]
-      }
-      setRevision(data.revision);setDraft(text)
-    }catch(error){setMessage(String(error))}finally{setBusy(false)}
+export function SlotImageTools({cpu,level,kind,label,regenerateLabel,disabled,onGenerate}:{
+  cpu:number;level:number;kind:ImageKind;label:string;regenerateLabel:string;disabled:boolean;onGenerate:()=>void
+}) {
+  const revision=useRef(0)
+  async function loadPrompt() {
+    const data=await apiRequest<CharacterContent>('/api/local/characters/'+cpu+'/content')
+    revision.current=data.revision
+    const slot=slotFor(data,level,kind)!
+    if((kind==='profile'||kind==='full_body')&&!slot.overrides?.positive) {
+      const presets=await apiRequest<Record<string,string>>('/api/local/characters/situation-prompts')
+      return presets[kind+'_'+level] ?? ''
+    }
+    return slot.positive
   }
-  async function save(){
-    setBusy(true)
-    try{
-      const change=kind==='ending'?{prompts:{ending:{positive:draft}}}:{framing:[{level,kind,positive:draft}]}
-      await apiRequest('/api/local/characters/'+cpu+'/content',{method:'PATCH',body:JSON.stringify({expected_revision:revision,...change})})
-      setDraft(null);setMessage('저장했습니다. 재생성하면 새 문구를 적용합니다.')
-      window.dispatchEvent(new CustomEvent('nrnf-prompt-edited',{detail:cpu}))
-    }catch(error){setMessage(String(error))}finally{setBusy(false)}
+  async function savePrompt(positive:string) {
+    const change=kind==='ending'?{prompts:{ending:{positive}}}:{framing:[{level,kind,positive}]}
+    await apiRequest('/api/local/characters/'+cpu+'/content',{method:'PATCH',body:JSON.stringify({expected_revision:revision.current,...change})})
+    window.dispatchEvent(new CustomEvent('nrnf-prompt-edited',{detail:cpu}))
   }
-  return <><button type="button" disabled={busy} onClick={()=>void edit()}>프롬프트 바로 수정</button>
-    {draft!==null && <span><label>이미지 구도 프롬프트<textarea aria-label="이미지 구도 프롬프트" value={draft} onChange={e=>setDraft(e.target.value)}/></label>
-    <button type="button" disabled={busy} onClick={()=>void save()}>프롬프트 저장</button>
-    <button type="button" disabled={busy} onClick={()=>setDraft(null)}>취소</button></span>}
-    {message && <small role="status">{message}</small>}</>
+  return <ImageTools label={label} regenerateLabel={regenerateLabel} disabled={disabled} onGenerate={onGenerate} loadPrompt={loadPrompt} savePrompt={savePrompt}/>
 }
 
-type Props={cpu:number;level:number;kind:ImageKind;url?:string|null;label:string;className:string;controlsOnly?:boolean;imageOnly?:boolean;onLoaded?:(url:string)=>void}
-export function LiveImage({cpu,level,kind,url,label,className,controlsOnly,imageOnly,onLoaded}:Props){
+type Props={cpu:number;level:number;kind:ImageKind;url?:string|null;label:string;className:string;controlsOnly?:boolean;imageOnly?:boolean;placeholder?:ReactNode;onLoaded?:(url:string)=>void}
+export function LiveImage({cpu,level,kind,url,label,className,controlsOnly,imageOnly,placeholder,onLoaded}:Props){
   const settings=useContext(ImageSettings)
   const key=slotPath(cpu,level,kind)
   const q=useImageQueue()
@@ -84,8 +74,7 @@ export function LiveImage({cpu,level,kind,url,label,className,controlsOnly,image
   },[key,settings.ready,visible,display,message,controlsOnly])
   return <span ref={anchor} className="live-image">
     {!controlsOnly && (display ? <img className={className} src={display} alt={label} onLoad={()=>onLoaded?.(display)}/> :
-      <span className={className+' image-empty'}>{q.active===key?'생성 중…':q.pending.has(key)?'생성 대기 중':label+' 없음'}</span>)}
-    {!imageOnly && settings.available && <span className="image-actions"><button type="button" disabled={q.pending.has(key)} onClick={()=>void generate(true)}>이미지 재생성</button>
-      <PromptShortcut key={key} cpu={cpu} level={level} kind={kind}/></span>}
+      <span className={className+' image-empty'}>{q.active===key?'생성 중…':q.pending.has(key)?'생성 대기 중':placeholder ?? label+' 없음'}</span>)}
+    {!imageOnly && settings.available && <SlotImageTools key={key} cpu={cpu} level={level} kind={kind} label={label} regenerateLabel={label+' 재생성'} disabled={q.pending.has(key)} onGenerate={()=>void generate(true)}/>}
     {message && !controlsOnly && <small role="status">{message}</small>}</span>
 }

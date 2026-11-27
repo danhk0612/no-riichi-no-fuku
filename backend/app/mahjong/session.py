@@ -60,6 +60,7 @@ class AuthoritativeGameSession:
         self._max_steps = max_steps
         self._steps = 0
         self._result_settled = False
+        self._event_offset = 0
         self._pending_events: list[dict[str, object] | str] = []
         self._hand_result_collector = HandResultCollector() if capture_hand_results else None
 
@@ -96,9 +97,10 @@ class AuthoritativeGameSession:
 
     def start(self) -> None:
         self._adapter.start()
+        log = self._collect_new_events()
         if self._hand_result_collector is not None:
             self._hand_result_collector.consume(
-                self._adapter.mjai_log, (), self._adapter.scores(), self.done
+                log, (), self._adapter.scores(), self.done
             )
         self._advance_until_human_turn()
 
@@ -172,9 +174,10 @@ class AuthoritativeGameSession:
 
     def _step(self, actions: Mapping[int, Action]) -> None:
         self._adapter.step(actions)
+        log = self._collect_new_events()
         if self._hand_result_collector is not None:
             self._hand_result_collector.consume(
-                self._adapter.mjai_log,
+                log,
                 self._adapter.last_hand_wins,
                 self._adapter.scores(),
                 self.done,
@@ -182,15 +185,10 @@ class AuthoritativeGameSession:
         self._steps += 1
         if self._steps > self._max_steps:
             raise GameSessionStateError("match exceeded the step limit")
-        
-        # 각 좌석의 observation에서 events를 수집
-        for observation in self._adapter.pending_observations.values():
-            obs_dict = observation.to_dict()
-            events = obs_dict.get("events")
-            if isinstance(events, list):
-                for event in events:
-                    if isinstance(event, (dict, str)):
-                        self._pending_events.append(event)
-                    # pybind 객체면 dict로 변환 시도
-                    elif hasattr(event, "to_dict"):
-                        self._pending_events.append(event.to_dict())
+
+    def _collect_new_events(self) -> list[dict[str, object]]:
+        # Every seat can observe the same action. The engine log records it once.
+        log = self._adapter.mjai_log
+        self._pending_events.extend(log[self._event_offset:])
+        self._event_offset = len(log)
+        return log

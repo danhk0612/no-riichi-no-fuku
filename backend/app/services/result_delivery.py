@@ -153,6 +153,16 @@ def result_envelope(db: Session, record: GameSessionRecord) -> dict[str, object]
             route = "selection"
     else:
         raise ResultDeliveryError("result delivery parent status is invalid")
+    next_view = None
+    if head_entry is not None:
+        following = entries[head_entry.ordinal] if head_entry.ordinal < len(entries) else None
+        if following is not None:
+            next_view = ("winner" if following.kind == "hand" and following.hand_start_log_offset == head_entry.hand_start_log_offset
+                         else "hand_result" if following.kind == "hand" else "settlement")
+        elif head_entry.kind == "settlement":
+            next_view = "ending" if state and state.generation == delivery.generation and state.phase == "ending_pending" else "selection"
+        else:
+            next_view = "settlement" if _terminal_hand_pending(db, record) else "hand"
     action_version = len(record.human_action_indices) if route == "human_turn" else None
     return {
         "version": 1,
@@ -166,6 +176,7 @@ def result_envelope(db: Session, record: GameSessionRecord) -> dict[str, object]
         },
         "terminal_ordinal": delivery.terminal_ordinal,
         "route": route,
+        "next_view": next_view,
         "action_version": action_version,
     }
 

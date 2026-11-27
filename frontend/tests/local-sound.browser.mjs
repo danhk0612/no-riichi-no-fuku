@@ -1,3 +1,4 @@
+import { enterDesktopGame } from './desktop-menu.mjs'
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 
@@ -126,8 +127,10 @@ try {
     })
   })
   await page.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
-  await page.locator('.selection-panel').waitFor()
+  await enterDesktopGame(page)
+  await page.locator('.opponent-sheet').waitFor()
   await page.waitForFunction(() => window.__audioInstances.length === 1)
+  await page.getByRole('button',{name:'설정',exact:true}).click()
   await page.getByRole('button', { name: '사운드·자료 설정' }).click()
   await page.locator('.sound-panel').waitFor()
   await page.getByText('이전 버전 등록 자료',{exact:true}).click()
@@ -201,6 +204,7 @@ try {
   assert.equal(await page.getByRole('button', { name: '배경음 재생' }).count(), 0, 'discarded retry rejection must not block the replacement Audio')
   assert.equal(await page.getByRole('button', { name: '1번 배경음 선택 해제' }).count(), 1)
   await page.getByRole('button', { name: '닫기' }).click()
+  await page.getByRole('button',{name:'게임 화면으로',exact:true}).click()
   for (const card of await page.locator('button.cpu-card:not([disabled])').all()) await card.click()
   await page.getByRole('button', { name: '동풍전 시작' }).click()
   await page.locator('.human-controls').waitFor()
@@ -254,7 +258,8 @@ try {
   await page.waitForFunction((count) => window.__audioInstances.length === count + 1, beforeComplete)
   assert.equal(await page.evaluate(() => window.__audioInstances.length), beforeComplete + 1, 'committed SFX fetch should complete after match_complete')
   await page.evaluate(() => { window.confirm = () => true })
-  await page.getByRole('button', { name: '초기화' }).click()
+  await page.getByRole('button', {name:'설정',exact:true}).click()
+      await page.getByRole('button', {name:'진행 초기화',exact:true}).click()
   await page.locator('.selection-panel').waitFor()
   await page.evaluate(() => window.__rejectDeferredPlay())
   await Promise.all([delayedSfxResponse, delayedVoiceResponse].map(async (response) => (await response).finished()))

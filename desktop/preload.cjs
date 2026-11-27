@@ -1,3 +1,3 @@
-const { contextBridge } = require('electron')
+const { contextBridge, ipcRenderer } = require('electron')
 
-contextBridge.exposeInMainWorld('nrnfDesktop', Object.freeze({ isDesktop: true }))
+contextBridge.exposeInMainWorld('nrnfDesktop', Object.freeze({ isDesktop: true, quit: () => ipcRenderer.send('quit-from-menu') }))

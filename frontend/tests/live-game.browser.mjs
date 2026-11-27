@@ -114,7 +114,7 @@ main()`)
   await page.getByLabel('플레이어 이름').fill('통합검증')
   await page.getByLabel('비밀번호', { exact: true }).fill('integration-password')
   await page.getByRole('button', { name: '가입 후 로그인' }).click()
-  await page.locator('.selection-panel').waitFor()
+  await page.locator('.opponent-sheet').waitFor()
   // Seed test progress only in this owned temporary DB, then reload choices through login.
   runPython(`from app.core.config import Settings
 from app.db.session import create_database_engine,create_session_factory
@@ -131,7 +131,7 @@ with factory.begin() as db:
   }
   await page.getByRole('button', { name: '로그아웃' }).click()
   await login()
-  await page.locator('.selection-panel').waitFor()
+  await page.locator('.opponent-sheet').waitFor()
   for (const index of [0, 1, 2]) await page.locator('.cpu-card').nth(index).click()
   await page.getByRole('button', { name: '동풍전 시작' }).click()
   await until(() => state?.type === 'human_turn')
@@ -205,7 +205,7 @@ with factory() as db:
   assert.deepEqual(again, state)
   assert.deepEqual(readPersisted(), persisted)
   await page.getByRole('button', { name: '다음 대국 선택' }).click()
-  await page.locator('.selection-panel').waitFor()
+  await page.locator('.opponent-sheet').waitFor()
   assert.equal(await page.locator('.cpu-card').count(), state.settlement.cpu_completed ? 5 : 6)
   assert.deepEqual(errors, [])
   console.log(JSON.stringify({ actions, scores: state.result.scores, ranks: state.result.ranks, settlement: state.settlement }))

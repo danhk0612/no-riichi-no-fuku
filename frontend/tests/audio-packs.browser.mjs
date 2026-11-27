@@ -1,3 +1,4 @@
+import { enterDesktopGame } from './desktop-menu.mjs'
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright')
@@ -66,12 +67,14 @@ try {
   await page.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
   await page.waitForFunction(() => window.__audios.length === 1 && !window.__audios[0].paused)
   finishBootstrap()
-  await page.locator('.selection-panel').waitFor()
+  await enterDesktopGame(page)
+  await page.locator('.opponent-sheet').waitFor()
   await page.waitForFunction(() => window.__audios[0].paused)
   await page.evaluate(() => { window.__audios = [] })
   for (const card of await page.locator('button.cpu-card:not([disabled])').all()) await card.click()
   await page.getByRole('button', { name: '동풍전 시작' }).click()
   await page.locator('.human-controls').waitFor()
+  await page.getByRole('button',{name:'설정',exact:true}).click()
   await page.getByRole('button', { name: '사운드·자료 설정' }).click()
   const voiceRow = page.locator('.sound-voice-row').nth(1)
   await voiceRow.waitFor()
@@ -104,6 +107,7 @@ try {
   await voiceRow.getByLabel('음성팩').selectOption('off')
   await voiceRow.getByRole('button', { name: '저장', exact: true }).click()
   await page.waitForFunction(() => window.__audios[0].paused)
+  await page.getByRole('button',{name:'게임 화면으로',exact:true}).click()
   socket.send(JSON.stringify(result))
   await page.getByRole('region',{name:'국 결과'}).waitFor()
   await page.waitForFunction(()=>window.__audios.length===2 && !window.__audios[1].paused)
@@ -121,6 +125,7 @@ try {
   assert.equal(defeatLoads,1)
   play.result_resume={session_id:'test-match',route:'result'}
   await page.reload()
+  await enterDesktopGame(page)
   await page.getByRole('region',{name:'최종 정산 결과'}).waitFor()
   await page.waitForFunction(()=>window.__audios.some(audio=>!audio.paused))
   await page.waitForFunction(()=>performance.getEntriesByType('resource').some(r=>r.name.endsWith('/result-only/file')))

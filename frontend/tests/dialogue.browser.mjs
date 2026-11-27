@@ -66,6 +66,31 @@ try {
   send(sockets[0], turn(0))
   await bubble(1).getByText('첫 대사', { exact: true }).waitFor()
   await page.locator('.round-status strong').getByText('동1국', { exact: true }).waitFor()
+  const positions = () => page.evaluate(()=>['.mahjong-table','.action-bar','.hand'].map(s=>{
+    const rect = document.querySelector(s).getBoundingClientRect()
+    return [rect.y,rect.bottom]
+  }))
+  const discardOnly = await positions()
+  const calls = turn(1)
+  calls.turn.legal_actions = [1,2,7].map(type=>({type,tile:null,consume_tiles:[],actor:0}))
+  send(sockets[0],calls)
+  await page.getByRole('button',{name:'치',exact:true}).waitFor()
+  assert.deepEqual(await positions(), discardOnly, '치·퐁·패스 표시 전후 대국판과 손패 좌표')
+  const preview = page.locator('.river-seat-0 .river-preview')
+  const emptyHeight = (await preview.boundingBox()).height
+  const crowded = turn(1)
+  crowded.turn.observation.discards[0] = Array.from({length:24}, (_,i) => i*4)
+  send(sockets[0], crowded)
+  await preview.getByText('버림패 24장', {exact:false}).waitFor()
+  assert.equal(await preview.locator('.tile').count(),18)
+  assert.equal((await preview.boundingBox()).height,emptyHeight)
+  await preview.focus()
+  await page.keyboard.press('Enter')
+  const river = page.getByRole('dialog',{name:'Player 0 버림패 전체'})
+  assert.equal(await river.locator('.tile').count(),24)
+  assert.deepEqual(await preview.locator('.tile-caption').allTextContents(),(await river.locator('.tile-caption').allTextContents()).slice(-18))
+  await page.keyboard.press('Escape')
+  assert.equal(await preview.evaluate(el => el === document.activeElement),true)
   const finalEast = turn(1)
   finalEast.turn.observation.kyoku_index = 3
   finalEast.turn.observation.oya = 3
@@ -102,7 +127,7 @@ try {
   for (const seat of [0, 1, 2, 3]) {
     await page.locator(`.seat-${seat} .melds`).waitFor()
     assert.equal(await page.locator(`.seat-${seat} .meld .tile`).count(), seat < 2 ? 3 : 4)
-    assert.equal(await page.locator(`.seat-${seat} .meld small`).innerText(), seat === 3 ? '암깡' : '부로')
+    assert.equal(await page.locator(`.seat-${seat} .meld > small`).innerText(), seat === 3 ? '암깡' : '부로')
   }
   assert.deepEqual(await page.locator('.seat-0 .meld .tile').allTextContents(), ['3만', '4만', '5만'])
   assert.equal(await page.locator('.seat-0 .meld .tile-red').count(), 1)
@@ -137,7 +162,7 @@ try {
     await page.locator('.cpu-card').filter({ hasText: `CPU ${id}` }).click()
   }
   await page.getByRole('button', { name: '동풍전 시작' }).click()
-  await page.waitForFunction(() => !document.querySelector('.selection-panel'))
+  await page.waitForFunction(() => !document.querySelector('.opponent-sheet'))
   assert.equal(sockets.length, 2)
   send(sockets[1], turn(0))
   await page.locator('.mahjong-table').waitFor()
@@ -164,7 +189,7 @@ try {
     await page.locator('.cpu-card').filter({ hasText: `CPU ${id}` }).click()
   }
   await page.getByRole('button', { name: '동풍전 시작' }).click()
-  await page.waitForFunction(() => !document.querySelector('.selection-panel'))
+  await page.waitForFunction(() => !document.querySelector('.opponent-sheet'))
   assert.equal(sockets.length, 3)
 
   // The authoritative game-over flag ends the loop without resetting progress.
@@ -173,7 +198,7 @@ try {
   await page.getByText('플레이어 HP 0', { exact: true }).waitFor()
   assert.equal(await page.getByRole('button', { name: '다음 대국 선택' }).count(), 0)
   assert.equal(await page.locator('.match-result li').count(), 4)
-  assert.equal(await page.locator('.selection-panel').count(), 0)
+  assert.equal(await page.locator('.opponent-sheet').count(), 0)
   assert.deepEqual(errors, [])
   console.log('PASS: dialogue lifecycle, four-seat melds, round reset, normal result loop and game-over boundary')
 } finally {

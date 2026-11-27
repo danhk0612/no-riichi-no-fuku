@@ -1,3 +1,4 @@
+import { enterDesktopGame } from './desktop-menu.mjs'
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 
@@ -58,13 +59,14 @@ try {
   const hand = makeHand(10, 1, 'hand-band-1', 1, 0)
   currentServerEnvelope = hand
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...hand }))
-  await page.getByRole('heading', { name: '국 결과 · E1국' }).waitFor()
+  await page.getByRole('heading', { name: '동 1국 결과' }).waitFor()
   await page.getByText('만관 미만').waitFor()
   assert.equal(await page.locator('.result-delivery-card').evaluate((node) => getComputedStyle(node).animationDuration), '0.15s')
   await page.emulateMedia({ reducedMotion: 'reduce' })
   assert.equal(await page.locator('.result-delivery-card').evaluate((node) => getComputedStyle(node).animationName), 'none')
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   const secondHand = makeHand(11, 2, 'hand-band-2', 2, 1)
+  secondHand.next_view = "winner"
   secondHand.head.payload.content = {version: 1, dialogues: [{cpu_id: 1, slot: "win", text: "저장된 화료 대사"}], scene: {stage: 1, media: null}}
   const doubleRon = [{hora_log_offset:9,actor:2,target:0,win_kind:'ron',score:{band:3,han:8,fu:30,ron_agari:16000},deltas:[-16000,0,16000,0]},
     {...secondHand.head.payload.fact_snapshot.winners[0],score:{band:2,han:5,fu:30,ron_agari:8000}}]
@@ -74,9 +76,10 @@ try {
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...secondHand }))
   await page.getByText('만관·하네만').waitFor()
   await page.getByText('저장된 화료 대사').waitFor()
-  await page.getByText('화료 CG가 등록되지 않았습니다.').waitFor()
+  assert.equal(await page.getByText('화료 CG가 등록되지 않았습니다.').count(),0)
   const thirdHand = makeHand(12, 3, 'hand-band-3', 3, 2)
   const rows=page.getByRole('region',{name:'화료자별 결과'})
+  await page.getByRole('button',{name:'다음 화료'}).waitFor()
   await rows.getByText('론 점수 16,000점').waitFor()
   await rows.getByText('론 점수 8,000점').waitFor()
   const firstWinner = rows.locator('.winner-card').first()
@@ -85,13 +88,13 @@ try {
   assert.deepEqual(await movements.locator('strong').evaluateAll(nodes => nodes.map(n => n.dataset.change)), ['loss','even','gain','even'])
   assert.equal(await rows.locator('.winner-card[data-current]').count(), 1)
   const summary=await rows.locator('.settlement-summary').allTextContents()
-  await rows.getByText('현재 배경 차례: 화료자').waitFor()
+  await rows.locator('[aria-current=step] > strong').filter({hasText:/^화료자/}).waitFor()
   thirdHand.head.payload.fact_snapshot=secondHand.head.payload.fact_snapshot
   thirdHand.head.payload.winner_display_order=[8,9]
   thirdHand.head.payload.displayed_hora_log_offset=9
   currentServerEnvelope = thirdHand
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...thirdHand }))
-  await rows.getByText('현재 배경 차례: 좌석 3').waitFor()
+  await rows.locator('[aria-current=step] > strong').filter({hasText:/^좌석 3/}).waitFor()
   assert.deepEqual(await rows.locator('.settlement-summary').allTextContents(),summary)
   await page.getByText('배만 이상').waitFor()
   const settlement = {
@@ -108,7 +111,7 @@ try {
   await page.getByRole('heading', { name: '동풍전 정산' }).waitFor()
   await page.locator('.result-delivery-card figure.result-asset img').waitFor()
   assert.match(await page.locator('.result-delivery-card figure.result-asset img').getAttribute('src'), /^blob:/)
-  const ranking = page.getByRole('list', {name:'동풍전 최종 순위'})
+  const ranking = page.getByRole('table', {name:'동풍전 최종 순위'})
   assert.deepEqual(await ranking.locator('.rank-points').allTextContents(), ['40,000점','30,000점','20,000점','10,000점'])
   assert.equal(await page.getByText('저장된 이름').count(), 1)
   const failedImage = structuredClone(settlement)
@@ -126,7 +129,7 @@ try {
   noImage.head.payload.presentation.result_asset = null
   currentServerEnvelope = noImage
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...noImage }))
-  await page.getByText('등록된 결과 CG가 없습니다.').waitFor()
+  await page.locator('[data-event-id="settlement-no-image"]').waitFor()
   const conflicting = structuredClone(noImage)
   conflicting.head.event_id = 'same-revision-conflict'
   const displayedEvent = page.locator('.result-delivery-card')
@@ -137,13 +140,13 @@ try {
   const reconciled = await reconciliation
   assert.equal(reconciled, true, `same-revision head conflict did not re-fetch; displayed event=${await displayedEvent.getAttribute('data-event-id')}; requests=${JSON.stringify(resultDeliveryRequests)}`)
   await page.getByRole('alert').waitFor({ state: 'detached' })
-  assert.equal(await page.getByText('등록된 결과 CG가 없습니다.').count(), 1)
+  assert.equal(await page.getByText('등록된 결과 CG가 없습니다.').count(), 0)
   sockets[0].send(JSON.stringify({ type: 'result_delivery', ...hand }))
   await page.waitForTimeout(100)
   assert.equal(await displayedEvent.getAttribute('data-event-id'), 'settlement-no-image')
   assert.equal(await page.getByRole('heading', { name: '동풍전 정산' }).count(), 1)
   assert.equal(await page.locator('.result-delivery-card figure.result-asset img').count(), 0)
-  assert.equal(await page.getByText('등록된 결과 CG가 없습니다.').count(), 1)
+  assert.equal(await page.getByText('등록된 결과 CG가 없습니다.').count(), 0)
   assert.equal(await page.getByRole('button', { name: '정산 확인' }).isEnabled(), true)
   let releaseHeld
   let startedHeld
@@ -201,12 +204,12 @@ try {
   next.head.payload.content.scene.transition.profile=null
   sockets[0].send(JSON.stringify({type:'result_delivery',...next}))
   await viewer.waitFor({state:'hidden'})
-  await scene.getByText('등록된 결과 CG가 없습니다.').waitFor()
-  await scene.getByText('CPU C 프로필 없음').waitFor()
+  assert.equal(await scene.getByText('등록된 결과 CG가 없습니다.').count(),0)
+  assert.equal(await scene.getByText('CPU C 프로필 없음').count(),0)
   assert.equal(await page.getByRole('button',{name:'정산 확인'}).isEnabled(),true)
   assert.deepEqual(commands,[])
   await page.close()
-  for (const scenario of ['reset', 'new-session', 'same-generation-new-session', 'human_turn', 'ending', 'selection', 'stage-confirm']) {
+  for (const scenario of ['reset', 'new-session', 'same-generation-new-session', 'human_turn', 'ending', 'selection', 'stage-confirm', 'minimum-window']) {
     const desktop = await browser.newPage()
     desktop.setDefaultTimeout(8000)
     await desktop.addInitScript(() => { window.nrnfDesktop = { isDesktop: true } })
@@ -238,7 +241,7 @@ try {
         play = { ...play, generation: 'new-generation', phase: 'omake', active_session_id: null }
         return route.fulfill({ json: play })
       }
-      if (path === '/api/local/play') return route.fulfill({ json: play })
+      if (path === '/api/local/play' || path === '/api/local/play/resume-hand') return route.fulfill({ json: play })
       if (path === '/api/local/play/roster-candidates') return route.fulfill({ json: cpus })
       if (path === '/api/game/sessions/active') return route.fulfill({ json: play.active_session_id ? { session_id: session, generation: play.generation, players } : null })
       if (path === '/api/game/sessions/recent') return route.fulfill({ json: null })
@@ -270,7 +273,49 @@ try {
       })
     })
     await desktop.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5173')
+    await enterDesktopGame(desktop)
     await desktop.locator('.hand button').waitFor()
+    if (scenario==='minimum-window') {
+      await desktop.setViewportSize({width:984,height:650})
+      const draw=makeHand(12,3,'draw-layout',1,2)
+      draw.head.payload.fact_snapshot.winners=[]
+      draw.head.payload.fact_snapshot.draws=[{reason:'exhaustive_draw',deltas:[-1000,3000,-1000,-1000]}]
+      const results=[hand,secondHand,draw]
+      const labels=new Map([[draw,'황패유국']])
+      for (const [reason,label,delta] of [
+        ['sanchaho','삼가화 유국',0], ['triple_ron','삼가화 유국',0],
+        ['suukansansen','사깡유국',0], ['suucha_riichi','사가리치',-1000],
+      ]) {
+        const ordinal=results.length+1
+        const result=makeHand(9+ordinal,ordinal,reason,1,ordinal-1)
+        result.head.payload.fact_snapshot.winners=[]
+        result.head.payload.fact_snapshot.draws=[{reason,deltas:Array(4).fill(delta)}]
+        labels.set(result,label)
+        results.push(result)
+      }
+      const terminal=results.length+1
+      const final={...noImage,acked_ordinal:terminal-1,delivery_revision:9+terminal,head:{...noImage.head,ordinal:terminal}}
+      for (const result of [...results,final]) {
+        desktopSockets[0].send(JSON.stringify({type:'result_delivery',...result,terminal_ordinal:terminal}))
+        const card=desktop.locator('[data-event-id="'+result.head.event_id+'"]')
+        await card.waitFor()
+        if (labels.has(result)) {
+          await card.getByText(labels.get(result),{exact:true}).waitFor()
+          const deltas=result.head.payload.fact_snapshot.draws[0].deltas
+          assert.deepEqual(await card.locator('.result-deltas strong').allTextContents(),deltas.map(d=>(d>0?'+':'')+d.toLocaleString()+'점'))
+        }
+        const points=card.locator('.result-deltas li,.rank-points')
+        assert.ok(await points.count()>=4)
+        for (const item of [...await points.all(),card.locator('.primary-button')]) {
+          assert.ok(await item.evaluate(node=>{
+            const r=node.getBoundingClientRect(), hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)
+            return r.y>=0 && r.bottom<=innerHeight && node.contains(hit)
+          }), result.head.event_id)
+        }
+      }
+      await desktop.close()
+      continue
+    }
     if (scenario==='stage-confirm') {
       desktopSockets[0].send(JSON.stringify({type:'result_delivery',...stageChange}))
       await desktop.getByRole('button',{name:'CG만 보기'}).click()
@@ -286,12 +331,12 @@ try {
     if (scenario==='human_turn') {
       const seat=desktop.getByRole('region',{name:'Player 2 좌석'})
       await seat.getByAltText('Player 2 프로필').waitFor()
-      await seat.locator('summary').click()
+      await seat.locator('.portrait-button').click()
       await seat.getByAltText('Player 2 전신').waitFor()
       await seat.getByText('키 169.0 cm').waitFor()
       await seat.getByText('리치 선호').waitFor()
       assert.equal(await seat.locator('dd').innerText(),'0')
-      await seat.locator('summary').click()
+      await desktop.keyboard.press('Escape')
     }
     desktopSockets[0].send(JSON.stringify({ type: 'result_delivery', ...noImage }))
     await desktop.locator('[data-event-id="settlement-no-image"]').waitFor()
@@ -303,9 +348,10 @@ try {
         desktopSockets[0].send(JSON.stringify({ type: 'result_delivery', ...conflicting }))
       } else {
         desktop.once('dialog', (dialog) => dialog.accept())
-        await desktop.getByRole('button', { name: '초기화' }).click()
+        await desktop.getByRole('button', {name:'설정',exact:true}).click()
+      await desktop.getByRole('button', {name:'진행 초기화',exact:true}).click()
       }
-      await desktop.locator('.selection-panel').waitFor()
+      await desktop.locator('.opponent-sheet').waitFor()
       for (const card of await desktop.locator('button.cpu-card:not([disabled])').all()) await card.click()
       await desktop.getByRole('button', { name: '동풍전 시작' }).click()
       if (scenario === 'reset') {
@@ -334,7 +380,7 @@ try {
         await desktop.locator('.hand button').click()
         assert.equal((await Promise.race([action, new Promise((_, reject) => setTimeout(() => reject(new Error('restored action was not sent')), 5000))])).action_version, 37)
       } else if (scenario === 'ending') await desktop.getByRole('region', { name: '엔딩' }).waitFor()
-      else await desktop.locator('.selection-panel').waitFor()
+      else await desktop.locator('.opponent-sheet').waitFor()
       assert.equal(await desktop.locator('.result-delivery-card').count(), 0, `${scenario} must leave the result card`)
     }
     await desktop.close()

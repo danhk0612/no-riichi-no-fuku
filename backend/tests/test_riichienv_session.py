@@ -68,6 +68,7 @@ class AuthoritativeGameSessionTest(unittest.TestCase):
         )
         game.start()
 
+        delivered = list(game.pending_events().events)
         checked_hidden_hands = False
         while not game.done:
             turn = game.human_turn()
@@ -87,7 +88,13 @@ class AuthoritativeGameSessionTest(unittest.TestCase):
             action_index = choose_human_action_index(turn.legal_actions)
             game.submit_human_action(action_index)
 
+            delivered.extend(game.pending_events().events)
+
         result = game.result()
+
+        self.assertEqual(delivered, game._adapter.mjai_log)
+        self.assertEqual(game.pending_events().events, ())
+
         self.assertEqual(result.scores, (16700, 25000, 33300, 25000))
         self.assertEqual(result.ranks, (4, 2, 1, 3))
         self.assertEqual(game.steps, 300)

@@ -243,6 +243,7 @@ class ResultDeliveryTests(unittest.TestCase):
                 self.assertEqual(current.status_code, 200, current.text)
                 envelope = current.json()
                 self.assertEqual(envelope["head"]["kind"], "hand")
+                self.assertEqual(envelope["next_view"], "settlement")
                 self.assertEqual(envelope["head"]["payload"]["content_mode"], "unbound")
                 self.assertEqual(envelope["head"]["payload"]["winner_display_order"], [5])
                 first_ack = client.post(
@@ -252,6 +253,7 @@ class ResultDeliveryTests(unittest.TestCase):
                 )
                 self.assertEqual(first_ack.status_code, 200, first_ack.text)
                 self.assertEqual(first_ack.json()["head"]["kind"], "settlement")
+                self.assertEqual(first_ack.json()["next_view"], "selection")
                 self.assertEqual(first_ack.json()["acked_ordinal"], 1)
                 self.assertEqual(first_ack.json()["head"]["payload"]["participants"], [
                     {"seat": 0, "name": "플레이어", "is_human": True},

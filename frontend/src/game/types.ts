@@ -97,6 +97,7 @@ export type ResultDeliveryEnvelope = {
   delivery_revision: number
   acked_ordinal: number
   head: ResultDeliveryEntry | null
+  next_view?: 'winner' | 'hand_result' | 'settlement' | 'ending' | 'selection' | 'hand' | null
   terminal_ordinal: number | null
   route: 'result' | 'human_turn' | 'settlement_wait' | 'ending' | 'selection'
   action_version: number | null
@@ -105,7 +106,7 @@ export type ResultDeliveryEnvelope = {
 export type GameScreenState =
   | { status: 'waiting' }
   | {
-      status: 'human_turn'
+      status: 'human_turn'; tableAction?: {seat:number; label:string}
       cpuDifficulties?: CpuDifficulty[] | null
       actionVersion: number
       turn: HumanTurn
@@ -172,9 +173,10 @@ export type DialogueEvent = {
   text: string
 }
 
+type TableActions = {table_actions?: {seat:number; kind:string; tile?:string|null}[]}
 export type GameServerMessage =
-  | ({ type: 'result_delivery' } & ResultDeliveryEnvelope)
-  | { type: 'human_turn'; cpu_difficulties?: CpuDifficulty[] | null; action_version: number; turn: HumanTurn; generation?: string | null; session_id?: string }
+  | ({ type: 'result_delivery' } & ResultDeliveryEnvelope & TableActions)
+  | (TableActions & { type: 'human_turn'; cpu_difficulties?: CpuDifficulty[] | null; action_version: number; turn: HumanTurn; generation?: string | null; session_id?: string })
   | {
       type: 'match_complete'
       cpu_difficulties?: CpuDifficulty[] | null

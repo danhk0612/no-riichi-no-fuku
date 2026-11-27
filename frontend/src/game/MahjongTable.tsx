@@ -1,4 +1,7 @@
+import { PagedPane } from '../PagedPane'
 import { SettlementScene } from './SettlementScene'
+import { LiveImage, ImageSettings } from '../LiveImage'
+import { useContext, useRef } from 'react'
 import { CharacterImage, Measurements } from '../CharacterImage'
 import { HandCG } from './HandCG'
 import type { SavedResultContent } from './types'
@@ -38,6 +41,17 @@ type MahjongTableProps = {
   resultAssetObjectUrl?: string | null
   resultAssetLoadFailed?: boolean
   allowGameOverContinue?: boolean
+}
+
+const drawReasonLabels: Record<string, string> = {
+  exhaustive_draw: '황패유국',
+  nagashimangan: '유국만관',
+  sanchaho: '삼가화 유국',
+  triple_ron: '삼가화 유국',
+  kyushu_kyuhai: '구종구패',
+  sufuurenta: '사풍연타',
+  suukansansen: '사깡유국',
+  suucha_riichi: '사가리치',
 }
 
 function PointChanges({ deltas, nameFor, label }: {
@@ -90,51 +104,61 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
   const input=content?.scene?.generation_input
   const canGenerate=!!(input?.positive?.trim() && input.settings?.model && input.settings.encoder && input.settings.vae)
   if (!entry) return null
+  const nextLabel = delivery.next_view
+    ? {winner:'다음 화료',hand_result:'다음 국 결과',settlement:'최종 정산',ending:'엔딩 보기',selection:'상대 선택',hand:'다음 국'}[delivery.next_view]
+    : settlementPayload ? '정산 확인' : '다음 국'
+  const drawLabels = (fact?.draws ?? []).map((draw: {reason?: string}) => drawReasonLabels[draw.reason ?? ''] ?? '유국')
+  const changes = winners.length ? winners : fact?.draws ?? []
+  const myDelta = changes.reduce((sum:number, item:{deltas?:number[]})=>sum + (item.deltas?.[0] ?? 0),0)
+  const wind = String(start?.bakaze ?? '')
+  const round = ({E:'동',S:'남',W:'서',N:'북'} as Record<string,string>)[wind] ?? wind
 
   return (
     <section className={`${settlementPayload ? 'match-result ' : ''}result-delivery-card`} data-result-kind={settlementPayload ? 'settlement' : 'hand'} data-multiple-winners={winners.length>1 || undefined} data-ordinal={entry?.ordinal} data-event-id={entry?.event_id} aria-live="polite" aria-label={settlementPayload ? '최종 정산 결과' : '국 결과'}>
-      <h2>{settlementPayload ? '동풍전 정산' : `국 결과 · ${String(start?.bakaze ?? '')}${String(start?.kyoku ?? 0)}국`}</h2>
+      <h2>{settlementPayload ? '동풍전 정산' : `${round} ${String(start?.kyoku ?? 0)}국 결과`}</h2>
+      <PagedPane section={String(entry.event_id)} label="결과"><div className="result-columns"><div className="result-scoreboard">
       {settlementPayload ? (
         <>
-          <ol className="result-ranking" aria-label="동풍전 최종 순위">{resultRows.map(row => (
-            <li key={row.seat} data-rank={row.rank}>
-              <span className="rank-number">{row.rank}위</span>
-              <strong>{nameFor(row.seat)}</strong>
-              <span className="rank-points">{row.score.toLocaleString()}점</span>
-            </li>
-          ))}</ol>
-          {transition && content?.scene && <SettlementScene key={delivery.generation+':'+delivery.session_id+':'+entry.event_id}
-            cpu={content.scene.cpu_id} transition={transition} stage={content.scene.stage} text={defeatLine ? defeatLine.text : null}
-            url={resultAssetObjectUrl} hasCG={!!resultAsset} failed={!!resultAssetLoadFailed}/>}
-          {!transition && resultAsset && resultAssetObjectUrl && <figure className="result-asset"><img src={resultAssetObjectUrl} alt={`단계 ${resultAsset.defeat_stage ?? ''} 결과 CG`} /><figcaption>단계 {resultAsset.defeat_stage ?? ''} 결과 CG</figcaption></figure>}
-          {!transition && resultAsset && !resultAssetObjectUrl && <p className="result-asset-status" role="status">{resultAssetLoadFailed ? 'CG를 불러오지 못했습니다.' : 'CG를 불러오는 중입니다.'}</p>}
-          {!transition && !resultAsset && <p className="result-asset-status">등록된 결과 CG가 없습니다.</p>}
-          {!content && dialogues.map((dialogue, index) => <blockquote className="result-dialogue" key={`${dialogue.cpu_character_id}-${dialogue.event_key}-${index}`}><p>{String(dialogue.text ?? '')}</p></blockquote>)}
+          {scores[0] != null && ranks[0] != null && <div className="personal-result"><span>내 순위</span><strong>{ranks[0]}위</strong><b>{scores[0].toLocaleString()}점</b></div>}
+          <table className="score-table" aria-label="동풍전 최종 순위"><thead><tr><th>순위</th><th>참가자</th><th>최종 점수</th></tr></thead><tbody>{resultRows.map(row => (
+            <tr key={row.seat} data-human={row.seat === 0 || undefined}>
+              <td>{row.rank}위</td><th scope="row">{nameFor(row.seat)}</th>
+              <td className="rank-points">{row.score.toLocaleString()}점</td>
+            </tr>
+          ))}</tbody></table>
+
         </>
       ) : (
         <>
+          <div className="hand-outcome"><strong>{winners.length ? winners.map(w=>nameFor(w.actor)).join(' · ')+' '+(winners.length>1?'복수 론':winners[0].win_kind==='tsumo'?'쯔모':'론') : drawLabels.join(' · ') || '유국'}</strong>
+            <span>내 점수 변동 <b>{myDelta>0?'+':''}{myDelta.toLocaleString()}점</b></span></div>
           <p className="settlement-summary">본장 {String(start?.honba ?? 0)} · 리치봉 {String(start?.kyotaku ?? 0)}</p>
           {winners.length > 0 ? (
             <section className="winner-results" aria-label="화료자별 결과">
-              {winners.map(w => <div className="winner-card settlement-summary" key={w.hora_log_offset} data-current={winners.length > 1 && w === winner || undefined}>
+              {winners.map(w => <div className="winner-card settlement-summary" key={w.hora_log_offset} data-current={winners.length > 1 && w === winner || undefined} aria-current={winners.length > 1 && w === winner ? "step" : undefined}>
                 <strong>{nameFor(w.actor)} · {w.win_kind === 'tsumo' ? '쯔모' : `론 · ${nameFor(w.target)}`}</strong>
                 <p>{({ 1: '만관 미만', 2: '만관·하네만', 3: '배만 이상' } as Record<number, string>)[Number(w.score?.band)] ?? '점수 미분류'} · {w.score?.han ?? 0}판 {w.score?.fu ?? 0}부</p>
                 {w.win_kind==='ron' && typeof w.score?.ron_agari==='number' && <p>론 점수 {w.score.ron_agari.toLocaleString()}점</p>}
                 <PointChanges deltas={w.deltas ?? []} nameFor={nameFor} label={nameFor(w.actor) + ' 화료 점수 이동'} />
               </div>)}
-              {winners.length>1 && winner && <p aria-label="현재 배경 차례">현재 배경 차례: {nameFor(winner.actor)}</p>}
             </section>
-          ) : <p className="settlement-summary">유국 결과</p>}
-          {Array.isArray(fact?.draws) && fact.draws.length > 0 && <p className="settlement-summary">유국 정보: {fact.draws.map((draw: Record<string, any>) => draw.reason ?? '유국').join(' · ')}</p>}
+          ) : null}
+          {winners.length > 0 && drawLabels.length > 0 && <p className="settlement-summary">{drawLabels.join(' · ')}</p>}
           {!winners.length && <PointChanges deltas={fact?.draws?.[0]?.deltas ?? []} nameFor={nameFor} label="유국 점수 이동" />}
         </>
       )}
+      </div><div className="result-extra">{settlementPayload && <>
+          {transition && content?.scene && <SettlementScene key={delivery.generation+':'+delivery.session_id+':'+entry.event_id}
+            cpu={content.scene.cpu_id} transition={transition} stage={content.scene.stage} text={defeatLine ? defeatLine.text : null}
+            url={resultAssetObjectUrl} hasCG={!!resultAsset} failed={!!resultAssetLoadFailed}/>}
+          {!transition && resultAsset && resultAssetObjectUrl && <figure className="result-asset"><img src={resultAssetObjectUrl} alt={`단계 ${resultAsset.defeat_stage ?? ''} 결과 CG`} /><figcaption>단계 {resultAsset.defeat_stage ?? ''} 결과 CG</figcaption></figure>}
+          {!transition && resultAsset && !resultAssetObjectUrl && <p className="result-asset-status" role="status">{resultAssetLoadFailed ? 'CG를 불러오지 못했습니다.' : 'CG를 불러오는 중입니다.'}</p>}
+          {!content && dialogues.map((dialogue, index) => <blockquote className="result-dialogue" key={`${dialogue.cpu_character_id}-${dialogue.event_key}-${index}`}><p>{String(dialogue.text ?? '')}</p></blockquote>)}
+      </>}
       {content?.dialogues.filter(line => line.text && line!==defeatLine).map(line => <blockquote className="result-dialogue" key={line.cpu_id + ':' + line.slot}>{line.text}</blockquote>)}
       {!settlementPayload && canGenerate && window.nrnfDesktop?.isDesktop && <HandCG path={`/api/local/play/sessions/${delivery.session_id}/results/${entry.event_id}/cg`} generation={delivery.generation}/>}
-      {!settlementPayload && content?.scene && !canGenerate && !content.scene.media && <p className="result-asset-status">{content.scene.missing_candidates?.length
-        ? '화료 CG 생략 · 미등록 후보: '+content.scene.missing_candidates.map(k=>({clothing_state:'복장 상태',situation:'화료 상황',pose:'포즈'})[k]).join(', ')
-        : '화료 CG가 등록되지 않았습니다.'}</p>}
-      {onAcknowledge && <button className="primary-button" onClick={() => onAcknowledge(delivery)} type="button">{settlementPayload ? '정산 확인' : '확인하고 다음 결과 보기'}</button>}
+      </div></div></PagedPane>
+      {onAcknowledge && <button className="primary-button" onClick={() => onAcknowledge(delivery)} type="button">{nextLabel}</button>}
     </section>
   )
 }
@@ -180,6 +204,22 @@ function TileRow({ tiles, emptyText }: { tiles: number[]; emptyText: string }) {
   )
 }
 
+function DiscardRiver({ name, tiles, seat }: { name: string; tiles: number[]; seat: number }) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  return <div className={`discards river-seat-${seat}`}>
+    <button type="button" className="river-preview" disabled={!tiles.length} aria-haspopup="dialog"
+      aria-label={name + ' 버림패 전체 보기 · ' + tiles.length + '장'} onClick={() => dialog.current?.showModal()}>
+      <span className="river-heading">버림패 {tiles.length}장 {tiles.length > 0 && <small>전체 보기 ›</small>}</span>
+      <span className="tile-row">{tiles.slice(-18).map(id => <Tile key={id} tileId={id}/>)}</span>
+    </button>
+    <dialog ref={dialog} className="river-dialog" aria-label={name + ' 버림패 전체'}>
+      <header><h2>{name} · 버림패</h2><button type="button" onClick={() => dialog.current?.close()}>닫기</button></header>
+      <p>총 {tiles.length}장 · 버린 순서</p>
+      <TileRow tiles={tiles} emptyText="버림패 없음"/>
+    </dialog>
+  </div>
+}
+
 function SeatPanel({
   player,
   observation,
@@ -189,6 +229,8 @@ function SeatPanel({
   observation: HumanObservation
   dialogue?: DialogueEvent
 }) {
+  const imageSettings = useContext(ImageSettings)
+  const profile = useRef<HTMLDialogElement>(null)
   const seat = player.seat
   return (
     <section className={`seat seat-${seat}`} aria-label={`${player.name} 좌석`}>
@@ -197,16 +239,22 @@ function SeatPanel({
           {seatWindLabel(seat, observation.oya)}
         </span>
         <strong>{player.name}</strong>
-        {player.isHuman && <span className="human-badge">PLAYER</span>}
+        {player.isHuman && <span className="human-badge">나</span>}
       </header>
-      {!player.isHuman && player.detail && <details className="seat-details">
-        <summary aria-label={player.name+' 캐릭터 정보'}><CharacterImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="profile" url={player.detail.images.profile} label={player.name+' 프로필'} className="seat-face"/></summary>
-        <div className="seat-bio"><CharacterImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="full_body" url={player.detail.images.full_body} label={player.name+' 전신'} className="seat-body"/>
-          <p>Level {player.detail.stage} · {player.detail.style}</p><Measurements values={player.detail.measurements_cm}/>
+      {!player.isHuman && player.detail && <>
+        <button type="button" className="portrait-button" aria-haspopup="dialog" onClick={()=>profile.current?.showModal()} aria-label={player.name+' 캐릭터 정보'}><CharacterImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="profile" url={player.detail.images.profile} label={player.name+' 프로필'} className="seat-face" placeholder={<span className="seat-wind-tile" aria-hidden="true">{seatWindLabel(seat, observation.oya)}</span>} imageOnly/></button>
+        <dialog ref={profile} className="profile-dialog" aria-label={player.name+' 캐릭터 정보'}>
+          <header><h2>{player.name}</h2><button type="button" onClick={()=>profile.current?.close()}>닫기</button></header>
+          <div className="profile-spread"><div className="full-portrait">
+          <CharacterImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="full_body" url={player.detail.images.full_body} label={player.name+' 전신'} className="seat-body" imageOnly/>
+          </div><div className="profile-copy"><PagedPane label="캐릭터 정보">
+          {imageSettings.available && player.detail.cpu_id != null && <div><b>프로필</b><LiveImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="profile" controlsOnly className="" label={player.name+' 프로필'}/></div>}
+          {imageSettings.available && player.detail.cpu_id != null && <div><b>전신</b><LiveImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="full_body" controlsOnly className="" label={player.name+' 전신'}/></div>}
+          <p>{defeatStageLabel(player.detail.stage)}</p><Measurements values={player.detail.measurements_cm}/>
           <p>{player.detail.description}</p><dl aria-label="마작 스펙">
           {Object.entries({aggression:'공격 성향',defense:'수비 성향',call_preference:'부로 선호',riichi_preference:'리치 선호',hand_value_preference:'타점 선호',speed_preference:'속도 선호'}).map(([k,label])=>
-            player.detail?.stats[k]!=null && <div key={k}><dt>{label}</dt><dd>{player.detail.stats[k]}</dd></div>)}</dl></div>
-      </details>}
+            player.detail?.stats[k]!=null && <div key={k}><dt>{label}</dt><dd>{player.detail.stats[k]}</dd></div>)}</dl></PagedPane></div></div></dialog>
+      </>}
       <p className="score">{observation.scores[seat].toLocaleString()}점</p>
       {observation.riichi_declared[seat] && <p className="riichi">리치</p>}
       {dialogue && !player.isHuman && (
@@ -224,9 +272,7 @@ function SeatPanel({
           ))}
         </div>
       )}
-      <div className="discards" aria-label={`${player.name} 버림패`} title="각 좌석에서 마지막으로 버린 패는 아래쪽 금색 선으로 표시합니다.">
-        <TileRow tiles={observation.discards[seat]} emptyText="버림패 없음" />
-      </div>
+
     </section>
   )
 }
@@ -331,12 +377,15 @@ function ActiveTable({
             dialogue={dialogueBySeat.get(player.seat)}
           />
         ))}
+        <div className="river-square">
+        {players.map(player=><DiscardRiver key={player.seat} seat={player.seat} name={player.name} tiles={observation.discards[player.seat]}/>)}
         <div className="round-status">
+          {state.tableAction && <b className="table-call" key={state.tableAction.label} role="status">{state.tableAction.label}</b>}
           <strong>{roundWindLabel(observation.round_wind)}{observation.kyoku_index % 4 + 1}국</strong>
           <div className="round-counters"><span>본장 {observation.honba}</span><span>리치봉 {observation.riichi_sticks}</span></div>
           <span>도라</span>
           <TileRow tiles={observation.dora_indicators} emptyText="없음" />
-        </div>
+        </div></div>
       </section>
       <HumanHand
         observation={observation}
@@ -376,7 +425,8 @@ function CompletedTable({
   return (
     <section className="match-result">
       <h2>동풍전 종료</h2>
-      <ol>
+      <div className="personal-result"><span>내 순위</span><strong>{state.result.ranks[0]}위</strong><b>{state.result.scores[0].toLocaleString()}점</b></div>
+      <ol className="legacy-ranking">
         {rows.map((row) => (
           <li key={row.rank}>
             <strong>{row.rank}위 · {row.name}</strong>

@@ -386,6 +386,44 @@ class GameRegistry:
                 raise GameRegistryError("completed match was not committed")
             self._load_completed_state(registered, record)
 
+    def restart_current_hand(self, session: Session, record: GameSessionRecord) -> None:
+        """Keep closed hands and restore the first actionable turn of the current hand."""
+        actions = record.human_action_indices
+        if not actions:
+            return
+        if record.hand_results_version == 1:
+            boundary = max((row.source_action_version for row in load_rows(session, record)), default=0)
+        else:
+            # Older records have no hand-result rows. Replay their original policy and seed.
+            choices = tuple(CpuChoice(**choice) for choice in record.cpu_choices)
+            replay = create_game_session_from_choices(record.user_id, choices, seed=record.match_seed)
+            boundary = 0
+            previous = None
+            for version in range(len(actions) + 1):
+                turn = replay.human_turn()
+                if turn is None:
+                    return
+                observation = turn.observation
+                hand = (observation["round_wind"], observation["kyoku_index"], observation["honba"])
+                if hand != previous:
+                    boundary, previous = version, hand
+                if version < len(actions):
+                    replay.submit_human_action(actions[version])
+        if boundary == len(actions):
+            return
+        with self._lock:
+            previous_game = self._games.get(record.id)
+            try:
+                record.human_action_indices = actions[:boundary]
+                self._restore(session, record)
+                session.commit()
+            except Exception:
+                session.rollback()
+                self._games.pop(record.id, None)
+                raise
+            if previous_game:
+                previous_game.game = None
+
     def evict(self, session_id: str) -> None:
         with self._lock:
             self._games.pop(session_id, None)

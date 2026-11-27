@@ -373,9 +373,11 @@ class LocalRuntimeTests(unittest.TestCase):
                         websocket.receive_json()["code"], "stale_action"
                     )
                     self.assertEqual(
-                        self._receive_human_turn(websocket), committed_turn
+                        self._receive_human_turn(websocket), restored_turn
                     )
-                self.assertEqual(restored_turn, committed_turn)
+                # Already presented table actions must not play again after a restart.
+                self.assertNotIn("table_actions", restored_turn)
+                self.assertEqual(restored_turn, {k: v for k, v in committed_turn.items() if k != "table_actions"})
             finally:
                 restarted.close()
 
