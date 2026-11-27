@@ -266,7 +266,7 @@ body:has(.desktop-shell) {overflow:clip}
 .at-table .seat:not(.seat-0)>.riichi {position:absolute;top:6px;right:6px}
 .at-table .seat:not(.seat-0)>.speech-bubble {top:6px;left:6px;bottom:auto;right:auto;max-width:90%}
 .at-table .seat-2 {align-self:start}
-.settings-detail .current-difficulty {color:var(--ink);margin:0 0 12px}
+.settings-detail .current-difficulty {margin:0 0 12px}
 
 .game-view > .result-delivery-card[data-event-id] {
   flex: 1;
