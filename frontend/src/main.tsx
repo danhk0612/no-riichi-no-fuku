@@ -64,6 +64,8 @@ const settingsGroups = [
 ] as const
 type SettingsPage = typeof settingsGroups[number]['items'][number][0]
 
+const TABLE_SOUND_UNDER_VOICE = 0.12
+
 function App() {
   const isDesktop = window.nrnfDesktop?.isDesktop === true
   const [accessToken, setAccessToken] = useState<string | null>(null)
@@ -122,6 +124,8 @@ function App() {
   const playedSoundEventsRef = useRef(new Set<string>())
   const gameAudioTokenRef = useRef(0)
   const activeSoundEffectsRef = useRef(new Map<string, { audio: HTMLAudioElement; url: string }>())
+  const tableSoundsRef = useRef(new Set<HTMLAudioElement>())
+  const tableVoicePlayingRef = useRef(false)
   const voiceQueueRef = useRef<Promise<void>>(Promise.resolve())
   const characterContentRef = useRef(new Map<number, Pick<CharacterContent, 'revision' | 'measurements_cm'>>())
   const difficultyPreviewToken = localRequestTokenRef.current
@@ -202,7 +206,14 @@ function App() {
     }
   }, [accessToken, deliveryAssetIdentity, deliveryAssetUrl])
 
+  function mixTableSounds(voicePlaying: boolean) {
+    tableVoicePlayingRef.current = voicePlaying
+    for (const sound of tableSoundsRef.current) sound.volume = voicePlaying ? TABLE_SOUND_UNDER_VOICE : 1
+  }
+
   function stopGameAudio() {
+    tableSoundsRef.current.clear()
+    tableVoicePlayingRef.current = false
     gameAudioTokenRef.current += 1
     voiceQueueRef.current = Promise.resolve()
     for (const { audio, url } of activeSoundEffectsRef.current.values()) {
@@ -633,8 +644,11 @@ function App() {
             return
           }
           const audio = new Audio(url)
+          tableSoundsRef.current.add(audio)
+          audio.volume = tableVoicePlayingRef.current ? TABLE_SOUND_UNDER_VOICE : 1
           activeSoundEffectsRef.current.set(identity, { audio, url })
           const release = () => {
+            tableSoundsRef.current.delete(audio)
             if (activeSoundEffectsRef.current.get(identity)?.audio === audio) activeSoundEffectsRef.current.delete(identity)
             URL.revokeObjectURL(url)
           }
@@ -679,10 +693,12 @@ function App() {
           audio.addEventListener('error', finishPlayback)
           audio.addEventListener('pause', finishPlayback)
           try {
+            mixTableSounds(true)
             await audio.play()
             await finished
           } catch { /* Audio failure never blocks game progression or the next queued voice. */ }
           finally {
+            if (audioToken === gameAudioTokenRef.current) mixTableSounds(false)
             finishPlayback()
             audio.removeEventListener('ended', finishPlayback)
             audio.removeEventListener('error', finishPlayback)
