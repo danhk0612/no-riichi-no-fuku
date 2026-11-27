@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from fastapi import HTTPException
@@ -13,6 +14,10 @@ from app.db.models import (
 from app.schemas.audio_packs import AudioPackSelectionWrite, CharacterVoiceSelectionWrite
 from app.services.local_media import LocalMediaError
 from app.services.result_assets import storage_path
+
+DEFAULT_VOICE_OWNERS = json.loads(
+    (Path(__file__).resolve().parents[1] / "seeds/default_voice_owners.json").read_text("utf-8")
+)
 
 AUDIO_PACK_SELECTION_KEY = "local_audio_pack_selection"
 DEFAULT_AUDIO_PACK_SELECTION = {
@@ -100,10 +105,12 @@ def resolve_audio_pack_slot(session: Session, *, kind: str, slot: str, media_roo
 def _voice_default_pack(session: Session, cpu_id: int) -> str | None:
     content = session.get(CharacterContent, cpu_id)
     if content is None or not content.pack_revision_id:
-        return session.scalar(select(ContentPack.id).join(
-            CpuCharacter, CpuCharacter.slug == ContentPack.namespace,
-        ).where(
-            CpuCharacter.id == cpu_id, ContentPack.kind == "voice",
+        character = session.get(CpuCharacter, cpu_id)
+        if character is None:
+            return None
+        namespace = DEFAULT_VOICE_OWNERS.get(character.slug, character.slug)
+        return session.scalar(select(ContentPack.id).where(
+            ContentPack.namespace == namespace, ContentPack.kind == "voice",
             ContentPack.pack_id == "ja-default", ContentPack.registered_revision_id.is_not(None),
         ))
     revision = session.get(ContentPackRevision, content.pack_revision_id)
@@ -173,7 +180,7 @@ def character_voice_selection(session: Session, cpu_id: int) -> dict:
     if session.get(CpuCharacter, cpu_id) is None:
         raise HTTPException(404, detail={"code": "not_found", "message": "캐릭터를 찾을 수 없습니다."})
     row = session.get(CharacterVoiceLink, cpu_id)
-    default_id = row.default_pack_id if row is not None and row.default_pack_id else _voice_default_pack(session, cpu_id)
+    default_id = _voice_default_pack(session, cpu_id)
     packs = [{"id": pack.id, "namespace": pack.namespace, "pack_id": pack.pack_id,
               "revision": pack.registered_revision_id}
              for pack in session.scalars(select(ContentPack).where(
@@ -210,18 +217,11 @@ def update_character_voice_selection(session: Session, cpu_id: int, change: Char
 
 def resolve_voice_slot(session: Session, cpu_id: int, slot: str, media_root: Path) -> dict | None:
     row = session.get(CharacterVoiceLink, cpu_id)
-    if row is None:
-        default_id = _voice_default_pack(session, cpu_id)
-        selected_id = None
-        mode = "default"
-    else:
-        default_id, selected_id, mode = row.default_pack_id, row.selected_pack_id, row.selection_mode
-        if default_id is None:
-            default_id = _voice_default_pack(session, cpu_id)
-    if mode == "off":
+    if row and row.selection_mode == "off":
         return None
-    if mode == "selected":
-        selected = _pack(session, selected_id, "voice")
+    if row and row.selection_mode == "selected":
+        selected = _pack(session, row.selected_pack_id, "voice")
         if selected is not None:
             return _clip_from_pack(session, selected, slot, media_root)
+    default_id = _voice_default_pack(session, cpu_id)
     return _clip_from_pack(session, _pack(session, default_id, "voice"), slot, media_root)

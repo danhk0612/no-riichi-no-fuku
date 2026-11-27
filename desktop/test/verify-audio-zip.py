@@ -1,4 +1,4 @@
-"""Decode the 81 release clips and audition their pon and discard sounds in manifest order."""
+"""Decode the 45 release clips and audition their pon and discard sounds in manifest order."""
 import argparse
 import json
 from pathlib import Path, PurePosixPath
@@ -9,9 +9,11 @@ from zipfile import ZipFile
 def inspect(archive, output):
     plan = Path(__file__).resolve().parents[2] / "docs/audio/production-ja.json"
     assets = json.loads(plan.read_text("utf-8"))["assets"]
+    owners = json.loads((plan.parents[2] / "backend/app/seeds/default_voice_owners.json").read_text("utf-8"))
+    assets = [a for a in assets if a["kind"] != "voice" or a["character"] in owners.values()]
     paths = {asset["path"] for asset in assets}
-    if len(paths) != 81:
-        raise ValueError("Expected 81 distinct release paths")
+    if len(paths) != 45:
+        raise ValueError("Expected 45 distinct release paths")
     comparisons = {"pon": [], "tile_discard": []}
     with ZipFile(archive) as package:
         entries = {}
@@ -19,6 +21,8 @@ def inspect(archive, output):
             path = PurePosixPath(entry.filename)
             if "packs" in path.parts:
                 relative = "/".join(path.parts[path.parts.index("packs"):])
+                if relative.startswith("packs/voices/") and relative.endswith(".ogg") and relative not in paths:
+                    raise ValueError(f"Unexpected voice clip: {relative}")
                 if relative in paths:
                     if relative in entries:
                         raise ValueError(f"Duplicate release clip: {relative}")

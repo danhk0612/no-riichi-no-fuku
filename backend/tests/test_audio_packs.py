@@ -106,11 +106,13 @@ class AudioPackTests(unittest.TestCase):
         folder.mkdir(parents=True)
         (folder / "pon.mp3").write_bytes(b"ID3rin")
         pack = self.by_id(self.scan(), "ja-default")
-        for cpu_id, expected in [(1, pack["id"]), (2, None)]:
+        for cpu_id, expected in [(1, pack["id"]), (4, pack["id"]), (2, None)]:
             response = self.client.get(f"/api/local/characters/{cpu_id}/voice-selection", headers=self.headers)
             self.assertEqual(response.json()["default_pack_id"], expected)
         with Session(self.runtime.engine) as session:
             self.assertEqual(resolve_voice_slot(session, 1, "pon", self.runtime.paths.media)["pack_id"], pack["id"])
+            self.assertEqual(resolve_voice_slot(session, 1, "pon", self.runtime.paths.media),
+                             resolve_voice_slot(session, 4, "pon", self.runtime.paths.media))
             self.assertIsNone(resolve_voice_slot(session, 2, "pon", self.runtime.paths.media))
 
     def test_voice_default_pack_revision_and_explicit_selected_off_are_preserved(self):
