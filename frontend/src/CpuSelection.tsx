@@ -38,6 +38,12 @@ export function CpuSelection({
   const [viewId,setViewId]=useState<number|null>(null)
   const viewed=cpus.find(c=>c.id===viewId) ?? cpus.find(c=>c.id===selectedIds.at(-1)) ?? cpus[0]
   const gallery = useRef<HTMLDialogElement>(null)
+  const profileTools = (cpu: CpuChoice) => settings.available && (
+    <span className="card-image-tools">
+      <LiveImage cpu={cpu.id} level={cpu.defeat_stage} kind="profile" controlsOnly className=""
+        url={cpu.stage_images?.profile} label={cpu.name+' 프로필'}/>
+    </span>
+  )
   const fullBody = viewed && <>
     <button type="button" className="gallery-open" aria-haspopup="dialog" onClick={()=>gallery.current?.showModal()}>전신 보기</button>
     <dialog ref={gallery} className="selection-gallery" aria-label={viewed.name+' 전신'}>
@@ -74,7 +80,7 @@ export function CpuSelection({
             {index>=0 && <span className="seat-check">✓</span>}
             <strong>{cpu.name}</strong>{completed && <small>완료 CPU</small>}
           </button>
-          {settings.available && <span className="card-image-tools">face-tools</span>}
+          {profileTools(cpu)}
         </div>
       })}</div>
       {!cpus.length && <p>선택 가능한 CPU가 없습니다.</p>}
@@ -129,7 +135,7 @@ export function CpuSelection({
               <span className="cpu-stage">{defeatStageLabel(cpu.defeat_stage)}</span>
               {cpu.measurements_cm && Object.entries({ height: '키', bust: '가슴(B)', waist: '허리(W)', hips: '엉덩이(H)' }).filter(([key]) => cpu.measurements_cm?.[key as keyof typeof cpu.measurements_cm]).map(([key, label]) => <span key={key}>{label} {cpu.measurements_cm?.[key as keyof typeof cpu.measurements_cm]} cm</span>)}
 
-            </button>{settings.available && <span className="card-image-tools">roster-tools</span>}</div>
+            </button>{profileTools(cpu)}</div>
           )
         })}
       </div>
