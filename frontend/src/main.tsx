@@ -4,6 +4,7 @@ import type { SavedResultContent } from './game/types'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import { AuthPanel } from './AuthPanel'
+import { PagedPane } from './PagedPane'
 import { CpuSelection } from './CpuSelection'
 import {
   createGameSession,
@@ -1091,7 +1092,7 @@ function App() {
             </div>)}
             {screen === 'play' && !cpus && <button id="settings-reset" type="button" disabled={busy} onClick={resetPlay}>진행 초기화</button>}
           </nav>
-          <div className="settings-detail">
+          <div className="settings-detail"><PagedPane section={activeSettings ?? 'name'} label="설정">
             {!activeSettings && <section aria-label="플레이어 이름 설정"><h3>플레이어 이름</h3>
               <ProfileEditor busy={profileBusy} name={profileName} onNameChange={value => { setProfileName(value); setProfileMessage('') }} onSave={savePlayerName} />
               {profileMessage && <p role="status">{profileMessage}</p>}
@@ -1106,7 +1107,7 @@ function App() {
             {openSettings.content && <div id="settings-page-content" hidden={activeSettings !== 'content'}><LocalContentPanel onCharactersChanged={async characters => { setEditedCharacters(characters); await refreshCharacterChoices() }} accessToken={accessToken} onClose={() => closeSettings('content')} fixedDirty={fixedDirty} fixedSaving={fixedSaving} setFixedDirty={setFixedDirty} setFixedSaving={setFixedSaving} onPackApplied={stopGameAudio} onMeasurementsUpdated={updateCharacterContent}
               onImageSaved={(id,level,kind,url)=>setCpus(current=>current?.map(cpu=>cpu.id===id && cpu.defeat_stage===level
                 ? {...cpu,stage_images:{profile:null,full_body:null,cg:null,...cpu.stage_images,[kind]:url}} : cpu) ?? current)} /></div>}
-          </div>
+          </PagedPane></div>
         </div>
       </section>}
       {screen !== 'play' && !settingsVisible && <section className={'front-page front-' + screen} aria-label={screen === 'title' ? '타이틀' : '메인 메뉴'}>
@@ -1314,12 +1315,14 @@ function EndingScreen({ accessToken, generation, eventId, fallback, busy, onCont
     <section className="match-result ending-panel" aria-label="엔딩">
       <p className="eyebrow">ENDING</p>
       <h2>모든 참가 CPU 완료</h2>
+      <PagedPane label="엔딩">
       {resources?.cpu_id && (resources.cg || imageSettings.ready) ? <LiveImage cpu={resources.cpu_id} level={3} kind="ending" label="엔딩 CG" className="ending-image" url={resources.cg?.url}/> : cgUrl && !imageError && <img className="ending-image" src={cgUrl} alt="엔딩 CG" onError={() => { setImageError(true); setLoadError(true) }} />}
       {!resources && !loadError && <p role="status">엔딩 자료를 불러오는 중…</p>}
       {text && <blockquote className="result-dialogue">{text}</blockquote>}
 
       {musicUrl && <audio className="ending-audio" src={musicUrl} controls autoPlay onError={() => setLoadError(true)} />}
       {loadError && <p className="muted">일부 엔딩 자료를 재생하거나 불러오지 못했습니다. 계속하기는 사용할 수 있습니다.</p>}
+      </PagedPane>
       <button className="primary-button" disabled={busy || resources?.acknowledged === true} onClick={onContinue} type="button">오마케로 계속하기</button>
     </section>
   )

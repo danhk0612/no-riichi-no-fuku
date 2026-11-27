@@ -107,7 +107,7 @@
   .opponent-selection .cpu-preview {grid-template-columns:1fr}
 }
 
-.opponent-selection .preview-copy {height:clamp(238px,30vh,330px);overflow:auto}
+.opponent-selection .preview-copy {height:auto}
 .mahjong-table .seat-face.image-empty {width:auto;height:auto;aspect-ratio:auto;max-width:100%;font-size:.75rem;color:#c2d0da}
 
 .river-preview {width:100%;min-width:0;display:grid;align-content:start;gap:4px;padding:3px 0;border:0;text-align:left;background:none;color:#e5eaf0;cursor:pointer}
@@ -141,11 +141,11 @@ body:has(.desktop-shell) {overflow:clip}
 .desktop-shell .content-panel {max-height:none;overflow:visible}
 .game-view>:is(.result-delivery-card,.match-result,.waiting-panel) {min-height:0;overflow:auto;overscroll-behavior:contain}
 .game-view>:is(.result-delivery-card,.match-result)>.primary-button {position:sticky;bottom:0}
-.game-view>:is(.opponent-sheet,.opponent-selection) {min-height:0;display:flex;flex-direction:column;overflow:auto}
-.game-view :is(.cpu-grid,.opponent-line) {overflow:auto;min-height:0;padding:4px;overscroll-behavior:contain}
+.game-view>:is(.opponent-sheet,.opponent-selection) {min-height:0;display:flex;flex-direction:column;overflow:visible}
+.game-view :is(.cpu-grid,.opponent-line) {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-content:start;min-height:0;padding:4px;overflow:visible}
 .game-view .opponent-sheet>:not(.opponent-line),.game-view .opponent-selection>:not(.cpu-grid) {flex-shrink:0}
 .game-view .dossier,.game-view .cpu-preview {height:clamp(155px,33vh,340px)}
-.game-view .dossier-info,.game-view .preview-copy {height:100%;align-self:stretch;overflow:auto}
+.game-view .dossier-info,.game-view .preview-copy {height:100%;align-self:stretch;overflow:visible}
 .game-view .scene-picture,.game-view .roster-scene {min-height:0}
 .game-view .game-toolbar {margin:0;min-height:28px}
 .game-view .current-difficulty {margin:2px 0 5px}
@@ -325,3 +325,42 @@ body:has(.desktop-shell) {overflow:clip}
   color:var(--navy);
   font:700 clamp(22px,3.3vh,38px)/1 Batang,serif;
 }
+
+.game-view .opponent-sheet,.game-view .opponent-selection {flex:1}
+.game-view .opponent-line,.game-view .cpu-grid {flex:1}
+.game-view :is(.preview-copy,.dossier-info) {display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-width:0}
+.game-view :is(.preview-copy,.dossier-info)>h3,.game-view .cpu-card strong,.draft-footer li {
+  display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.game-view :is(.preview-copy,.dossier-info)>p {margin:6px 0 10px}
+.preview-actions,.candidate-pages {display:flex;align-items:center;gap:8px}
+.preview-actions>button,.candidate-pages button,.candidate-detail button {
+  margin:0;padding:5px 12px;border:1px solid #8799aa;border-radius:2px;background:var(--paper);color:var(--ink);font:inherit;cursor:pointer;
+}
+.candidate-pages {justify-content:center;margin-block:4px;font-size:.9rem}
+.candidate-pages button:disabled {opacity:.45;cursor:default}
+.candidate-detail {width:min(36rem,85vw);padding:20px;border:0;border-top:4px solid var(--gold);color:var(--ink);background:var(--paper);overflow-wrap:anywhere}
+.candidate-detail::backdrop {background:#0b1b2cbb}
+.candidate-detail header {display:flex;align-items:center;justify-content:space-between;gap:12px}
+.candidate-detail header h2 {margin:0}
+.candidate-detail dl {margin:12px 0}
+.candidate-detail dl>div {display:grid;grid-template-columns:6rem 1fr;padding:5px 0;border-top:1px solid var(--rule)}
+.candidate-detail dd {margin:0}
+.game-view .opponent-selection .panel-heading {display:flex;align-items:center}
+.game-view .opponent-selection .panel-heading>div:first-child {display:flex;align-items:baseline;gap:16px;flex-direction:row-reverse}
+.game-view .opponent-selection .cpu-profile {min-width:0}
+.game-view .cpu-preview,.game-view .dossier {min-height:0}
+@media(max-width:720px){.game-view :is(.cpu-grid,.opponent-line){grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+.paged-pane {display:flex;flex-direction:column;min-height:0;min-width:0;height:100%}
+.page-window {min-height:0;flex:1;overflow:hidden}
+.page-window > div {display:flow-root}
+.desktop-shell .settings-detail {min-height:0;overflow:visible}
+.settings-detail :is(.shared-prompt-list,.shared-candidate-list) {max-height:none;overflow:visible}
+.profile-dialog .profile-copy {max-height:62vh;display:grid;grid-template-rows:minmax(0,1fr)}
+.game-view .paged-pane .result-columns,.game-view .paged-pane .result-extra {overflow:visible}
+
+.candidate-detail[open] {display:flex;flex-direction:column;max-height:85vh;box-sizing:border-box}
+.candidate-detail .paged-pane {height:auto}
+.game-view>.ending-panel:has(.paged-pane) {display:flex;flex-direction:column;overflow:hidden}
+.game-view>.ending-panel .paged-pane {height:auto}

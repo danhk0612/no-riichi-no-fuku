@@ -83,7 +83,12 @@ try {
   await shot('roster')
   {
     const cards = page.locator('button.cpu-card')
-    for(let i=0;i<3;i++) await cards.nth(i).click()
+    await cards.first().click()
+    await button('다음 후보').click()
+    await cards.first().click()
+    await button('이전 후보').click()
+    assert.equal(await cards.first().getAttribute('aria-pressed'), 'true')
+    await cards.nth(1).click()
     await button('참가 명단 확정').click()
     const badges = page.locator('.portrait-button .seat-wind-tile')
     await badges.first().waitFor()

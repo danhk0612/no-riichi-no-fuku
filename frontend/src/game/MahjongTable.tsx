@@ -1,3 +1,4 @@
+import { PagedPane } from '../PagedPane'
 import { SettlementScene } from './SettlementScene'
 import { LiveImage, ImageSettings } from '../LiveImage'
 import { useContext, useRef } from 'react'
@@ -115,7 +116,7 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
   return (
     <section className={`${settlementPayload ? 'match-result ' : ''}result-delivery-card`} data-result-kind={settlementPayload ? 'settlement' : 'hand'} data-multiple-winners={winners.length>1 || undefined} data-ordinal={entry?.ordinal} data-event-id={entry?.event_id} aria-live="polite" aria-label={settlementPayload ? '최종 정산 결과' : '국 결과'}>
       <h2>{settlementPayload ? '동풍전 정산' : `${round} ${String(start?.kyoku ?? 0)}국 결과`}</h2>
-      <div className="result-columns"><div className="result-scoreboard">
+      <PagedPane section={String(entry.event_id)} label="결과"><div className="result-columns"><div className="result-scoreboard">
       {settlementPayload ? (
         <>
           {scores[0] != null && ranks[0] != null && <div className="personal-result"><span>내 순위</span><strong>{ranks[0]}위</strong><b>{scores[0].toLocaleString()}점</b></div>}
@@ -156,7 +157,7 @@ function ResultDeliveryCard({ delivery, onAcknowledge, resultAssetObjectUrl, res
       </>}
       {content?.dialogues.filter(line => line.text && line!==defeatLine).map(line => <blockquote className="result-dialogue" key={line.cpu_id + ':' + line.slot}>{line.text}</blockquote>)}
       {!settlementPayload && canGenerate && window.nrnfDesktop?.isDesktop && <HandCG path={`/api/local/play/sessions/${delivery.session_id}/results/${entry.event_id}/cg`} generation={delivery.generation}/>}
-      </div></div>
+      </div></div></PagedPane>
       {onAcknowledge && <button className="primary-button" onClick={() => onAcknowledge(delivery)} type="button">{nextLabel}</button>}
     </section>
   )
@@ -246,13 +247,13 @@ function SeatPanel({
           <header><h2>{player.name}</h2><button type="button" onClick={()=>profile.current?.close()}>닫기</button></header>
           <div className="profile-spread"><div className="full-portrait">
           <CharacterImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="full_body" url={player.detail.images.full_body} label={player.name+' 전신'} className="seat-body" imageOnly/>
-          </div><div className="profile-copy">
+          </div><div className="profile-copy"><PagedPane label="캐릭터 정보">
           {imageSettings.available && player.detail.cpu_id != null && <div><b>프로필</b><LiveImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="profile" controlsOnly className="" label={player.name+' 프로필'}/></div>}
           {imageSettings.available && player.detail.cpu_id != null && <div><b>전신</b><LiveImage cpu={player.detail.cpu_id} level={player.detail.stage} kind="full_body" controlsOnly className="" label={player.name+' 전신'}/></div>}
           <p>{defeatStageLabel(player.detail.stage)}</p><Measurements values={player.detail.measurements_cm}/>
           <p>{player.detail.description}</p><dl aria-label="마작 스펙">
           {Object.entries({aggression:'공격 성향',defense:'수비 성향',call_preference:'부로 선호',riichi_preference:'리치 선호',hand_value_preference:'타점 선호',speed_preference:'속도 선호'}).map(([k,label])=>
-            player.detail?.stats[k]!=null && <div key={k}><dt>{label}</dt><dd>{player.detail.stats[k]}</dd></div>)}</dl></div></div></dialog>
+            player.detail?.stats[k]!=null && <div key={k}><dt>{label}</dt><dd>{player.detail.stats[k]}</dd></div>)}</dl></PagedPane></div></div></dialog>
       </>}
       <p className="score">{observation.scores[seat].toLocaleString()}점</p>
       {observation.riichi_declared[seat] && <p className="riichi">리치</p>}

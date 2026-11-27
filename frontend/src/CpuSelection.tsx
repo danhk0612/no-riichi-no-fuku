@@ -1,6 +1,7 @@
 import './opponent-selection.css'
+import { PagedPane } from './PagedPane'
 import {LiveImage,ImageSettings} from './LiveImage'
-import { useContext,useRef,useState } from 'react'
+import { useContext,useEffect,useRef,useState } from 'react'
 import { CharacterImage, Measurements } from './CharacterImage'
 import type { CpuChoice } from './game/types'
 import { defeatStageLabel } from './stages'
@@ -36,7 +37,25 @@ export function CpuSelection({
 }: CpuSelectionProps) {
   const settings=useContext(ImageSettings)
   const [viewId,setViewId]=useState<number|null>(null)
-  const viewed=cpus.find(c=>c.id===viewId) ?? cpus.find(c=>c.id===selectedIds.at(-1)) ?? cpus[0]
+  const [narrow,setNarrow]=useState(() => window.matchMedia('(max-width: 720px)').matches)
+  useEffect(() => {
+    const query=window.matchMedia('(max-width: 720px)')
+    const changed=() => setNarrow(query.matches)
+    query.addEventListener('change',changed)
+    return () => query.removeEventListener('change',changed)
+  },[])
+  const pageSize=narrow ? 3 : 5
+  const [first,setFirst]=useState(0)
+  const pages=Math.max(1,Math.ceil(cpus.length/pageSize))
+  const page=Math.min(Math.floor(first/pageSize),pages-1)
+  const visible=cpus.slice(page*pageSize,(page+1)*pageSize)
+  const viewed=visible.find(c=>c.id===viewId) ?? visible.find(c=>c.id===selectedIds.at(-1)) ?? visible[0]
+  const details=useRef<HTMLDialogElement>(null)
+  const pager=pages>1 && <nav className="candidate-pages" aria-label="후보 페이지">
+    <button type="button" disabled={!page} onClick={()=>setFirst((page-1)*pageSize)}>이전 후보</button>
+    <span aria-live="polite">{page+1} / {pages}</span>
+    <button type="button" disabled={page+1===pages} onClick={()=>setFirst((page+1)*pageSize)}>다음 후보</button>
+  </nav>
   const gallery = useRef<HTMLDialogElement>(null)
   const profileTools = (cpu: CpuChoice) => settings.available && (
     <span className="card-image-tools">
@@ -52,6 +71,23 @@ export function CpuSelection({
       {settings.available && <div className="gallery-cg">단계 CG <LiveImage cpu={viewed.id} level={viewed.defeat_stage} kind="cg" controlsOnly className="" label="단계 CG"/></div>}
     </dialog>
   </>
+  const preview = viewed && <>
+    <h3 title={viewed.name}>{viewed.name}</h3>
+    <p>{styles[viewed.style] ?? viewed.style} · {defeatStageLabel(viewed.defeat_stage)}</p>
+    <div className="preview-actions">
+      <button type="button" aria-haspopup="dialog" onClick={()=>details.current?.showModal()}>상세 정보</button>
+      {fullBody}
+    </div>
+    <dialog className="candidate-detail" ref={details} aria-label={viewed.name+' 상세 정보'}>
+      <header><h2>{viewed.name}</h2><button type="button" onClick={()=>details.current?.close()}>닫기</button></header>
+      <PagedPane label="상세 정보"><p>{viewed.short_description}</p>
+      <dl><div><dt>대국 성향</dt><dd>{styles[viewed.style] ?? viewed.style}</dd></div>
+        <div><dt>의상 단계</dt><dd>{defeatStageLabel(viewed.defeat_stage)}</dd></div>
+        {viewed.difficulty_preview && <div><dt>난이도</dt><dd>다음 대국 난이도 {viewed.difficulty_preview.level}/10</dd></div>}
+      </dl>
+      <Measurements values={viewed.measurements_cm}/></PagedPane>
+    </dialog>
+  </>
   if (!rosterMode) {
 
     return <section className="opponent-sheet" aria-labelledby="opponent-title">
@@ -59,16 +95,10 @@ export function CpuSelection({
         <span className="seat-count" aria-live="polite">선택 <b>{selectedIds.length}</b> / 3</span></header>
       {viewed && <section className="dossier" aria-label="캐릭터 미리보기">
         <div className="scene-picture"><CharacterImage cpu={viewed.id} level={viewed.defeat_stage} kind="cg" url={viewed.stage_images?.cg} label="단계 CG" className="scene-art" imageOnly/></div>
-        <div className="dossier-info"><h3>{viewed.name}</h3><p>{viewed.short_description}</p>
-          <dl><div><dt>대국 성향</dt><dd>{styles[viewed.style] ?? viewed.style}</dd></div>
-            <div><dt>의상 단계</dt><dd>{defeatStageLabel(viewed.defeat_stage)}</dd></div>
-            {viewed.difficulty_preview && <div><dt>난이도</dt><dd>다음 대국 난이도 {viewed.difficulty_preview.level}/10</dd></div>}
-            {Object.values(viewed.measurements_cm ?? {}).some(Boolean) && <div><dt>신체 정보</dt><dd><Measurements values={viewed.measurements_cm}/></dd></div>}
-          </dl>
-          {fullBody}
+        <div className="dossier-info">{preview}
         </div>
       </section>}
-      <div className="opponent-line">{cpus.map(cpu=>{
+      <div className="opponent-line">{visible.map(cpu=>{
         const index=selectedIds.indexOf(cpu.id)
         const completed=cpu.defeat_stage>=3 && !allowCompleted
         const full=selectedIds.length===3 && index<0
@@ -83,6 +113,7 @@ export function CpuSelection({
           {profileTools(cpu)}
         </div>
       })}</div>
+      {pager}
       {!cpus.length && <p>선택 가능한 CPU가 없습니다.</p>}
       {error && <p role="alert">{error}</p>}
       <footer className="draft-footer"><strong>선택한 상대</strong><ol aria-label="선택한 상대">{[0,1,2].map(i=><li key={i}>{cpus.find(cpu=>cpu.id===selectedIds[i])?.name ?? '미선택'}</li>)}</ol>
@@ -108,15 +139,11 @@ export function CpuSelection({
         <div className="roster-scene">
           <CharacterImage cpu={viewed.id} level={viewed.defeat_stage} kind="cg" url={viewed.stage_images?.cg} label="단계 CG" className="preview-cg" imageOnly/>
         </div>
-        <div className="preview-copy"><h3>{viewed.name}</h3><p>{viewed.short_description}</p>
-          <dl><div><dt>대국 성향</dt><dd>{styles[viewed.style] ?? viewed.style}</dd></div>
-            <div><dt>의상 단계</dt><dd>{defeatStageLabel(viewed.defeat_stage)}</dd></div></dl>
-          <Measurements values={viewed.measurements_cm}/>
-          {fullBody}
+        <div className="preview-copy">{preview}
         </div>
       </section>}
       <div className="cpu-grid">
-        {cpus.map((cpu) => {
+        {visible.map((cpu) => {
           const selectedIndex = selectedIds.indexOf(cpu.id)
           return (
             <div key={cpu.id} onMouseEnter={()=>setViewId(cpu.id)} onFocus={()=>setViewId(cpu.id)} tabIndex={busy ? 0 : undefined}>
@@ -133,12 +160,11 @@ export function CpuSelection({
                 <strong>{cpu.name}</strong>
               </span>
               <span className="cpu-stage">{defeatStageLabel(cpu.defeat_stage)}</span>
-              {cpu.measurements_cm && Object.entries({ height: '키', bust: '가슴(B)', waist: '허리(W)', hips: '엉덩이(H)' }).filter(([key]) => cpu.measurements_cm?.[key as keyof typeof cpu.measurements_cm]).map(([key, label]) => <span key={key}>{label} {cpu.measurements_cm?.[key as keyof typeof cpu.measurements_cm]} cm</span>)}
-
             </button>{profileTools(cpu)}</div>
           )
         })}
       </div>
+      {pager}
       {cpus.length === 0 && <p className="empty-message">선택 가능한 CPU가 없습니다.</p>}
       {error && <p className="form-error" role="alert">{error}</p>}
       <button
