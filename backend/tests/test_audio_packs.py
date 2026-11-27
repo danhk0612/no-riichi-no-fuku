@@ -99,6 +99,20 @@ class AudioPackTests(unittest.TestCase):
             "bgm_mode": "legacy", "bgm_pack_id": None,
         }).status_code, 409)
 
+    def test_builtin_voice_resolves_by_character_without_applying_a_character_pack(self):
+        portable = Path(self.tmp.name) / "portable"
+        self.runtime.content_packs.game_root = portable
+        folder = portable / "packs/voices/tachibana-rin/ja-default"
+        folder.mkdir(parents=True)
+        (folder / "pon.mp3").write_bytes(b"ID3rin")
+        pack = self.by_id(self.scan(), "ja-default")
+        for cpu_id, expected in [(1, pack["id"]), (2, None)]:
+            response = self.client.get(f"/api/local/characters/{cpu_id}/voice-selection", headers=self.headers)
+            self.assertEqual(response.json()["default_pack_id"], expected)
+        with Session(self.runtime.engine) as session:
+            self.assertEqual(resolve_voice_slot(session, 1, "pon", self.runtime.paths.media)["pack_id"], pack["id"])
+            self.assertIsNone(resolve_voice_slot(session, 2, "pon", self.runtime.paths.media))
+
     def test_voice_default_pack_revision_and_explicit_selected_off_are_preserved(self):
         self.install(audio("voice", "voice-a", {"chi": "chi.mp3", "win": "win.mp3", "defeat_stage_3": "loss.mp3"}, "actor-one"),
                      {"chi.mp3": b"ID3chi", "win.mp3": b"ID3win", "loss.mp3": b"ID3loss"})

@@ -100,7 +100,12 @@ def resolve_audio_pack_slot(session: Session, *, kind: str, slot: str, media_roo
 def _voice_default_pack(session: Session, cpu_id: int) -> str | None:
     content = session.get(CharacterContent, cpu_id)
     if content is None or not content.pack_revision_id:
-        return None
+        return session.scalar(select(ContentPack.id).join(
+            CpuCharacter, CpuCharacter.slug == ContentPack.namespace,
+        ).where(
+            CpuCharacter.id == cpu_id, ContentPack.kind == "voice",
+            ContentPack.pack_id == "ja-default", ContentPack.registered_revision_id.is_not(None),
+        ))
     revision = session.get(ContentPackRevision, content.pack_revision_id)
     if revision is None:
         return None

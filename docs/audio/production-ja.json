@@ -1,0 +1,758 @@
+{
+  "project_id": "nrnf-ja-audio",
+  "preview": "ポン。少し迷いましたが、この一手でいきます。リーチ。ゆっくり息を整えて、卓の流れを見ていました。ツモ。最後までお付き合いいただき、ありがとうございました。もう一局、ご一緒にいかがですか。次の牌は、どんな一枚でしょうね。",
+  "characters": [
+    {
+      "id": "tachibana-rin",
+      "name": "타치바나 린",
+      "design": "Original adult Japanese woman in her twenties, native standard Japanese. Clean isolated studio voice. Clear mid register, measured rhythm, precise vowels, a gentle smile only after winning."
+    },
+    {
+      "id": "kurokawa-mio",
+      "name": "쿠로카와 미오",
+      "design": "Original adult Japanese woman in her twenties, native standard Japanese. Clean isolated studio voice. Soft lower register, cautious onset, firm word endings, intimate but articulate."
+    },
+    {
+      "id": "amamiya-yuna",
+      "name": "아마미야 유나",
+      "design": "Original adult Japanese woman in her twenties, native standard Japanese. Clean isolated studio voice. Springy upper-mid register, quick attack, strong consonants, confident and punchy."
+    },
+    {
+      "id": "shirogane-rei",
+      "name": "시로가네 레이",
+      "design": "Original adult Japanese woman in her twenties, native standard Japanese. Clean isolated studio voice. Cool clear mid register, spare breath, even pitch, composed and understated."
+    },
+    {
+      "id": "kanzaki-aya",
+      "name": "칸자키 아야",
+      "design": "Original adult Japanese woman in her twenties, native standard Japanese. Clean isolated studio voice. Bright light upper register, playful inflections, nimble conversational timing."
+    },
+    {
+      "id": "saionji-kaede",
+      "name": "사이온지 카에데",
+      "design": "Original adult Japanese woman in her twenties, native standard Japanese. Clean isolated studio voice. Warm rounded low-mid register, unhurried phrasing, poised with a resonant finish."
+    }
+  ],
+  "assets": [
+    {
+      "id": "tachibana-rin-chi",
+      "kind": "voice",
+      "character": "tachibana-rin",
+      "name": "타치바나 린",
+      "slot": "chi",
+      "text": "チー",
+      "path": "packs/voices/tachibana-rin/ja-default/chi.ogg"
+    },
+    {
+      "id": "tachibana-rin-pon",
+      "kind": "voice",
+      "character": "tachibana-rin",
+      "name": "타치바나 린",
+      "slot": "pon",
+      "text": "ポン",
+      "path": "packs/voices/tachibana-rin/ja-default/pon.ogg"
+    },
+    {
+      "id": "tachibana-rin-kan",
+      "kind": "voice",
+      "character": "tachibana-rin",
+      "name": "타치바나 린",
+      "slot": "kan",
+      "text": "カン",
+      "path": "packs/voices/tachibana-rin/ja-default/kan.ogg"
+    },
+    {
+      "id": "tachibana-rin-riichi",
+      "kind": "voice",
+      "character": "tachibana-rin",
+      "name": "타치바나 린",
+      "slot": "riichi",
+      "text": "リーチ",
+      "path": "packs/voices/tachibana-rin/ja-default/riichi.ogg"
+    },
+    {
+      "id": "tachibana-rin-ron",
+      "kind": "voice",
+      "character": "tachibana-rin",
+      "name": "타치바나 린",
+      "slot": "ron",
+      "text": "ロン",
+      "path": "packs/voices/tachibana-rin/ja-default/ron.ogg"
+    },
+    {
+      "id": "tachibana-rin-tsumo",
+      "kind": "voice",
+      "character": "tachibana-rin",
+      "name": "타치바나 린",
+      "slot": "tsumo",
+      "text": "ツモ",
+      "path": "packs/voices/tachibana-rin/ja-default/tsumo.ogg"
+    },
+    {
+      "id": "tachibana-rin-win",
+      "kind": "voice",
+      "character": "tachibana-rin",
+      "name": "타치바나 린",
+      "slot": "win",
+      "text": "きれいにまとまりました。",
+      "path": "packs/voices/tachibana-rin/ja-default/win.ogg"
+    },
+    {
+      "id": "tachibana-rin-match-first",
+      "kind": "voice",
+      "character": "tachibana-rin",
+      "name": "타치바나 린",
+      "slot": "match_first",
+      "text": "流れを最後まで見失わずに済みました。",
+      "path": "packs/voices/tachibana-rin/ja-default/match_first.ogg"
+    },
+    {
+      "id": "tachibana-rin-match-last",
+      "kind": "voice",
+      "character": "tachibana-rin",
+      "name": "타치바나 린",
+      "slot": "match_last",
+      "text": "今回はバランスを崩してしまいました。",
+      "path": "packs/voices/tachibana-rin/ja-default/match_last.ogg"
+    },
+    {
+      "id": "tachibana-rin-defeat-stage-1",
+      "kind": "voice",
+      "character": "tachibana-rin",
+      "name": "타치바나 린",
+      "slot": "defeat_stage_1",
+      "text": "約束ですから、上着は脱ぎますね。",
+      "path": "packs/voices/tachibana-rin/ja-default/defeat_stage_1.ogg"
+    },
+    {
+      "id": "tachibana-rin-defeat-stage-2",
+      "kind": "voice",
+      "character": "tachibana-rin",
+      "name": "타치바나 린",
+      "slot": "defeat_stage_2",
+      "text": "二度目ですか……次は立て直します。",
+      "path": "packs/voices/tachibana-rin/ja-default/defeat_stage_2.ogg"
+    },
+    {
+      "id": "tachibana-rin-defeat-stage-3",
+      "kind": "voice",
+      "character": "tachibana-rin",
+      "name": "타치바나 린",
+      "slot": "defeat_stage_3",
+      "text": "完敗です。この勝負、ここで退きます。",
+      "path": "packs/voices/tachibana-rin/ja-default/defeat_stage_3.ogg"
+    },
+    {
+      "id": "kurokawa-mio-chi",
+      "kind": "voice",
+      "character": "kurokawa-mio",
+      "name": "쿠로카와 미오",
+      "slot": "chi",
+      "text": "チー",
+      "path": "packs/voices/kurokawa-mio/ja-default/chi.ogg"
+    },
+    {
+      "id": "kurokawa-mio-pon",
+      "kind": "voice",
+      "character": "kurokawa-mio",
+      "name": "쿠로카와 미오",
+      "slot": "pon",
+      "text": "ポン",
+      "path": "packs/voices/kurokawa-mio/ja-default/pon.ogg"
+    },
+    {
+      "id": "kurokawa-mio-kan",
+      "kind": "voice",
+      "character": "kurokawa-mio",
+      "name": "쿠로카와 미오",
+      "slot": "kan",
+      "text": "カン",
+      "path": "packs/voices/kurokawa-mio/ja-default/kan.ogg"
+    },
+    {
+      "id": "kurokawa-mio-riichi",
+      "kind": "voice",
+      "character": "kurokawa-mio",
+      "name": "쿠로카와 미오",
+      "slot": "riichi",
+      "text": "リーチ",
+      "path": "packs/voices/kurokawa-mio/ja-default/riichi.ogg"
+    },
+    {
+      "id": "kurokawa-mio-ron",
+      "kind": "voice",
+      "character": "kurokawa-mio",
+      "name": "쿠로카와 미오",
+      "slot": "ron",
+      "text": "ロン",
+      "path": "packs/voices/kurokawa-mio/ja-default/ron.ogg"
+    },
+    {
+      "id": "kurokawa-mio-tsumo",
+      "kind": "voice",
+      "character": "kurokawa-mio",
+      "name": "쿠로카와 미오",
+      "slot": "tsumo",
+      "text": "ツモ",
+      "path": "packs/voices/kurokawa-mio/ja-default/tsumo.ogg"
+    },
+    {
+      "id": "kurokawa-mio-win",
+      "kind": "voice",
+      "character": "kurokawa-mio",
+      "name": "쿠로카와 미오",
+      "slot": "win",
+      "text": "待った甲斐があった。",
+      "path": "packs/voices/kurokawa-mio/ja-default/win.ogg"
+    },
+    {
+      "id": "kurokawa-mio-match-first",
+      "kind": "voice",
+      "character": "kurokawa-mio",
+      "name": "쿠로카와 미오",
+      "slot": "match_first",
+      "text": "守るべきところは守れたね。",
+      "path": "packs/voices/kurokawa-mio/ja-default/match_first.ogg"
+    },
+    {
+      "id": "kurokawa-mio-match-last",
+      "kind": "voice",
+      "character": "kurokawa-mio",
+      "name": "쿠로카와 미오",
+      "slot": "match_last",
+      "text": "ちょっと守りすぎたかな。",
+      "path": "packs/voices/kurokawa-mio/ja-default/match_last.ogg"
+    },
+    {
+      "id": "kurokawa-mio-defeat-stage-1",
+      "kind": "voice",
+      "character": "kurokawa-mio",
+      "name": "쿠로카와 미오",
+      "slot": "defeat_stage_1",
+      "text": "一枚だけね。まだ諦めてないから。",
+      "path": "packs/voices/kurokawa-mio/ja-default/defeat_stage_1.ogg"
+    },
+    {
+      "id": "kurokawa-mio-defeat-stage-2",
+      "kind": "voice",
+      "character": "kurokawa-mio",
+      "name": "쿠로카와 미오",
+      "slot": "defeat_stage_2",
+      "text": "もう後がないね。気を引き締めなきゃ。",
+      "path": "packs/voices/kurokawa-mio/ja-default/defeat_stage_2.ogg"
+    },
+    {
+      "id": "kurokawa-mio-defeat-stage-3",
+      "kind": "voice",
+      "character": "kurokawa-mio",
+      "name": "쿠로카와 미오",
+      "slot": "defeat_stage_3",
+      "text": "もう逃げ場はないね。私の負け。",
+      "path": "packs/voices/kurokawa-mio/ja-default/defeat_stage_3.ogg"
+    },
+    {
+      "id": "amamiya-yuna-chi",
+      "kind": "voice",
+      "character": "amamiya-yuna",
+      "name": "아마미야 유나",
+      "slot": "chi",
+      "text": "チー",
+      "path": "packs/voices/amamiya-yuna/ja-default/chi.ogg"
+    },
+    {
+      "id": "amamiya-yuna-pon",
+      "kind": "voice",
+      "character": "amamiya-yuna",
+      "name": "아마미야 유나",
+      "slot": "pon",
+      "text": "ポン",
+      "path": "packs/voices/amamiya-yuna/ja-default/pon.ogg"
+    },
+    {
+      "id": "amamiya-yuna-kan",
+      "kind": "voice",
+      "character": "amamiya-yuna",
+      "name": "아마미야 유나",
+      "slot": "kan",
+      "text": "カン",
+      "path": "packs/voices/amamiya-yuna/ja-default/kan.ogg"
+    },
+    {
+      "id": "amamiya-yuna-riichi",
+      "kind": "voice",
+      "character": "amamiya-yuna",
+      "name": "아마미야 유나",
+      "slot": "riichi",
+      "text": "リーチ",
+      "path": "packs/voices/amamiya-yuna/ja-default/riichi.ogg"
+    },
+    {
+      "id": "amamiya-yuna-ron",
+      "kind": "voice",
+      "character": "amamiya-yuna",
+      "name": "아마미야 유나",
+      "slot": "ron",
+      "text": "ロン",
+      "path": "packs/voices/amamiya-yuna/ja-default/ron.ogg"
+    },
+    {
+      "id": "amamiya-yuna-tsumo",
+      "kind": "voice",
+      "character": "amamiya-yuna",
+      "name": "아마미야 유나",
+      "slot": "tsumo",
+      "text": "ツモ",
+      "path": "packs/voices/amamiya-yuna/ja-default/tsumo.ogg"
+    },
+    {
+      "id": "amamiya-yuna-win",
+      "kind": "voice",
+      "character": "amamiya-yuna",
+      "name": "아마미야 유나",
+      "slot": "win",
+      "text": "よし、押し切った！",
+      "path": "packs/voices/amamiya-yuna/ja-default/win.ogg"
+    },
+    {
+      "id": "amamiya-yuna-match-first",
+      "kind": "voice",
+      "character": "amamiya-yuna",
+      "name": "아마미야 유나",
+      "slot": "match_first",
+      "text": "ほらね、最後まで押せば道は開ける！",
+      "path": "packs/voices/amamiya-yuna/ja-default/match_first.ogg"
+    },
+    {
+      "id": "amamiya-yuna-match-last",
+      "kind": "voice",
+      "character": "amamiya-yuna",
+      "name": "아마미야 유나",
+      "slot": "match_last",
+      "text": "くっ、押すタイミングを外した！",
+      "path": "packs/voices/amamiya-yuna/ja-default/match_last.ogg"
+    },
+    {
+      "id": "amamiya-yuna-defeat-stage-1",
+      "kind": "voice",
+      "character": "amamiya-yuna",
+      "name": "아마미야 유나",
+      "slot": "defeat_stage_1",
+      "text": "上着くらい、どうってことないよ！",
+      "path": "packs/voices/amamiya-yuna/ja-default/defeat_stage_1.ogg"
+    },
+    {
+      "id": "amamiya-yuna-defeat-stage-2",
+      "kind": "voice",
+      "character": "amamiya-yuna",
+      "name": "아마미야 유나",
+      "slot": "defeat_stage_2",
+      "text": "二度もやられるなんて……次は負けない！",
+      "path": "packs/voices/amamiya-yuna/ja-default/defeat_stage_2.ogg"
+    },
+    {
+      "id": "amamiya-yuna-defeat-stage-3",
+      "kind": "voice",
+      "character": "amamiya-yuna",
+      "name": "아마미야 유나",
+      "slot": "defeat_stage_3",
+      "text": "参った！　今回はあんたの勝ちだ！",
+      "path": "packs/voices/amamiya-yuna/ja-default/defeat_stage_3.ogg"
+    },
+    {
+      "id": "shirogane-rei-chi",
+      "kind": "voice",
+      "character": "shirogane-rei",
+      "name": "시로가네 레이",
+      "slot": "chi",
+      "text": "チー",
+      "path": "packs/voices/shirogane-rei/ja-default/chi.ogg"
+    },
+    {
+      "id": "shirogane-rei-pon",
+      "kind": "voice",
+      "character": "shirogane-rei",
+      "name": "시로가네 레이",
+      "slot": "pon",
+      "text": "ポン",
+      "path": "packs/voices/shirogane-rei/ja-default/pon.ogg"
+    },
+    {
+      "id": "shirogane-rei-kan",
+      "kind": "voice",
+      "character": "shirogane-rei",
+      "name": "시로가네 레이",
+      "slot": "kan",
+      "text": "カン",
+      "path": "packs/voices/shirogane-rei/ja-default/kan.ogg"
+    },
+    {
+      "id": "shirogane-rei-riichi",
+      "kind": "voice",
+      "character": "shirogane-rei",
+      "name": "시로가네 레이",
+      "slot": "riichi",
+      "text": "リーチ",
+      "path": "packs/voices/shirogane-rei/ja-default/riichi.ogg"
+    },
+    {
+      "id": "shirogane-rei-ron",
+      "kind": "voice",
+      "character": "shirogane-rei",
+      "name": "시로가네 레이",
+      "slot": "ron",
+      "text": "ロン",
+      "path": "packs/voices/shirogane-rei/ja-default/ron.ogg"
+    },
+    {
+      "id": "shirogane-rei-tsumo",
+      "kind": "voice",
+      "character": "shirogane-rei",
+      "name": "시로가네 레이",
+      "slot": "tsumo",
+      "text": "ツモ",
+      "path": "packs/voices/shirogane-rei/ja-default/tsumo.ogg"
+    },
+    {
+      "id": "shirogane-rei-win",
+      "kind": "voice",
+      "character": "shirogane-rei",
+      "name": "시로가네 레이",
+      "slot": "win",
+      "text": "手が整いました。",
+      "path": "packs/voices/shirogane-rei/ja-default/win.ogg"
+    },
+    {
+      "id": "shirogane-rei-match-first",
+      "kind": "voice",
+      "character": "shirogane-rei",
+      "name": "시로가네 레이",
+      "slot": "match_first",
+      "text": "門前を通した甲斐がありました。",
+      "path": "packs/voices/shirogane-rei/ja-default/match_first.ogg"
+    },
+    {
+      "id": "shirogane-rei-match-last",
+      "kind": "voice",
+      "character": "shirogane-rei",
+      "name": "시로가네 레이",
+      "slot": "match_last",
+      "text": "手作りに気を取られましたね。",
+      "path": "packs/voices/shirogane-rei/ja-default/match_last.ogg"
+    },
+    {
+      "id": "shirogane-rei-defeat-stage-1",
+      "kind": "voice",
+      "character": "shirogane-rei",
+      "name": "시로가네 레이",
+      "slot": "defeat_stage_1",
+      "text": "約束どおり、上着を脱ぎます。",
+      "path": "packs/voices/shirogane-rei/ja-default/defeat_stage_1.ogg"
+    },
+    {
+      "id": "shirogane-rei-defeat-stage-2",
+      "kind": "voice",
+      "character": "shirogane-rei",
+      "name": "시로가네 레이",
+      "slot": "defeat_stage_2",
+      "text": "二度目ですね。まだ冷静に打てます。",
+      "path": "packs/voices/shirogane-rei/ja-default/defeat_stage_2.ogg"
+    },
+    {
+      "id": "shirogane-rei-defeat-stage-3",
+      "kind": "voice",
+      "character": "shirogane-rei",
+      "name": "시로가네 레이",
+      "slot": "defeat_stage_3",
+      "text": "三度の敗北です。言い訳はしません。",
+      "path": "packs/voices/shirogane-rei/ja-default/defeat_stage_3.ogg"
+    },
+    {
+      "id": "kanzaki-aya-chi",
+      "kind": "voice",
+      "character": "kanzaki-aya",
+      "name": "칸자키 아야",
+      "slot": "chi",
+      "text": "チー",
+      "path": "packs/voices/kanzaki-aya/ja-default/chi.ogg"
+    },
+    {
+      "id": "kanzaki-aya-pon",
+      "kind": "voice",
+      "character": "kanzaki-aya",
+      "name": "칸자키 아야",
+      "slot": "pon",
+      "text": "ポン",
+      "path": "packs/voices/kanzaki-aya/ja-default/pon.ogg"
+    },
+    {
+      "id": "kanzaki-aya-kan",
+      "kind": "voice",
+      "character": "kanzaki-aya",
+      "name": "칸자키 아야",
+      "slot": "kan",
+      "text": "カン",
+      "path": "packs/voices/kanzaki-aya/ja-default/kan.ogg"
+    },
+    {
+      "id": "kanzaki-aya-riichi",
+      "kind": "voice",
+      "character": "kanzaki-aya",
+      "name": "칸자키 아야",
+      "slot": "riichi",
+      "text": "リーチ",
+      "path": "packs/voices/kanzaki-aya/ja-default/riichi.ogg"
+    },
+    {
+      "id": "kanzaki-aya-ron",
+      "kind": "voice",
+      "character": "kanzaki-aya",
+      "name": "칸자키 아야",
+      "slot": "ron",
+      "text": "ロン",
+      "path": "packs/voices/kanzaki-aya/ja-default/ron.ogg"
+    },
+    {
+      "id": "kanzaki-aya-tsumo",
+      "kind": "voice",
+      "character": "kanzaki-aya",
+      "name": "칸자키 아야",
+      "slot": "tsumo",
+      "text": "ツモ",
+      "path": "packs/voices/kanzaki-aya/ja-default/tsumo.ogg"
+    },
+    {
+      "id": "kanzaki-aya-win",
+      "kind": "voice",
+      "character": "kanzaki-aya",
+      "name": "칸자키 아야",
+      "slot": "win",
+      "text": "はい、できあがりっ！",
+      "path": "packs/voices/kanzaki-aya/ja-default/win.ogg"
+    },
+    {
+      "id": "kanzaki-aya-match-first",
+      "kind": "voice",
+      "character": "kanzaki-aya",
+      "name": "칸자키 아야",
+      "slot": "match_first",
+      "text": "このテンポ、最後まで乗れたね！",
+      "path": "packs/voices/kanzaki-aya/ja-default/match_first.ogg"
+    },
+    {
+      "id": "kanzaki-aya-match-last",
+      "kind": "voice",
+      "character": "kanzaki-aya",
+      "name": "칸자키 아야",
+      "slot": "match_last",
+      "text": "飛ばしすぎて、最後に転んじゃった。",
+      "path": "packs/voices/kanzaki-aya/ja-default/match_last.ogg"
+    },
+    {
+      "id": "kanzaki-aya-defeat-stage-1",
+      "kind": "voice",
+      "character": "kanzaki-aya",
+      "name": "칸자키 아야",
+      "slot": "defeat_stage_1",
+      "text": "上着はお預けかあ。次、いこっ！",
+      "path": "packs/voices/kanzaki-aya/ja-default/defeat_stage_1.ogg"
+    },
+    {
+      "id": "kanzaki-aya-defeat-stage-2",
+      "kind": "voice",
+      "character": "kanzaki-aya",
+      "name": "칸자키 아야",
+      "slot": "defeat_stage_2",
+      "text": "えっ、もう二回目？　ちょっと待ってよ。",
+      "path": "packs/voices/kanzaki-aya/ja-default/defeat_stage_2.ogg"
+    },
+    {
+      "id": "kanzaki-aya-defeat-stage-3",
+      "kind": "voice",
+      "character": "kanzaki-aya",
+      "name": "칸자키 아야",
+      "slot": "defeat_stage_3",
+      "text": "あっという間だったね。今回はそっちが速かった！",
+      "path": "packs/voices/kanzaki-aya/ja-default/defeat_stage_3.ogg"
+    },
+    {
+      "id": "saionji-kaede-chi",
+      "kind": "voice",
+      "character": "saionji-kaede",
+      "name": "사이온지 카에데",
+      "slot": "chi",
+      "text": "チー",
+      "path": "packs/voices/saionji-kaede/ja-default/chi.ogg"
+    },
+    {
+      "id": "saionji-kaede-pon",
+      "kind": "voice",
+      "character": "saionji-kaede",
+      "name": "사이온지 카에데",
+      "slot": "pon",
+      "text": "ポン",
+      "path": "packs/voices/saionji-kaede/ja-default/pon.ogg"
+    },
+    {
+      "id": "saionji-kaede-kan",
+      "kind": "voice",
+      "character": "saionji-kaede",
+      "name": "사이온지 카에데",
+      "slot": "kan",
+      "text": "カン",
+      "path": "packs/voices/saionji-kaede/ja-default/kan.ogg"
+    },
+    {
+      "id": "saionji-kaede-riichi",
+      "kind": "voice",
+      "character": "saionji-kaede",
+      "name": "사이온지 카에데",
+      "slot": "riichi",
+      "text": "リーチ",
+      "path": "packs/voices/saionji-kaede/ja-default/riichi.ogg"
+    },
+    {
+      "id": "saionji-kaede-ron",
+      "kind": "voice",
+      "character": "saionji-kaede",
+      "name": "사이온지 카에데",
+      "slot": "ron",
+      "text": "ロン",
+      "path": "packs/voices/saionji-kaede/ja-default/ron.ogg"
+    },
+    {
+      "id": "saionji-kaede-tsumo",
+      "kind": "voice",
+      "character": "saionji-kaede",
+      "name": "사이온지 카에데",
+      "slot": "tsumo",
+      "text": "ツモ",
+      "path": "packs/voices/saionji-kaede/ja-default/tsumo.ogg"
+    },
+    {
+      "id": "saionji-kaede-win",
+      "kind": "voice",
+      "character": "saionji-kaede",
+      "name": "사이온지 카에데",
+      "slot": "win",
+      "text": "待つだけの価値がありました。",
+      "path": "packs/voices/saionji-kaede/ja-default/win.ogg"
+    },
+    {
+      "id": "saionji-kaede-match-first",
+      "kind": "voice",
+      "character": "saionji-kaede",
+      "name": "사이온지 카에데",
+      "slot": "match_first",
+      "text": "最後に残るのは、価値ある一手ですね。",
+      "path": "packs/voices/saionji-kaede/ja-default/match_first.ogg"
+    },
+    {
+      "id": "saionji-kaede-match-last",
+      "kind": "voice",
+      "character": "saionji-kaede",
+      "name": "사이온지 카에데",
+      "slot": "match_last",
+      "text": "大きな手を追って、全体を見失いました。",
+      "path": "packs/voices/saionji-kaede/ja-default/match_last.ogg"
+    },
+    {
+      "id": "saionji-kaede-defeat-stage-1",
+      "kind": "voice",
+      "character": "saionji-kaede",
+      "name": "사이온지 카에데",
+      "slot": "defeat_stage_1",
+      "text": "上着はお渡しします。勝負はこれからです。",
+      "path": "packs/voices/saionji-kaede/ja-default/defeat_stage_1.ogg"
+    },
+    {
+      "id": "saionji-kaede-defeat-stage-2",
+      "kind": "voice",
+      "character": "saionji-kaede",
+      "name": "사이온지 카에데",
+      "slot": "defeat_stage_2",
+      "text": "二度目ですか。ずいぶん高くつきましたね。",
+      "path": "packs/voices/saionji-kaede/ja-default/defeat_stage_2.ogg"
+    },
+    {
+      "id": "saionji-kaede-defeat-stage-3",
+      "kind": "voice",
+      "character": "saionji-kaede",
+      "name": "사이온지 카에데",
+      "slot": "defeat_stage_3",
+      "text": "この勝負の実りは、あなたのものです。",
+      "path": "packs/voices/saionji-kaede/ja-default/defeat_stage_3.ogg"
+    },
+    {
+      "id": "default-tile-discard",
+      "kind": "sfx",
+      "slot": "tile_discard",
+      "text": "One hard resin mahjong tile lands face up on felt, one tap then silence. Clean standard Japanese automatic mahjong table, dry close microphone, distinct and moderate attack. No speech, music or ambient loop.",
+      "duration_ms": 550,
+      "path": "packs/sfx/default/tile_discard.ogg"
+    },
+    {
+      "id": "default-tile-shuffle",
+      "kind": "sfx",
+      "slot": "tile_shuffle",
+      "text": "A compact handful of resin mahjong tiles mixes on felt and settles. Clean standard Japanese automatic mahjong table, dry close microphone, distinct and moderate attack. No speech, music or ambient loop.",
+      "duration_ms": 1600,
+      "path": "packs/sfx/default/tile_shuffle.ogg"
+    },
+    {
+      "id": "default-riichi-stick",
+      "kind": "sfx",
+      "slot": "riichi_stick",
+      "text": "One slender scoring stick set down on the table with a light precise clack. Clean standard Japanese automatic mahjong table, dry close microphone, distinct and moderate attack. No speech, music or ambient loop.",
+      "duration_ms": 750,
+      "path": "packs/sfx/default/riichi_stick.ogg"
+    },
+    {
+      "id": "parlor-tile-discard",
+      "kind": "sfx",
+      "slot": "tile_discard",
+      "text": "One hard resin mahjong tile lands face up on felt, one tap then silence. Small quiet Japanese parlor, close perspective, felt softening the impact, very short natural room reflection. No speech, music or ambient loop.",
+      "duration_ms": 550,
+      "path": "packs/sfx/parlor/tile_discard.ogg"
+    },
+    {
+      "id": "parlor-tile-shuffle",
+      "kind": "sfx",
+      "slot": "tile_shuffle",
+      "text": "A compact handful of resin mahjong tiles mixes on felt and settles. Small quiet Japanese parlor, close perspective, felt softening the impact, very short natural room reflection. No speech, music or ambient loop.",
+      "duration_ms": 1600,
+      "path": "packs/sfx/parlor/tile_shuffle.ogg"
+    },
+    {
+      "id": "parlor-riichi-stick",
+      "kind": "sfx",
+      "slot": "riichi_stick",
+      "text": "One slender scoring stick set down on the table with a light precise clack. Small quiet Japanese parlor, close perspective, felt softening the impact, very short natural room reflection. No speech, music or ambient loop.",
+      "duration_ms": 750,
+      "path": "packs/sfx/parlor/riichi_stick.ogg"
+    },
+    {
+      "id": "arcade-tile-discard",
+      "kind": "sfx",
+      "slot": "tile_discard",
+      "text": "One hard resin mahjong tile lands face up on felt, one tap then silence. Crisp arcade mahjong table. Physical impact with a subtle short electronic accent, most pronounced on the stick. No speech, music or ambient loop.",
+      "duration_ms": 550,
+      "path": "packs/sfx/arcade/tile_discard.ogg"
+    },
+    {
+      "id": "arcade-tile-shuffle",
+      "kind": "sfx",
+      "slot": "tile_shuffle",
+      "text": "A compact handful of resin mahjong tiles mixes on felt and settles. Crisp arcade mahjong table. Physical impact with a subtle short electronic accent, most pronounced on the stick. No speech, music or ambient loop.",
+      "duration_ms": 1600,
+      "path": "packs/sfx/arcade/tile_shuffle.ogg"
+    },
+    {
+      "id": "arcade-riichi-stick",
+      "kind": "sfx",
+      "slot": "riichi_stick",
+      "text": "One slender scoring stick set down on the table with a light precise clack. Crisp arcade mahjong table. Physical impact with a subtle short electronic accent, most pronounced on the stick. No speech, music or ambient loop.",
+      "duration_ms": 750,
+      "path": "packs/sfx/arcade/riichi_stick.ogg"
+    }
+  ]
+}
