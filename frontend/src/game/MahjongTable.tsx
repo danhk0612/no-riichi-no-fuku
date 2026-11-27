@@ -45,6 +45,7 @@ type MahjongTableProps = {
 const drawReasonLabels: Record<string, string> = {
   exhaustive_draw: '황패유국',
   nagashimangan: '유국만관',
+  sanchaho: '삼가화 유국',
   triple_ron: '삼가화 유국',
   kyushu_kyuhai: '구종구패',
   sufuurenta: '사풍연타',

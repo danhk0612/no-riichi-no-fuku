@@ -280,11 +280,30 @@ try {
       const draw=makeHand(12,3,'draw-layout',1,2)
       draw.head.payload.fact_snapshot.winners=[]
       draw.head.payload.fact_snapshot.draws=[{reason:'exhaustive_draw',deltas:[-1000,3000,-1000,-1000]}]
-      for (const result of [hand,secondHand,draw,noImage]) {
-        desktopSockets[0].send(JSON.stringify({type:'result_delivery',...result}))
+      const results=[hand,secondHand,draw]
+      const labels=new Map([[draw,'황패유국']])
+      for (const [reason,label,delta] of [
+        ['sanchaho','삼가화 유국',0], ['triple_ron','삼가화 유국',0],
+        ['suukansansen','사깡유국',0], ['suucha_riichi','사가리치',-1000],
+      ]) {
+        const ordinal=results.length+1
+        const result=makeHand(9+ordinal,ordinal,reason,1,ordinal-1)
+        result.head.payload.fact_snapshot.winners=[]
+        result.head.payload.fact_snapshot.draws=[{reason,deltas:Array(4).fill(delta)}]
+        labels.set(result,label)
+        results.push(result)
+      }
+      const terminal=results.length+1
+      const final={...noImage,acked_ordinal:terminal-1,delivery_revision:9+terminal,head:{...noImage.head,ordinal:terminal}}
+      for (const result of [...results,final]) {
+        desktopSockets[0].send(JSON.stringify({type:'result_delivery',...result,terminal_ordinal:terminal}))
         const card=desktop.locator('[data-event-id="'+result.head.event_id+'"]')
         await card.waitFor()
-        if (result===draw) await card.getByText('황패유국',{exact:true}).waitFor()
+        if (labels.has(result)) {
+          await card.getByText(labels.get(result),{exact:true}).waitFor()
+          const deltas=result.head.payload.fact_snapshot.draws[0].deltas
+          assert.deepEqual(await card.locator('.result-deltas strong').allTextContents(),deltas.map(d=>(d>0?'+':'')+d.toLocaleString()+'점'))
+        }
         const points=card.locator('.result-deltas li,.rank-points')
         assert.ok(await points.count()>=4)
         for (const item of [...await points.all(),card.locator('.primary-button')]) {
