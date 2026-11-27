@@ -30,7 +30,14 @@ async function checkViewport() {
     const visible = el => el.top >= -1 && el.bottom <= innerHeight+1 && el.left >= -1 && el.right <= innerWidth+1
     const faces = [...document.querySelectorAll('.portrait-button')].map(el=>el.getBoundingClientRect())
     const items = [...document.querySelectorAll('.river-square .river-preview,.hand button,.action-bar button')]
+    const scrollbars = [...document.querySelectorAll('body *')].filter(node => {
+      if (!node.clientHeight || !node.clientWidth) return false
+      const style = getComputedStyle(node)
+      return (/auto|scroll/.test(style.overflowY) && node.scrollHeight > node.clientHeight + 1) ||
+        (/auto|scroll/.test(style.overflowX) && node.scrollWidth > node.clientWidth + 1)
+    }).map(node => node.className || node.tagName)
     return {
+      scrollbars,
       uniform:!table || (faces.length===3 && faces.every(r=>r.width===r.height && r.width===faces[0].width)),
       top:!table || (table.top < 16 && !document.querySelector('.app-header h1') && !document.querySelector('.game-toolbar span')),
       outer:doc.scrollHeight <= innerHeight+1 && doc.scrollWidth <= innerWidth+1,
@@ -42,6 +49,7 @@ async function checkViewport() {
       kinds:[...document.querySelectorAll('.action-bar button')].map(b=>b.dataset.action)
     }
   })
+  assert.deepEqual(layout.scrollbars, [], '창 내부 스크롤바')
   if (layout.positions) {
     const size = layout.width+'x'+layout.height
     const prior = decisionRows.get(size)
