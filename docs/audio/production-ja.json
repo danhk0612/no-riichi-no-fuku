@@ -1,36 +1,65 @@
 {
   "project_id": "nrnf-ja-audio",
   "preview": "ポン。少し迷いましたが、この一手でいきます。リーチ。ゆっくり息を整えて、卓の流れを見ていました。ツモ。最後までお付き合いいただき、ありがとうございました。もう一局、ご一緒にいかがですか。次の牌は、どんな一枚でしょうね。",
+  "voice_cast": {
+    "clear": "Adult woman in her twenties, native standard Japanese, clean isolated recording. Clear middle register, precise vowels and neutral placement.",
+    "soft": "Adult woman in her twenties, native standard Japanese, clean isolated recording. Soft low-middle register with clear endings and an intimate studio tone.",
+    "bright": "Adult woman in her twenties, native standard Japanese, clean isolated recording. Bright, light upper-middle register with quick consonants and energetic projection."
+  },
   "characters": [
     {
       "id": "tachibana-rin",
       "name": "타치바나 린",
-      "design": "Original adult Japanese woman in her twenties, native standard Japanese. Clean isolated studio voice. Clear mid register, measured rhythm, precise vowels, a gentle smile only after winning."
+      "voice_group": "clear",
+      "direction": "Clear mid register, measured rhythm, precise vowels, a gentle smile only after winning.",
+      "voice_settings": {
+        "speed": 1.0
+      }
     },
     {
       "id": "kurokawa-mio",
       "name": "쿠로카와 미오",
-      "design": "Original adult Japanese woman in her twenties, native standard Japanese. Clean isolated studio voice. Soft lower register, cautious onset, firm word endings, intimate but articulate."
+      "voice_group": "soft",
+      "direction": "Soft lower register, cautious onset, firm word endings, intimate but articulate.",
+      "voice_settings": {
+        "speed": 0.98
+      }
     },
     {
       "id": "amamiya-yuna",
       "name": "아마미야 유나",
-      "design": "Original adult Japanese woman in her twenties, native standard Japanese. Clean isolated studio voice. Springy upper-mid register, quick attack, strong consonants, confident and punchy."
+      "voice_group": "bright",
+      "direction": "Springy upper-mid register, quick attack, strong consonants, confident and punchy.",
+      "voice_settings": {
+        "speed": 1.04
+      }
     },
     {
       "id": "shirogane-rei",
       "name": "시로가네 레이",
-      "design": "Original adult Japanese woman in her twenties, native standard Japanese. Clean isolated studio voice. Cool clear mid register, spare breath, even pitch, composed and understated."
+      "voice_group": "clear",
+      "direction": "Cool clear mid register, spare breath, even pitch, composed and understated.",
+      "voice_settings": {
+        "speed": 0.95
+      }
     },
     {
       "id": "kanzaki-aya",
       "name": "칸자키 아야",
-      "design": "Original adult Japanese woman in her twenties, native standard Japanese. Clean isolated studio voice. Bright light upper register, playful inflections, nimble conversational timing."
+      "voice_group": "bright",
+      "direction": "Bright light upper register, playful inflections, nimble conversational timing.",
+      "voice_settings": {
+        "speed": 1.1
+      }
     },
     {
       "id": "saionji-kaede",
       "name": "사이온지 카에데",
-      "design": "Original adult Japanese woman in her twenties, native standard Japanese. Clean isolated studio voice. Warm rounded low-mid register, unhurried phrasing, poised with a resonant finish."
+      "voice_group": "soft",
+      "direction": "Warm rounded low-mid register, unhurried phrasing, poised with a resonant finish.",
+      "voice_settings": {
+        "speed": 0.92
+      }
     }
   ],
   "assets": [
